@@ -1,0 +1,4 @@
+[Project]
+Name=Firefly
+Manager=KDevCMakeManager
+VersionControl=kdevgit
