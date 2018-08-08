@@ -3,7 +3,7 @@
 #include <cstdint>
 
 namespace firefly{
-   
+
    class FFInt{
    public:
       /**
@@ -17,8 +17,11 @@ namespace firefly{
        * 	@param ffint a FFInt object
        */
       FFInt(const FFInt& ffint);
+      /**
+       * 	Default constructor
+       */
       FFInt();
-      
+
       // defining new operators for finite field arithmetic
       FFInt& operator =(const FFInt&);
       FFInt& operator +=(const FFInt&);
@@ -32,7 +35,7 @@ namespace firefly{
       FFInt pow(const FFInt&);
       bool operator ==(const FFInt&);
       bool operator !=(const FFInt&);
-      
+
       uint64_t n; /**< the integer member of the finite field */
       uint64_t p; /**< the prime defining the finite field */
    private:
