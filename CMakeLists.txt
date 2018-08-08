@@ -26,6 +26,7 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 #file(GLOB LIBSOURCES
 #  ${SOURCE_PATH}/*.cpp)
 
-add_executable(firefly ${SOURCE_PATH}/example.cpp)
+add_executable(example ${SOURCE_PATH}/example.cpp)
 
-install(TARGETS firefly RUNTIME DESTINATION bin)
+# needed to install libray
+#install(TARGETS Firefly_static RUNTIME DESTINATION bin)
