@@ -22,11 +22,14 @@ endif()
 set(SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(INCLUDE_PATH ${SOURCE_PATH}/include)
 
-# Firefly library files
-#file(GLOB LIBSOURCES
-#  ${SOURCE_PATH}/*.cpp)
+# include headers
+include_directories(${INCLUDE_PATH})
 
-add_executable(example ${SOURCE_PATH}/example.cpp)
+# Firefly library files
+file(GLOB LIBSOURCES
+  ${SOURCE_PATH}/*.cpp)
+
+add_executable(example ${LIBSOURCES})
 
 # needed to install libray
 #install(TARGETS Firefly_static RUNTIME DESTINATION bin)
