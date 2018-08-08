@@ -2,7 +2,7 @@
 #include "iostream"
 
 namespace firefly {
-   
+
 FFInt::FFInt(uint64_t n_, uint64_t p_) : n(n_), p(p_) {}
 
 FFInt::FFInt(const FFInt& ffint) : p(ffint.p), n(ffint.n) {}
@@ -32,7 +32,7 @@ FFInt& FFInt::operator/=(const FFInt& ffint){
    return *this;
 }
 
-FFInt FFInt::pow(const FFInt& ffint){
+FFInt FFInt::pow(const FFInt& ffint) const{
    FFInt result;
    std::uint64_t exp;
    std::uint64_t base;
@@ -93,7 +93,7 @@ FFInt& FFInt::operator=(const FFInt& ffint){
    return *this;
 }
 
-uint64_t FFInt::mod_mul(uint64_t a, uint64_t b, const uint64_t p){
+uint64_t FFInt::mod_mul(uint64_t a, uint64_t b, const uint64_t p) const{
    long double x;
    uint64_t c;
    int64_t r;
@@ -105,7 +105,7 @@ uint64_t FFInt::mod_mul(uint64_t a, uint64_t b, const uint64_t p){
    return r < 0 ? r + p : r;
 }
 
-uint64_t FFInt::mod_inv(const uint64_t a, const uint64_t p){
+uint64_t FFInt::mod_inv(const uint64_t a, const uint64_t p) const{
    int64_t t{0};
    int64_t newt{1};
    int64_t tmpt;
