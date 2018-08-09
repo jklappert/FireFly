@@ -3,7 +3,7 @@
 #include "ReconstHelper.hpp"
 
 namespace firefly {
-   
+
 RatReconst::RatReconst(int n_) : n(n_), prime(primes().at(0)) {}
 
 std::vector<FFInt> RatReconst::reconst(){
