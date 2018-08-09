@@ -24,13 +24,27 @@ namespace firefly{
       void constrCanonical();
       Polynomial canonical;
    private:
+      /**
+       * 	A numerical black box function which provides the reconstruction
+       * 	algorithm with the finite field member f(y)
+       * 	@param p the prime number which defines the finite field
+       * 	@param y a member of the finite field which should be evaluated in f(y)
+       */
       FFInt num(uint64_t p, const FFInt& y);
+      /**
+       * 	Computes the coefficient a_i recursevly using eq. (3.11) of
+       * 	arXiv:1608.01902
+       * 	@param i the order of a_i
+       * 	@param ip recursion order
+       * 	@param num f(y_i)
+       * 	@returns a_i
+       */
       FFInt compAi(int i, int ip, const FFInt& num);
       Polynomial iterateCanonical(uint i);
 
       int n; /**< The number of parameters */
-      const uint64_t prime;
-      std::vector<FFInt> ai {};
-      std::vector<FFInt> yi {};
+      const uint64_t prime; /**< The prime number defining the finite field */
+      std::vector<FFInt> ai {}; /**< A vector which holds all coefficients a_i */
+      std::vector<FFInt> yi {}; /**< A vector which holds all arguments y_i */
    };
 }
