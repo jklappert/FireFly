@@ -5,7 +5,7 @@ namespace firefly {
 
 FFInt::FFInt(uint64_t n_, uint64_t p_) : n(n_), p(p_) {}
 
-FFInt::FFInt(const FFInt& ffint) : p(ffint.p), n(ffint.n) {}
+FFInt::FFInt(const FFInt& ffint) : n(ffint.n), p(ffint.p) {}
 
 FFInt::FFInt() {}
 

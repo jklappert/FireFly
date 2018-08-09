@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
 project(Firefly VERSION 0.0.1)
 
+set (CMAKE_CXX_COMPILER clang++-3.8)
+
+set(CMAKE_BUILD_TYPE Debug)
 # set the build type to release. If one needs debugging symbols, compile
 # with "CMAKE_BUILD_TYPE Debug"
 if(NOT CMAKE_BUILD_TYPE)
@@ -17,6 +20,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
   endif()
 endif()
+
 
 # set paths
 set(SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/source)

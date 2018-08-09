@@ -2,25 +2,26 @@
 #include <iostream>
 #include "PolyReconst.hpp"
 #include "ReconstHelper.hpp"
+#include "Logger.hpp"
 
 namespace firefly {
 
 PolyReconst::PolyReconst(int n_) : n(n_), prime(primes().at(0)) {}
 
 std::vector<FFInt> PolyReconst::reconst(){
-   int maxDegree = 1000;
+   uint maxDegree = 1000;
    const int breakCondition = 3;
 
    yi.emplace_back(FFInt(std::rand() % prime, prime));
    ai.emplace_back(num(prime, yi.back()));
 
-   for(int i = 1; i < maxDegree; i++){
+   for(uint i = 1; i < maxDegree; i++){
       yi.emplace_back(FFInt(std::rand() % prime, prime));
       ai.emplace_back(compAi(i, i, num(prime, yi.back())));
       if(ai.at(i).n == 0) {
 	 if(i > breakCondition){
 	    bool nonZero = false;
-	    for(int j = ai.size(); j > ai.size() - breakCondition; j--){
+	    for(uint j = ai.size(); j > ai.size() - breakCondition; j--){
 	       if(ai.at(j - 1).n != 0){
 		  nonZero = true;
 		  break;
@@ -41,13 +42,13 @@ std::vector<FFInt> PolyReconst::reconst(){
 
 void PolyReconst::constrCanonical(){
    if(ai.size() == 0){
-      std::cout << "Polynomial not yet reconstructed or 0\n";
+      INFO_MSG("Polynomial not yet reconstructed or 0.");
    } else if(ai.size() == 1){
-      std::vector<FFInt> coef{ ai.at(0)};
+      std::vector<FFInt> coef{ai.at(0)};
       Polynomial poly(coef);
       canonical = poly;
    } else{
-      std::vector<FFInt> coef{ ai.at(0)};
+      std::vector<FFInt> coef{ai.at(0)};
       Polynomial poly(coef);
       canonical = poly + iterateCanonical(1);
    }
@@ -61,7 +62,7 @@ FFInt PolyReconst::compAi(int i, int ip, const FFInt& num){
    }
 }
 
-Polynomial PolyReconst::iterateCanonical(int i){
+Polynomial PolyReconst::iterateCanonical(uint i){
    if(i < ai.size() - 1){
       std::vector<FFInt> coef1{ (FFInt(0, prime) - yi.at(i - 1)) * ai.at(i), ai.at(i) };
       std::vector<FFInt> coef2{ FFInt(0, prime) - yi.at(i - 1), FFInt(1, prime) };

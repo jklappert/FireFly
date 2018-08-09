@@ -60,7 +60,7 @@ Polynomial& Polynomial::operator=(const Polynomial& a){
 }
 
 std::ostream& operator<<(std::ostream& out, const Polynomial& a){
-   for(int i = 0; i < a.coef.size(); i++){
+   for(int i = 0; i < (int) a.coef.size(); i++){
       const uint64_t n = a.coef.at(i).n;
       if(n != 0) out << " + " << n << "*x^" << i;
    }

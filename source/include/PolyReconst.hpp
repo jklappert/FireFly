@@ -26,7 +26,7 @@ namespace firefly{
    private:
       FFInt num(uint64_t p, const FFInt& y);
       FFInt compAi(int i, int ip, const FFInt& num);
-      Polynomial iterateCanonical(int i);
+      Polynomial iterateCanonical(uint i);
 
       int n; /**< The number of parameters */
       const uint64_t prime;

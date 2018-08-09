@@ -4,7 +4,7 @@
 #include "FFInt.hpp"
 #include "Polynomial.hpp"
 
-int main(int argc, char **argv) {
+int main() {
 /*   std::vector<firefly::FFInt> v1;
    v1.emplace_back(firefly::FFInt(4,7));
    v1.emplace_back(firefly::FFInt(2,7));
