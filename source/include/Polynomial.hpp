@@ -5,7 +5,7 @@
 #include "FFInt.hpp"
 
 namespace firefly{
-   
+
    class Polynomial{
    public:
       Polynomial();
@@ -15,8 +15,8 @@ namespace firefly{
       Polynomial operator*(const Polynomial&);
       Polynomial& operator=(const Polynomial&);
       int deg;
-      std::vector<FFInt> coef;
+      std::vector<FFInt> coef {};
    };
-   
+
    std::ostream& operator<<(std::ostream& out, const Polynomial& a);
 }

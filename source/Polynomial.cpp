@@ -1,7 +1,7 @@
 #include "Polynomial.hpp"
 
 namespace firefly {
-   
+
 Polynomial::Polynomial(std::vector<FFInt> coef_) : coef(coef_){
    deg = coef.size() - 1;
 }
@@ -11,7 +11,7 @@ Polynomial::Polynomial() {}
 
 Polynomial Polynomial::operator+(const Polynomial& b){
    Polynomial a = *this;
-   std::vector<FFInt> newCoefs;
+   std::vector<FFInt> newCoefs {};
    if(a.deg >= b.deg){
       newCoefs = a.coef;
       for(int i = 0; i <= b.deg; i++) newCoefs.at(i) += b.coef.at(i);
@@ -24,7 +24,7 @@ Polynomial Polynomial::operator+(const Polynomial& b){
 
 Polynomial Polynomial::operator-(const Polynomial& b){
    Polynomial a = *this;
-   std::vector<FFInt> newCoefs;
+   std::vector<FFInt> newCoefs {};
    if(a.deg >= b.deg){
       newCoefs = a.coef;
       for(int i = 0; i <= b.deg; i++) newCoefs.at(i) -= b.coef.at(i);
@@ -39,12 +39,12 @@ Polynomial Polynomial::operator-(const Polynomial& b){
 
 Polynomial Polynomial::operator*(const Polynomial& b){
    Polynomial a = *this;
-   std::vector<FFInt> newCoefs;
+   std::vector<FFInt> newCoefs {};
    const double newDeg = a.deg + b.deg;
    for(int i = 0; i <= newDeg; i++){
       FFInt ffint(0, a.coef.at(0).p);
       for(int j = 0; j <= i; j++){
-	 if(a.deg >= j && b.deg >= (i - j)){ 
+	 if(a.deg >= j && b.deg >= (i - j)){
 	    ffint += a.coef.at(j)*b.coef.at(i - j);
 	 }
       }

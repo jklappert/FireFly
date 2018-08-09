@@ -30,7 +30,7 @@ namespace firefly{
 
       int n; /**< The number of parameters */
       const uint64_t prime;
-      std::vector<FFInt> ai;
-      std::vector<FFInt> yi;
+      std::vector<FFInt> ai {};
+      std::vector<FFInt> yi {};
    };
 }

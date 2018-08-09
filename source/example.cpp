@@ -1,8 +1,10 @@
 #include <iostream>
 #include <vector>
 #include "PolyReconst.hpp"
+#include "RatReconst.hpp"
 #include "FFInt.hpp"
 #include "Polynomial.hpp"
+#include "Logger.hpp"
 
 int main() {
 /*   std::vector<firefly::FFInt> v1;
@@ -16,10 +18,11 @@ int main() {
    firefly::Polynomial p2(v2);
    firefly::Polynomial p3 = p2*p1;
    std::cout << p3 << "\n";*/
-   firefly::PolyReconst rec (1);
+   firefly::RatReconst rec (1);
    auto vec = rec.reconst();
-   std::cout << vec.at(0).n << " " << vec.at(1).n << " " << vec.at(2).n << std::endl;
-   rec.constrCanonical();
-   std::cout << rec.canonical << std::endl;
+   INFO_MSG("Coefficient size: " << vec.size());
+   //rec.constrCanonical();
+   //std::cout << rec.canonical << std::endl;
+
    return 0;
 }

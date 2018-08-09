@@ -40,6 +40,14 @@ std::vector<FFInt> PolyReconst::reconst(){
    return ai;
 }
 
+FFInt PolyReconst::compAi(int i, int ip, const FFInt& num){
+   if(ip == 0){
+      return num;
+   } else{
+      return (compAi(i, ip - 1, num) - ai.at(ip - 1))/(yi.at(i) - yi.at(ip - 1));
+   }
+}
+
 void PolyReconst::constrCanonical(){
    if(ai.size() == 0){
       INFO_MSG("Polynomial not yet reconstructed or 0.");
@@ -51,14 +59,6 @@ void PolyReconst::constrCanonical(){
       std::vector<FFInt> coef{ai.at(0)};
       Polynomial poly(coef);
       canonical = poly + iterateCanonical(1);
-   }
-}
-
-FFInt PolyReconst::compAi(int i, int ip, const FFInt& num){
-   if(ip == 0){
-      return num;
-   } else{
-      return (compAi(i, ip - 1, num) - ai.at(ip - 1))/(yi.at(i) - yi.at(ip - 1));
    }
 }
 
@@ -80,8 +80,22 @@ FFInt PolyReconst::num(uint64_t p, const FFInt& y){
    FFInt a0 (3, p);
    FFInt a1 (6, p);
    FFInt a2 (18, p);
-   FFInt exp (2, p);
-   return a0 + a1*y + a2*y.pow(exp);
+   FFInt a3 (25, p);
+   FFInt a4 (30, p);
+   FFInt a5 (2, p);
+   FFInt a6 (7, p);
+   FFInt a7 (100, p);
+   FFInt a8 (13, p);
+   FFInt exp2 (2, p);
+   FFInt exp3 (3, p);
+   FFInt exp4 (4, p);
+   FFInt exp5 (5, p);
+   FFInt exp6 (6, p);
+   FFInt exp7 (7, p);
+   FFInt exp8 (8, p);
+
+   return a0 + a1*y + a2*y.pow(exp2) + a3*y.pow(exp3) + a4*y.pow(exp4)
+      + a5*y.pow(exp5) + a6*y.pow(exp6) + a7*y.pow(exp7) + a8*y.pow(exp8);
 }
 
 }
