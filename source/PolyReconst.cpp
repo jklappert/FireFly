@@ -5,10 +5,7 @@
 
 namespace firefly {
 
-PolyReconst::PolyReconst(int n_) : n(n_), prime(primes().at(0)) {
-   ai.reserve(5000);
-   yi.reserve(5000);
-}
+PolyReconst::PolyReconst(int n_) : n(n_), prime(primes().at(0)) {}
 
 std::vector<FFInt> PolyReconst::reconst(){
    uint maxDegree = 5000;
@@ -55,11 +52,7 @@ std::vector<FFInt> PolyReconst::reconst(){
 	    if(!nonZero) break;
 	 }
       }
-      if(i == maxDegree - 1){
-	 maxDegree += 5000;
-	 yi.resize(maxDegree);
-	 yi.resize(maxDegree);
-      }
+      if(i == maxDegree - 1) maxDegree += 5000;
    }
 
    for(int i = 0; i < breakCondition; i++){
