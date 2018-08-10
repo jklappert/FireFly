@@ -1,12 +1,14 @@
 #include <cstdlib>
-#include <iostream>
 #include "PolyReconst.hpp"
 #include "ReconstHelper.hpp"
 #include "Logger.hpp"
 
 namespace firefly {
 
-PolyReconst::PolyReconst(int n_) : n(n_), prime(primes().at(0)) {}
+PolyReconst::PolyReconst(int n_) : n(n_), prime(primes().at(0)) {
+   ai.reserve(1000);
+   yi.reserve(1000);
+}
 
 std::vector<FFInt> PolyReconst::reconst(){
    uint maxDegree = 1000;
@@ -17,7 +19,30 @@ std::vector<FFInt> PolyReconst::reconst(){
 
    for(uint i = 1; i < maxDegree; i++){
       yi.emplace_back(FFInt(std::rand() % prime, prime));
-      ai.emplace_back(compAi(i, i, num(prime, yi.back())));
+      FFInt fyi;
+
+      bool spuriousPole = true;
+      while(spuriousPole){
+	 try{
+	    fyi = num(prime, yi.back());
+	    spuriousPole = false;
+	 } catch(const std::exception&){
+	    yi.pop_back();
+	    yi.emplace_back(FFInt(std::rand() % prime, prime));
+	 }
+      }
+
+      spuriousPole = true;
+      while(spuriousPole){
+	 try{
+	    ai.emplace_back(compAi(i, i, fyi));
+	    spuriousPole = false;
+	 } catch (const std::exception&){
+	    yi.pop_back();
+	    yi.emplace_back(FFInt(std::rand() % prime, prime));
+	 }
+      }
+
       if(ai.at(i).n == 0) {
 	 if(i > breakCondition){
 	    bool nonZero = false;
@@ -30,7 +55,11 @@ std::vector<FFInt> PolyReconst::reconst(){
 	    if(!nonZero) break;
 	 }
       }
-      if(i == maxDegree - 1) maxDegree += 1000;
+      if(i == maxDegree - 1){
+	 maxDegree += 1000;
+	 yi.resize(maxDegree);
+	 yi.resize(maxDegree);
+      }
    }
 
    for(int i = 0; i < breakCondition; i++){
@@ -44,6 +73,7 @@ FFInt PolyReconst::compAi(int i, int ip, const FFInt& num){
    if(ip == 0){
       return num;
    } else{
+      if(yi.at(i) == yi.at(ip - 1)) throw std::runtime_error("Divide by 0 error!");
       return (compAi(i, ip - 1, num) - ai.at(ip - 1))/(yi.at(i) - yi.at(ip - 1));
    }
 }

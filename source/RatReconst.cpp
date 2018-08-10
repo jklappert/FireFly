@@ -4,7 +4,10 @@
 
 namespace firefly {
 
-RatReconst::RatReconst(int n_) : n(n_), prime(primes().at(0)) {}
+RatReconst::RatReconst(int n_) : n(n_), prime(primes().at(0)) {
+   ai.reserve(1000);
+   yi.reserve(1000);
+}
 
 std::vector<FFInt> RatReconst::reconst(){
    uint maxDegree = 1000;
@@ -12,31 +15,57 @@ std::vector<FFInt> RatReconst::reconst(){
 
    yi.emplace_back(FFInt(std::rand() % prime, prime));
    ai.emplace_back(num(prime, yi.back()));
-   fyi.emplace_back(ai.at(0));
 
    for(uint i = 1; i < maxDegree; i++){
       yi.emplace_back(FFInt(std::rand() % prime, prime));
-      fyi.emplace_back(num(prime, yi.back()));
-      ai.emplace_back(compAi(i, i, fyi.back()));
-      if(fyi.back() == compFyi(i - 1, yi.back())){
+      FFInt fyi;
+
+      bool spuriousPole = true;
+      while(spuriousPole){
+	 try{
+	    fyi = num(prime, yi.back());
+	    spuriousPole = false;
+	 } catch(const std::exception&){
+	    yi.pop_back();
+	    yi.emplace_back(FFInt(std::rand() % prime, prime));
+	 }
+      }
+
+      if(fyi == compFyi(i - 1, yi.back())){
 	 if(i > breakCondition){
 	    bool nonequal = false;
-	    for(uint j = ai.size(); j > ai.size() - breakCondition; j--){
-	       if(fyi.at(j - 1) != compFyi(j - 2, yi.at(j - 1))){
+	    for(uint j = 0; j < breakCondition; j++){
+	       const FFInt y = FFInt(std::rand() % prime, prime);
+	       FFInt fy = num(prime, y);
+	       if(fy != compFyi(i - 1, y)){
 		  nonequal = true;
 		  break;
 	       }
 	    }
-	    if(!nonequal) break;
+	    if(!nonequal){
+	       yi.pop_back();
+	       break;
+	    }
 	 }
       }
-      if(i == maxDegree - 1) maxDegree += 1000;
+
+      spuriousPole = true;
+      while(spuriousPole){
+	 try{
+	    ai.emplace_back(compAi(i, i, fyi));
+	    spuriousPole = false;
+	 } catch (const std::exception&){
+	    yi.pop_back();
+	    yi.emplace_back(FFInt(std::rand() % prime, prime));
+	 }
+      }
+      if(i == maxDegree - 1) {
+	 maxDegree += 1000;
+	 yi.resize(maxDegree);
+	 ai.resize(maxDegree);
+      }
    }
-   for(int i = 0; i < breakCondition; i++){
-      yi.pop_back();
-      ai.pop_back();
-      fyi.pop_back();
-   }
+
    return ai;
 }
 
@@ -44,11 +73,12 @@ FFInt RatReconst::compAi(int i, int ip, const FFInt& num){
    if(ip == 0){
       return num;
    } else{
+      if(compAi(i, ip - 1, num) == ai.at(ip - 1)) throw std::runtime_error("Divide by 0 error!");
       return (yi.at(i) - yi.at(ip - 1))/(compAi(i, ip - 1, num) - ai.at(ip - 1));
    }
 }
 
-FFInt RatReconst::compFyi(int i, FFInt& y){
+FFInt RatReconst::compFyi(int i, const FFInt& y){
    return iterateCanonicalNum(i, i, y);
 }
 

@@ -60,10 +60,9 @@ namespace firefly{
        * 	@param y y_i
        * 	@returns f(y_i)
        */
-      FFInt compFyi(int i, FFInt& y);
+      FFInt compFyi(int i, const FFInt& y);
       std::vector<FFInt> ai {}; /**< A vector which holds all coefficients a_i */
       std::vector<FFInt> yi {}; /**< A vector which holds all arguments y_i */
-      std::vector<FFInt> fyi {}; /**< A vector which holds all function values f(y_i) */
       /**
        * 	A numerical black box function which provides the reconstruction
        * 	algorithm with the finite field member f(y)
