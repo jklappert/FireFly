@@ -130,7 +130,7 @@ std::pair<Polynomial, Polynomial> RatReconst::normalize(std::pair<Polynomial, Po
 	 return ratFun;
       }
    }
-   ERROR_MSG("Could not reconstruct rational funtion. Still has spurious poles!");
+   ERROR_MSG("Could not reconstruct rational function. Still has spurious poles!");
    return ratFun;
 }
 
@@ -151,9 +151,9 @@ FFInt RatReconst::num(uint64_t p, const FFInt& y){
    FFInt exp5 (5, p);
    FFInt exp6 (6, p);
    FFInt exp7 (7, p);
-   FFInt exp8 (8, p);
+   FFInt exp12 (12, p);
 
-   return (a0)/(a2 + a3*y + a4*y.pow(exp2));
+   return (a0 + a7*y.pow(exp12))/(a2 + a3*y + a4*y.pow(exp12));
 }
 
 }
