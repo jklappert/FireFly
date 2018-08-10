@@ -102,8 +102,9 @@ void RatReconst::constrCanonical(){
       std::vector<FFInt> coefZ{FFInt(0, prime) - yi.at(0), FFInt(1, prime)};
       Polynomial constant(a0);
       Polynomial zPol(coefZ);
-      canonical = std::pair<Polynomial, Polynomial> (constant*r.first
-	 + zPol*r.second, r.first);
+      std::pair<Polynomial, Polynomial> ratFun (constant*r.first + zPol*r.second,
+						r.first);
+      canonical = normalize(ratFun);
    }
 }
 
@@ -121,12 +122,24 @@ std::pair<Polynomial, Polynomial> RatReconst::iterateCanonical(uint i){
    }
 }
 
+std::pair<Polynomial, Polynomial> RatReconst::normalize(std::pair<Polynomial, Polynomial>& ratFun){
+   for(auto coef : ratFun.second.coef){
+      if(coef.n != 0){
+	 ratFun.first = ratFun.first*(FFInt(1,prime)/coef);
+	 ratFun.second = ratFun.second*(FFInt(1,prime)/coef);
+	 return ratFun;
+      }
+   }
+   ERROR_MSG("Could not reconstruct rational funtion. Still has spurious poles!");
+   return ratFun;
+}
+
 
 FFInt RatReconst::num(uint64_t p, const FFInt& y){
    FFInt a0 (2, p);
    FFInt a1 (6, p);
-   FFInt a2 (2, p);
-   FFInt a3 (7, p);
+   FFInt a2 (1, p);
+   FFInt a3 (227, p);
    FFInt a4 (30, p);
    FFInt a5 (2, p);
    FFInt a6 (7, p);

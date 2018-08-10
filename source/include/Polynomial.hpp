@@ -14,6 +14,8 @@ namespace firefly{
       Polynomial operator-(const Polynomial&);
       Polynomial operator*(const Polynomial&);
       Polynomial& operator=(const Polynomial&);
+      Polynomial operator*(const FFInt&);
+      Polynomial operator/(const FFInt&);
       int deg;
       std::vector<FFInt> coef {};
    };

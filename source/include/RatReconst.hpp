@@ -43,6 +43,7 @@ namespace firefly{
        * 	@returns a_i
        */
       FFInt compAi(int i, int ip, const FFInt& num);
+      std::pair<Polynomial, Polynomial> normalize(std::pair<Polynomial, Polynomial>& ratFun);
       std::pair<Polynomial, Polynomial> iterateCanonical(uint i);
       /**
        * 	A numerical implementation of Thiele's interpolation formula

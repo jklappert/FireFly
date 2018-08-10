@@ -59,6 +59,24 @@ Polynomial& Polynomial::operator=(const Polynomial& a){
    return *this;
 }
 
+Polynomial Polynomial::operator*(const FFInt& a){
+   std::vector<FFInt> newCoefs {};
+   for(auto coef : coef){
+      newCoefs.push_back(coef*a);
+   }
+   return Polynomial(newCoefs);
+}
+
+Polynomial Polynomial::operator/(const FFInt& a){
+   std::vector<FFInt> newCoefs {};
+   for(auto coef : coef){
+      newCoefs.push_back(coef/a);
+   }
+   return Polynomial(newCoefs);
+}
+
+
+
 std::ostream& operator<<(std::ostream& out, const Polynomial& a){
     if(a.coef.size() == 1) return out << a.coef.at(0).n;
    for(int i = 0; i < (int) a.coef.size(); i++){

@@ -24,7 +24,6 @@ int main() {
    rec.constrCanonical();
    INFO_MSG("Coefficient size: " << vec.size());
    INFO_MSG("f(x) = " << rec.canonical.first << "/(" << rec.canonical.second << ")");
-   std::cout << (firefly::FFInt(6,43)/firefly::FFInt(7,43)).n << "\n";
    //rec.constrCanonical();
    //std::cout << rec.canonical << std::endl;
 
