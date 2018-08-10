@@ -19,7 +19,6 @@ std::vector<FFInt> RatReconst::reconst(){
    for(uint i = 1; i < maxDegree; i++){
       yi.emplace_back(FFInt(std::rand() % prime, prime));
       FFInt fyi;
-
       bool spuriousPole = true;
       while(spuriousPole){
 	 try{
@@ -32,20 +31,18 @@ std::vector<FFInt> RatReconst::reconst(){
       }
 
       if(fyi == compFyi(i - 1, yi.back())){
-	 if(i > breakCondition){
-	    bool nonequal = false;
-	    for(uint j = 0; j < breakCondition; j++){
-	       const FFInt y = FFInt(std::rand() % prime, prime);
-	       FFInt fy = num(prime, y);
-	       if(fy != compFyi(i - 1, y)){
-		  nonequal = true;
-		  break;
-	       }
-	    }
-	    if(!nonequal){
-	       yi.pop_back();
+	 bool nonequal = false;
+	 for(uint j = 0; j < breakCondition; j++){
+	    const FFInt y = FFInt(std::rand() % prime, prime);
+	    FFInt fy = num(prime, y);
+	    if(fy != compFyi(i - 1, y)){
+	       nonequal = true;
 	       break;
 	    }
+	 }
+	 if(!nonequal){
+	    yi.pop_back();
+	    break;
 	 }
       }
 
@@ -91,42 +88,45 @@ FFInt RatReconst::iterateCanonicalNum(uint i, uint ip, const FFInt& y){
 }
 
 void RatReconst::constrCanonical(){
-   /*if(ai.size() == 0){
-      INFO_MSG("Polynomial not yet reconstructed or 0.");
+   if(ai.size() == 0){
+      INFO_MSG("Rational function not yet reconstructed or 0.");
    } else if(ai.size() == 1){
-      std::vector<FFInt> coef{ai.at(0)};
-      Polynomial poly(coef);
-      canonical = poly;
+      std::vector<FFInt> coefNom{ai.at(0)};
+      std::vector<FFInt> coefDen{FFInt(1, prime)};
+      Polynomial nom(coefNom);
+      Polynomial den(coefDen);
+      canonical = std::pair<Polynomial, Polynomial> (nom, den);
    } else{
-      std::vector<FFInt> coef{ai.at(0)};
-      Polynomial poly(coef);
-      canonical = poly + iterateCanonical(1);
-   }*/
+      std::pair<Polynomial, Polynomial> r = iterateCanonical(1);
+      std::vector<FFInt> a0{ai.at(0)};
+      std::vector<FFInt> coefZ{FFInt(0, prime) - yi.at(0), FFInt(1, prime)};
+      Polynomial constant(a0);
+      Polynomial zPol(coefZ);
+      canonical = std::pair<Polynomial, Polynomial> (constant*r.first
+	 + zPol*r.second, r.first);
+   }
 }
 
-Polynomial RatReconst::iterateCanonical(uint i){
-   /*if(i < ai.size() - 1){
-      std::vector<FFInt> coef1{ (FFInt(0, prime) - yi.at(i - 1))/ai.at(i),
-	 FFInt(1, prime)/ai.at(i) };
-      std::vector<FFInt> coef2{ FFInt(0, prime) - yi.at(i - 1), FFInt(1, prime) };
-      Polynomial poly1(coef1);
-      Polynomial poly2(coef2);
-      return poly1 + poly2 / iterateCanonical(i + 1);
+std::pair<Polynomial, Polynomial> RatReconst::iterateCanonical(uint i){
+   if(i < ai.size() - 1){
+      std::pair<Polynomial, Polynomial> fnp1 = iterateCanonical(i + 1);
+      Polynomial p1 (std::vector<FFInt> {ai.at(i)});
+      Polynomial p2 (std::vector<FFInt> {FFInt(0, prime) - yi.at(i), FFInt(1, prime)});
+      return std::pair<Polynomial, Polynomial> (fnp1.first*p1 + fnp1.second*p2,
+						fnp1.first);
    } else{
-      std::vector<FFInt> coef1{ (FFInt(0, prime) - yi.at(i - 1))/ai.at(i),
-	 FFInt(1, prime)/ai.at(i) };
-      Polynomial poly1(coef1);
-      return poly1;
-   }*/
-   return Polynomial();
+      Polynomial p1 (std::vector<FFInt> {ai.at(i)});
+      Polynomial p2 (std::vector<FFInt> {FFInt(1, prime)});
+      return std::pair<Polynomial, Polynomial> (p1, p2);
+   }
 }
 
 
 FFInt RatReconst::num(uint64_t p, const FFInt& y){
-   FFInt a0 (3, p);
+   FFInt a0 (2, p);
    FFInt a1 (6, p);
-   FFInt a2 (18, p);
-   FFInt a3 (25, p);
+   FFInt a2 (2, p);
+   FFInt a3 (7, p);
    FFInt a4 (30, p);
    FFInt a5 (2, p);
    FFInt a6 (7, p);
@@ -140,7 +140,7 @@ FFInt RatReconst::num(uint64_t p, const FFInt& y){
    FFInt exp7 (7, p);
    FFInt exp8 (8, p);
 
-   return (a0 + a1*y + a4*y.pow(exp2) + a4*y.pow(exp3))/(a2 + a3*y );
+   return (a0)/(a2 + a3*y + a4*y.pow(exp2));
 }
 
 }

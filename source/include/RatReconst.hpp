@@ -43,7 +43,7 @@ namespace firefly{
        * 	@returns a_i
        */
       FFInt compAi(int i, int ip, const FFInt& num);
-      Polynomial iterateCanonical(uint i);
+      std::pair<Polynomial, Polynomial> iterateCanonical(uint i);
       /**
        * 	A numerical implementation of Thiele's interpolation formula
        * 	from arXiv:1608.01902 eq. (3.10)
