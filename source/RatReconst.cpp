@@ -5,12 +5,12 @@
 namespace firefly {
 
 RatReconst::RatReconst(int n_) : n(n_), prime(primes().at(0)) {
-   ai.reserve(1000);
-   yi.reserve(1000);
+   ai.reserve(5000);
+   yi.reserve(5000);
 }
 
 std::vector<FFInt> RatReconst::reconst(){
-   uint maxDegree = 1000;
+   uint maxDegree = 5000;
    const int breakCondition = 3;
 
    yi.emplace_back(FFInt(std::rand() % prime, prime));
@@ -57,7 +57,7 @@ std::vector<FFInt> RatReconst::reconst(){
 	 }
       }
       if(i == maxDegree - 1) {
-	 maxDegree += 1000;
+	 maxDegree += 5000;
 	 yi.resize(maxDegree);
 	 ai.resize(maxDegree);
       }

@@ -19,13 +19,13 @@ int main() {
    firefly::Polynomial p3 = p2*p1;
    std::cout << p3 << "\n";*/
    //firefly::RatReconst rec (1);
-   firefly::RatReconst rec(1);
+   firefly::PolyReconst rec(1);
    auto vec = rec.reconst();
    rec.constrCanonical();
    INFO_MSG("Coefficient size: " << vec.size());
-   INFO_MSG("f(x) = (" << rec.canonical.first << ")/(" << rec.canonical.second << ")");
+   //INFO_MSG("f(x) = (" << rec.canonical.first << ")/(" << rec.canonical.second << ")");
    //rec.constrCanonical();
-   //std::cout << rec.canonical << std::endl;
+   std::cout << rec.canonical << std::endl;
 
    return 0;
 }
