@@ -29,10 +29,10 @@
 
 namespace firefly {
 
-/**
- * Enum representing the kind of output.
- */
-enum ELogLevel { kVerbose, kDebug, kInfo, kWarning, kError, kFatal };
+  /**
+   * Enum representing the kind of output.
+   */
+  enum ELogLevel { kVerbose, kDebug, kInfo, kWarning, kError, kFatal };
 
 } // namespace firefly
 
@@ -41,15 +41,15 @@ enum ELogLevel { kVerbose, kDebug, kInfo, kWarning, kError, kFatal };
 #define LOG_OUTPUT_STREAM std::cerr
 
 #ifdef ENABLE_VERBOSE
-   #define VERBOSE_MSG(message) LOG(firefly::kVerbose, message)
+#define VERBOSE_MSG(message) LOG(firefly::kVerbose, message)
 #else
-   #define VERBOSE_MSG(message)
+#define VERBOSE_MSG(message)
 #endif
 
 #ifdef ENABLE_DEBUG
-   #define DEBUG_MSG(message) LOG(firefly::kDebug,   message)
+#define DEBUG_MSG(message) LOG(firefly::kDebug,   message)
 #else
-   #define DEBUG_MSG(message)
+#define DEBUG_MSG(message)
 #endif
 
 #define INFO_MSG(message)    LOG(firefly::kInfo,    message)
@@ -57,13 +57,13 @@ enum ELogLevel { kVerbose, kDebug, kInfo, kWarning, kError, kFatal };
 #define ERROR_MSG(message)   LOG(firefly::kError,   message)
 
 #ifdef ENABLE_SILENT
-   #define FATAL_MSG(message)                         \
+#define FATAL_MSG(message)                         \
       do {                                            \
          exit(EXIT_FAILURE);                          \
          throw std::runtime_error(message);           \
       } while (false)
 #else
-   #define FATAL_MSG(message)                                         \
+#define FATAL_MSG(message)                                         \
       do {                                                            \
          LOG(firefly::kFatal, message);                              \
          throw std::runtime_error(message);                           \
@@ -71,9 +71,9 @@ enum ELogLevel { kVerbose, kDebug, kInfo, kWarning, kError, kFatal };
 #endif
 
 #ifdef ENABLE_SILENT
-   #define PRINT_PREFIX(level)
+#define PRINT_PREFIX(level)
 #else
-   #define PRINT_PREFIX(level)                                        \
+#define PRINT_PREFIX(level)                                        \
       do {                                                            \
          switch (level) {                                             \
          case firefly::kVerbose: LOG_OUTPUT_STREAM << "Firefly verbose: "; break; \
@@ -89,9 +89,9 @@ enum ELogLevel { kVerbose, kDebug, kInfo, kWarning, kError, kFatal };
 #endif
 
 #ifdef ENABLE_SILENT
-   #define PRINT_FILE_LINE(level)
+#define PRINT_FILE_LINE(level)
 #else
-   #define PRINT_FILE_LINE(level)                                     \
+#define PRINT_FILE_LINE(level)                                     \
       do {                                                            \
          switch (level) {                                             \
          case firefly::kFatal:                                       \
@@ -105,9 +105,9 @@ enum ELogLevel { kVerbose, kDebug, kInfo, kWarning, kError, kFatal };
 #endif
 
 #ifdef ENABLE_SILENT
-   #define PRINT_COLOR_CODE(level)
+#define PRINT_COLOR_CODE(level)
 #else
-   #define PRINT_COLOR_CODE(level)                                  \
+#define PRINT_COLOR_CODE(level)                                  \
       do {                                                          \
          switch (level) {                                           \
          case firefly::kVerbose: LOG_OUTPUT_STREAM << "\033[0;36m"; break; \
@@ -123,37 +123,37 @@ enum ELogLevel { kVerbose, kDebug, kInfo, kWarning, kError, kFatal };
 #endif
 
 #ifdef ENABLE_SILENT
-   #define RESET_COLOR(level)
+#define RESET_COLOR(level)
 #else
-   #define RESET_COLOR(level)                                    \
+#define RESET_COLOR(level)                                    \
       do {                                                       \
          LOG_OUTPUT_STREAM << "\033[0m";                         \
       } while (false)
 #endif
 
 #ifdef ENABLE_SILENT
-   #define PRINT_MESSAGE(level, message)
+#define PRINT_MESSAGE(level, message)
 #else
-   #define PRINT_MESSAGE(level, message)                         \
+#define PRINT_MESSAGE(level, message)                         \
       do {                                                       \
          LOG_OUTPUT_STREAM << message;                           \
       } while (false)
 #endif
 
 #ifdef ENABLE_SILENT
-   #define PRINT_ENDL(level)
+#define PRINT_ENDL(level)
 #else
-   #define PRINT_ENDL(level)                                     \
+#define PRINT_ENDL(level)                                     \
       do {                                                       \
          LOG_OUTPUT_STREAM << std::endl;                         \
       } while (false)
 #endif
 
 #ifdef ENABLE_SILENT
-   #define LOG(level, message)
+#define LOG(level, message)
 #else
-   #ifdef ENABLE_COLORS
-      #define LOG(level, message)                                \
+#ifdef ENABLE_COLORS
+#define LOG(level, message)                                \
       do {                                                       \
          PRINT_COLOR_CODE(level);                                \
          PRINT_PREFIX(level);                                    \
@@ -162,13 +162,13 @@ enum ELogLevel { kVerbose, kDebug, kInfo, kWarning, kError, kFatal };
          PRINT_MESSAGE(level, message);                          \
          PRINT_ENDL(level);                                      \
       } while (false)
-   #else
-      #define LOG(level, message)                  \
+#else
+#define LOG(level, message)                  \
       do {                                         \
          PRINT_PREFIX(level);                      \
          PRINT_FILE_LINE(level);                   \
          PRINT_MESSAGE(level, message);            \
          PRINT_ENDL(level);                        \
       } while (false)
-   #endif
+#endif
 #endif
