@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(Firefly VERSION 0.0.1)
 
-set (CMAKE_CXX_COMPILER clang++-3.8)
+set (CMAKE_CXX_COMPILER clang++)
 
 set(CMAKE_BUILD_TYPE Debug)
 # set the build type to release. If one needs debugging symbols, compile

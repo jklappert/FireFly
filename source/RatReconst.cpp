@@ -14,11 +14,13 @@ namespace firefly {
     ai.emplace_back (num (prime, yi.back()));
 
     for (uint i = 1; i < maxDegree; i++) {
+      INFO_MSG("Iteration step " << i);
       yi.emplace_back (FFInt (std::rand() % prime, prime));
       FFInt fyi;
       bool spuriousPole = true;
 
       while (spuriousPole) {
+        INFO_MSG("Spurious 1");
         try {
           fyi = num (prime, yi.back());
           spuriousPole = false;
@@ -27,6 +29,8 @@ namespace firefly {
           yi.emplace_back (FFInt (std::rand() % prime, prime));
         }
       }
+
+      INFO_MSG("Compare");
 
       if (fyi == compFyi (i - 1, yi.back())) {
         bool nonequal = false;
@@ -50,6 +54,7 @@ namespace firefly {
       spuriousPole = true;
 
       while (spuriousPole) {
+        INFO_MSG("Spurious 1");
         try {
           ai.emplace_back (compAi (i, i, fyi));
           spuriousPole = false;
