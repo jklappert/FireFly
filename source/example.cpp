@@ -23,7 +23,7 @@ int main() {
   auto vec = rec.reconst();
   rec.constrCanonical();
   INFO_MSG ("Coefficient size: " << vec.size());
-  //INFO_MSG("f(x) = (" << rec.canonical.first << ")/(" << rec.canonical.second << ")");
+  INFO_MSG("f(x) = (" << rec.canonical.first << ")/(" << rec.canonical.second << ")");
   //rec.constrCanonical();
   //std::cout << rec.canonical << std::endl;
 

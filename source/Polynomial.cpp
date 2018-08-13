@@ -75,8 +75,8 @@ namespace firefly {
   Polynomial Polynomial::operator* (const FFInt &a) {
     std::vector<FFInt> newCoefs {};
 
-    for (auto coef : coef) {
-      newCoefs.push_back (coef * a);
+    for (auto coefficient : coef) {
+      newCoefs.push_back (coefficient * a);
     }
 
     return Polynomial (newCoefs);
@@ -85,8 +85,8 @@ namespace firefly {
   Polynomial Polynomial::operator/ (const FFInt &a) {
     std::vector<FFInt> newCoefs {};
 
-    for (auto coef : coef) {
-      newCoefs.push_back (coef / a);
+    for (auto coefficient : coef) {
+      newCoefs.push_back (coefficient / a);
     }
 
     return Polynomial (newCoefs);

@@ -4,7 +4,10 @@
 
 namespace firefly {
 
-  RatReconst::RatReconst (int n_) : n (n_), prime (primes().at (0)) {}
+  RatReconst::RatReconst (int n_) : n (n_), prime (primes().at (0)) {
+  ai.reserve(5000);
+  yi.reserve(5000);
+  }
 
   std::vector<FFInt> RatReconst::reconst() {
     uint maxDegree = 5000;
@@ -14,13 +17,11 @@ namespace firefly {
     ai.emplace_back (num (prime, yi.back()));
 
     for (uint i = 1; i < maxDegree; i++) {
-      INFO_MSG("Iteration step " << i);
       yi.emplace_back (FFInt (std::rand() % prime, prime));
       FFInt fyi;
       bool spuriousPole = true;
 
       while (spuriousPole) {
-        INFO_MSG("Spurious 1");
         try {
           fyi = num (prime, yi.back());
           spuriousPole = false;
@@ -29,8 +30,6 @@ namespace firefly {
           yi.emplace_back (FFInt (std::rand() % prime, prime));
         }
       }
-
-      INFO_MSG("Compare");
 
       if (fyi == compFyi (i - 1, yi.back())) {
         bool nonequal = false;
@@ -54,7 +53,6 @@ namespace firefly {
       spuriousPole = true;
 
       while (spuriousPole) {
-        INFO_MSG("Spurious 1");
         try {
           ai.emplace_back (compAi (i, i, fyi));
           spuriousPole = false;
@@ -64,7 +62,11 @@ namespace firefly {
         }
       }
 
-      if (i == maxDegree - 1) maxDegree += 5000;
+      if (i == maxDegree - 1) {
+        maxDegree += 5000;
+        ai.reserve(maxDegree);
+        yi.reserve(maxDegree);
+      }
     }
 
     return ai;
@@ -74,9 +76,11 @@ namespace firefly {
     if (ip == 0) {
       return num;
     } else {
-      if (compAi (i, ip - 1, num) == ai.at (ip - 1)) throw std::runtime_error ("Divide by 0 error!");
+      FFInt aiDum = compAi (i, ip - 1, num);
 
-      return (yi.at (i) - yi.at (ip - 1)) / (compAi (i, ip - 1, num) - ai.at (ip - 1));
+      if (aiDum == ai.at (ip - 1)) throw std::runtime_error ("Divide by 0 error!");
+
+      return (yi.at (i) - yi.at (ip - 1)) / (aiDum - ai.at (ip - 1));
     }
   }
 
@@ -157,7 +161,7 @@ namespace firefly {
     FFInt exp5 (5, p);
     FFInt exp6 (6, p);
     FFInt exp7 (7, p);
-    FFInt exp12 (12, p);
+    FFInt exp12 (4000, p);
 
     return (a0 + a7 * y.pow (exp12)) / (a2 + a3 * y + a4 * y.pow (exp12));
   }
