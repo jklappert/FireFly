@@ -161,9 +161,9 @@ namespace firefly {
     FFInt exp5 (5, p);
     FFInt exp6 (6, p);
     FFInt exp7 (7, p);
-    FFInt exp12 (4000, p);
+    FFInt exp12 (100, p);
 
-    return (a0 + a7 * y.pow (exp12)) / (a2 + a3 * y + a4 * y.pow (exp12));
+    return (a0 - a7 * y.pow (exp12)) / (a2 + a3 * y + a4 * y.pow (exp12));
   }
 
 }

@@ -18,6 +18,7 @@ namespace firefly {
     Polynomial operator/ (const FFInt &);
     int deg;
     std::vector<FFInt> coef {};
+    FFInt calc(FFInt x);
   };
 
   std::ostream &operator<< (std::ostream &out, const Polynomial &a);

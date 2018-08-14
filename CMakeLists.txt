@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
 project(Firefly VERSION 0.0.1)
 
-set (CMAKE_CXX_COMPILER clang++)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+
+find_package(GMP REQUIRED)
+
+set (CMAKE_CXX_COMPILER clang++-3.8)
 
 set(CMAKE_BUILD_TYPE Debug)
 # set the build type to release. If one needs debugging symbols, compile
@@ -17,14 +21,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # enable all warnings in Debug mode
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
   if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -Wextra -pedantic")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
   endif()
 endif()
 
 # enable optimization
 if(CMAKE_BUILD_TYPE STREQUAL Release)
   if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -Wextra -pedantic")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
   endif()
 endif()
 
@@ -40,6 +44,7 @@ file(GLOB LIBSOURCES
   ${SOURCE_PATH}/*.cpp)
 
 add_executable(example ${LIBSOURCES})
+target_link_libraries(example gmp)
 
 # needed to install libray
 #install(TARGETS Firefly_static RUNTIME DESTINATION bin)

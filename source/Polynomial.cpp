@@ -8,6 +8,15 @@ namespace firefly {
 
   Polynomial::Polynomial() {}
 
+  FFInt Polynomial::calc (FFInt x) {
+    const uint64_t prime = coef.at(0).p;
+    FFInt res (0, prime);
+    for(uint i = 0; i < (uint) coef.size(); i++){
+      FFInt exp (i, prime);
+      res += coef.at(i)*x.pow(exp);
+    }
+    return res;
+  }
 
   Polynomial Polynomial::operator+ (const Polynomial &b) {
     Polynomial a = *this;
