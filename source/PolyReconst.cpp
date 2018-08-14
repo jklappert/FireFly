@@ -58,11 +58,11 @@ namespace firefly {
     return guessi;
   }
 
-  std::vector<mpz_class> PolyReconst::reconst_ff (const uint64_t prime) {
+  std::vector<mpz_class> PolyReconst::reconst_ff(const uint64_t prime) {
     uint maxDegree = yi.capacity();
     std::vector<FFInt> ai {};
     ai.reserve (maxDegree + breakCondition);
-    
+
     yi.clear();
     yi.reserve(maxDegree);
 
@@ -89,7 +89,7 @@ namespace firefly {
 
       while (spuriousPole) {
         try {
-          ai.emplace_back (comp_ai (ai, i, i, fyi));
+          ai.emplace_back (comp_ai (ai, fyi, i, i));
           spuriousPole = false;
         } catch (const std::exception &) {
           yi.pop_back();
@@ -128,17 +128,55 @@ namespace firefly {
     return convert_to_mpz (constr_canonical (ai, prime));
   }
 
-  FFInt PolyReconst::comp_ai (const std::vector<FFInt> &ai, int i, int ip, const FFInt &num) {
+  FFInt PolyReconst::comp_ai(const std::vector<FFInt> &ai, const FFInt &num, int i, int ip) {
     if (ip == 0) {
       return num;
     } else {
       if ( (yi.at (i)).n == (yi.at (ip - 1)).n) throw std::runtime_error ("Division by 0 error!");
 
-      return (comp_ai (ai, i, ip - 1, num) - ai.at (ip - 1)) / (yi.at (i) - yi.at (ip - 1));
+      return (comp_ai(ai, num, i, ip - 1) - ai.at (ip - 1)) / (yi.at (i) - yi.at (ip - 1));
     }
   }
 
-  std::vector<mpz_class> PolyReconst::convert_to_mpz (const std::vector<FFInt> &ci) const {
+  std::vector<FFInt> PolyReconst::constr_canonical(const std::vector<FFInt> &ai, const uint64_t prime) const {
+    if (ai.size() == 0) {
+      INFO_MSG ("Polynomial not yet reconstructed or 0.");
+      return std::vector<FFInt> {};
+    } else if (ai.size() == 1) {
+      return ai;
+    } else {
+      std::vector<FFInt> coef {ai.at (0) };
+      Polynomial poly (coef);
+      return (poly + iterate_canonical (ai, prime, 1)).coef;
+    }
+  }
+
+  Polynomial PolyReconst::iterate_canonical(const std::vector<FFInt> &ai, const uint64_t prime, uint i) const {
+    if (i < ai.size() - 1) {
+      std::vector<FFInt> coef1 { (FFInt (0, prime) - yi.at (i - 1)) *ai.at (i), ai.at (i) };
+      std::vector<FFInt> coef2 { FFInt (0, prime) - yi.at (i - 1), FFInt (1, prime) };
+      Polynomial poly1 (coef1);
+      Polynomial poly2 (coef2);
+      return poly1 + poly2 * iterate_canonical (ai, prime, i + 1);
+    } else {
+      std::vector<FFInt> coef1 { (FFInt (0, prime) - yi.at (i - 1)) *ai.at (i), ai.at (i) };
+      Polynomial poly1 (coef1);
+      return poly1;
+    }
+  }
+
+  bool PolyReconst::test_guess(const uint64_t prime) {
+    std::vector<FFInt> gi_ffi = convert_to_ffint (prime);
+    Polynomial gy (gi_ffi);
+
+    for (uint i = 0; i < std::min(breakCondition, (uint) yi.size()); i++) {
+      if (gy.calc (yi.at (i)) != num (prime, yi.at (i))) return false;
+    }
+
+    return true;
+  }
+
+  std::vector<mpz_class> PolyReconst::convert_to_mpz(const std::vector<FFInt> &ci) const {
     std::vector<mpz_class> ci_mpz;
     ci_mpz.reserve (ci.size());
 
@@ -150,7 +188,7 @@ namespace firefly {
     return ci_mpz;
   }
 
-  std::vector<FFInt> PolyReconst::convert_to_ffint (const uint64_t prime) const {
+  std::vector<FFInt> PolyReconst::convert_to_ffint(const uint64_t prime) const {
     std::vector<FFInt> gi_ffi;
     gi_ffi.reserve (guessi.size());
 
@@ -168,47 +206,7 @@ namespace firefly {
     return gi_ffi;
   }
 
-
-  std::vector<FFInt> PolyReconst::constr_canonical (const std::vector<FFInt> &ai, const uint64_t prime) const {
-    if (ai.size() == 0) {
-      INFO_MSG ("Polynomial not yet reconstructed or 0.");
-      return std::vector<FFInt> {};
-    } else if (ai.size() == 1) {
-      return ai;
-    } else {
-      std::vector<FFInt> coef {ai.at (0) };
-      Polynomial poly (coef);
-      return (poly + iterate_canonical (ai, 1, prime)).coef;
-    }
-  }
-
-  Polynomial PolyReconst::iterate_canonical (const std::vector<FFInt> &ai, uint i, const uint64_t prime) const {
-    if (i < ai.size() - 1) {
-      std::vector<FFInt> coef1 { (FFInt (0, prime) - yi.at (i - 1)) *ai.at (i), ai.at (i) };
-      std::vector<FFInt> coef2 { FFInt (0, prime) - yi.at (i - 1), FFInt (1, prime) };
-      Polynomial poly1 (coef1);
-      Polynomial poly2 (coef2);
-      return poly1 + poly2 * iterate_canonical (ai, i + 1, prime);
-    } else {
-      std::vector<FFInt> coef1 { (FFInt (0, prime) - yi.at (i - 1)) *ai.at (i), ai.at (i) };
-      Polynomial poly1 (coef1);
-      return poly1;
-    }
-  }
-
-  bool PolyReconst::test_guess (const uint64_t prime) {
-    std::vector<FFInt> gi_ffi = convert_to_ffint (prime);
-    Polynomial gy (gi_ffi);
-
-    for (uint i = 0; i < std::min(breakCondition, (uint) yi.size()); i++) {
-      if (gy.calc (yi.at (i)) != num (prime, yi.at (i))) return false;
-    }
-
-    return true;
-  }
-
-
-  FFInt PolyReconst::num (uint64_t p, const FFInt &y) const {
+  FFInt PolyReconst::num(uint64_t p, const FFInt &y) const {
     FFInt a0_0 (3, p);
     FFInt a0_1 (5, p);
     FFInt a1_0 (6, p);
