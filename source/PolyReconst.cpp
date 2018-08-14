@@ -15,7 +15,7 @@ namespace firefly {
     combined_prime = first_prime;
     combined_ci = reconst_ff (first_prime);
 
-    for (uint i = primes().size() - 1; i > 0; i--) {
+    for (int i = (int) primes().size() - 2; i >= 0; i--) {
       bool runtest = true;
       for (const auto ci : combined_ci) {
         mpz_class a = ci;
@@ -31,7 +31,11 @@ namespace firefly {
       if (runtest) {
         if (test_guess (prime)) break;
       }
-      
+
+      guessi.clear();
+
+      if(i == 0) throw std::runtime_error("Prime numbers not sufficient to reconstruct your coefficients!");
+
       std::vector<mpz_class> ci_tmp = reconst_ff (prime);
 
       std::pair<mpz_class, mpz_class> p1 (combined_ci.at (0), combined_prime);
@@ -140,7 +144,7 @@ namespace firefly {
 
     for (const auto coef : ci) {
       mpz_class coef_i (coef.n);
-      ci_mpz.push_back (coef_i);
+      ci_mpz.emplace_back (coef_i);
     }
 
     return ci_mpz;
@@ -151,7 +155,7 @@ namespace firefly {
     gi_ffi.reserve (guessi.size());
 
     for (const auto gi : guessi) {
-      mpz_class tmp (gi.nominator % prime);
+      mpz_class tmp (gi.numerator % prime);
 
       if (tmp < 0) tmp = tmp + prime;
 
@@ -214,7 +218,10 @@ namespace firefly {
     FFInt a4 (30, p);
     FFInt a5 (2, p);
     FFInt a6 (7, p);
-    FFInt a7 (100, p);
+    mpz_class test;
+    test = "1234567891098987984233232323232323232323232323232323232897070743454587987987098053098798708432432098098743432098";
+    test = test % p;
+    FFInt a7 (std::stoull(test.get_str()), p);
     FFInt a8 (13, p);
     FFInt exp2 (2, p);
     FFInt exp3 (3, p);
@@ -222,8 +229,8 @@ namespace firefly {
     FFInt exp5 (5, p);
     FFInt exp6 (6, p);
     FFInt exp7 (7, p);
-    FFInt exp8 (4000, p);
+    FFInt exp8 (1000, p);
 
-    return a0_0 / a0_1 - a1_0 / a1_1 * y;
+    return a7/a8*y.pow(exp8);
   }
 }

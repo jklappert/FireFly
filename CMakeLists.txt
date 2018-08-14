@@ -7,7 +7,7 @@ find_package(GMP REQUIRED)
 
 set (CMAKE_CXX_COMPILER clang++-3.8)
 
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 # set the build type to release. If one needs debugging symbols, compile
 # with "CMAKE_BUILD_TYPE Debug"
 if(NOT CMAKE_BUILD_TYPE)

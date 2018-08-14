@@ -6,9 +6,9 @@ namespace firefly {
   
   class RationalNumber {
   public:
-    RationalNumber(mpz_class nominator_, mpz_class denominator_);
+    RationalNumber(mpz_class numerator_, mpz_class denominator_);
     
-    mpz_class nominator;
+    mpz_class numerator;
     mpz_class denominator;
   };
   
