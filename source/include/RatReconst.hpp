@@ -3,8 +3,9 @@
 #include <cstdint>
 #include <vector>
 #include "FFInt.hpp"
-#include "Polynomial.hpp"
+#include "PolynomialFF.hpp"
 #include "RationalNumber.hpp"
+#include "RationalFunction.hpp"
 #include "gmpxx.h"
 
 namespace firefly {
@@ -18,11 +19,11 @@ namespace firefly {
     RatReconst(int n_);
     /**
      *    Calls the reconstruction algorithm
-     *    @returns a vector with a pair of integers corrisponding to the
-     *    coefficient of the polynom. The vector is ordered in an anscending
-     *    way such that the first coefficient corresponds to to z^0,...
+     *    @returns a RationalFunction object
+     *    @throw runtimeerror if the prime numbers are not sufficient to reconstruct
+     *    rational coefficients
      */
-    std::pair<std::vector<RationalNumber>, std::vector<RationalNumber>> reconst();
+    RationalFunction reconst();
   private:
     std::pair<std::vector<mpz_class>, std::vector<mpz_class>> reconst_ff(const uint64_t prime);
     /**
@@ -41,14 +42,14 @@ namespace firefly {
      *    @param prime a prime number defining the finite field
      *    @return A normalized version of ratFun
      */
-    std::pair<Polynomial, Polynomial> normalize(std::pair<Polynomial, Polynomial> &ratFun, const uint64_t prime) const;
+    std::pair<PolynomialFF, PolynomialFF> normalize(std::pair<PolynomialFF, PolynomialFF> &ratFun, const uint64_t prime) const;
     /**
      *    Constructs the canonical form of the rational function recursivly
      *    @param ai a vector of the coefficients ai as FFints
      *    @param prime a prime number defining the current finite field
      *    @return the rational function in its canonical form
      */
-    std::pair<Polynomial, Polynomial>  construct_canonical(std::vector<FFInt> &ai, const uint64_t prime) const;
+    std::pair<PolynomialFF, PolynomialFF>  construct_canonical(std::vector<FFInt> &ai, const uint64_t prime) const;
     /**
      *    Iterates Thiele's interpolation formula to get the canonical form
      *    of the rational function
@@ -57,7 +58,7 @@ namespace firefly {
      *    @param prime a prime number defining the current finite field
      *    @return the recursivly iterated rational function in its canonical form
      */
-    std::pair<Polynomial, Polynomial> iterate_canonical(std::vector<FFInt> &ai, uint i, const uint64_t prime) const;
+    std::pair<PolynomialFF, PolynomialFF> iterate_canonical(std::vector<FFInt> &ai, uint i, const uint64_t prime) const;
     /**
      *    Calculates f(y_i) using  Thiele's interpolation formula
      *    @param ai a vector of coefficients ai
@@ -71,10 +72,10 @@ namespace firefly {
     /**
      *    A numerical black box function which provides the reconstruction
      *    algorithm with the finite field member f(y)
-     *    @param p the prime number which defines the finite field
+     *    @param prime the prime number which defines the finite field
      *    @param y a member of the finite field which should be evaluated in f(y)
      */
-    FFInt num(uint64_t p, const FFInt &y) const;
+    FFInt num(uint64_t prime, const FFInt &y) const;
     /**
      *    Test if the guess yields the same answer for the function in the finite
      *    field of prime
@@ -85,11 +86,11 @@ namespace firefly {
     /**
      *    Converts the coefficients of a rational function from FFInts to mpz_class
      *    objects
-     *    @param p a rational function
+     *    @param rf a rational function
      *    @return the coefficients of the given rational function converted to
      *    mpz_class objects
      */
-    std::pair<std::vector<mpz_class>, std::vector<mpz_class>> convert_to_mpz(const std::pair<Polynomial, Polynomial> &p) const;
+    std::pair<std::vector<mpz_class>, std::vector<mpz_class>> convert_to_mpz(const std::pair<PolynomialFF, PolynomialFF> &rf) const;
     /**
      *    Converts the elements of a vector of RationalNumber objects to FFInts
      *    @param ri the vector of RationalNumber objects

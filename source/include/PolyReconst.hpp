@@ -5,6 +5,7 @@
 #include <gmpxx.h>
 #include "FFInt.hpp"
 #include "Polynomial.hpp"
+#include "PolynomialFF.hpp"
 #include "RationalNumber.hpp"
 
 namespace firefly {
@@ -18,11 +19,11 @@ namespace firefly {
     PolyReconst(int n_);
     /**
      *    Calls the reconstruction algorithm
-     *    @return A vector with a pair of integers corresponding to the
-     *    coefficients of the polynomial. The vector is ordered in an ascending
-     *    way such that the first coefficient corresponds to x^0,...
+     *    @return the reconstructed Polynomial
+     *    @throw runtimeerror if the prime numbers are not sufficient to reconstruct
+     *    rational coefficients
      */
-    std::vector<RationalNumber> reconst();
+    Polynomial reconst();
 
   private:
     /**
@@ -56,7 +57,7 @@ namespace firefly {
      *    @param i The iteration step; stops at ai.size()
      *    @return One iteration step of the canonical polynomial
      */
-    Polynomial iterate_canonical(const std::vector<FFInt> &ai, const uint64_t prime, uint i) const;
+    PolynomialFF iterate_canonical(const std::vector<FFInt> &ai, const uint64_t prime, uint i) const;
     /**
      *    A numerical black box function which provides the reconstruction
      *    algorithm with the finite field member f(y)

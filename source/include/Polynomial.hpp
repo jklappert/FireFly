@@ -1,25 +1,22 @@
 #pragma once
 
 #include <vector>
-#include <iostream>
-#include "FFInt.hpp"
+#include "RationalNumber.hpp"
 
 namespace firefly {
 
   class Polynomial {
   public:
-    Polynomial();
-    Polynomial(std::vector<FFInt> coef_);
-    Polynomial operator+ (const Polynomial &);
-    Polynomial operator- (const Polynomial &);
-    Polynomial operator* (const Polynomial &);
-    Polynomial &operator= (const Polynomial &);
-    Polynomial operator* (const FFInt &);
-    Polynomial operator/ (const FFInt &);
-    int deg;
-    std::vector<FFInt> coef {};
-    FFInt calc(FFInt x);
+    /**
+     *    A constructor for a polynomial with RationalNumber objects as
+     *    coefficients
+     *    @param coefs_ a vector of RationalNumber coefficients for the polynomial
+     *    in ascending order (x^0, x^2,...)
+     */
+    Polynomial(std::vector<RationalNumber> coefs_);
+    std::vector<RationalNumber> coefs;  /**< The vector which holds all coefficients*/
   };
 
-  std::ostream &operator<< (std::ostream &out, const Polynomial &a);
+  std::ostream &operator<< (std::ostream &out, const Polynomial &pol);
+
 }

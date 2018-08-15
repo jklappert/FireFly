@@ -9,8 +9,19 @@ namespace firefly {
   }
 
   std::ostream &operator<< (std::ostream &out, const RationalNumber &a) {
-    out << "(" << a.numerator.get_str() << "/" << a.denominator.get_str() << ")";
+    if (a.denominator == 1) {
+      if (a.numerator < 1) {
+        out << "(" << a.numerator.get_str() << ")";
+      } else {
+        out << a.numerator.get_str();
+      }
+    } else {
+      out << "(" << a.numerator.get_str() << "/" << a.denominator.get_str() << ")";
+    }
+
     return out;
   }
 
 }
+
+
