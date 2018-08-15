@@ -11,12 +11,12 @@ namespace firefly {
      *    @param n_ an integer which is a member of the finite fild
      *    @param p_ a prime number
      */
-    FFInt (uint64_t n_, uint64_t p_);
+    FFInt(uint64_t n_, uint64_t p_);
     /**
      *    A constructor
      *    @param ffint a FFInt object
      */
-    FFInt (const FFInt &ffint);
+    FFInt(const FFInt &ffint);
     /**
      *    Default constructor
      */
@@ -34,7 +34,7 @@ namespace firefly {
     FFInt operator / (const FFInt &);
     bool operator == (const FFInt &);
     bool operator != (const FFInt &);
-    FFInt pow (const FFInt &ffint) const;
+    FFInt pow(const FFInt &ffint) const;
 
     uint64_t n; /**< the integer member of the finite field */
     uint64_t p; /**< the prime defining the finite field */
@@ -46,12 +46,12 @@ namespace firefly {
      *    @param b the ceil
      *    @param p the prime which defines the finite field
      */
-    uint64_t mod_mul (uint64_t a, uint64_t b, const uint64_t p) const;
+    uint64_t mod_mul(uint64_t a, uint64_t b, const uint64_t p) const;
     /**
      *    Extended Euclidian algorithm to calculate the multiplicative
      *    invrse.
      *    mod_inv(a,p) solves a*t = 1 mod p for t.
      */
-    uint64_t mod_inv (const uint64_t a, const uint64_t p) const;
+    uint64_t mod_inv(const uint64_t a, const uint64_t p) const;
   };
 }

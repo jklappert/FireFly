@@ -48,7 +48,7 @@ namespace firefly {
      *    @param prime The prime number of the finite field
      *    @return The vector of coefficients of the canonical form
      */
-    std::vector<FFInt> constr_canonical(const std::vector<FFInt> &ai, const uint64_t prime) const;
+    std::vector<FFInt> construct_canonical(const std::vector<FFInt> &ai, const uint64_t prime) const;
     /**
      *    Iterative construction of the canonical form
      *    @param ai The computed ai
@@ -60,27 +60,39 @@ namespace firefly {
     /**
      *    A numerical black box function which provides the reconstruction
      *    algorithm with the finite field member f(y)
-     *    @param p The prime number which defines the finite field
+     *    @param prime The prime number which defines the finite field
      *    @param y A member of the finite field which should be evaluated in f(y)
      *    @return The numerical result in the finite field of prime
      */
-    FFInt num(uint64_t p, const FFInt &y) const;
+    FFInt num(uint64_t prime, const FFInt &y) const;
     /**
      *    Test if the guess yields the same answer for the function in the finite
      *    field of prime
-     *    @param p The prime number which defines the finite field
+     *    @param prime The prime number which defines the finite field
      *    @return true or false
      */
     bool test_guess(const uint64_t prime);
-    std::vector<mpz_class> convert_to_mpz(const std::vector<FFInt>& ai) const;
-    std::vector<FFInt> convert_to_ffint(const uint64_t prime) const;
-    const uint breakCondition = 3;
+    /**
+     *    Converts a vector of FFInts to a vector of mpz_class
+     *    @param ai a vector of FFInts
+     *    @return The vector ai converted to mpz_class objects
+     */
+    std::vector<mpz_class> convert_to_mpz(const std::vector<FFInt> &ai) const;
+    /**
+     *    Convert a vector of RationalNumber objects to FFInts
+     *    @param ri a vector of RationalNumber objects
+     *    @param prime a prime defining the current finite field
+     *    @return the vector ri converted to FFInt objects
+     */
+    std::vector<FFInt> convert_to_ffint(const std::vector<RationalNumber> &ri, const uint64_t prime) const;
+    const uint breakCondition = 3;  /**< The number of additional evaluations of
+                                      the black box function to validate the termination criterion */
     int n; /**< The number of parameters */
     std::vector<FFInt> yi {}; /**< A vector which holds all arguments y_i */
     mpz_class combined_prime {}; /**< The combination of the used prime numbers
                                   with the chinese remained theorem */
     std::vector<mpz_class> combined_ci {}; /**< The combination of the finite field
                                   results with the chinese remained theorem */
-    std::vector<RationalNumber> guessi {}; /**< The guesses of the rational coefficients */
+    std::vector<RationalNumber> gi {}; /**< The guesses of the rational coefficients */
   };
 }
