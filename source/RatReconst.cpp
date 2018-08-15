@@ -265,7 +265,6 @@ namespace firefly {
     return true;
   }
 
-
   FFInt RatReconst::num (uint64_t p, const FFInt &y) const {
     FFInt a0 (2, p);
     FFInt a1 (6, p);

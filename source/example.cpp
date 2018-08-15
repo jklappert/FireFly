@@ -17,8 +17,7 @@ int main() {
   auto vec_rat = rec_rat.reconst();
   auto vec_pol = rec_pol.reconst();
   INFO_MSG("f(x) = (" << vec_rat.first.at(0) << " + " << vec_rat.first.at(1) << " * x)/(" << vec_rat.second.at(0) << " + " << vec_rat.second.at(100) << " * x^4)");
-  INFO_MSG(vec_pol.at(1000));
-  
+  INFO_MSG(vec_pol.at(0) << " + " << vec_pol.at(2));
 
   return 0;
 }

@@ -229,6 +229,6 @@ namespace firefly {
     FFInt exp7 (7, p);
     FFInt exp8 (1000, p);
 
-    return a7/a8*y.pow(exp8);
+    return a0_0 + a0_0*y.pow(exp2);
   }
 }
