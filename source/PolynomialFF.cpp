@@ -20,7 +20,7 @@ namespace firefly {
     return res;
   }
 
-  PolynomialFF PolynomialFF::operator+ (const PolynomialFF &b) {
+  PolynomialFF PolynomialFF::operator+(const PolynomialFF &b) {
     PolynomialFF a = *this;
     std::vector<FFInt> newCoefs {};
 
@@ -37,7 +37,7 @@ namespace firefly {
     return PolynomialFF(newCoefs);
   }
 
-  PolynomialFF PolynomialFF::operator- (const PolynomialFF &b) {
+  PolynomialFF PolynomialFF::operator-(const PolynomialFF &b) {
     PolynomialFF a = *this;
     std::vector<FFInt> newCoefs {};
 
@@ -57,7 +57,7 @@ namespace firefly {
     return PolynomialFF(newCoefs);
   }
 
-  PolynomialFF PolynomialFF::operator* (const PolynomialFF &b) {
+  PolynomialFF PolynomialFF::operator*(const PolynomialFF &b) {
     PolynomialFF a = *this;
     std::vector<FFInt> newCoefs {};
     const double newDeg = a.deg + b.deg;
@@ -77,13 +77,13 @@ namespace firefly {
     return PolynomialFF(newCoefs);
   }
 
-  PolynomialFF &PolynomialFF::operator= (const PolynomialFF &a) {
+  PolynomialFF &PolynomialFF::operator=(const PolynomialFF &a) {
     coef = a.coef;
     deg = a.deg;
     return *this;
   }
 
-  PolynomialFF PolynomialFF::operator* (const FFInt &a) {
+  PolynomialFF PolynomialFF::operator*(const FFInt &a) {
     std::vector<FFInt> newCoefs {};
 
     for (auto coefficient : coef) {
@@ -93,7 +93,7 @@ namespace firefly {
     return PolynomialFF(newCoefs);
   }
 
-  PolynomialFF PolynomialFF::operator/ (const FFInt &a) {
+  PolynomialFF PolynomialFF::operator/(const FFInt &a) {
     std::vector<FFInt> newCoefs {};
 
     for (auto coefficient : coef) {
@@ -105,7 +105,7 @@ namespace firefly {
 
 
 
-  std::ostream &operator<< (std::ostream &out, const PolynomialFF &a) {
+  std::ostream &operator<<(std::ostream &out, const PolynomialFF &a) {
     if (a.coef.size() == 1) return out << a.coef.at(0).n;
 
     for (int i = 0; i < (int) a.coef.size(); i++) {
