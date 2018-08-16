@@ -1,12 +1,11 @@
 #pragma once
 
-#include <vector>
 #include <iostream>
-#include "FFInt.hpp"
+#include "MultiPolynomialFF.hpp"
 
 namespace firefly {
 
-  class PolynomialFF {
+  class PolynomialFF : public MultiPolynomialFF {
   public:
     PolynomialFF();
     PolynomialFF(std::vector<FFInt> coef_);
@@ -16,9 +15,9 @@ namespace firefly {
     PolynomialFF &operator= (const PolynomialFF &);
     PolynomialFF operator* (const FFInt &);
     PolynomialFF operator/ (const FFInt &);
-    int deg;
-    std::vector<FFInt> coef {};
+    uint deg;
     FFInt calc(FFInt x);
+    std::vector<FFInt> coef {};
   };
 
   std::ostream &operator<< (std::ostream &out, const PolynomialFF &a);

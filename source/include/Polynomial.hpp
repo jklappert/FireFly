@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "RationalNumber.hpp"
+#include "Monomial.hpp"
 
 namespace firefly {
 
@@ -14,7 +14,7 @@ namespace firefly {
      *    in ascending order (x^0, x^2,...)
      */
     Polynomial(std::vector<RationalNumber> coefs_);
-    std::vector<RationalNumber> coefs;  /**< The vector which holds all coefficients*/
+    std::vector<Monomial> coefs;  /**< The vector which holds all coefficients*/
   };
 
   std::ostream &operator<< (std::ostream &out, const Polynomial &pol);

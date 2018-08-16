@@ -8,6 +8,8 @@ namespace firefly {
     denominator = denominator_ / gcd_;
   }
 
+  RationalNumber::RationalNumber() {}
+
   std::ostream &operator<< (std::ostream &out, const RationalNumber &a) {
     if (a.denominator == 1) {
       if (a.numerator < 1) {
