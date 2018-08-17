@@ -5,12 +5,11 @@ namespace firefly {
 
   FFInt::FFInt(uint64_t n_, uint64_t p_) : n(n_), p(p_) {}
 
-  FFInt::FFInt(const FFInt &ffint) : n(ffint.n), p(ffint.p) {}
+  FFInt::FFInt(const FFInt& ffint) : n(ffint.n), p(ffint.p) {}
 
   FFInt::FFInt() {}
 
-
-  FFInt &FFInt::operator+= (const FFInt &ffint) {
+  FFInt& FFInt::operator+=(const FFInt& ffint) {
     n += ffint.n;
 
     if (n >= p) n -= p;
@@ -18,24 +17,24 @@ namespace firefly {
     return *this;
   }
 
-  FFInt &FFInt::operator-= (const FFInt &ffint) {
+  FFInt& FFInt::operator-=(const FFInt& ffint) {
     if (ffint.n > n) n += p;
 
     n -= ffint.n;
     return *this;
   }
 
-  FFInt &FFInt::operator*= (const FFInt &ffint) {
+  FFInt& FFInt::operator*=(const FFInt& ffint) {
     n = mod_mul(n, ffint.n, p);
     return *this;
   }
 
-  FFInt &FFInt::operator/= (const FFInt &ffint) {
+  FFInt& FFInt::operator/=(const FFInt& ffint) {
     n = mod_mul(n, mod_inv(ffint.n, p), p);
     return *this;
   }
 
-  FFInt FFInt::pow(const FFInt &ffint) const {
+  FFInt FFInt::pow(const FFInt& ffint) const {
     FFInt result;
     std::uint64_t exp;
     std::uint64_t base;
@@ -63,7 +62,7 @@ namespace firefly {
     return result;
   }
 
-  FFInt FFInt::operator+ (const FFInt &ffint) {
+  FFInt FFInt::operator+(const FFInt& ffint) {
     auto sum = ffint.n + n;
 
     if (sum >= p) sum -= p;
@@ -71,7 +70,7 @@ namespace firefly {
     return FFInt(sum, p);
   }
 
-  FFInt FFInt::operator- (const FFInt &ffint) {
+  FFInt FFInt::operator-(const FFInt& ffint) {
     auto diff = n;
 
     if (ffint.n > diff) diff += p;
@@ -80,26 +79,20 @@ namespace firefly {
     return FFInt(diff, p);
   }
 
-  FFInt FFInt::operator* (const FFInt &ffint) {
+  FFInt FFInt::operator*(const FFInt& ffint) {
     return FFInt(mod_mul(n, ffint.n, p), p);
   }
 
-  FFInt FFInt::operator/ (const FFInt &ffint) {
+  FFInt FFInt::operator/(const FFInt& ffint) {
     return FFInt(mod_mul(n, mod_inv(ffint.n, p), p), p);
   }
 
-  bool FFInt::operator== (const FFInt &ffint) {
+  bool FFInt::operator==(const FFInt& ffint) {
     return (n == ffint.n);
   }
 
-  bool FFInt::operator!= (const FFInt &ffint) {
+  bool FFInt::operator!=(const FFInt& ffint) {
     return (n != ffint.n);
-  }
-
-  FFInt &FFInt::operator= (const FFInt &ffint) {
-    n = ffint.n;
-    p = ffint.p;
-    return *this;
   }
 
   uint64_t FFInt::mod_mul(uint64_t a, uint64_t b, const uint64_t p) const {
@@ -138,6 +131,11 @@ namespace firefly {
 
     // if(r > 1) throw init_error("mod_inv: not invertible");
     return t < 0 ? t + p : t;
+  }
+
+  std::ostream& operator<<(std::ostream& out, const FFInt& ffint) {
+    out << ffint.n;
+    return out;
   }
 
 }

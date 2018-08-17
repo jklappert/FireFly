@@ -4,11 +4,11 @@ namespace firefly{
 
   MultiPolynomialFF::MultiPolynomialFF() {}
 
-  MultiPolynomialFF::MultiPolynomialFF(uint n_, const std::map<uint, MultiPolynomialFF> & coef_) : n(n_), coef(coef_) {
-    deg = coef.size() - 1;
+  MultiPolynomialFF::MultiPolynomialFF(uint n_, const std::map<uint, MultiPolynomialFF>& coef_) : n(n_), coef(coef_) {
+    deg = coef.rend()->first;
   }
 
-  MultiPolynomialFF MultiPolynomialFF::operator+(const MultiPolynomialFF & other) {
+  MultiPolynomialFF MultiPolynomialFF::operator+(const MultiPolynomialFF& other) {
     if (n == other.n && n > 1) {
       std::map<uint, MultiPolynomialFF> new_coef;
 
@@ -26,11 +26,11 @@ namespace firefly{
         }
       }
 
-      return MultiPolynomialFF(n, new_coef);
+      return MultiPolynomialFF(n, std::move(new_coef));
     } else throw std::runtime_error("Adding multipolynomials of different variables!");
   }
 
-  MultiPolynomialFF MultiPolynomialFF::operator-(const MultiPolynomialFF & other) {
+  MultiPolynomialFF MultiPolynomialFF::operator-(const MultiPolynomialFF& other) {
     if (n == other.n && n > 1) {
       std::map<uint, MultiPolynomialFF> new_coef = coef;
       MultiPolynomialFF empty_coef(n - 1, std::map<uint, MultiPolynomialFF>());
@@ -44,18 +44,18 @@ namespace firefly{
         }
       }
 
-      return MultiPolynomialFF(n, new_coef);
+      return MultiPolynomialFF(n, std::move(new_coef));
     } else throw std::runtime_error("Subtracting multipolynomials of different variables!");
   }
 
-  MultiPolynomialFF MultiPolynomialFF::operator*(const FFInt & factor) {
+  MultiPolynomialFF MultiPolynomialFF::operator*(const FFInt& factor) {
     std::map<uint, MultiPolynomialFF> new_coef = coef;
 
     for (auto element : new_coef) {
       element.second = element.second * factor;
     }
 
-    return MultiPolynomialFF(n, new_coef);
+    return MultiPolynomialFF(n, std::move(new_coef));
   }
 
 }
