@@ -101,5 +101,6 @@ namespace firefly {
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */
     std::unordered_map<uint, std::vector<FFInt>> yis {};
+    std::unordered_map<uint, int> max_deg{};
   };
 }

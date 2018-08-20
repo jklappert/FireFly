@@ -11,6 +11,7 @@ namespace firefly {
       std::vector<FFInt> yi;
       yi.reserve(5000);
       yis.insert(std::make_pair(i, std::move(yi)));
+      max_deg.insert(std::make_pair(i, -1));
     }
   }
 
@@ -21,12 +22,11 @@ namespace firefly {
     std::vector<uint> chosen_yi(n);
     combined_ci = convert_to_mpz(reconst_ff(zi, first_prime, chosen_yi));
 
-    for (int i = (int) primes().size() - 96; i >= 0; i--) {
+    for (int i = (int) primes().size() - 2; i >= 0; i--) {
       bool runtest = true;
 
       for (const auto ci : combined_ci) {
         mpz_class a = ci.second;
-
         try {
           gi.insert(std::make_pair(ci.first, get_rational_coef(a, combined_prime)));
         } catch (const std::exception &) {
@@ -42,10 +42,17 @@ namespace firefly {
       }
 
       gi.clear();
+      yis.clear();
+
+      for (uint i = 1; i <= n; i++) {
+        std::vector<FFInt> yi;
+        yi.reserve(max_deg[i]);
+        yis.insert(std::make_pair(i, std::move(yi)));
+      }
 
       if (i == 0) throw std::runtime_error("Prime numbers not sufficient to reconstruct your coefficients!");
 
-      // use another prime to utilize the Chinese Remainder Theorem to reconstruct the get_rational_coef
+      // use another prime to utilize the Chinese Remainder Theorem to reconstruct the rational
       // coefficients
       mpz_map ci_tmp = convert_to_mpz(reconst_ff(zi, prime, chosen_yi));
 
@@ -57,11 +64,11 @@ namespace firefly {
 
       auto it = combined_ci.begin();
 
-      for (++it; it != combined_ci.end(); ++it) {
+      for (it = ++it; it != combined_ci.end(); ++it) {
         p1 = std::make_pair(it->second, combined_prime);
         p2 = std::make_pair(ci_tmp[it->first], prime);
-        std::pair<mpz_class, mpz_class> p3j = run_chinese_remainder(p1, p2);
-        combined_ci[it->first] = p3j.first;
+        p3 = run_chinese_remainder(p1, p2);
+        combined_ci[it->first] = p3.first;
       }
 
       combined_prime = p3.second;
@@ -72,13 +79,12 @@ namespace firefly {
 
   PolynomialFF PolyReconst::reconst_ff(const uint zi, const uint64_t prime, std::vector<uint> &chosen_yi) {
     std::vector<FFInt> &yi = yis[zi];
-    uint maxDegree = yi.capacity();
+    uint maxDegree = max_deg[zi] > 0 ? max_deg[zi] : yi.capacity();
     std::vector<PolynomialFF> ai;
-    ai.reserve(maxDegree + breakCondition);
+    ai.reserve(maxDegree);
 
-    bool know_order = yi.capacity() == yi.size();
-
-    if (!know_order) {
+    bool known_prime = yi.capacity() == yi.size();
+    if (!known_prime) {
       yi.emplace_back(FFInt(std::rand() % prime, prime));
       yis.insert(std::make_pair(zi, yi));
     }
@@ -90,12 +96,13 @@ namespace firefly {
       }
 
       ai.emplace_back(num(prime, chosen_yi_ff));
+
     } else {
       ai.emplace_back(reconst_ff(zi - 1, prime, chosen_yi));
     }
 
     for (uint i = 1; i < maxDegree; i++) {
-      if (!know_order){
+      if (!known_prime){
         yi.emplace_back(FFInt(std::rand() % prime, prime));
         yis.insert(std::make_pair(zi, yi));
       }
@@ -150,9 +157,8 @@ namespace firefly {
         }
       }
 
-      if (!know_order && i == maxDegree) {
+      if (!known_prime && i == maxDegree) {
         maxDegree += 5000;
-        yi.reserve(maxDegree);
         ai.reserve(maxDegree);
       }
     }
@@ -162,12 +168,11 @@ namespace firefly {
 
     chosen_yi[zi - 1] = 0;
 
-    if(!know_order){ 
-      yi.shrink_to_fit();
-      yis.insert(std::make_pair(zi, yi));
-    }
+    if(!known_prime) yi.shrink_to_fit();
 
-    return PolynomialFF(construct_canonical(zi, ai, prime));
+    if(max_deg[zi] < 0) max_deg[zi] = yi.size();
+
+    return construct_canonical(zi, ai, prime);
   }
 
   PolynomialFF PolyReconst::comp_ai(const uint zi, const std::vector<PolynomialFF> &ai,
@@ -240,14 +245,18 @@ namespace firefly {
   ff_map PolyReconst::convert_to_ffint(const rn_map &ri, const uint64_t prime) const {
     ff_map gi_ffi;
 
-    for (const auto g_i : ri) {
+    for (const auto& g_i : ri) {
       mpz_class tmp(g_i.second.numerator % prime);
+      mpz_class tmp2(g_i.second.denominator % prime);
 
       if (tmp < 0) tmp = tmp + prime;
 
       FFInt n(std::stoull(tmp.get_str()), prime);
+
       tmp = g_i.second.denominator % prime;
+
       FFInt d(std::stoull(tmp.get_str()), prime);
+
       gi_ffi.insert(std::make_pair(g_i.first, n / d));
     }
 
@@ -270,8 +279,9 @@ namespace firefly {
     FFInt a5(2, prime);
     FFInt a6(7, prime);
     mpz_class test;
-    test = "12345678910989879987987098053098798708432432098098743432098";
+    test = "1234567891098987998798709805302432098098743432098";
     test = test % prime;
+    mpz_class ab = test - prime;
     FFInt a7(std::stoull(test.get_str()), prime);
     FFInt a8(13, prime);
     FFInt exp2(2, prime);
@@ -285,7 +295,7 @@ namespace firefly {
     ff_map res;
     res.insert(std::make_pair(std::vector<uint> (n), a0_0 + a2*y2 
     + a3*y3 + a4*y*y2*y3*y4.pow(exp8) + a3/a4*y.pow(exp2)*y3.pow(exp7) 
-    - a4*y4.pow(exp2) - a4/a3 * y.pow(exp2)));
+    - a4*y4.pow(exp2) - a7/a3 * y.pow(exp2)));
 
     return PolynomialFF(n, res);
   }
