@@ -35,7 +35,7 @@ namespace firefly {
         }
       }
 
-      uint64_t prime = primes().at(i);
+      uint64_t prime = primes()[i];
 
       if (runtest) {
         if (test_guess(prime)) break;
@@ -45,6 +45,8 @@ namespace firefly {
 
       if (i == 0) throw std::runtime_error("Prime numbers not sufficient to reconstruct your coefficients!");
 
+      // use another prime to utilize the Chinese Remainder Theorem to reconstruct the get_rational_coef
+      // coefficients
       mpz_map ci_tmp = convert_to_mpz(reconst_ff(zi, prime, chosen_yi));
 
       std::pair<mpz_class, mpz_class> p1(combined_ci.begin()->second, combined_prime);
@@ -54,8 +56,7 @@ namespace firefly {
       combined_ci.begin()->second = p3.first;
 
       auto it = combined_ci.begin();
-      //it += it;
-      
+
       for (++it; it != combined_ci.end(); ++it) {
         p1 = std::make_pair(it->second, combined_prime);
         p2 = std::make_pair(ci_tmp[it->first], prime);
@@ -99,7 +100,7 @@ namespace firefly {
         yis.insert(std::make_pair(zi, yi));
       }
 
-      chosen_yi.at(zi - 1) = i;
+      chosen_yi[zi - 1] = i;
 
       PolynomialFF fyi;
 
@@ -119,7 +120,7 @@ namespace firefly {
 
           spuriousPole = false;
         } catch (const std::exception &) {
-          yi.at(i) = FFInt(std::rand() % prime, prime);
+          yi[i] = FFInt(std::rand() % prime, prime);
         }
       }
 
@@ -130,16 +131,16 @@ namespace firefly {
           ai.emplace_back(comp_ai(zi, ai, fyi, i, i));
           spuriousPole = false;
         } catch (const std::exception &e) {
-          yi.at(i) = FFInt(std::rand() % prime, prime);
+          yi[i] = FFInt(std::rand() % prime, prime);
         }
       }
 
-      if (ai.at(i).zero()) {
+      if (ai[i].zero()) {
         if (i > breakCondition) {
           bool nonZero = false;
 
           for (uint j = ai.size(); j > ai.size() - breakCondition; j--) {
-            if (!ai.at(j - 1).zero()) {
+            if (!ai[j - 1].zero()) {
               nonZero = true;
               break;
             }
@@ -159,7 +160,7 @@ namespace firefly {
       ai.pop_back();
     }
 
-    chosen_yi.at(zi - 1) = 0;
+    chosen_yi[zi - 1] = 0;
 
     if(!know_order){ 
       yi.shrink_to_fit();
@@ -176,9 +177,9 @@ namespace firefly {
     if (ip == 0) {
       return num;
     } else {
-      if ((yi.at(i)).n == (yi.at(ip - 1)).n) throw std::runtime_error("Division by 0 error!");
+      if (yi[i].n == yi[ip - 1].n) throw std::runtime_error("Division by 0 error!");
 
-      return (comp_ai(zi, ai, num, i, ip - 1) - ai.at(ip - 1)) / (yi.at(i) - yi.at(ip - 1));
+      return (comp_ai(zi, ai, num, i, ip - 1) - ai[ip - 1]) / (yi[i] - yi[ip - 1]);
     }
   }
 
@@ -188,9 +189,9 @@ namespace firefly {
       INFO_MSG("Polynomial not yet reconstructed or 0.");
       return PolynomialFF();
     } else if (ai.size() == 1) {
-      return ai.at(0);
+      return ai[0];
     } else {
-      return (ai.at(0) + iterate_canonical(zi, ai, prime, 1));
+      return (ai[0] + iterate_canonical(zi, ai, prime, 1));
     }
   }
 
@@ -200,10 +201,10 @@ namespace firefly {
     std::vector<FFInt> &yi = yis[zi];
 
     if (i < ai.size() - 1) {
-      PolynomialFF poly = ai.at(i) + iterate_canonical(zi, ai, prime, i + 1);
-      return poly.mul(zi) + poly * (FFInt(0, prime) - yi.at(i - 1));
+      PolynomialFF poly = ai[i] + iterate_canonical(zi, ai, prime, i + 1);
+      return poly.mul(zi) + poly * (FFInt(0, prime) - yi[i - 1]);
     } else {
-      return ai.at(i) * (FFInt(0, prime) - yi.at(i - 1)) + ai.at(i).mul(zi);
+      return ai[i] * (FFInt(0, prime) - yi[i - 1]) + ai[i].mul(zi);
     }
   }
 
