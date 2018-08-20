@@ -1,19 +1,21 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
+#include "UintHasher.hpp"
 #include "Monomial.hpp"
 
 namespace firefly {
+  typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
 
   class Polynomial {
   public:
     /**
      *    A constructor for a polynomial with RationalNumber objects as
      *    coefficients
-     *    @param coefs_ a vector of RationalNumber coefficients for the polynomial
-     *    in ascending order (x^0, x^2,...)
+     *    @param coefs_ an unordered map of coefficients and degrees
      */
-    Polynomial(std::vector<RationalNumber> coefs_);
+    Polynomial(const rn_map& coef);
     std::vector<Monomial> coefs;  /**< The vector which holds all coefficients*/
   };
 

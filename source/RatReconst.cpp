@@ -6,10 +6,10 @@
 namespace firefly {
 
   RatReconst::RatReconst(int n_) : n(n_) {
-    yi.reserve(5000);
+    //yi.reserve(5000);
   }
 
-  RationalFunction RatReconst::reconst() {
+  /*RationalFunction RatReconst::reconst() {
     uint64_t first_prime = primes().back();
     combined_prime = first_prime;
     std::pair<std::vector<mpz_class>, std::vector<mpz_class>> tmp  = reconst_ff(first_prime);
@@ -292,6 +292,6 @@ namespace firefly {
     FFInt exp12(12, prime);
 
     return (a0 / a1 - a3 / a4 * y) / (FFInt(0, prime) - a2 * y.pow(exp12));
-  }
+  }*/
 
 }

@@ -24,7 +24,7 @@ namespace firefly {
     //tmp_c = mpz_class(s);
     mpz_clear(tmp);
     return std::pair<mpz_class, mpz_class> (a, n);
-  };
+  }
 
   RationalNumber get_rational_coef(const mpz_class &a, const mpz_class &p) {
     mpz_class t = 0;

@@ -1,24 +1,28 @@
 #pragma once
 
 #include <iostream>
-#include <vector>
-#include "MultiPolynomialFF.hpp"
+#include "UintHasher.hpp"
+#include <unordered_map>
+#include "FFInt.hpp"
 
 namespace firefly {
 
-  class PolynomialFF : public MultiPolynomialFF {
+  typedef std::unordered_map<std::vector<uint>, FFInt, UintHasher> ff_map;
+
+  class PolynomialFF {
   public:
     PolynomialFF();
-    PolynomialFF(std::vector<FFInt> coef_);
+    PolynomialFF(uint n_, ff_map coef_);
     PolynomialFF operator+(const PolynomialFF &);
     PolynomialFF operator-(const PolynomialFF &);
-    PolynomialFF operator*(const PolynomialFF &);
-    PolynomialFF &operator=(const PolynomialFF &);
+    PolynomialFF &operator=(const PolynomialFF &) = default;
     PolynomialFF operator*(const FFInt &);
     PolynomialFF operator/(const FFInt &);
-    uint deg;
-    FFInt calc(FFInt x);
-    std::vector<FFInt> coef {};
+    uint n;
+    FFInt calc(std::vector<FFInt> x);
+    ff_map coef;
+    bool zero();
+    PolynomialFF mul(const uint zi);
   };
 
   std::ostream &operator<<(std::ostream &out, const PolynomialFF &a);

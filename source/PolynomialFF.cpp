@@ -2,19 +2,20 @@
 
 namespace firefly {
 
-  PolynomialFF::PolynomialFF(std::vector<FFInt> coef_) : coef(coef_) {
-    deg = coef.size() - 1;
-  }
+  PolynomialFF::PolynomialFF(uint n_, ff_map coef_) : n(n_), coef(coef_) {}
 
   PolynomialFF::PolynomialFF() {}
 
-  FFInt PolynomialFF::calc(FFInt x) {
-    const uint64_t prime = coef.at(0).p;
+  FFInt PolynomialFF::calc(std::vector<FFInt> x) {
+    const uint64_t prime = coef.begin()->second.p;
     FFInt res(0, prime);
 
-    for (uint i = 0; i < (uint) coef.size(); i++) {
-      FFInt exp(i, prime);
-      res += coef.at(i) * x.pow(exp);
+    for (auto& term : coef) {
+      FFInt product(1, prime);
+      for (uint i = 0; i < x.size(); i++) {
+        product *= x[i].pow(FFInt(term.first[i], prime));
+      }
+      res += term.second * product;
     }
 
     return res;
@@ -22,103 +23,117 @@ namespace firefly {
 
   PolynomialFF PolynomialFF::operator+(const PolynomialFF &b) {
     PolynomialFF a = *this;
-    std::vector<FFInt> newCoefs {};
+    ff_map new_coefs;
 
-    if (a.deg >= b.deg) {
-      newCoefs = a.coef;
+    if (a.coef.size() > b.coef.size()) {
+      new_coefs = a.coef;
 
-      for (int i = 0; i <= b.deg; i++) newCoefs.at(i) += b.coef.at(i);
+      for (auto & el : b.coef) {
+        auto got = new_coefs.find(el.first);
+
+        if (got == new_coefs.end()) {
+          new_coefs.insert(el);
+        } else {
+          FFInt res = got -> second + el.second;
+          if(res.n != 0) {
+            got -> second = res;
+          } else{
+            new_coefs.erase(got -> first);
+          }
+        }
+      }
     } else {
-      newCoefs = b.coef;
+      new_coefs = b.coef;
 
-      for (int i = 0; i <= a.deg; i++) newCoefs.at(i) += a.coef.at(i);
+      for (auto & el : a.coef) {
+        auto got = new_coefs.find(el.first);
+
+        if (got == new_coefs.end()) {
+          new_coefs.insert(el);
+        } else {
+          FFInt res = got -> second + el.second;
+          if(res.n != 0) {
+            got -> second = res;
+          } else{
+            new_coefs.erase(got -> first);
+          }
+        }
+      }
     }
 
-    return PolynomialFF(newCoefs);
+    return PolynomialFF(n, new_coefs);
   }
 
   PolynomialFF PolynomialFF::operator-(const PolynomialFF &b) {
     PolynomialFF a = *this;
-    std::vector<FFInt> newCoefs {};
+    ff_map new_coefs;
 
-    if (a.deg >= b.deg) {
-      newCoefs = a.coef;
+    new_coefs = a.coef;
 
-      for (int i = 0; i <= b.deg; i++) newCoefs.at(i) -= b.coef.at(i);
-    } else {
-      newCoefs = b.coef;
-      FFInt zero(0, a.coef.at(1).p);
+    for (auto & el : b.coef) {
+      auto got = new_coefs.find(el.first);
 
-      for (int i = 0; i <= a.deg; i++) newCoefs.at(i) = a.coef.at(i) - newCoefs.at(i);
-
-      for (int i = a.deg + 1; i <= b.deg; i++) newCoefs.at(i) = zero - newCoefs.at(i);
-    }
-
-    return PolynomialFF(newCoefs);
-  }
-
-  PolynomialFF PolynomialFF::operator*(const PolynomialFF &b) {
-    PolynomialFF a = *this;
-    std::vector<FFInt> newCoefs {};
-    const double newDeg = a.deg + b.deg;
-
-    for (int i = 0; i <= newDeg; i++) {
-      FFInt ffint(0, a.coef.at(0).p);
-
-      for (int j = 0; j <= i; j++) {
-        if (a.deg >= j && b.deg >= (i - j)) {
-          ffint += a.coef.at(j) * b.coef.at(i - j);
-        }
+      if (got == new_coefs.end()) {
+        new_coefs.insert(std::make_pair(el.first, FFInt(0, el.second.p) - el.second));
+      } else {
+          FFInt res = got -> second - el.second;
+          if(res.n != 0) {
+            got -> second = res;
+          } else{
+            new_coefs.erase(got -> first);
+          }
       }
-
-      newCoefs.push_back(ffint);
     }
 
-    return PolynomialFF(newCoefs);
+    return PolynomialFF(n, new_coefs);
   }
 
-  PolynomialFF &PolynomialFF::operator=(const PolynomialFF &a) {
-    coef = a.coef;
-    deg = a.deg;
-    return *this;
-  }
+  PolynomialFF PolynomialFF::operator*(const FFInt &ffint) {
+    ff_map new_coefs;
 
-  PolynomialFF PolynomialFF::operator*(const FFInt &a) {
-    std::vector<FFInt> newCoefs {};
-
-    for (auto coefficient : coef) {
-      newCoefs.push_back(coefficient * a);
+    for (auto el : coef) {
+      new_coefs.insert(std::make_pair(el.first, el.second * ffint));
     }
 
-    return PolynomialFF(newCoefs);
+    return PolynomialFF(n, new_coefs);
   }
 
-  PolynomialFF PolynomialFF::operator/(const FFInt &a) {
-    std::vector<FFInt> newCoefs {};
+  PolynomialFF PolynomialFF::operator/(const FFInt &ffint) {
+    ff_map new_coefs;
 
-    for (auto coefficient : coef) {
-      newCoefs.push_back(coefficient / a);
+    for (auto el : coef) {
+      new_coefs.insert(std::make_pair(el.first, el.second / ffint));
     }
 
-    return PolynomialFF(newCoefs);
+    return PolynomialFF(n, new_coefs);
   }
-
-
 
   std::ostream &operator<<(std::ostream &out, const PolynomialFF &a) {
-    if (a.coef.size() == 1) return out << a.coef.at(0).n;
-
-    for (int i = 0; i < (int) a.coef.size(); i++) {
-      const uint64_t n = a.coef.at(i).n;
-
-      if (i == 0) {
-        out << n << "*x^" << i;
-      } else if (n != 0) {
-        out << " + " << n << "*x^" << i;
+    for(auto& coef_ : a.coef){
+      out << " + " << coef_.second.n << "*x^(";
+      for(const auto i : coef_.first){
+        out << i << ",";
       }
+      out << "\b)";
     }
-
+    out << "\n";
     return out;
   }
+
+  PolynomialFF PolynomialFF::mul(const uint zi) {
+    ff_map new_coefs;
+    for(auto coef_ : coef){
+      std::vector<uint> new_element = coef_.first;
+      new_element.at(zi - 1) ++;
+      new_coefs.insert(std::make_pair(new_element, coef_.second));
+    }
+    return PolynomialFF(n, new_coefs);
+  }
+
+
+  bool PolynomialFF::zero() {
+    return coef.empty();
+  }
+
 
 }

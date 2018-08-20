@@ -4,13 +4,13 @@
 #include "Logger.hpp"
 
 int main() {
-  firefly::RatReconst rec_rat(1);
-  firefly::PolyReconst rec_pol(1);
+  //firefly::RatReconst rec_rat(1);
+  firefly::PolyReconst rec_pol(4);
 
   try {
-    auto rat_fun = rec_rat.reconst();
+    //auto rat_fun = rec_rat.reconst();
     auto pol_fun = rec_pol.reconst();
-    std::cout << rat_fun;
+    //std::cout << rat_fun;
     std::cout << "f(x) = " << pol_fun;
   } catch (std::exception &e) {
     ERROR_MSG(e.what());

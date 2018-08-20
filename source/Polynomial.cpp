@@ -2,23 +2,35 @@
 
 namespace firefly {
 
-  Polynomial::Polynomial(std::vector<RationalNumber> coefs_) {
-    for (uint i = 0; i < (uint) coefs_.size(); i++) {
-      RationalNumber rn = coefs_.at(i);
-
-      if (rn.numerator != 0) coefs.emplace_back(Monomial(rn, i));
+  Polynomial::Polynomial(const rn_map &coef) {
+    for (const auto & el : coef) {
+      coefs.emplace_back(Monomial(el.first, el.second));
     }
+
+    std::sort(coefs.begin(), coefs.end());
   }
 
   std::ostream &operator<<(std::ostream &out, const Polynomial &pol) {
     bool first = true;
 
-    for (const auto mono : pol.coefs) {
+    for (const auto & mono : pol.coefs) {
       if (first) {
-        out <<  mono.coef_rn << "*x^" << mono.deg;
+        out <<  mono.coef << "*x^(";
+
+        for (const auto i : mono.powers) {
+          out << i << ",";
+        }
+
+        out << "\b)";
         first = false;
       } else {
-        out << " + " << mono.coef_rn << "*x^" << mono.deg;
+        out << " + " << mono.coef << "*x^(";
+
+        for (const auto i : mono.powers) {
+          out << i << ",";
+        }
+
+        out << "\b)";
       }
 
     }

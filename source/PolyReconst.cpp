@@ -6,23 +6,29 @@
 
 namespace firefly {
 
-  PolyReconst::PolyReconst(int n_) : n(n_) {
-    yi.reserve(5000);
+  PolyReconst::PolyReconst(uint n_) : n(n_) {
+    for (uint i = 1; i <= n; i++) {
+      std::vector<FFInt> yi;
+      yi.reserve(5000);
+      yis.insert(std::make_pair(i, std::move(yi)));
+    }
   }
 
   Polynomial PolyReconst::reconst() {
     uint64_t first_prime = primes().back();
     combined_prime = first_prime;
-    combined_ci = reconst_ff(first_prime);
+    const uint zi = n;
+    std::vector<uint> chosen_yi(n);
+    combined_ci = convert_to_mpz(reconst_ff(zi, first_prime, chosen_yi));
 
-    for (int i = (int) primes().size() - 2; i >= 0; i--) {
+    for (int i = (int) primes().size() - 96; i >= 0; i--) {
       bool runtest = true;
 
       for (const auto ci : combined_ci) {
-        mpz_class a = ci;
+        mpz_class a = ci.second;
 
         try {
-          gi.emplace_back(get_rational_coef(a, combined_prime));
+          gi.insert(std::make_pair(ci.first, get_rational_coef(a, combined_prime)));
         } catch (const std::exception &) {
           runtest = false;
           break;
@@ -39,20 +45,22 @@ namespace firefly {
 
       if (i == 0) throw std::runtime_error("Prime numbers not sufficient to reconstruct your coefficients!");
 
-      std::vector<mpz_class> ci_tmp = reconst_ff(prime);
+      mpz_map ci_tmp = convert_to_mpz(reconst_ff(zi, prime, chosen_yi));
 
-      std::pair<mpz_class, mpz_class> p1(combined_ci.at(0), combined_prime);
-      std::pair<mpz_class, mpz_class> p2(ci_tmp.at(0), prime);
+      std::pair<mpz_class, mpz_class> p1(combined_ci.begin()->second, combined_prime);
+      std::pair<mpz_class, mpz_class> p2(ci_tmp[combined_ci.begin()->first], prime);
 
       std::pair<mpz_class, mpz_class> p3 = run_chinese_remainder(p1, p2);
-      combined_ci.at(0) = p3.first;
+      combined_ci.begin()->second = p3.first;
 
-      for (uint j = 1; j < (uint) combined_ci.size(); j++) {
-        p1 = std::make_pair(combined_ci.at(j), combined_prime);
-        p2 = std::make_pair(ci_tmp.at(j), prime);
-
+      auto it = combined_ci.begin();
+      //it += it;
+      
+      for (++it; it != combined_ci.end(); ++it) {
+        p1 = std::make_pair(it->second, combined_prime);
+        p2 = std::make_pair(ci_tmp[it->first], prime);
         std::pair<mpz_class, mpz_class> p3j = run_chinese_remainder(p1, p2);
-        combined_ci.at(j) = p3j.first;
+        combined_ci[it->first] = p3j.first;
       }
 
       combined_prime = p3.second;
@@ -61,30 +69,57 @@ namespace firefly {
     return Polynomial(gi);
   }
 
-  std::vector<mpz_class> PolyReconst::reconst_ff(const uint64_t prime) {
+  PolynomialFF PolyReconst::reconst_ff(const uint zi, const uint64_t prime, std::vector<uint> &chosen_yi) {
+    std::vector<FFInt> &yi = yis[zi];
     uint maxDegree = yi.capacity();
-    std::vector<FFInt> ai {};
+    std::vector<PolynomialFF> ai;
     ai.reserve(maxDegree + breakCondition);
 
-    yi.clear();
-    yi.reserve(maxDegree);
+    bool know_order = yi.capacity() == yi.size();
 
-    yi.emplace_back(FFInt(std::rand() % prime, prime));
-    ai.emplace_back(num(prime, yi.back()));
+    if (!know_order) {
+      yi.emplace_back(FFInt(std::rand() % prime, prime));
+      yis.insert(std::make_pair(zi, yi));
+    }
+
+    if (zi == 1) {
+      std::vector<FFInt> chosen_yi_ff;
+      for (uint i = 0; i < (uint) chosen_yi.size(); i++) {
+        chosen_yi_ff.emplace_back(yis[i + 1][chosen_yi[i]]);
+      }
+
+      ai.emplace_back(num(prime, chosen_yi_ff));
+    } else {
+      ai.emplace_back(reconst_ff(zi - 1, prime, chosen_yi));
+    }
 
     for (uint i = 1; i < maxDegree; i++) {
-      yi.emplace_back(FFInt(std::rand() % prime, prime));
-      FFInt fyi;
+      if (!know_order){
+        yi.emplace_back(FFInt(std::rand() % prime, prime));
+        yis.insert(std::make_pair(zi, yi));
+      }
+
+      chosen_yi.at(zi - 1) = i;
+
+      PolynomialFF fyi;
 
       bool spuriousPole = true;
-
       while (spuriousPole) {
         try {
-          fyi = num(prime, yi.back());
+          if (zi == 1) {
+            std::vector<FFInt> chosen_yi_ff;
+            for (uint j = 0; j < chosen_yi.size(); j++) {
+              chosen_yi_ff.emplace_back(yis[j + 1][chosen_yi[j]]);
+            }
+
+            fyi = num(prime, chosen_yi_ff);
+          } else {
+            fyi = reconst_ff(zi - 1, prime, chosen_yi);
+          }
+
           spuriousPole = false;
         } catch (const std::exception &) {
-          yi.pop_back();
-          yi.emplace_back(FFInt(std::rand() % prime, prime));
+          yi.at(i) = FFInt(std::rand() % prime, prime);
         }
       }
 
@@ -92,20 +127,19 @@ namespace firefly {
 
       while (spuriousPole) {
         try {
-          ai.emplace_back(comp_ai(ai, fyi, i, i));
+          ai.emplace_back(comp_ai(zi, ai, fyi, i, i));
           spuriousPole = false;
-        } catch (const std::exception &) {
-          yi.pop_back();
-          yi.emplace_back(FFInt(std::rand() % prime, prime));
+        } catch (const std::exception &e) {
+          yi.at(i) = FFInt(std::rand() % prime, prime);
         }
       }
 
-      if (ai.at(i).n == 0) {
+      if (ai.at(i).zero()) {
         if (i > breakCondition) {
           bool nonZero = false;
 
           for (uint j = ai.size(); j > ai.size() - breakCondition; j--) {
-            if (ai.at(j - 1).n != 0) {
+            if (!ai.at(j - 1).zero()) {
               nonZero = true;
               break;
             }
@@ -115,102 +149,116 @@ namespace firefly {
         }
       }
 
-      if (i == maxDegree - 1) {
+      if (!know_order && i == maxDegree) {
         maxDegree += 5000;
         yi.reserve(maxDegree);
         ai.reserve(maxDegree);
       }
     }
-
     for (uint i = 0; i < breakCondition; i++) {
-      yi.pop_back();
       ai.pop_back();
     }
 
-    yi.reserve(yi.size() + breakCondition);
-    return convert_to_mpz(construct_canonical(ai, prime));
+    chosen_yi.at(zi - 1) = 0;
+
+    if(!know_order){ 
+      yi.shrink_to_fit();
+      yis.insert(std::make_pair(zi, yi));
+    }
+
+    return PolynomialFF(construct_canonical(zi, ai, prime));
   }
 
-  FFInt PolyReconst::comp_ai(const std::vector<FFInt> &ai, const FFInt &num, int i, int ip) {
+  PolynomialFF PolyReconst::comp_ai(const uint zi, const std::vector<PolynomialFF> &ai,
+                                    const PolynomialFF &num, int i, int ip) {
+    std::vector<FFInt> &yi = yis[zi];
+
     if (ip == 0) {
       return num;
     } else {
       if ((yi.at(i)).n == (yi.at(ip - 1)).n) throw std::runtime_error("Division by 0 error!");
 
-      return (comp_ai(ai, num, i, ip - 1) - ai.at(ip - 1)) / (yi.at(i) - yi.at(ip - 1));
+      return (comp_ai(zi, ai, num, i, ip - 1) - ai.at(ip - 1)) / (yi.at(i) - yi.at(ip - 1));
     }
   }
 
-  std::vector<FFInt> PolyReconst::construct_canonical(const std::vector<FFInt> &ai, const uint64_t prime) const {
+  PolynomialFF PolyReconst::construct_canonical(const uint zi, std::vector<PolynomialFF> &ai,
+                                                const uint64_t prime) {
     if (ai.size() == 0) {
       INFO_MSG("Polynomial not yet reconstructed or 0.");
-      return std::vector<FFInt> {};
+      return PolynomialFF();
     } else if (ai.size() == 1) {
-      return ai;
+      return ai.at(0);
     } else {
-      std::vector<FFInt> coef {ai.at(0) };
-      PolynomialFF poly(coef);
-      return (poly + iterate_canonical(ai, prime, 1)).coef;
+      return (ai.at(0) + iterate_canonical(zi, ai, prime, 1));
     }
   }
 
-  PolynomialFF PolyReconst::iterate_canonical(const std::vector<FFInt> &ai, const uint64_t prime, uint i) const {
+  PolynomialFF PolyReconst::iterate_canonical(const uint zi,
+                                              std::vector<PolynomialFF> &ai,
+                                              const uint64_t prime, uint i) {
+    std::vector<FFInt> &yi = yis[zi];
+
     if (i < ai.size() - 1) {
-      std::vector<FFInt> coef1 { (FFInt(0, prime) - yi.at(i - 1)) *ai.at(i), ai.at(i) };
-      std::vector<FFInt> coef2 { FFInt(0, prime) - yi.at(i - 1), FFInt(1, prime) };
-      PolynomialFF poly1(coef1);
-      PolynomialFF poly2(coef2);
-      return poly1 + poly2 * iterate_canonical(ai, prime, i + 1);
+      PolynomialFF poly = ai.at(i) + iterate_canonical(zi, ai, prime, i + 1);
+      return poly.mul(zi) + poly * (FFInt(0, prime) - yi.at(i - 1));
     } else {
-      std::vector<FFInt> coef1 { (FFInt(0, prime) - yi.at(i - 1)) *ai.at(i), ai.at(i) };
-      PolynomialFF poly1(coef1);
-      return poly1;
+      return ai.at(i) * (FFInt(0, prime) - yi.at(i - 1)) + ai.at(i).mul(zi);
     }
   }
 
   bool PolyReconst::test_guess(const uint64_t prime) {
-    std::vector<FFInt> gi_ffi = convert_to_ffint(gi, prime);
-    PolynomialFF gy(gi_ffi);
+    ff_map gi_ffi = convert_to_ffint(gi, prime);
+    PolynomialFF gy(n, gi_ffi);
 
-    for (uint i = 0; i < std::min(breakCondition, (uint) yi.size()); i++) {
-      if (gy.calc(yi.at(i)) != num(prime, yi.at(i))) return false;
+    std::vector<uint> zero_element(n);
+
+    for (uint i = 0; i < breakCondition; i++) {
+      std::vector<FFInt> chosen_yi;
+
+      for (uint j = 0; j < n; j++) {
+        chosen_yi.emplace_back(FFInt(std::rand() % prime, prime));
+      }
+
+      if (gy.calc(chosen_yi) != num(prime, chosen_yi).coef[zero_element]) return false;
     }
 
     return true;
   }
 
-  std::vector<mpz_class> PolyReconst::convert_to_mpz(const std::vector<FFInt> &ci) const {
-    std::vector<mpz_class> ci_mpz;
-    ci_mpz.reserve(ci.size());
+  mpz_map PolyReconst::convert_to_mpz(const PolynomialFF &poly) const {
+    mpz_map ci_mpz;
 
-    for (const auto coef : ci) {
-      mpz_class coef_i(coef.n);
-      ci_mpz.emplace_back(coef_i);
+    for (const auto &coef : poly.coef) {
+      ci_mpz.insert(std::make_pair(coef.first, mpz_class(coef.second.n)));
     }
 
     return ci_mpz;
   }
 
-  std::vector<FFInt> PolyReconst::convert_to_ffint(const std::vector<RationalNumber> &ri,
-                                                   const uint64_t prime) const {
-    std::vector<FFInt> gi_ffi;
-    gi_ffi.reserve(ri.size());
+  ff_map PolyReconst::convert_to_ffint(const rn_map &ri, const uint64_t prime) const {
+    ff_map gi_ffi;
 
     for (const auto g_i : ri) {
-      mpz_class tmp(g_i.numerator % prime);
+      mpz_class tmp(g_i.second.numerator % prime);
 
       if (tmp < 0) tmp = tmp + prime;
 
       FFInt n(std::stoull(tmp.get_str()), prime);
-      tmp = g_i.denominator % prime;
+      tmp = g_i.second.denominator % prime;
       FFInt d(std::stoull(tmp.get_str()), prime);
-      gi_ffi.emplace_back(n / d);
+      gi_ffi.insert(std::make_pair(g_i.first, n / d));
     }
 
     return gi_ffi;
   }
 
-  FFInt PolyReconst::num(uint64_t prime, const FFInt &y) const {
+  PolynomialFF PolyReconst::num(uint64_t prime, const std::vector<FFInt> &chosen_yi) const {
+    FFInt y = chosen_yi[0];
+    FFInt y2 = chosen_yi[1];
+    FFInt y3 = chosen_yi[2];
+    FFInt y4 = chosen_yi[3];
+    //FFInt y5 = chosen_yi[4];
     FFInt a0_0(3, prime);
     FFInt a0_1(5, prime);
     FFInt a1_0(6, prime);
@@ -221,7 +269,7 @@ namespace firefly {
     FFInt a5(2, prime);
     FFInt a6(7, prime);
     mpz_class test;
-    test = "1234567891098987984233232323232323232323232323232323232897070743454587987987098053098798708432432098098743432098";
+    test = "12345678910989879987987098053098798708432432098098743432098";
     test = test % prime;
     FFInt a7(std::stoull(test.get_str()), prime);
     FFInt a8(13, prime);
@@ -231,8 +279,15 @@ namespace firefly {
     FFInt exp5(5, prime);
     FFInt exp6(6, prime);
     FFInt exp7(7, prime);
-    FFInt exp8(1000, prime);
+    FFInt exp8(8, prime);
 
-    return a0_0 + a0_0 * y.pow(exp2);
+    ff_map res;
+    res.insert(std::make_pair(std::vector<uint> (n), a0_0 + a2*y2 
+    + a3*y3 + a4*y*y2*y3*y4.pow(exp8) + a3/a4*y.pow(exp2)*y3.pow(exp7) 
+    - a4*y4.pow(exp2) - a4/a3 * y.pow(exp2)));
+
+    return PolynomialFF(n, res);
   }
 }
+
+
