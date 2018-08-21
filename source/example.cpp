@@ -16,5 +16,20 @@ int main() {
     ERROR_MSG(e.what());
   }
 
+  std::vector<std::pair<std::string, uint64_t>> replacements;
+  replacements.push_back(std::make_pair("d", 3));
+
+  firefly::FFInt d("d", 7, replacements);
+  firefly::FFInt a("4", 7, replacements);
+  firefly::FFInt b("497823478997845978789348974597878986789430893490308508340894568045608904568456", 7, replacements);
+
+  INFO_MSG(d << " " << a << " " << b);
+
+  try {
+    firefly::FFInt c("sdf", 7, replacements);
+  } catch (const std::exception &) {
+    firefly::FFInt c("", 7, replacements);
+  }
+
   return 0;
 }

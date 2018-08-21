@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string>
+#include <vector>
 
 namespace firefly {
 
@@ -18,6 +20,7 @@ namespace firefly {
      *    @param ffint a FFInt object
      */
     FFInt(const FFInt& ffint);
+    FFInt(const std::string& str, uint64_t p_, const std::vector<std::pair<std::string, uint64_t>>& replacements);
     /**
      *    Default constructor
      */
@@ -54,8 +57,9 @@ namespace firefly {
      *    mod_inv(a,p) solves a*t = 1 mod p for t.
      */
     uint64_t mod_inv(const uint64_t a, const uint64_t p) const;
+    uint64_t parse_longint(const std::string& str, uint64_t prime);
   };
 
   std::ostream& operator<<(std::ostream& out, const FFInt& ffint);
-  
+
 }

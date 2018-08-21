@@ -1,11 +1,37 @@
+#include <sstream>
 #include "FFInt.hpp"
-#include "iostream"
 
 namespace firefly {
 
   FFInt::FFInt(uint64_t n_, uint64_t p_) : n(n_), p(p_) {}
 
   FFInt::FFInt(const FFInt& ffint) : n(ffint.n), p(ffint.p) {}
+
+//copied from Kira
+  FFInt::FFInt(const std::string& str, uint64_t p_, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
+    p = p_;
+    for (const auto& var : replacements) {
+      if (var.first == str) {
+        n = var.second;
+        return;
+      }
+    }
+    std::istringstream ss{str};
+    auto success = static_cast<bool>(ss >> n);
+    if (!(success && ss.rdbuf()->in_avail() == 0)) {
+      if (str.empty()) {
+        // (ss >> n) fails if ss is empty
+        throw std::runtime_error("FFInt: empty argument");
+      } else if (std::isalpha(str.front())) {
+        throw std::runtime_error("Unkown or invalid coefficient string \"" + str + "\"");
+      } else {
+        n = parse_longint(str, p);
+      }
+    } else if (n >= p) {
+      // special case: the parsed value fits into n, but is >= p
+      n %= p;
+    }
+}
 
   FFInt::FFInt() {}
 
@@ -131,6 +157,36 @@ namespace firefly {
 
     // if(r > 1) throw init_error("mod_inv: not invertible");
     return t < 0 ? t + p : t;
+  }
+
+  //copied from Kira
+    uint64_t FFInt::parse_longint(const std::string& str, uint64_t prime) {
+    // Parse a long integer, passed as a string, take the modulus wrt. prime
+    // and return it. The string is split into chunks of at most 18 digits
+    // which are then put together via modular arithmetic.
+    // Return zero if the string is empty.
+    //
+    // Make sure the input is an unsigned integer without whitespace padding.
+    for (const auto ch: str) {
+      if (!std::isdigit(ch)) throw std::runtime_error("parse_longint(): invalid number string \"" + str + "\"");
+    }
+    uint64_t result = 0;
+    std::size_t pos = 0;
+    std::size_t len = ((str.size() - 1) % 18) + 1;
+    while (pos < str.size()) {
+      std::string strchunk = str.substr(pos, len);
+      pos += len;
+      len = 18;
+      uint64_t intchunk;
+      std::istringstream ss{strchunk};
+      ss >> intchunk;
+      // result=0 in the first pass or when the string is zero padded
+      // on the left so that the first (few) chunks give zero.
+      if (result) result = mod_mul(result, 1000000000000000000uLL, prime);
+      result += intchunk;
+      result %= prime;
+    }
+    return result;
   }
 
   std::ostream& operator<<(std::ostream& out, const FFInt& ffint) {
