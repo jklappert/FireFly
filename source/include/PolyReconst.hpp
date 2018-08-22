@@ -94,7 +94,7 @@ namespace firefly {
      *    @return the vector ri converted to FFInt objects
      */
     ff_map convert_to_ffint(const rn_map &ri, const uint64_t prime) const;
-    const uint breakCondition = 3;  /**< The number of additional evaluations of
+    const uint breakCondition = 1;  /**< The number of additional evaluations of
                                       the black box function to validate the termination criterion */
     uint n; /**< The number of parameters */
     mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */

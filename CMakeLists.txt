@@ -43,8 +43,10 @@ include_directories(${INCLUDE_PATH})
 file(GLOB LIBSOURCES
   ${SOURCE_PATH}/*.cpp)
 
-add_executable(example ${LIBSOURCES})
-target_link_libraries(example gmp)
+add_library(Firefly STATIC ${LIBSOURCES})
+
+add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp)
+target_link_libraries(example Firefly gmp)
 
 # needed to install libray
 #install(TARGETS Firefly_static RUNTIME DESTINATION bin)

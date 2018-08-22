@@ -290,10 +290,10 @@ namespace firefly {
     FFInt exp5(5, prime);
     FFInt exp6(6, prime);
     FFInt exp7(7, prime);
-    FFInt exp8(8, prime);
+    FFInt exp8(500, prime);
 
     ff_map res;
-    res.insert(std::make_pair(std::vector<uint> (n), a0_0 + a2*y2 
+    res.insert(std::make_pair(std::vector<uint> (n), a2*y2 
     + a3*y3 + a4*y*y2*y3*y4.pow(exp8) + a3/a4*y.pow(exp2)*y3.pow(exp7) 
     - a4*y4.pow(exp2) - a7/a3 * y.pow(exp2)));
 
