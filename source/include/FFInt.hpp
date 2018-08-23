@@ -14,13 +14,13 @@ namespace firefly {
      *    @param n_ an integer which is a member of the finite fild
      *    @param p_ a prime number
      */
-    FFInt(uint64_t n_, uint64_t p_);
+    FFInt(const uint64_t n_, const uint64_t p_);
     /**
      *    A constructor
      *    @param ffint a FFInt object
      */
     FFInt(const FFInt& ffint);
-    FFInt(const std::string& str, uint64_t p_, const std::vector<std::pair<std::string, uint64_t>>& replacements);
+    FFInt(const std::string& str, const uint64_t p_, const std::vector<std::pair<std::string, uint64_t>>& replacements);
     /**
      *    Default constructor
      */
@@ -34,6 +34,7 @@ namespace firefly {
     FFInt& operator/=(const FFInt&);
     FFInt operator+(const FFInt&);
     FFInt operator-(const FFInt&);
+    FFInt operator-();
     FFInt operator*(const FFInt&);
     FFInt operator/(const FFInt&);
     bool operator==(const FFInt&);
@@ -59,6 +60,8 @@ namespace firefly {
     uint64_t mod_inv(const uint64_t a, const uint64_t p) const;
     uint64_t parse_longint(const std::string& str, uint64_t prime);
   };
+
+  FFInt pow(const FFInt& ffint, const FFInt& power);
 
   std::ostream& operator<<(std::ostream& out, const FFInt& ffint);
 

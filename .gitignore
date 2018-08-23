@@ -10,3 +10,4 @@ CMakeFiles/*
 cmake_install.cmake
 Makefile
 example
+libFirefly.a

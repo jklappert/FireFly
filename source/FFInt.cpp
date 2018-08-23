@@ -3,12 +3,12 @@
 
 namespace firefly {
 
-  FFInt::FFInt(uint64_t n_, uint64_t p_) : n(n_), p(p_) {}
+  FFInt::FFInt(const uint64_t n_, const uint64_t p_) : n(n_), p(p_) {}
 
   FFInt::FFInt(const FFInt& ffint) : n(ffint.n), p(ffint.p) {}
 
 //copied from Kira
-  FFInt::FFInt(const std::string& str, uint64_t p_, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
+  FFInt::FFInt(const std::string& str, const uint64_t p_, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
     p = p_;
     for (const auto& var : replacements) {
       if (var.first == str) {
@@ -105,6 +105,10 @@ namespace firefly {
     return FFInt(diff, p);
   }
 
+  FFInt FFInt::operator-() {
+    return FFInt(p - n, p);
+  }
+
   FFInt FFInt::operator*(const FFInt& ffint) {
     return FFInt(mod_mul(n, ffint.n, p), p);
   }
@@ -187,6 +191,10 @@ namespace firefly {
       result %= prime;
     }
     return result;
+  }
+
+  FFInt pow(const FFInt& ffint, const FFInt& power) {
+    return ffint.pow(power);
   }
 
   std::ostream& operator<<(std::ostream& out, const FFInt& ffint) {
