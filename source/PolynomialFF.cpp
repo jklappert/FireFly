@@ -135,5 +135,4 @@ namespace firefly {
     return coef.empty();
   }
 
-
 }

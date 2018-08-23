@@ -23,6 +23,7 @@ namespace firefly {
     ff_map coef;
     bool zero();
     PolynomialFF mul(const uint zi);
+    FFInt get_nz_coef();
   };
 
   std::ostream &operator<<(std::ostream &out, const PolynomialFF &a);

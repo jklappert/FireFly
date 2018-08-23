@@ -10,6 +10,15 @@ namespace firefly {
     std::sort(coefs.begin(), coefs.end());
   }
 
+  Polynomial::Polynomial() {}
+
+  Polynomial Polynomial::operator*(const RationalNumber& rn) {
+    for(auto& mon : coefs){
+      mon.coef = mon.coef * rn;
+    }
+    return *this;
+  }
+
   std::ostream &operator<<(std::ostream &out, const Polynomial &pol) {
     bool first = true;
 

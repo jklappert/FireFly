@@ -13,6 +13,7 @@ namespace firefly {
      *    @param d the polynomial of the denominator
      */
     RationalFunction(Polynomial n, Polynomial d);
+    RationalFunction();
     Polynomial numerator;  /**< The coefficients of the numerator */
     Polynomial denominator; /**< The coefficients of the denominator */
   };

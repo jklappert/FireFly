@@ -5,293 +5,244 @@
 
 namespace firefly {
 
-  RatReconst::RatReconst(int n_) : n(n_) {
-    //yi.reserve(5000);
+  RatReconst::RatReconst(int n_, uint64_t prime) : n(n_) {
+    ti.reserve(5000);
+    ai.reserve(5000);
+    combined_prime = prime;
   }
 
-  /*RationalFunction RatReconst::reconst() {
-    uint64_t first_prime = primes().back();
-    combined_prime = first_prime;
-    std::pair<std::vector<mpz_class>, std::vector<mpz_class>> tmp  = reconst_ff(first_prime);
-    combined_ni = tmp.first;
-    combined_di = tmp.second;
+  void RatReconst::feed(uint64_t prime, const FFInt &new_ti, const std::vector<FFInt> &yis, FFInt &num) {
+    if (!done) {
+      // first check if we are done. If not start the reconstruction again using
+      // the chinese remainder theorem in combining the previous results
+      if (new_prime) {
+        ti.clear();
+        ai.clear();
+        ti.emplace_back(new_ti);
 
-    for (int i = (int) primes().size() - 2; i >= 0; i--) {
-      bool runtest = true;
+        if (rec_rat_coef()) {
+          if (n == 1) {
+            done = test_guess(prime, num);
 
-      for (const auto ci : combined_ni) {
-        mpz_class a = ci;
-
-        try {
-          g_ni.emplace_back(get_rational_coef(a, combined_prime));
-        } catch (const std::exception &) {
-          runtest = false;
-          break;
-        }
-      }
-
-      for (const auto ci : combined_di) {
-        mpz_class a = ci;
-
-        try {
-          g_di.emplace_back(get_rational_coef(a, combined_prime));
-        } catch (const std::exception &) {
-          runtest = false;
-          break;
-        }
-      }
-
-      uint64_t prime = primes().at(i);
-
-      if (runtest) {
-        if (test_guess(prime)) break;
-      }
-
-      if (i == 0) throw std::runtime_error("Prime numbers not sufficient to reconstruct your coefficients!");
-
-      g_ni.clear();
-      g_di.clear();
-      tmp = reconst_ff(prime);
-
-      // numerator
-      std::pair<mpz_class, mpz_class> p1(combined_ni.at(0), combined_prime);
-      std::pair<mpz_class, mpz_class> p2(tmp.first.at(0), prime);
-
-      std::pair<mpz_class, mpz_class> p3 = run_chinese_remainder(p1, p2);
-      combined_ni.at(0) = p3.first;
-
-      for (uint j = 1; j < (uint) combined_ni.size(); j++) {
-        p1 = std::make_pair(combined_ni.at(j), combined_prime);
-        p2 = std::make_pair(tmp.first.at(j), prime);
-
-        std::pair<mpz_class, mpz_class> p3j = run_chinese_remainder(p1, p2);
-        combined_ni.at(j) = p3j.first;
-      }
-
-      // denominator
-      for (uint j = 0; j < (uint) combined_di.size(); j++) {
-        p1 = std::make_pair(combined_di.at(j), combined_prime);
-        p2 = std::make_pair(tmp.second.at(j), prime);
-
-        std::pair<mpz_class, mpz_class> p3j = run_chinese_remainder(p1, p2);
-        combined_di.at(j) = p3j.first;
-      }
-
-      combined_prime = p3.second;
-    }
-
-    return RationalFunction(Polynomial(g_ni), Polynomial(g_di));
-  }
-
-
-  std::pair<std::vector<mpz_class>, std::vector<mpz_class>> RatReconst::reconst_ff(const uint64_t prime)  {
-    uint maxDegree = yi.capacity();
-    std::vector<FFInt> ai {};
-    ai.reserve(maxDegree + breakCondition);
-
-    yi.clear();
-    yi.reserve(maxDegree);
-    yi.emplace_back(FFInt(std::rand() % prime, prime));
-    ai.emplace_back(num(prime, yi.back()));
-
-    for (uint i = 1; i < maxDegree; i++) {
-      yi.emplace_back(FFInt(std::rand() % prime, prime));
-      FFInt fyi;
-      bool spuriousPole = true;
-
-      while (spuriousPole) {
-        try {
-          fyi = num(prime, yi.back());
-          spuriousPole = false;
-        } catch (const std::exception &) {
-          yi.pop_back();
-          yi.emplace_back(FFInt(std::rand() % prime, prime));
-        }
-      }
-
-      if (fyi == comp_fyi(ai, i - 1, i - 1, yi.back(), prime)) {
-        bool nonequal = false;
-
-        for (uint j = 0; j < breakCondition; j++) {
-          const FFInt y = FFInt(std::rand() % prime, prime);
-          FFInt fy = num(prime, y);
-
-          if (fy != comp_fyi(ai, i - 1, i - 1, y, prime)) {
-            nonequal = true;
-            break;
+            if (done) return;
           }
         }
 
-        if (!nonequal) {
-          yi.pop_back();
-          break;
+        g_ni.clear();
+        g_di.clear();
+
+        if (!use_chinese_remainder) use_chinese_remainder = true;
+
+        new_prime = false;
+        ti.pop_back();
+      }
+
+      // basic reconstruction algorithm, check if reconstructed function is equal
+      // to numeric input and calculate coefficients a_i, check chinese chinese remainder
+      // theorem
+      ti.emplace_back(new_ti);
+      const uint i = ti.size() - 1;
+
+      if (check) {
+        check = false;
+
+        if (num == comp_fyi(i - 1, i - 1, ti.back(), prime)) {
+          if (ai.capacity() != ai.size()) {
+            ai.shrink_to_fit();
+            ti.shrink_to_fit();
+          }
+
+          ti.pop_back();
+          ai.pop_back();
+
+          std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(construct_canonical(prime));
+
+          if (!use_chinese_remainder) {
+            combined_ni = tmp.first;
+            combined_di = tmp.second;
+          } else {
+            std::pair<mpz_class, mpz_class> p1;
+            std::pair<mpz_class, mpz_class> p2;
+            std::pair<mpz_class, mpz_class> p3;
+
+            //numerator
+            for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
+              p1 = std::make_pair(it->second, combined_prime);
+              p2 = std::make_pair(tmp.first[it->first], prime);
+              p3 = run_chinese_remainder(p1, p2);
+              combined_ni[it->first] = p3.first;
+            }
+
+            // denominator
+            for (auto it = combined_di.begin(); it != combined_di.end(); ++it) {
+              p1 = std::make_pair(it->second, combined_prime);
+              p2 = std::make_pair(tmp.second[it->first], prime);
+              p3 = run_chinese_remainder(p1, p2);
+              combined_di[it->first] = p3.first;
+            }
+
+            combined_prime = p3.second;
+          }
+
+          new_prime = true;
+          return;
         }
       }
 
-      spuriousPole = true;
-
-      while (spuriousPole) {
-        try {
-          ai.emplace_back(comp_ai(ai, i, i, fyi));
-          spuriousPole = false;
-        } catch (const std::exception &) {
-          yi.pop_back();
-          yi.emplace_back(FFInt(std::rand() % prime, prime));
+      if (i == 0) {
+        ai.emplace_back(num);
+      } else {
+        if (num == comp_fyi(i - 1, i - 1, ti.back(), prime)) {
+          check = true;
         }
-      }
 
-      if (i == maxDegree - 1) {
-        maxDegree += 5000;
-        ai.reserve(maxDegree);
-        yi.reserve(maxDegree);
+        ai.emplace_back(comp_ai(i, i, num));
+      }
+    }
+  }
+
+  RationalFunction RatReconst::get_result() {
+    result = RationalFunction(Polynomial(g_ni), Polynomial(g_di));
+    RationalNumber first_coef = result.denominator.coefs[0].coef;
+
+    if (first_coef.numerator != 1 || first_coef.denominator != 1) normalize();
+
+    return result;
+  }
+
+
+  bool RatReconst::rec_rat_coef() {
+    bool run_test = true;
+
+    for (const auto ci : combined_ni) {
+      mpz_class a = ci.second;
+
+      try {
+        g_ni.emplace(std::make_pair(ci.first, get_rational_coef(a, combined_prime)));
+      } catch (const std::exception &) {
+        run_test = false;
+        break;
       }
     }
 
-    yi.reserve(yi.size() + breakCondition);
+    for (const auto ci : combined_di) {
+      mpz_class a = ci.second;
 
-    return convert_to_mpz(construct_canonical(ai, prime));
+      try {
+        g_di.emplace(std::make_pair(ci.first, get_rational_coef(a, combined_prime)));
+      } catch (const std::exception &) {
+        run_test = false;
+        break;
+      }
+    }
+
+    return run_test;
   }
 
-  FFInt RatReconst::comp_ai(std::vector<FFInt> &ai, int i, int ip, const FFInt &num) {
+  FFInt RatReconst::comp_ai(int i, int ip, const FFInt &num) {
     if (ip == 0) {
       return num;
     } else {
-      FFInt aiDum = comp_ai(ai, i, ip - 1, num);
+      FFInt ai_i = comp_ai(i, ip - 1, num);
 
-      if (aiDum == ai.at(ip - 1)) throw std::runtime_error("Divide by 0 error!");
-
-      return (yi.at(i) - yi.at(ip - 1)) / (aiDum - ai.at(ip - 1));
+      return (ti[i] - ti[ip - 1]) / (ai_i - ai[ip - 1]);
     }
   }
 
-  FFInt RatReconst::comp_fyi(std::vector<FFInt> &ai, uint i, uint ip, const FFInt &y, const uint64_t prime) const {
+  FFInt RatReconst::comp_fyi(uint i, uint ip, const FFInt &y, const uint64_t prime) {
     if (ip == 0) {
-      return ai.at(i);
+      return ai[i];
     } else {
-      return ai.at(i - ip) + (FFInt(0, prime) - yi.at(i - ip) + y) / comp_fyi(ai, i, ip - 1, y, prime);
+      return ai[i - ip] + (FFInt(0, prime) - ti[i - ip] + y) / comp_fyi(i, ip - 1, y, prime);
     }
   }
 
-  std::pair<PolynomialFF, PolynomialFF> RatReconst::construct_canonical(std::vector<FFInt> &ai, const uint64_t prime) const {
-    if (ai.size() == 0) {
-      return std::make_pair(PolynomialFF(), PolynomialFF());
-    } else if (ai.size() == 1) {
-      std::vector<FFInt> coefNom {ai.at(0) };
-      std::vector<FFInt> coefDen {FFInt(1, prime) };
-      PolynomialFF nom(coefNom);
-      PolynomialFF den(coefDen);
-      return std::pair<PolynomialFF, PolynomialFF> (nom, den);
+  std::pair<PolynomialFF, PolynomialFF> RatReconst::construct_canonical(const uint64_t prime) const {
+    if (ai.size() == 1) {
+      ff_map numerator_ff;
+      std::vector<uint> zero_deg = {0};
+      numerator_ff.emplace(std::make_pair(zero_deg, ai[0]));
+      ff_map denominator_ff;
+      denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1, prime)));
+      return std::make_pair(PolynomialFF(1, numerator_ff), PolynomialFF(1, denominator_ff));
     } else {
-      std::pair<PolynomialFF, PolynomialFF> r = iterate_canonical(ai, 1, prime);
-      std::vector<FFInt> a0 {ai.at(0) };
-      std::vector<FFInt> coefZ {FFInt(0, prime) - yi.at(0), FFInt(1, prime) };
-      PolynomialFF constant(a0);
-      PolynomialFF zPol(coefZ);
-      std::pair<PolynomialFF, PolynomialFF> ratFun(constant * r.first + zPol * r.second,
-                                               r.first);
-      return normalize(ratFun, prime);
+      std::pair<PolynomialFF, PolynomialFF> r = iterate_canonical(1, prime);
+      FFInt mti = FFInt(0, prime) - ti[0];
+      std::pair<PolynomialFF, PolynomialFF> ratFun(r.first * ai[0] + r.second * mti + r.second.mul(1),
+                                                   r.first);
+      return ratFun;
     }
   }
 
-  std::pair<PolynomialFF, PolynomialFF> RatReconst::iterate_canonical(std::vector<FFInt> &ai, uint i, const uint64_t prime) const {
+  std::pair<PolynomialFF, PolynomialFF> RatReconst::iterate_canonical(uint i, const uint64_t prime) const {
     if (i < ai.size() - 1) {
-      std::pair<PolynomialFF, PolynomialFF> fnp1 = iterate_canonical(ai, i + 1 , prime);
-      PolynomialFF p1(std::vector<FFInt> {ai.at(i) });
-      PolynomialFF p2(std::vector<FFInt> {FFInt(0, prime) - yi.at(i), FFInt(1, prime) });
-      return std::pair<PolynomialFF, PolynomialFF> (fnp1.first * p1 + fnp1.second * p2,
-                                                fnp1.first);
+      std::pair<PolynomialFF, PolynomialFF> fnp1 = iterate_canonical(i + 1 , prime);
+      FFInt mti = FFInt(0, prime) - ti[i];
+      return std::pair<PolynomialFF, PolynomialFF> (fnp1.first * ai[i] + fnp1.second.mul(1) + fnp1.second * mti,
+                                                    fnp1.first);
     } else {
-      PolynomialFF p1(std::vector<FFInt> {ai.at(i) });
-      PolynomialFF p2(std::vector<FFInt> {FFInt(1, prime) });
-      return std::pair<PolynomialFF, PolynomialFF> (p1, p2);
+      ff_map numerator_ff;
+      std::vector<uint> zero_deg = {0};
+      numerator_ff.emplace(std::make_pair(zero_deg, ai[i]));
+      ff_map denominator_ff;
+      denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1, prime)));
+      return std::make_pair(PolynomialFF(1, numerator_ff), PolynomialFF(1, denominator_ff));
     }
   }
 
-  std::pair<PolynomialFF, PolynomialFF> RatReconst::normalize(std::pair<PolynomialFF, PolynomialFF> &ratFun, const uint64_t prime) const {
-    for (auto coef : ratFun.second.coef) {
-      if (coef.n != 0) {
-        ratFun.first = ratFun.first * (FFInt(1, prime) / coef);
-        ratFun.second = ratFun.second * (FFInt(1, prime) / coef);
-        return ratFun;
-      }
-    }
+  void RatReconst::normalize() {
+    RationalNumber equializer = result.denominator.coefs[0].coef;
+    RationalNumber terminator(equializer.denominator, equializer.numerator);
 
-    ERROR_MSG("Could not reconstruct rational function. Still has spurious poles!");
-    return ratFun;
+    result.numerator = result.numerator * terminator;
+    result.denominator = result.denominator * terminator;
   }
 
-  std::pair<std::vector<mpz_class>, std::vector<mpz_class>> RatReconst::convert_to_mpz(const std::pair<PolynomialFF, PolynomialFF> &rf) const {
-    std::vector<mpz_class> ci_mpz_1;
-    std::vector<mpz_class> ci_mpz_2;
-    ci_mpz_1.reserve(rf.first.deg);
-    ci_mpz_2.reserve(rf.second.deg);
+  std::pair<mpz_map, mpz_map> RatReconst::convert_to_mpz(const std::pair<PolynomialFF, PolynomialFF> &rf) const {
+    mpz_map ci_mpz_1;
+    mpz_map ci_mpz_2;
 
     for (const auto coef : rf.first.coef) {
-      mpz_class coef_i(coef.n);
-      ci_mpz_1.emplace_back(coef_i);
+      ci_mpz_1.emplace(coef.first, mpz_class(coef.second.n));
     }
 
     for (const auto coef : rf.second.coef) {
-      mpz_class coef_i(coef.n);
-      ci_mpz_2.emplace_back(coef_i);
+      ci_mpz_2.emplace(coef.first, mpz_class(coef.second.n));
     }
 
     return std::make_pair(ci_mpz_1, ci_mpz_2);
   }
 
-  std::vector<FFInt> RatReconst::convert_to_ffint(const std::vector<RationalNumber> &ri, const uint64_t prime) const {
-    std::vector<FFInt> gi_ffi;
-    gi_ffi.reserve(ri.size());
+  ff_map RatReconst::convert_to_ffint(const rn_map &ri, const uint64_t prime) const {
+    ff_map gi_ffi;
 
-    for (const auto gi : ri) {
-      mpz_class tmp(gi.numerator % prime);
+    for (const auto & g_i : ri) {
+      mpz_class tmp(g_i.second.numerator % prime);
 
       if (tmp < 0) tmp = tmp + prime;
 
       FFInt n(std::stoull(tmp.get_str()), prime);
-      tmp = gi.denominator % prime;
+
+      tmp = g_i.second.denominator % prime;
+
       FFInt d(std::stoull(tmp.get_str()), prime);
-      gi_ffi.emplace_back(n / d);
+
+      gi_ffi.insert(std::make_pair(g_i.first, n / d));
     }
 
     return gi_ffi;
   }
 
-  bool RatReconst::test_guess(const uint64_t prime) {
-    std::vector<FFInt> g_ff_ni = convert_to_ffint(g_ni, prime);
-    std::vector<FFInt> g_ff_di = convert_to_ffint(g_di, prime);
-    PolynomialFF g_ny(g_ff_ni);
-    PolynomialFF g_dy(g_ff_di);
+  bool RatReconst::test_guess(const uint64_t prime, const FFInt &num) {
+    ff_map g_ff_ni = convert_to_ffint(g_ni, prime);
+    ff_map g_ff_di = convert_to_ffint(g_di, prime);
+    PolynomialFF g_ny(1, g_ff_ni);
+    PolynomialFF g_dy(1, g_ff_di);
+    std::vector<FFInt> yis = {ti[0]};
 
-    for (uint i = 0; i < std::min(breakCondition, (uint) yi.size()); i++) {
-      if ((g_ny.calc(yi.at(i)) / g_dy.calc(yi.at(i))) != num(prime, yi.at(i))) return false;
-    }
+    return (g_ny.calc(yis) / g_dy.calc(yis)) == num;
 
-    return true;
   }
 
-  FFInt RatReconst::num(uint64_t prime, const FFInt &y) const {
-    FFInt a0(2, prime);
-    FFInt a1(6, prime);
-    FFInt a2(1, prime);
-    FFInt a3(227, prime);
-    FFInt a4(30, prime);
-    FFInt a5(2, prime);
-    FFInt a6(7, prime);
-    mpz_class test;
-    test = "1234567891098987984325845845858586879708085484545745874587458787878787874587878787874587878787878798309459864387658765876565987658765765767656565765765765876586586586565865865865865808089897070743454587987987098053098798708432432098098743432098";
-    test = test % prime;
-    FFInt a7(std::stoull(test.get_str()), prime);
-    FFInt a8(13, prime);
-    FFInt exp2(2, prime);
-    FFInt exp3(3, prime);
-    FFInt exp4(4, prime);
-    FFInt exp5(5, prime);
-    FFInt exp6(6, prime);
-    FFInt exp7(7, prime);
-    FFInt exp12(12, prime);
-
-    return (a0 / a1 - a3 / a4 * y) / (FFInt(0, prime) - a2 * y.pow(exp12));
-  }*/
-
 }
+

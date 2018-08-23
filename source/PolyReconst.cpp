@@ -56,15 +56,12 @@ namespace firefly {
       // coefficients
       mpz_map ci_tmp = convert_to_mpz(reconst_ff(zi, prime, chosen_yi));
 
-      std::pair<mpz_class, mpz_class> p1(combined_ci.begin()->second, combined_prime);
-      std::pair<mpz_class, mpz_class> p2(ci_tmp[combined_ci.begin()->first], prime);
+      std::pair<mpz_class, mpz_class> p1;
+      std::pair<mpz_class, mpz_class> p2;
 
-      std::pair<mpz_class, mpz_class> p3 = run_chinese_remainder(p1, p2);
-      combined_ci.begin()->second = p3.first;
+      std::pair<mpz_class, mpz_class> p3;
 
-      auto it = combined_ci.begin();
-
-      for (it = ++it; it != combined_ci.end(); ++it) {
+      for (auto it = combined_ci.begin(); it != combined_ci.end(); ++it) {
         p1 = std::make_pair(it->second, combined_prime);
         p2 = std::make_pair(ci_tmp[it->first], prime);
         p3 = run_chinese_remainder(p1, p2);
@@ -247,7 +244,6 @@ namespace firefly {
 
     for (const auto& g_i : ri) {
       mpz_class tmp(g_i.second.numerator % prime);
-      mpz_class tmp2(g_i.second.denominator % prime);
 
       if (tmp < 0) tmp = tmp + prime;
 
@@ -294,7 +290,7 @@ namespace firefly {
 
     ff_map res;
     res.insert(std::make_pair(std::vector<uint> (n), a2*y2 
-    + a3*y3 + a4*y*y2*y3*y4.pow(exp8) + a3/a4*y.pow(exp2)*y3.pow(exp7) 
+    + a3*y3 + a4*y*y2*y3*y4.pow(exp7) + a3/a4*y.pow(exp2)*y3.pow(exp7) 
     - a4*y4.pow(exp2) - a7/a3 * y.pow(exp2)));
 
     return PolynomialFF(n, res);

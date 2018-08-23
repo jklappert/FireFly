@@ -16,7 +16,9 @@ namespace firefly {
      *    @param coefs_ an unordered map of coefficients and degrees
      */
     Polynomial(const rn_map& coef);
+    Polynomial();
     std::vector<Monomial> coefs;  /**< The vector which holds all coefficients*/
+    Polynomial operator*(const RationalNumber &);
   };
 
   std::ostream &operator<< (std::ostream &out, const Polynomial &pol);
