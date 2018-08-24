@@ -9,7 +9,7 @@ namespace firefly {
     out << "Denominator: " << rf.denominator;
     return out;
   }
-  
+
   RationalFunction::RationalFunction() {}
 
 }

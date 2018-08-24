@@ -110,7 +110,6 @@ namespace firefly {
     return result;
   }
 
-
   bool RatReconst::rec_rat_coef() {
     bool run_test = true;
 
@@ -227,7 +226,7 @@ namespace firefly {
 
       FFInt d(std::stoull(tmp.get_str()));
 
-      gi_ffi.insert(std::make_pair(g_i.first, n / d));
+      gi_ffi.emplace(std::make_pair(g_i.first, n / d));
     }
 
     return gi_ffi;
