@@ -7,19 +7,22 @@
 int main() {
   uint64_t prime = firefly::primes()[0];
   //firefly::RatReconst rec_rat(1, prime);
-  firefly::PolyReconst rec_pol(5, prime);
+  firefly::PolyReconst rec_pol(1, prime);
 
   try {
     int i = 1;
     std::vector<firefly::FFInt> yis;
     yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
-    yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
-    yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
-    yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
-    yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
+    //yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
+    //yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
+    //yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
+    //yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
     while (!rec_pol.done) {
       if(rec_pol.new_prime) {
         prime = firefly::primes()[i];
+        for(int i = 0; i < yis.size(); i++){
+          yis[i] = firefly::FFInt(std::rand() % prime, prime);
+        }
         i++;
       }
       yis[rec_pol.next_zi - 1] = firefly::FFInt(std::rand() % prime, prime);
@@ -30,10 +33,10 @@ int main() {
       firefly::FFInt a1(1,prime);
       firefly::FFInt a2(18, prime);
       firefly::FFInt a3(25, prime);
-      firefly::FFInt a4(300, prime);
+      firefly::FFInt a4(1000, prime);
       firefly::FFInt a5(2, prime);
       firefly::FFInt a6(7, prime);
-      firefly::FFInt num = (a6-a7/a6*yis[0].pow(a5) + a1*yis[2] + a3*yis[0]*yis[1] + a4*yis[3]+ a2*yis[4]);
+      firefly::FFInt num = (a6-a2/a6*yis[0].pow(a4));// + a1*yis[2] + a3*yis[0]*yis[1].pow(a6) + a4*yis[3] + a2*yis[4].pow(a4));
       rec_pol.feed(prime, yis, num);
     }
 

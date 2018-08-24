@@ -89,11 +89,14 @@ namespace firefly {
         ais[next_zi].emplace_back(comp_ai(next_zi, i, i, PolynomialFF(n, zero_map), ais[next_zi]));
       }
 
+      // if the lowest stage ai is zero, combine them into an ai for a higher stage
+      // and check if we are done
       if (ais[next_zi][i].zero()) {
         ais[next_zi].pop_back();
         yis[next_zi].pop_back();
 
-        if (curr_zi == 1) curr_zi ++;
+        if (curr_zi == 1 && n > 1) curr_zi ++;
+        if(curr_zi == 1 && n == 1) check = true;
 
         if (n > 1) {
           for (uint j = next_zi + 1; j <= curr_zi; j++) {
@@ -236,5 +239,3 @@ namespace firefly {
   }
 
 }
-
-
