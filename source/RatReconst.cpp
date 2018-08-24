@@ -11,7 +11,7 @@ namespace firefly {
     combined_prime = prime;
   }
 
-  void RatReconst::feed(uint64_t prime, const FFInt &new_ti, const std::vector<FFInt> &yis, FFInt &num) {
+  void RatReconst::feed(uint64_t prime, const FFInt &new_ti, const std::vector<FFInt> &yis, const FFInt &num) {
     if (!done) {
       // first check if we are done. If not start the reconstruction again using
       // the chinese remainder theorem in combining the previous results
@@ -153,7 +153,7 @@ namespace firefly {
     if (ip == 0) {
       return ai[i];
     } else {
-      return ai[i - ip] + (FFInt(0, prime) - ti[i - ip] + y) / comp_fyi(i, ip - 1, y, prime);
+      return ai[i - ip] + (FFInt(0) - ti[i - ip] + y) / comp_fyi(i, ip - 1, y, prime);
     }
   }
 
@@ -163,11 +163,11 @@ namespace firefly {
       std::vector<uint> zero_deg = {0};
       numerator_ff.emplace(std::make_pair(zero_deg, ai[0]));
       ff_map denominator_ff;
-      denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1, prime)));
+      denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1)));
       return std::make_pair(PolynomialFF(1, numerator_ff), PolynomialFF(1, denominator_ff));
     } else {
       std::pair<PolynomialFF, PolynomialFF> r = iterate_canonical(1, prime);
-      FFInt mti = FFInt(0, prime) - ti[0];
+      FFInt mti = FFInt(0) - ti[0];
       std::pair<PolynomialFF, PolynomialFF> ratFun(r.first * ai[0] + r.second * mti + r.second.mul(1),
                                                    r.first);
       return ratFun;
@@ -177,7 +177,7 @@ namespace firefly {
   std::pair<PolynomialFF, PolynomialFF> RatReconst::iterate_canonical(uint i, const uint64_t prime) const {
     if (i < ai.size() - 1) {
       std::pair<PolynomialFF, PolynomialFF> fnp1 = iterate_canonical(i + 1 , prime);
-      FFInt mti = FFInt(0, prime) - ti[i];
+      FFInt mti = FFInt(0) - ti[i];
       return std::pair<PolynomialFF, PolynomialFF> (fnp1.first * ai[i] + fnp1.second.mul(1) + fnp1.second * mti,
                                                     fnp1.first);
     } else {
@@ -185,7 +185,7 @@ namespace firefly {
       std::vector<uint> zero_deg = {0};
       numerator_ff.emplace(std::make_pair(zero_deg, ai[i]));
       ff_map denominator_ff;
-      denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1, prime)));
+      denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1)));
       return std::make_pair(PolynomialFF(1, numerator_ff), PolynomialFF(1, denominator_ff));
     }
   }
@@ -221,11 +221,11 @@ namespace firefly {
 
       if (tmp < 0) tmp = tmp + prime;
 
-      FFInt n(std::stoull(tmp.get_str()), prime);
+      FFInt n(std::stoull(tmp.get_str()));
 
       tmp = g_i.second.denominator % prime;
 
-      FFInt d(std::stoull(tmp.get_str()), prime);
+      FFInt d(std::stoull(tmp.get_str()));
 
       gi_ffi.insert(std::make_pair(g_i.first, n / d));
     }
@@ -245,4 +245,3 @@ namespace firefly {
   }
 
 }
-

@@ -3,13 +3,14 @@
 
 namespace firefly {
 
-  FFInt::FFInt(const uint64_t n_, const uint64_t p_) : n(n_), p(p_) {}
+  uint64_t FFInt::p;
 
-  FFInt::FFInt(const FFInt& ffint) : n(ffint.n), p(ffint.p) {}
+  FFInt::FFInt(const uint64_t n_) : n(n_) {}
+
+  FFInt::FFInt(const FFInt& ffint) : n(ffint.n) {}
 
 //copied from Kira
-  FFInt::FFInt(const std::string& str, const uint64_t p_, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
-    p = p_;
+  FFInt::FFInt(const std::string& str, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
     for (const auto& var : replacements) {
       if (var.first == str) {
         n = var.second;
@@ -25,7 +26,7 @@ namespace firefly {
       } else if (std::isalpha(str.front())) {
         throw std::runtime_error("Unkown or invalid coefficient string \"" + str + "\"");
       } else {
-        n = parse_longint(str, p);
+        n = parse_longint(str);
       }
     } else if (n >= p) {
       // special case: the parsed value fits into n, but is >= p
@@ -51,12 +52,12 @@ namespace firefly {
   }
 
   FFInt& FFInt::operator*=(const FFInt& ffint) {
-    n = mod_mul(n, ffint.n, p);
+    n = mod_mul(n, ffint.n);
     return *this;
   }
 
   FFInt& FFInt::operator/=(const FFInt& ffint) {
-    n = mod_mul(n, mod_inv(ffint.n, p), p);
+    n = mod_mul(n, mod_inv(ffint.n));
     return *this;
   }
 
@@ -76,12 +77,12 @@ namespace firefly {
       } else {
         // treat as negative exponent
         exp = p - ffint.n;
-        base = mod_inv(n, p);  // =1/ffint1.n
+        base = mod_inv(n);  // =1/ffint1.n
         result.n = base;
       }
 
       for (std::uint64_t i = 1; i != exp; ++i) {
-        result.n = mod_mul(result.n, base, p);
+        result.n = mod_mul(result.n, base);
       }
     }
 
@@ -93,7 +94,7 @@ namespace firefly {
 
     if (sum >= p) sum -= p;
 
-    return FFInt(sum, p);
+    return FFInt(sum);
   }
 
   FFInt FFInt::operator-(const FFInt& ffint) {
@@ -102,30 +103,30 @@ namespace firefly {
     if (ffint.n > diff) diff += p;
 
     diff -= ffint.n;
-    return FFInt(diff, p);
+    return FFInt(diff);
   }
 
   FFInt FFInt::operator-() {
-    return FFInt(p - n, p);
+    return FFInt(p - n);
   }
 
   FFInt FFInt::operator*(const FFInt& ffint) {
-    return FFInt(mod_mul(n, ffint.n, p), p);
+    return FFInt(mod_mul(n, ffint.n));
   }
 
   FFInt FFInt::operator/(const FFInt& ffint) {
-    return FFInt(mod_mul(n, mod_inv(ffint.n, p), p), p);
+    return FFInt(mod_mul(n, mod_inv(ffint.n)));
   }
 
-  bool FFInt::operator==(const FFInt& ffint) {
+  bool FFInt::operator==(const FFInt& ffint) const {
     return (n == ffint.n);
   }
 
-  bool FFInt::operator!=(const FFInt& ffint) {
+  bool FFInt::operator!=(const FFInt& ffint) const {
     return (n != ffint.n);
   }
 
-  uint64_t FFInt::mod_mul(uint64_t a, uint64_t b, const uint64_t p) const {
+  uint64_t FFInt::mod_mul(uint64_t a, uint64_t b) const {
     long double x;
     uint64_t c;
     int64_t r;
@@ -140,7 +141,7 @@ namespace firefly {
     return r < 0 ? r + p : r;
   }
 
-  uint64_t FFInt::mod_inv(const uint64_t a, const uint64_t p) const {
+  uint64_t FFInt::mod_inv(const uint64_t a) const {
     int64_t t {0};
     int64_t newt {1};
     int64_t tmpt;
@@ -164,7 +165,7 @@ namespace firefly {
   }
 
   //copied from Kira
-    uint64_t FFInt::parse_longint(const std::string& str, uint64_t prime) {
+    uint64_t FFInt::parse_longint(const std::string& str) {
     // Parse a long integer, passed as a string, take the modulus wrt. prime
     // and return it. The string is split into chunks of at most 18 digits
     // which are then put together via modular arithmetic.
@@ -186,11 +187,15 @@ namespace firefly {
       ss >> intchunk;
       // result=0 in the first pass or when the string is zero padded
       // on the left so that the first (few) chunks give zero.
-      if (result) result = mod_mul(result, 1000000000000000000uLL, prime);
+      if (result) result = mod_mul(result, 1000000000000000000uLL);
       result += intchunk;
-      result %= prime;
+      result %= p;
     }
     return result;
+  }
+
+  FFInt operator*(const FFInt& a, const FFInt& b) {
+    return a*b;
   }
 
   FFInt pow(const FFInt& ffint, const FFInt& power) {

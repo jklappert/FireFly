@@ -7,13 +7,12 @@ namespace firefly {
   PolynomialFF::PolynomialFF() {}
 
   FFInt PolynomialFF::calc(std::vector<FFInt> x) {
-    const uint64_t prime = coef.begin()->second.p;
-    FFInt res(0, prime);
+    FFInt res(0);
 
     for (auto& term : coef) {
-      FFInt product(1, prime);
+      FFInt product(1);
       for (uint i = 0; i < x.size(); i++) {
-        product *= x[i].pow(FFInt(term.first[i], prime));
+        product *= x[i].pow(FFInt(term.first[i]));
       }
       res += term.second * product;
     }
@@ -74,7 +73,7 @@ namespace firefly {
       auto got = new_coefs.find(el.first);
 
       if (got == new_coefs.end()) {
-        new_coefs.insert(std::make_pair(el.first, FFInt(0, el.second.p) - el.second));
+        new_coefs.insert(std::make_pair(el.first, FFInt(0) - el.second));
       } else {
           FFInt res = got -> second - el.second;
           if(res.n != 0) {

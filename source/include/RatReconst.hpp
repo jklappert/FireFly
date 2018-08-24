@@ -23,7 +23,7 @@ namespace firefly {
     /**
      *
      */
-    void feed(uint64_t prime, const FFInt &new_ti, const std::vector<FFInt> &yis, FFInt &num);
+    void feed(uint64_t prime, const FFInt &new_ti, const std::vector<FFInt> &yis, const FFInt &num);
     /**
      *
      */

@@ -289,12 +289,10 @@ namespace firefly {
     FFInt exp8(500, prime);
 
     ff_map res;
-    res.insert(std::make_pair(std::vector<uint> (n), a2*y2 
-    + a3*y3 + a4*y*y2*y3*y4.pow(exp7) + a3/a4*y.pow(exp2)*y3.pow(exp7) 
+    res.insert(std::make_pair(std::vector<uint> (n), a2*y2
+    + a3*y3 + a4*y*y2*y3*y4.pow(exp7) + a3/a4*y.pow(exp2)*y3.pow(exp7)
     - a4*y4.pow(exp2) - a7/a3 * y.pow(exp2)));
 
     return PolynomialFF(n, res);
   }
 }
-
-
