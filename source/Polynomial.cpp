@@ -38,7 +38,6 @@ namespace firefly {
         for (const auto i : mono.powers) {
           out << i << ",";
         }
-
         out << "\b)";
       }
 

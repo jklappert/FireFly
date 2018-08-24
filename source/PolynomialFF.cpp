@@ -2,7 +2,7 @@
 
 namespace firefly {
 
-  PolynomialFF::PolynomialFF(uint n_, ff_map coef_) : n(n_), coef(coef_) {}
+  PolynomialFF::PolynomialFF(uint n_, ff_map coef_) : n(n_), coef(coef_){}
 
   PolynomialFF::PolynomialFF() {}
 
@@ -132,7 +132,9 @@ namespace firefly {
 
 
   bool PolynomialFF::zero() {
-    return coef.empty();
+    if(coef.empty()) return true;
+    //if(coef.size() == 1 && coef.begin()->second.n == 0) return true;
+    return false;
   }
 
 }

@@ -5,19 +5,21 @@ namespace firefly {
 
   FFInt::FFInt(uint64_t n_, uint64_t p_) : n(n_), p(p_) {}
 
-  FFInt::FFInt(const FFInt& ffint) : n(ffint.n), p(ffint.p) {}
+  FFInt::FFInt(const FFInt &ffint) : n(ffint.n), p(ffint.p) {}
 
-//copied from Kira
-  FFInt::FFInt(const std::string& str, uint64_t p_, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
+  FFInt::FFInt(const std::string &str, uint64_t p_, const std::vector<std::pair<std::string, uint64_t>> &replacements) {
     p = p_;
-    for (const auto& var : replacements) {
+
+    for (const auto & var : replacements) {
       if (var.first == str) {
         n = var.second;
         return;
       }
     }
-    std::istringstream ss{str};
+
+    std::istringstream ss {str};
     auto success = static_cast<bool>(ss >> n);
+
     if (!(success && ss.rdbuf()->in_avail() == 0)) {
       if (str.empty()) {
         // (ss >> n) fails if ss is empty
@@ -31,11 +33,11 @@ namespace firefly {
       // special case: the parsed value fits into n, but is >= p
       n %= p;
     }
-}
+  }
 
   FFInt::FFInt() {}
 
-  FFInt& FFInt::operator+=(const FFInt& ffint) {
+  FFInt &FFInt::operator+=(const FFInt &ffint) {
     n += ffint.n;
 
     if (n >= p) n -= p;
@@ -43,24 +45,24 @@ namespace firefly {
     return *this;
   }
 
-  FFInt& FFInt::operator-=(const FFInt& ffint) {
+  FFInt &FFInt::operator-=(const FFInt &ffint) {
     if (ffint.n > n) n += p;
 
     n -= ffint.n;
     return *this;
   }
 
-  FFInt& FFInt::operator*=(const FFInt& ffint) {
+  FFInt &FFInt::operator*=(const FFInt &ffint) {
     n = mod_mul(n, ffint.n, p);
     return *this;
   }
 
-  FFInt& FFInt::operator/=(const FFInt& ffint) {
+  FFInt &FFInt::operator/=(const FFInt &ffint) {
     n = mod_mul(n, mod_inv(ffint.n, p), p);
     return *this;
   }
 
-  FFInt FFInt::pow(const FFInt& ffint) const {
+  FFInt FFInt::pow(const FFInt &ffint) const {
     FFInt result;
     std::uint64_t exp;
     std::uint64_t base;
@@ -88,7 +90,7 @@ namespace firefly {
     return result;
   }
 
-  FFInt FFInt::operator+(const FFInt& ffint) {
+  FFInt FFInt::operator+(const FFInt &ffint) {
     auto sum = ffint.n + n;
 
     if (sum >= p) sum -= p;
@@ -96,7 +98,7 @@ namespace firefly {
     return FFInt(sum, p);
   }
 
-  FFInt FFInt::operator-(const FFInt& ffint) {
+  FFInt FFInt::operator-(const FFInt &ffint) {
     auto diff = n;
 
     if (ffint.n > diff) diff += p;
@@ -105,19 +107,19 @@ namespace firefly {
     return FFInt(diff, p);
   }
 
-  FFInt FFInt::operator*(const FFInt& ffint) {
+  FFInt FFInt::operator*(const FFInt &ffint) {
     return FFInt(mod_mul(n, ffint.n, p), p);
   }
 
-  FFInt FFInt::operator/(const FFInt& ffint) {
+  FFInt FFInt::operator/(const FFInt &ffint) {
     return FFInt(mod_mul(n, mod_inv(ffint.n, p), p), p);
   }
 
-  bool FFInt::operator==(const FFInt& ffint) {
+  bool FFInt::operator==(const FFInt &ffint) {
     return (n == ffint.n);
   }
 
-  bool FFInt::operator!=(const FFInt& ffint) {
+  bool FFInt::operator!=(const FFInt &ffint) {
     return (n != ffint.n);
   }
 
@@ -159,37 +161,41 @@ namespace firefly {
     return t < 0 ? t + p : t;
   }
 
-  //copied from Kira
-    uint64_t FFInt::parse_longint(const std::string& str, uint64_t prime) {
+  uint64_t FFInt::parse_longint(const std::string &str, uint64_t prime) {
     // Parse a long integer, passed as a string, take the modulus wrt. prime
     // and return it. The string is split into chunks of at most 18 digits
     // which are then put together via modular arithmetic.
     // Return zero if the string is empty.
     //
     // Make sure the input is an unsigned integer without whitespace padding.
-    for (const auto ch: str) {
+    for (const auto ch : str) {
       if (!std::isdigit(ch)) throw std::runtime_error("parse_longint(): invalid number string \"" + str + "\"");
     }
+
     uint64_t result = 0;
     std::size_t pos = 0;
     std::size_t len = ((str.size() - 1) % 18) + 1;
+
     while (pos < str.size()) {
       std::string strchunk = str.substr(pos, len);
       pos += len;
       len = 18;
       uint64_t intchunk;
-      std::istringstream ss{strchunk};
+      std::istringstream ss {strchunk};
       ss >> intchunk;
+
       // result=0 in the first pass or when the string is zero padded
       // on the left so that the first (few) chunks give zero.
       if (result) result = mod_mul(result, 1000000000000000000uLL, prime);
+
       result += intchunk;
       result %= prime;
     }
+
     return result;
   }
 
-  std::ostream& operator<<(std::ostream& out, const FFInt& ffint) {
+  std::ostream &operator<<(std::ostream &out, const FFInt &ffint) {
     out << ffint.n;
     return out;
   }
