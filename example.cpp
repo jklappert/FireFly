@@ -8,7 +8,7 @@ int main() {
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   //firefly::RatReconst rec_rat(1, prime);
-  firefly::PolyReconst rec_pol(1, prime);
+  firefly::PolyReconst rec_pol(3, prime);
 
   try {
     int i = 1;
