@@ -11,7 +11,7 @@ namespace firefly {
     combined_prime = FFInt::p;
   }
 
-  void RatReconst::feed(const FFInt &new_ti, const std::vector<FFInt> &yis, const FFInt &num) {
+  void RatReconst::feed(const FFInt& new_ti, const std::vector<FFInt>& yis, const FFInt& num) {
     if (!done) {
       // first check if we are done. If not start the reconstruction again using
       // the chinese remainder theorem in combining the previous results
@@ -47,60 +47,59 @@ namespace firefly {
       ti.emplace_back(new_ti);
       const uint i = ti.size() - 1;
 
-      if (check) {
-        check = false;
-
-        if (num == comp_fyi(i - 1, i - 1, ti.back())) {
-          if (ai.capacity() != ai.size()) {
-            ai.shrink_to_fit();
-            ti.shrink_to_fit();
-          }
-
-          ti.pop_back();
-          ai.pop_back();
-
-          std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(construct_canonical());
-
-          if (!use_chinese_remainder) {
-            combined_ni = tmp.first;
-            combined_di = tmp.second;
-          } else {
-            std::pair<mpz_class, mpz_class> p1;
-            std::pair<mpz_class, mpz_class> p2;
-            std::pair<mpz_class, mpz_class> p3;
-
-            //numerator
-            for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
-              p1 = std::make_pair(it->second, combined_prime);
-              p2 = std::make_pair(tmp.first[it->first], FFInt::p);
-              p3 = run_chinese_remainder(p1, p2);
-              combined_ni[it->first] = p3.first;
-            }
-
-            // denominator
-            for (auto it = combined_di.begin(); it != combined_di.end(); ++it) {
-              p1 = std::make_pair(it->second, combined_prime);
-              p2 = std::make_pair(tmp.second[it->first], FFInt::p);
-              p3 = run_chinese_remainder(p1, p2);
-              combined_di[it->first] = p3.first;
-            }
-
-            combined_prime = p3.second;
-          }
-
-          new_prime = true;
-          return;
-        }
-      }
-
       if (i == 0) {
         ai.emplace_back(num);
       } else {
-        if (num == comp_fyi(i - 1, i - 1, ti.back())) {
-          check = true;
-        }
+        if (num == comp_fyi(i - 1, i - 1, ti.back())) check = true;
 
         ai.emplace_back(comp_ai(i, i, num));
+      }
+
+      if (check) {
+        check = false;
+
+        // todo not needed anymore. Only if one wants to check twice
+        // if (num == comp_fyi(i - 1, i - 1, ti.back())) {
+        if (ai.capacity() != ai.size()) {
+          ai.shrink_to_fit();
+          ti.shrink_to_fit();
+        }
+
+        ti.pop_back();
+        ai.pop_back();
+
+        std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(construct_canonical());
+
+        if (!use_chinese_remainder) {
+          combined_ni = tmp.first;
+          combined_di = tmp.second;
+        } else {
+          std::pair<mpz_class, mpz_class> p1;
+          std::pair<mpz_class, mpz_class> p2;
+          std::pair<mpz_class, mpz_class> p3;
+
+          //numerator
+          for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
+            p1 = std::make_pair(it->second, combined_prime);
+            p2 = std::make_pair(tmp.first[it->first], FFInt::p);
+            p3 = run_chinese_remainder(p1, p2);
+            combined_ni[it->first] = p3.first;
+          }
+
+          // denominator
+          for (auto it = combined_di.begin(); it != combined_di.end(); ++it) {
+            p1 = std::make_pair(it->second, combined_prime);
+            p2 = std::make_pair(tmp.second[it->first], FFInt::p);
+            p3 = run_chinese_remainder(p1, p2);
+            combined_di[it->first] = p3.first;
+          }
+
+          combined_prime = p3.second;
+        }
+
+        new_prime = true;
+        return;
+        // }
       }
     }
   }
@@ -122,7 +121,7 @@ namespace firefly {
 
       try {
         g_ni.emplace(std::make_pair(ci.first, get_rational_coef(a, combined_prime)));
-      } catch (const std::exception &) {
+      } catch (const std::exception&) {
         run_test = false;
         break;
       }
@@ -133,7 +132,7 @@ namespace firefly {
 
       try {
         g_di.emplace(std::make_pair(ci.first, get_rational_coef(a, combined_prime)));
-      } catch (const std::exception &) {
+      } catch (const std::exception&) {
         run_test = false;
         break;
       }
@@ -142,7 +141,7 @@ namespace firefly {
     return run_test;
   }
 
-  FFInt RatReconst::comp_ai(int i, int ip, const FFInt &num) {
+  FFInt RatReconst::comp_ai(int i, int ip, const FFInt& num) {
     if (ip == 0) {
       return num;
     } else {
@@ -152,7 +151,7 @@ namespace firefly {
     }
   }
 
-  FFInt RatReconst::comp_fyi(uint i, uint ip, const FFInt &y) {
+  FFInt RatReconst::comp_fyi(uint i, uint ip, const FFInt& y) {
     if (ip == 0) {
       return ai[i];
     } else {
@@ -201,7 +200,7 @@ namespace firefly {
     result.denominator = result.denominator * terminator;
   }
 
-  std::pair<mpz_map, mpz_map> RatReconst::convert_to_mpz(const std::pair<PolynomialFF, PolynomialFF> &rf) const {
+  std::pair<mpz_map, mpz_map> RatReconst::convert_to_mpz(const std::pair<PolynomialFF, PolynomialFF>& rf) const {
     mpz_map ci_mpz_1;
     mpz_map ci_mpz_2;
 
@@ -216,7 +215,7 @@ namespace firefly {
     return std::make_pair(ci_mpz_1, ci_mpz_2);
   }
 
-  ff_map RatReconst::convert_to_ffint(const rn_map &ri) const {
+  ff_map RatReconst::convert_to_ffint(const rn_map& ri) const {
     ff_map gi_ffi;
 
     for (const auto & g_i : ri) {
@@ -236,7 +235,7 @@ namespace firefly {
     return gi_ffi;
   }
 
-  bool RatReconst::test_guess(const FFInt &num) {
+  bool RatReconst::test_guess(const FFInt& num) {
     ff_map g_ff_ni = convert_to_ffint(g_ni);
     ff_map g_ff_di = convert_to_ffint(g_di);
     PolynomialFF g_ny(1, g_ff_ni);
@@ -248,3 +247,4 @@ namespace firefly {
   }
 
 }
+

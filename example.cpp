@@ -37,10 +37,10 @@ int main() {
       firefly::FFInt a1(1);
       firefly::FFInt a2(18);
       firefly::FFInt a3(25);
-      firefly::FFInt a4(10);
+      firefly::FFInt a4(100);
       firefly::FFInt a5(2);
       firefly::FFInt a6(7);
-      firefly::FFInt num = (a6-a7/a6*yis[0].pow(a5))/(a1 + a1*yis[0]);//+ a1*yis[2] + a3*yis[0]*yis[1].pow(a6));
+      firefly::FFInt num = (a6-a4/a6*yis[0].pow(a4))/(a1 + a1*yis[0]);//+ a1*yis[2] + a3*yis[0]*yis[1].pow(a6));
       rec_rat.feed(yis[0], yis, num);
     }
 
