@@ -19,11 +19,11 @@ namespace firefly {
      *    A constructor
      *    @param n_ the number of parameters
      */
-    RatReconst(int n_, uint64_t prime);
+    RatReconst(int n_);
     /**
      *
      */
-    void feed(uint64_t prime, const FFInt &new_ti, const std::vector<FFInt> &yis, const FFInt &num);
+    void feed(const FFInt &new_ti, const std::vector<FFInt> &yis, const FFInt &num);
     /**
      *
      */
@@ -47,7 +47,7 @@ namespace firefly {
      *    @param prime a prime number defining the current finite field
      *    @return the rational function in its canonical form
      */
-    std::pair<PolynomialFF, PolynomialFF>  construct_canonical(const uint64_t prime) const;
+    std::pair<PolynomialFF, PolynomialFF>  construct_canonical() const;
     /**
      *    Iterates Thiele's interpolation formula to get the canonical form
      *    of the rational function
@@ -56,7 +56,7 @@ namespace firefly {
      *    @param prime a prime number defining the current finite field
      *    @return the recursivly iterated rational function in its canonical form
      */
-    std::pair<PolynomialFF, PolynomialFF> iterate_canonical(uint i, const uint64_t prime) const;
+    std::pair<PolynomialFF, PolynomialFF> iterate_canonical(uint i) const;
     /**
      *    Calculates f(y_i) using  Thiele's interpolation formula
      *    @param ai a vector of coefficients ai
@@ -66,14 +66,14 @@ namespace firefly {
      *    @param prime a prime number defining the finite field
      *    @returns f(y_i)
      */
-    FFInt comp_fyi(uint i, uint ip, const FFInt &y, const uint64_t prime);
+    FFInt comp_fyi(uint i, uint ip, const FFInt &y);
     /**
      *    Test if the guess yields the same answer for the function in the finite
      *    field of prime
      *    @param prime The prime number which defines the finite field
      *    @return true or false
      */
-    bool test_guess(const uint64_t prime, const FFInt &num);
+    bool test_guess(const FFInt &num);
     /**
      *    Converts the coefficients of a rational function from FFInts to mpz_class
      *    objects
@@ -88,7 +88,7 @@ namespace firefly {
      *    @param prime the prime number defining the corresponding finite field
      *    @return elements of ri converted to FFInts
      */
-    ff_map convert_to_ffint(const rn_map &ri, const uint64_t prime) const;
+    ff_map convert_to_ffint(const rn_map &ri) const;
     bool rec_rat_coef();
     int n; /**< The number of parameters */
     bool check = false;

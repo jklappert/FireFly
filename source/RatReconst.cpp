@@ -5,13 +5,13 @@
 
 namespace firefly {
 
-  RatReconst::RatReconst(int n_, uint64_t prime) : n(n_) {
+  RatReconst::RatReconst(int n_) : n(n_) {
     ti.reserve(5000);
     ai.reserve(5000);
-    combined_prime = prime;
+    combined_prime = FFInt::p;
   }
 
-  void RatReconst::feed(uint64_t prime, const FFInt &new_ti, const std::vector<FFInt> &yis, const FFInt &num) {
+  void RatReconst::feed(const FFInt &new_ti, const std::vector<FFInt> &yis, const FFInt &num) {
     if (!done) {
       // first check if we are done. If not start the reconstruction again using
       // the chinese remainder theorem in combining the previous results
@@ -22,9 +22,13 @@ namespace firefly {
 
         if (rec_rat_coef()) {
           if (n == 1) {
-            done = test_guess(prime, num);
+            done = test_guess(num);
 
-            if (done) return;
+            if (done) {
+              new_prime = false;
+              use_chinese_remainder = false;
+              return;
+            }
           }
         }
 
@@ -46,7 +50,7 @@ namespace firefly {
       if (check) {
         check = false;
 
-        if (num == comp_fyi(i - 1, i - 1, ti.back(), prime)) {
+        if (num == comp_fyi(i - 1, i - 1, ti.back())) {
           if (ai.capacity() != ai.size()) {
             ai.shrink_to_fit();
             ti.shrink_to_fit();
@@ -55,7 +59,7 @@ namespace firefly {
           ti.pop_back();
           ai.pop_back();
 
-          std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(construct_canonical(prime));
+          std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(construct_canonical());
 
           if (!use_chinese_remainder) {
             combined_ni = tmp.first;
@@ -68,7 +72,7 @@ namespace firefly {
             //numerator
             for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
               p1 = std::make_pair(it->second, combined_prime);
-              p2 = std::make_pair(tmp.first[it->first], prime);
+              p2 = std::make_pair(tmp.first[it->first], FFInt::p);
               p3 = run_chinese_remainder(p1, p2);
               combined_ni[it->first] = p3.first;
             }
@@ -76,7 +80,7 @@ namespace firefly {
             // denominator
             for (auto it = combined_di.begin(); it != combined_di.end(); ++it) {
               p1 = std::make_pair(it->second, combined_prime);
-              p2 = std::make_pair(tmp.second[it->first], prime);
+              p2 = std::make_pair(tmp.second[it->first], FFInt::p);
               p3 = run_chinese_remainder(p1, p2);
               combined_di[it->first] = p3.first;
             }
@@ -92,7 +96,7 @@ namespace firefly {
       if (i == 0) {
         ai.emplace_back(num);
       } else {
-        if (num == comp_fyi(i - 1, i - 1, ti.back(), prime)) {
+        if (num == comp_fyi(i - 1, i - 1, ti.back())) {
           check = true;
         }
 
@@ -148,15 +152,15 @@ namespace firefly {
     }
   }
 
-  FFInt RatReconst::comp_fyi(uint i, uint ip, const FFInt &y, const uint64_t prime) {
+  FFInt RatReconst::comp_fyi(uint i, uint ip, const FFInt &y) {
     if (ip == 0) {
       return ai[i];
     } else {
-      return ai[i - ip] + (FFInt(0) - ti[i - ip] + y) / comp_fyi(i, ip - 1, y, prime);
+      return ai[i - ip] + (FFInt(0) - ti[i - ip] + y) / comp_fyi(i, ip - 1, y);
     }
   }
 
-  std::pair<PolynomialFF, PolynomialFF> RatReconst::construct_canonical(const uint64_t prime) const {
+  std::pair<PolynomialFF, PolynomialFF> RatReconst::construct_canonical() const {
     if (ai.size() == 1) {
       ff_map numerator_ff;
       std::vector<uint> zero_deg = {0};
@@ -165,7 +169,7 @@ namespace firefly {
       denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1)));
       return std::make_pair(PolynomialFF(1, numerator_ff), PolynomialFF(1, denominator_ff));
     } else {
-      std::pair<PolynomialFF, PolynomialFF> r = iterate_canonical(1, prime);
+      std::pair<PolynomialFF, PolynomialFF> r = iterate_canonical(1);
       FFInt mti = FFInt(0) - ti[0];
       std::pair<PolynomialFF, PolynomialFF> ratFun(r.first * ai[0] + r.second * mti + r.second.mul(1),
                                                    r.first);
@@ -173,9 +177,9 @@ namespace firefly {
     }
   }
 
-  std::pair<PolynomialFF, PolynomialFF> RatReconst::iterate_canonical(uint i, const uint64_t prime) const {
+  std::pair<PolynomialFF, PolynomialFF> RatReconst::iterate_canonical(uint i) const {
     if (i < ai.size() - 1) {
-      std::pair<PolynomialFF, PolynomialFF> fnp1 = iterate_canonical(i + 1 , prime);
+      std::pair<PolynomialFF, PolynomialFF> fnp1 = iterate_canonical(i + 1);
       FFInt mti = FFInt(0) - ti[i];
       return std::pair<PolynomialFF, PolynomialFF> (fnp1.first * ai[i] + fnp1.second.mul(1) + fnp1.second * mti,
                                                     fnp1.first);
@@ -212,17 +216,17 @@ namespace firefly {
     return std::make_pair(ci_mpz_1, ci_mpz_2);
   }
 
-  ff_map RatReconst::convert_to_ffint(const rn_map &ri, const uint64_t prime) const {
+  ff_map RatReconst::convert_to_ffint(const rn_map &ri) const {
     ff_map gi_ffi;
 
     for (const auto & g_i : ri) {
-      mpz_class tmp(g_i.second.numerator % prime);
+      mpz_class tmp(g_i.second.numerator % FFInt::p);
 
-      if (tmp < 0) tmp = tmp + prime;
+      if (tmp < 0) tmp = tmp + FFInt::p;
 
       FFInt n(std::stoull(tmp.get_str()));
 
-      tmp = g_i.second.denominator % prime;
+      tmp = g_i.second.denominator % FFInt::p;
 
       FFInt d(std::stoull(tmp.get_str()));
 
@@ -232,9 +236,9 @@ namespace firefly {
     return gi_ffi;
   }
 
-  bool RatReconst::test_guess(const uint64_t prime, const FFInt &num) {
-    ff_map g_ff_ni = convert_to_ffint(g_ni, prime);
-    ff_map g_ff_di = convert_to_ffint(g_di, prime);
+  bool RatReconst::test_guess(const FFInt &num) {
+    ff_map g_ff_ni = convert_to_ffint(g_ni);
+    ff_map g_ff_di = convert_to_ffint(g_di);
     PolynomialFF g_ny(1, g_ff_ni);
     PolynomialFF g_dy(1, g_ff_di);
     std::vector<FFInt> yis = {ti[0]};

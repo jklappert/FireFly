@@ -6,13 +6,13 @@
 
 namespace firefly {
 
-  PolyReconst::PolyReconst(uint n_, uint64_t prime) : n(n_) {
+  PolyReconst::PolyReconst(uint n_) : n(n_) {
     next_zi = 1;
     curr_zi = 1;
-    combined_prime = prime;
+    combined_prime = FFInt::p;
   }
 
-  void PolyReconst::feed(uint64_t prime, const std::vector<FFInt> &new_yis, FFInt &num) {
+  void PolyReconst::feed(const std::vector<FFInt>& new_yis, FFInt& num) {
     if (!done) {
       // if no yi's/ai's are currently stored, initialize everything
       if (ais.empty() && !use_chinese_remainder) {
@@ -44,14 +44,14 @@ namespace firefly {
 
           try {
             gi.insert(std::make_pair(ci.first, get_rational_coef(a, combined_prime)));
-          } catch (const std::exception &) {
+          } catch (const std::exception&) {
             runtest = false;
             break;
           }
         }
 
         if (runtest) {
-          done = test_guess(prime, num);
+          done = test_guess(num);
 
           if (done) return;
         }
@@ -96,15 +96,16 @@ namespace firefly {
         yis[next_zi].pop_back();
 
         if (curr_zi == 1 && n > 1) curr_zi ++;
-        if(curr_zi == 1 && n == 1) check = true;
+
+        if (curr_zi == 1 && n == 1) check = true;
 
         if (n > 1) {
           for (uint j = next_zi + 1; j <= curr_zi; j++) {
             if (ais[j].empty()) {
-              ais[j].emplace_back(construct_canonical(j - 1, prime, ais[j - 1]));
+              ais[j].emplace_back(construct_canonical(j - 1, ais[j - 1]));
             } else {
               uint k = yis[j].size() - 1;
-              PolynomialFF num_ff = construct_canonical(j - 1, prime, ais[j - 1]);
+              PolynomialFF num_ff = construct_canonical(j - 1, ais[j - 1]);
               ais[j].emplace_back(comp_ai(j, k, k, num_ff, ais[j]));
             }
 
@@ -122,7 +123,7 @@ namespace firefly {
             if (max_deg[j] < 0) max_deg[j] = yis[j].size();
 
             if (j == curr_zi) {
-              if(curr_zi == n) {
+              if (curr_zi == n) {
                 next_zi = j;
                 check = true;
                 break;
@@ -135,7 +136,7 @@ namespace firefly {
         }
 
         if (check && next_zi == curr_zi && curr_zi == n) {
-          mpz_map ci_tmp = convert_to_mpz(construct_canonical(n, prime, ais[n]));
+          mpz_map ci_tmp = convert_to_mpz(construct_canonical(n, ais[n]));
 
           if (!use_chinese_remainder) {
             combined_ci = ci_tmp;
@@ -149,7 +150,7 @@ namespace firefly {
 
             for (auto it = combined_ci.begin(); it != combined_ci.end(); ++it) {
               p1 = std::make_pair(it->second, combined_prime);
-              p2 = std::make_pair(ci_tmp[it->first], prime);
+              p2 = std::make_pair(ci_tmp[it->first], FFInt::p);
               p3 = run_chinese_remainder(p1, p2);
               combined_ci[it->first] = p3.first;
             }
@@ -171,33 +172,33 @@ namespace firefly {
   }
 
   PolynomialFF PolyReconst::comp_ai(const uint zi, int i, int ip,
-                                    const PolynomialFF &num, std::vector<PolynomialFF> &ai) {
-    std::vector<FFInt> &yi = yis[zi];
+                                    const PolynomialFF& num, std::vector<PolynomialFF>& ai) {
+    std::vector<FFInt>& yi = yis[zi];
 
     if (ip == 0) return num;
 
     return (comp_ai(zi, i, ip - 1, num, ai) - ai[ip - 1]) / (yi[i] - yi[ip - 1]);
   }
 
-  PolynomialFF PolyReconst::construct_canonical(const uint zi, const uint64_t prime, std::vector<PolynomialFF> &ai) {
+  PolynomialFF PolyReconst::construct_canonical(const uint zi, std::vector<PolynomialFF>& ai) {
     if (ai.size() == 1) return ai[0];
 
-    return (ai[0] + iterate_canonical(zi, prime, 1, ai));
+    return (ai[0] + iterate_canonical(zi, 1, ai));
   }
 
-  PolynomialFF PolyReconst::iterate_canonical(const uint zi, const uint64_t prime, uint i, std::vector<PolynomialFF> &ai) {
-    std::vector<FFInt> &yi = yis[zi];
+  PolynomialFF PolyReconst::iterate_canonical(const uint zi, uint i, std::vector<PolynomialFF>& ai) {
+    std::vector<FFInt>& yi = yis[zi];
 
     if (i < ai.size() - 1) {
-      PolynomialFF poly = ai[i] + iterate_canonical(zi, prime, i + 1, ai);
+      PolynomialFF poly = ai[i] + iterate_canonical(zi, i + 1, ai);
       return poly.mul(zi) + poly * (FFInt(0) - yi[i - 1]);
     }
 
     return ai[i] * (FFInt(0) - yi[i - 1]) + ai[i].mul(zi);
   }
 
-  bool PolyReconst::test_guess(const uint64_t prime, const FFInt &num) {
-    ff_map gi_ffi = convert_to_ffint(gi, prime);
+  bool PolyReconst::test_guess(const FFInt& num) {
+    ff_map gi_ffi = convert_to_ffint(gi);
     PolynomialFF gy(n, gi_ffi);
     std::vector<FFInt> chosen_yi(n);
 
@@ -208,7 +209,7 @@ namespace firefly {
     return gy.calc(chosen_yi) == num;
   }
 
-  mpz_map PolyReconst::convert_to_mpz(const PolynomialFF &poly) const {
+  mpz_map PolyReconst::convert_to_mpz(const PolynomialFF& poly) const {
     mpz_map ci_mpz;
 
     for (const auto & coef : poly.coef) {
@@ -218,17 +219,17 @@ namespace firefly {
     return ci_mpz;
   }
 
-  ff_map PolyReconst::convert_to_ffint(const rn_map &ri, const uint64_t prime) const {
+  ff_map PolyReconst::convert_to_ffint(const rn_map& ri) const {
     ff_map gi_ffi;
 
     for (const auto & g_i : ri) {
-      mpz_class tmp(g_i.second.numerator % prime);
+      mpz_class tmp(g_i.second.numerator % FFInt::p);
 
-      if (tmp < 0) tmp = tmp + prime;
+      if (tmp < 0) tmp = tmp + FFInt::p;
 
       FFInt n(std::stoull(tmp.get_str()));
 
-      tmp = g_i.second.denominator % prime;
+      tmp = g_i.second.denominator % FFInt::p;
 
       FFInt d(std::stoull(tmp.get_str()));
 

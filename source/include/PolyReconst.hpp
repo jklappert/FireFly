@@ -20,14 +20,14 @@ namespace firefly {
      *    A constructor
      *    @param n_ The number of parameters as an integer
      */
-    PolyReconst(uint n_, uint64_t prime);
+    PolyReconst(uint n_);
     /**
      *    Calls the reconstruction algorithm
      *    @return the reconstructed Polynomial
      *    @throw runtimeerror if the prime numbers are not sufficient to reconstruct
      *    rational coefficients
      */
-    void feed(uint64_t prime, const std::vector<FFInt> &yis, FFInt &num);
+    void feed(const std::vector<FFInt> &yis, FFInt &num);
     bool done = false;
     bool new_prime = false;
     uint next_zi = 1;
@@ -51,7 +51,7 @@ namespace firefly {
      *    @param prime The prime number of the finite field
      *    @return The vector of coefficients of the canonical form
      */
-    PolynomialFF construct_canonical(const uint zi, const uint64_t prime, std::vector<PolynomialFF>& ai);
+    PolynomialFF construct_canonical(const uint zi, std::vector<PolynomialFF>& ai);
     /**
      *    Iterative construction of the canonical form
      *    @param zi the integer i to a z
@@ -60,14 +60,14 @@ namespace firefly {
      *    @param i The iteration step; stops at ai.size()
      *    @return One iteration step of the canonical polynomial
      */
-    PolynomialFF iterate_canonical(const uint zi, const uint64_t prime, uint i, std::vector<PolynomialFF>& ai);
+    PolynomialFF iterate_canonical(const uint zi, uint i, std::vector<PolynomialFF>& ai);
     /**
      *    Test if the guess yields the same answer for the function in the finite
      *    field of prime
      *    @param prime The prime number which defines the finite field
      *    @return true or false
      */
-    bool test_guess(const uint64_t prime, const FFInt& num);
+    bool test_guess(const FFInt& num);
     /**
      *    Converts a vector of FFInts to a vector of mpz_class
      *    @param ai a vector of FFInts
@@ -80,7 +80,7 @@ namespace firefly {
      *    @param prime a prime defining the current finite field
      *    @return the vector ri converted to FFInt objects
      */
-    ff_map convert_to_ffint(const rn_map &ri, const uint64_t prime) const;
+    ff_map convert_to_ffint(const rn_map &ri) const;
     uint n; /**< The number of parameters */
     bool use_chinese_remainder = false;
     bool check = false;
