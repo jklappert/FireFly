@@ -111,9 +111,9 @@ namespace firefly {
     return FFInt(p - n);
   }
 
-  FFInt FFInt::operator*(const FFInt& ffint) {
+  /*FFInt FFInt::operator*(const FFInt& ffint) {
     return FFInt(mod_mul(n, ffint.n));
-  }
+  }*/
 
   FFInt FFInt::operator/(const FFInt& ffint) {
     return FFInt(mod_mul(n, mod_inv(ffint.n)));
@@ -200,7 +200,7 @@ namespace firefly {
   }
 
   FFInt operator*(const FFInt& a, const FFInt& b) {
-    return a * b;
+    return FFInt(a.mod_mul(a.n, b.n));
   }
 
   FFInt pow(const FFInt& ffint, const FFInt& power) {

@@ -33,7 +33,7 @@ namespace firefly {
       if (new_prime) {
         bool runtest = true;
 
-        for (int i = 0; i < n; i++) {
+        for (uint i = 0; i < n; i++) {
           yis[i + 1].clear();
           ais[i + 1].clear();
           yis[i + 1].emplace_back(new_yis[i]);
@@ -67,7 +67,7 @@ namespace firefly {
       }
 
       //if (yis[next_zi].back() != new_yis[next_zi - 1]) {
-      for (int i = 1; i <= next_zi; i++) {
+      for (uint i = 1; i <= next_zi; i++) {
         yis[i].emplace_back(new_yis[i - 1]);
       }
 
@@ -202,7 +202,7 @@ namespace firefly {
     PolynomialFF gy(n, gi_ffi);
     std::vector<FFInt> chosen_yi(n);
 
-    for (int i = 1; i <= n; i++) {
+    for (uint i = 1; i <= n; i++) {
       chosen_yi[i - 1] = yis[i][0];
     }
 

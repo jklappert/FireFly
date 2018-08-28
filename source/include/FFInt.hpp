@@ -35,7 +35,7 @@ namespace firefly {
     FFInt operator+(const FFInt&);
     FFInt operator-(const FFInt&);
     FFInt operator-();
-    FFInt operator*(const FFInt&);
+    //FFInt operator*(const FFInt&);
     FFInt operator/(const FFInt&);
     bool operator==(const FFInt&) const;
     bool operator!=(const FFInt&) const;
@@ -43,7 +43,6 @@ namespace firefly {
 
     uint64_t n; /**< the integer member of the finite field */
     static uint64_t p; /**< the prime defining the finite field */
-  private:
     /**
      *    A function to calculate a*b mod p
      *    taken from https://en.wikipedia.org/wiki/Modular_arithmetic
@@ -57,12 +56,12 @@ namespace firefly {
      *    invrse.
      *    mod_inv(a,p) solves a*t = 1 mod p for t.
      */
+  private:
     uint64_t mod_inv(const uint64_t a) const;
     uint64_t parse_longint(const std::string& str);
   };
 
-  FFInt operator*(const FFInt& a, const FFInt& b);
+  FFInt operator*(const FFInt&, const FFInt&);
   FFInt pow(const FFInt& ffint, const FFInt& power);
   std::ostream& operator<<(std::ostream& out, const FFInt& ffint);
-
 }

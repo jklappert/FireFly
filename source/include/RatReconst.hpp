@@ -98,7 +98,6 @@ namespace firefly {
     std::unordered_map<uint, PolyReconst> coef_d {};
     RationalFunction result;
     mpz_class combined_prime {};  /**< The combination of the used prime numbers with the chinese remained theorem */
-    const uint breakCondition = 1;  /**< The number of additional evaluations of the black box function to validate the termination criterion */
     std::vector<FFInt> ti {}; /**< A vector which holds all arguments t_i */
     rn_map g_ni {}; /**< rational coefficient guesses for the numerator*/
     rn_map g_di {}; /**< rational coefficient guesses for the denominator*/
