@@ -11,8 +11,8 @@ namespace firefly {
    *    remainder theorem
    */
   std::pair<mpz_class, mpz_class> run_chinese_remainder(
-    const std::pair<mpz_class, mpz_class> &p1,
-    const std::pair<mpz_class, mpz_class> &p2);
+    const std::pair<mpz_class, mpz_class>& p1,
+    const std::pair<mpz_class, mpz_class>& p2);
 
   /**
    *    Applies the rational reconstruction algorithm
@@ -21,5 +21,5 @@ namespace firefly {
    *    @return a RationalNumber which has been reconstruction using the
    *    rational reconstruction algorithm
    */
-  RationalNumber get_rational_coef(const mpz_class &a, const mpz_class &p);
+  RationalNumber get_rational_coef(const mpz_class& a, const mpz_class& p);
 }

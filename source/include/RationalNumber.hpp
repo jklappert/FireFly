@@ -10,9 +10,9 @@ namespace firefly {
     RationalNumber();
     mpz_class numerator;
     mpz_class denominator;
-    RationalNumber operator*(const RationalNumber &);
+    RationalNumber operator*(const RationalNumber&);
   };
 
-  std::ostream &operator<< (std::ostream &out, const RationalNumber &a);
+  std::ostream& operator<< (std::ostream& out, const RationalNumber& a);
 
 }

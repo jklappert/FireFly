@@ -3,9 +3,9 @@
 #include "RationalNumber.hpp"
 #include "FFInt.hpp"
 
-namespace firefly{
+namespace firefly {
 
-  class Monomial{
+  class Monomial {
   public:
     Monomial(const std::vector<uint>& powers_, const RationalNumber& coef_);
     bool operator<(const Monomial&);

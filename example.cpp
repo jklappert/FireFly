@@ -14,12 +14,13 @@ int main() {
     int i = 1;
     std::vector<firefly::FFInt> yis;
     yis.emplace_back(firefly::FFInt(std::rand() % prime));
+
     //yis.emplace_back(firefly::FFInt(std::rand() % prime));
     //yis.emplace_back(firefly::FFInt(std::rand() % prime));
     //yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
     //yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
     while (!rec.done) {
-      if(rec.new_prime) {
+      if (rec.new_prime) {
         prime = firefly::primes()[i];
         firefly::FFInt::p = prime;
 
@@ -28,6 +29,7 @@ int main() {
         }*/
         i++;
       }
+
       yis[0] = firefly::FFInt(std::rand() % prime);
       //yis[rec_pol.next_zi - 1] = firefly::FFInt(std::rand() % prime);
       mpz_class test;
@@ -40,7 +42,7 @@ int main() {
       firefly::FFInt a4(100);
       firefly::FFInt a5(2);
       firefly::FFInt a6(7);
-      firefly::FFInt num = (a6-a4/a6*yis[0].pow(a4));//(a1 + a1*yis[0]);//+ a1*yis[2] + a3*yis[0]*yis[1].pow(a6));
+      firefly::FFInt num = (a6 - a4 / a6 * yis[0].pow(a4)); //(a1 + a1*yis[0]);//+ a1*yis[2] + a3*yis[0]*yis[1].pow(a6));
       rec.feed(yis, num);
     }
 
@@ -49,7 +51,7 @@ int main() {
     //auto pol_fun = rec_pol.reconst();
     //std::cout << rat_fun;
     //std::cout << "f(x) = " << pol_fun;
-  } catch (std::exception &e) {
+  } catch (std::exception& e) {
     ERROR_MSG(e.what());
   }
 

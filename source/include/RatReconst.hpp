@@ -23,7 +23,7 @@ namespace firefly {
     /**
      *
      */
-    void feed(const FFInt &new_ti, const std::vector<FFInt> &yis, const FFInt &num);
+    void feed(const FFInt& new_ti, const std::vector<FFInt>& yis, const FFInt& num);
     /**
      *
      */
@@ -32,7 +32,7 @@ namespace firefly {
     bool new_prime = false;
     int zi = -1;
   private:
-    FFInt comp_ai(int i, int ip, const FFInt &num);
+    FFInt comp_ai(int i, int ip, const FFInt& num);
     /**
      *    Normalize the rational function such that the first non-zero coefficient
      *    of the denominator is normalized to 1
@@ -66,14 +66,14 @@ namespace firefly {
      *    @param prime a prime number defining the finite field
      *    @returns f(y_i)
      */
-    FFInt comp_fyi(uint i, uint ip, const FFInt &y);
+    FFInt comp_fyi(uint i, uint ip, const FFInt& y);
     /**
      *    Test if the guess yields the same answer for the function in the finite
      *    field of prime
      *    @param prime The prime number which defines the finite field
      *    @return true or false
      */
-    bool test_guess(const FFInt &num);
+    bool test_guess(const FFInt& num);
     /**
      *    Converts the coefficients of a rational function from FFInts to mpz_class
      *    objects
@@ -81,14 +81,14 @@ namespace firefly {
      *    @return the coefficients of the given rational function converted to
      *    mpz_class objects
      */
-    std::pair<mpz_map, mpz_map> convert_to_mpz(const std::pair<PolynomialFF, PolynomialFF> &rf) const;
+    std::pair<mpz_map, mpz_map> convert_to_mpz(const std::pair<PolynomialFF, PolynomialFF>& rf) const;
     /**
      *    Converts the elements of a vector of RationalNumber objects to FFInts
      *    @param ri the vector of RationalNumber objects
      *    @param prime the prime number defining the corresponding finite field
      *    @return elements of ri converted to FFInts
      */
-    ff_map convert_to_ffint(const rn_map &ri) const;
+    ff_map convert_to_ffint(const rn_map& ri) const;
     bool rec_rat_coef();
     int n; /**< The number of parameters */
     bool check = false;

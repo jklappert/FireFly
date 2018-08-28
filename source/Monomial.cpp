@@ -1,8 +1,8 @@
 #include "Monomial.hpp"
 
-namespace firefly{
+namespace firefly {
 
-  Monomial::Monomial(const std::vector<uint> &powers_, const RationalNumber &coef_) : powers(powers_), coef(coef_) {}
+  Monomial::Monomial(const std::vector<uint>& powers_, const RationalNumber& coef_) : powers(powers_), coef(coef_) {}
 
   bool Monomial::operator<(const Monomial& m2) {
     uint deg1 = 0;

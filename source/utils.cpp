@@ -6,8 +6,8 @@ namespace firefly {
    *  zahl und p
    */
   std::pair<mpz_class, mpz_class> run_chinese_remainder(
-    const std::pair<mpz_class, mpz_class> &p1,
-    const std::pair<mpz_class, mpz_class> &p2) {
+    const std::pair<mpz_class, mpz_class>& p1,
+    const std::pair<mpz_class, mpz_class>& p2) {
     mpz_class a, n, m1, m2, tmp_c;
     mpz_t tmp;
     n = p1.second * p2.second;
@@ -26,7 +26,7 @@ namespace firefly {
     return std::pair<mpz_class, mpz_class> (a, n);
   }
 
-  RationalNumber get_rational_coef(const mpz_class &a, const mpz_class &p) {
+  RationalNumber get_rational_coef(const mpz_class& a, const mpz_class& p) {
     mpz_class t = 0;
     mpz_class newt = 1;
     mpz_class tmpt;

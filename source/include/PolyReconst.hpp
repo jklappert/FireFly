@@ -27,7 +27,7 @@ namespace firefly {
      *    @throw runtimeerror if the prime numbers are not sufficient to reconstruct
      *    rational coefficients
      */
-    void feed(const std::vector<FFInt> &yis, FFInt &num);
+    void feed(const std::vector<FFInt>& yis, FFInt& num);
     bool done = false;
     bool new_prime = false;
     uint next_zi = 1;
@@ -43,7 +43,7 @@ namespace firefly {
      *    @param ip Recursion order
      *    @return a(i)
      */
-    PolynomialFF comp_ai(const uint zi, int i, int ip, const PolynomialFF &num, std::vector<PolynomialFF>& ai);
+    PolynomialFF comp_ai(const uint zi, int i, int ip, const PolynomialFF& num, std::vector<PolynomialFF>& ai);
     /**
      *    Convert the reconstructed polynomial to the canonical form
      *    @param zi the integer i to a zi
@@ -73,14 +73,14 @@ namespace firefly {
      *    @param ai a vector of FFInts
      *    @return The vector ai converted to mpz_class objects
      */
-    mpz_map convert_to_mpz(const PolynomialFF &poly) const;
+    mpz_map convert_to_mpz(const PolynomialFF& poly) const;
     /**
      *    Convert a vector of RationalNumber objects to FFInts
      *    @param ri a vector of RationalNumber objects
      *    @param prime a prime defining the current finite field
      *    @return the vector ri converted to FFInt objects
      */
-    ff_map convert_to_ffint(const rn_map &ri) const;
+    ff_map convert_to_ffint(const rn_map& ri) const;
     uint n; /**< The number of parameters */
     bool use_chinese_remainder = false;
     bool check = false;
@@ -89,7 +89,7 @@ namespace firefly {
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */
     std::unordered_map<uint, std::vector<FFInt>> yis {};
-    std::unordered_map<uint, std::vector<PolynomialFF>> ais{};
-    std::unordered_map<uint, int> max_deg{};
+    std::unordered_map<uint, std::vector<PolynomialFF>> ais {};
+    std::unordered_map<uint, int> max_deg {};
   };
 }

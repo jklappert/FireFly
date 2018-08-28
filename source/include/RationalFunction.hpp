@@ -18,5 +18,5 @@ namespace firefly {
     Polynomial denominator; /**< The coefficients of the denominator */
   };
 
-  std::ostream &operator<< (std::ostream &out, const RationalFunction &rf);
+  std::ostream& operator<< (std::ostream& out, const RationalFunction& rf);
 }

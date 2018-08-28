@@ -3,7 +3,7 @@
 namespace firefly {
 
   // the 100 largest 63-bit primes
-  const std::vector<uint64_t> &primes() {
+  const std::vector<uint64_t>& primes() {
     const static std::vector<uint64_t> primevec = {
       9223372036854775783uLL, 9223372036854775643uLL, 9223372036854775549uLL,
       9223372036854775507uLL, 9223372036854775433uLL, 9223372036854775421uLL,

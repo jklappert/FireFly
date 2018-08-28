@@ -5,7 +5,7 @@
 namespace firefly {
   class UintHasher {
   public:
-    std::size_t operator()(std::vector<uint> const &vec) const {
+    std::size_t operator()(std::vector<uint> const& vec) const {
       std::size_t seed = vec.size();
 
       for (auto & i : vec) {

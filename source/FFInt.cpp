@@ -9,9 +9,8 @@ namespace firefly {
 
   FFInt::FFInt(const FFInt& ffint) : n(ffint.n) {}
 
-//copied from Kira
   FFInt::FFInt(const std::string& str, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
-    for (const auto& var : replacements) {
+    for (const auto & var : replacements) {
       if (var.first == str) {
         n = var.second;
         return;
@@ -38,7 +37,7 @@ namespace firefly {
 
   FFInt::FFInt() {}
 
-  FFInt &FFInt::operator+=(const FFInt &ffint) {
+  FFInt& FFInt::operator+=(const FFInt& ffint) {
     n += ffint.n;
 
     if (n >= p) n -= p;
@@ -46,7 +45,7 @@ namespace firefly {
     return *this;
   }
 
-  FFInt &FFInt::operator-=(const FFInt &ffint) {
+  FFInt& FFInt::operator-=(const FFInt& ffint) {
     if (ffint.n > n) n += p;
 
     n -= ffint.n;
@@ -63,7 +62,7 @@ namespace firefly {
     return *this;
   }
 
-  FFInt FFInt::pow(const FFInt &ffint) const {
+  FFInt FFInt::pow(const FFInt& ffint) const {
     FFInt result;
     std::uint64_t exp;
     std::uint64_t base;
@@ -91,7 +90,7 @@ namespace firefly {
     return result;
   }
 
-  FFInt FFInt::operator+(const FFInt &ffint) {
+  FFInt FFInt::operator+(const FFInt& ffint) {
     auto sum = ffint.n + n;
 
     if (sum >= p) sum -= p;
@@ -99,7 +98,7 @@ namespace firefly {
     return FFInt(sum);
   }
 
-  FFInt FFInt::operator-(const FFInt &ffint) {
+  FFInt FFInt::operator-(const FFInt& ffint) {
     auto diff = n;
 
     if (ffint.n > diff) diff += p;
@@ -166,8 +165,7 @@ namespace firefly {
     return t < 0 ? t + p : t;
   }
 
-  //copied from Kira
-    uint64_t FFInt::parse_longint(const std::string& str) {
+  uint64_t FFInt::parse_longint(const std::string& str) {
     // Parse a long integer, passed as a string, take the modulus wrt. prime
     // and return it. The string is split into chunks of at most 18 digits
     // which are then put together via modular arithmetic.
@@ -193,6 +191,7 @@ namespace firefly {
       // result=0 in the first pass or when the string is zero padded
       // on the left so that the first (few) chunks give zero.
       if (result) result = mod_mul(result, 1000000000000000000uLL);
+
       result += intchunk;
       result %= p;
     }
@@ -201,7 +200,7 @@ namespace firefly {
   }
 
   FFInt operator*(const FFInt& a, const FFInt& b) {
-    return a*b;
+    return a * b;
   }
 
   FFInt pow(const FFInt& ffint, const FFInt& power) {
