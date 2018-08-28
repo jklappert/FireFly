@@ -155,11 +155,11 @@ namespace firefly {
     if (ip == 0) {
       return ai[i];
     } else {
-      return ai[i - ip] + (FFInt(0) - ti[i - ip] + y) / comp_fyi(i, ip - 1, y);
+      return ai[i - ip] + (-ti[i - ip] + y) / comp_fyi(i, ip - 1, y);
     }
   }
 
-  std::pair<PolynomialFF, PolynomialFF> RatReconst::construct_canonical() const {
+  std::pair<PolynomialFF, PolynomialFF> RatReconst::construct_canonical() {
     if (ai.size() == 1) {
       ff_map numerator_ff;
       std::vector<uint> zero_deg = {0};
@@ -169,17 +169,17 @@ namespace firefly {
       return std::make_pair(PolynomialFF(1, numerator_ff), PolynomialFF(1, denominator_ff));
     } else {
       std::pair<PolynomialFF, PolynomialFF> r = iterate_canonical(1);
-      FFInt mti = FFInt(0) - ti[0];
+      FFInt mti = -ti[0];
       std::pair<PolynomialFF, PolynomialFF> ratFun(r.first * ai[0] + r.second * mti + r.second.mul(1),
                                                    r.first);
       return ratFun;
     }
   }
 
-  std::pair<PolynomialFF, PolynomialFF> RatReconst::iterate_canonical(uint i) const {
+  std::pair<PolynomialFF, PolynomialFF> RatReconst::iterate_canonical(uint i) {
     if (i < ai.size() - 1) {
       std::pair<PolynomialFF, PolynomialFF> fnp1 = iterate_canonical(i + 1);
-      FFInt mti = FFInt(0) - ti[i];
+      FFInt mti = -ti[i];
       return std::pair<PolynomialFF, PolynomialFF> (fnp1.first * ai[i] + fnp1.second.mul(1) + fnp1.second * mti,
                                                     fnp1.first);
     } else {

@@ -47,7 +47,7 @@ namespace firefly {
      *    @param prime a prime number defining the current finite field
      *    @return the rational function in its canonical form
      */
-    std::pair<PolynomialFF, PolynomialFF>  construct_canonical() const;
+    std::pair<PolynomialFF, PolynomialFF>  construct_canonical();
     /**
      *    Iterates Thiele's interpolation formula to get the canonical form
      *    of the rational function
@@ -56,7 +56,7 @@ namespace firefly {
      *    @param prime a prime number defining the current finite field
      *    @return the recursivly iterated rational function in its canonical form
      */
-    std::pair<PolynomialFF, PolynomialFF> iterate_canonical(uint i) const;
+    std::pair<PolynomialFF, PolynomialFF> iterate_canonical(uint i);
     /**
      *    Calculates f(y_i) using  Thiele's interpolation formula
      *    @param ai a vector of coefficients ai

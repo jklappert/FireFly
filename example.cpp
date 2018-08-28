@@ -7,8 +7,8 @@
 int main() {
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
-  firefly::RatReconst rec_rat(1);
-  //firefly::PolyReconst rec_pol(3);
+  //firefly::RatReconst rec(1);
+  firefly::PolyReconst rec(1);
 
   try {
     int i = 1;
@@ -18,8 +18,8 @@ int main() {
     //yis.emplace_back(firefly::FFInt(std::rand() % prime));
     //yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
     //yis.emplace_back(firefly::FFInt(std::rand() % prime, prime));
-    while (!rec_rat.done) {
-      if(rec_rat.new_prime) {
+    while (!rec.done) {
+      if(rec.new_prime) {
         prime = firefly::primes()[i];
         firefly::FFInt::p = prime;
 
@@ -40,11 +40,11 @@ int main() {
       firefly::FFInt a4(100);
       firefly::FFInt a5(2);
       firefly::FFInt a6(7);
-      firefly::FFInt num = (a6-a4/a6*yis[0].pow(a4))/(a1 + a1*yis[0]);//+ a1*yis[2] + a3*yis[0]*yis[1].pow(a6));
-      rec_rat.feed(yis[0], yis, num);
+      firefly::FFInt num = (a6-a4/a6*yis[0].pow(a4));//(a1 + a1*yis[0]);//+ a1*yis[2] + a3*yis[0]*yis[1].pow(a6));
+      rec.feed(yis, num);
     }
 
-    std::cout << rec_rat.get_result();
+    std::cout << rec.get_result();
     //auto rat_fun = rec_rat.reconst();
     //auto pol_fun = rec_pol.reconst();
     //std::cout << rat_fun;

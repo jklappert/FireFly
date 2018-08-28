@@ -191,10 +191,10 @@ namespace firefly {
 
     if (i < ai.size() - 1) {
       PolynomialFF poly = ai[i] + iterate_canonical(zi, i + 1, ai);
-      return poly.mul(zi) + poly * (FFInt(0) - yi[i - 1]);
+      return poly.mul(zi) + poly * (-yi[i - 1]);
     }
 
-    return ai[i] * (FFInt(0) - yi[i - 1]) + ai[i].mul(zi);
+    return ai[i] * (-yi[i - 1]) + ai[i].mul(zi);
   }
 
   bool PolyReconst::test_guess(const FFInt& num) {
