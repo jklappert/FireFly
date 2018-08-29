@@ -6,8 +6,6 @@ namespace firefly {
     for (const auto & el : coef) {
       coefs.emplace_back(Monomial(el.first, el.second));
     }
-
-    std::sort(coefs.begin(), coefs.end());
   }
 
   Polynomial::Polynomial() {}
@@ -47,6 +45,35 @@ namespace firefly {
 
     out << "\n";
     return out;
+  }
+
+  Polynomial Polynomial::homogenize(uint degree) {
+    for(auto & mon : coefs){
+      uint old_degree = 0;
+      for(auto & power : mon.powers) old_degree += power;
+      mon.powers.insert(mon.powers.begin(), degree - old_degree);
+    }
+    return *this;
+  }
+
+  //todo can be optimized using an unordered_map
+  Polynomial& Polynomial::operator+=(const Polynomial& a) {
+    for(auto & coef_a : a.coefs){
+      int pos = -1;
+      for(uint i = 0; i < (uint) coefs.size(); i++){
+        if(coef_a.powers == coefs[i].powers) pos = i;
+      }
+      if(pos == -1) {
+        coefs.emplace_back(coef_a);
+      } else{
+        coefs[pos].coef += coef_a.coef;
+      }
+    }
+    return *this;
+  }
+
+  void Polynomial::sort() {
+    std::sort(coefs.begin(), coefs.end());
   }
 
 }

@@ -12,7 +12,9 @@ namespace firefly {
     combined_prime = FFInt::p;
   }
 
-  void PolyReconst::feed(const std::vector<FFInt>& new_yis, FFInt& num) {
+  PolyReconst::PolyReconst() {}
+
+  void PolyReconst::feed(const std::vector<FFInt>& new_yis, const FFInt& num) {
     if (!done) {
       // if no yi's/ai's are currently stored, initialize everything
       if (ais.empty() && !use_chinese_remainder) {
@@ -168,7 +170,9 @@ namespace firefly {
   }
 
   Polynomial PolyReconst::get_result() {
-    return Polynomial(gi);
+    Polynomial result(gi);
+    result.sort();
+    return result;
   }
 
   PolynomialFF PolyReconst::comp_ai(const uint zi, int i, int ip,

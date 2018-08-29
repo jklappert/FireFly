@@ -11,17 +11,17 @@ namespace firefly {
     combined_prime = FFInt::p;
   }
 
-  void RatReconst::feed(const FFInt& new_ti, const std::vector<FFInt>& yis, const FFInt& num) {
+  void RatReconst::feed(FFInt& new_ti, std::vector<FFInt>& yis, const FFInt& num) {
     if (!done) {
       // first check if we are done. If not start the reconstruction again using
       // the chinese remainder theorem in combining the previous results
       if (new_prime) {
-        ti.clear();
-        ai.clear();
-        ti.emplace_back(new_ti);
+        if (n == 1) {
+          ti.clear();
+          ai.clear();
+          ti.emplace_back(new_ti);
 
-        if (rec_rat_coef()) {
-          if (n == 1) {
+          if (rec_rat_coef()) {
             done = test_guess(num);
 
             if (done) {
@@ -30,20 +30,21 @@ namespace firefly {
               return;
             }
           }
+
+          g_ni.clear();
+          g_di.clear();
+
+          if (!use_chinese_remainder) use_chinese_remainder = true;
+
+          ti.pop_back();
         }
-
-        g_ni.clear();
-        g_di.clear();
-
-        if (!use_chinese_remainder) use_chinese_remainder = true;
-
         new_prime = false;
-        ti.pop_back();
       }
 
       // basic reconstruction algorithm, check if reconstructed function is equal
       // to numeric input and calculate coefficients a_i, check chinese chinese remainder
       // theorem
+      zi = 1;
       ti.emplace_back(new_ti);
       const uint i = ti.size() - 1;
 
@@ -68,36 +69,123 @@ namespace firefly {
         ti.pop_back();
         ai.pop_back();
 
-        std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(construct_canonical());
+        if (n == 1) {
+          std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(construct_canonical());
 
-        if (!use_chinese_remainder) {
-          combined_ni = tmp.first;
-          combined_di = tmp.second;
+          if (!use_chinese_remainder) {
+            combined_ni = tmp.first;
+            combined_di = tmp.second;
+          } else {
+            std::pair<mpz_class, mpz_class> p1;
+            std::pair<mpz_class, mpz_class> p2;
+            std::pair<mpz_class, mpz_class> p3;
+
+            //numerator
+            for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
+              p1 = std::make_pair(it->second, combined_prime);
+              p2 = std::make_pair(tmp.first[it->first], FFInt::p);
+              p3 = run_chinese_remainder(p1, p2);
+              combined_ni[it->first] = p3.first;
+            }
+
+            // denominator
+            for (auto it = combined_di.begin(); it != combined_di.end(); ++it) {
+              p1 = std::make_pair(it->second, combined_prime);
+              p2 = std::make_pair(tmp.second[it->first], FFInt::p);
+              p3 = run_chinese_remainder(p1, p2);
+              combined_di[it->first] = p3.first;
+            }
+
+            combined_prime = p3.second;
+          }
+
+          new_prime = true;
         } else {
-          std::pair<mpz_class, mpz_class> p1;
-          std::pair<mpz_class, mpz_class> p2;
-          std::pair<mpz_class, mpz_class> p3;
+          zi = curr_zi;
+          curr_zi = 0;
+          new_prime = true;
+          done = true;
 
-          //numerator
-          for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
-            p1 = std::make_pair(it->second, combined_prime);
-            p2 = std::make_pair(tmp.first[it->first], FFInt::p);
-            p3 = run_chinese_remainder(p1, p2);
-            combined_ni[it->first] = p3.first;
+          std::pair<PolynomialFF, PolynomialFF> canonical = construct_canonical();
+          PolynomialFF denominator = canonical.second;
+          FFInt equializer = FFInt(1) / canonical.second.coef[denominator.min_deg()];
+
+          canonical.first = canonical.first * equializer;
+          canonical.second = canonical.second * equializer;
+          //std::cout << "num " << canonical.first << "den " << canonical.second;
+          // check whether there is already a map for numerator and denominator
+          if (coef_n.empty()) {
+            for (const auto coef : canonical.first.coef) {
+              PolyReconst rec(n - 1);
+              rec.feed(yis, coef.second);
+              coef_n.insert(std::make_pair(coef.first[0], std::move(rec)));
+
+              if (curr_zi == 0) curr_zi = rec.next_zi + 1;
+
+              curr_zi = std::min(rec.next_zi + 1, curr_zi);
+
+              if (!rec.new_prime) new_prime = false;
+
+              if (!rec.done) done = false;
+            }
+
+            for (const auto coef : canonical.second.coef) {
+              PolyReconst rec(n - 1);
+              rec.feed(yis, coef.second);
+              coef_d.insert(std::make_pair(coef.first[0], std::move(rec)));
+
+              if (curr_zi == 0) curr_zi = rec.next_zi + 1;
+
+              curr_zi = std::min(rec.next_zi + 1, curr_zi);
+
+              if (!rec.new_prime) new_prime = false;
+
+              if (!rec.done) done = false;
+            }
+          } else {
+            for (const auto coef : canonical.first.coef) {
+              PolyReconst& rec = coef_n[coef.first[0]];
+
+              if (!rec.done) {
+                if (curr_zi == 0) curr_zi = rec.next_zi + 1;
+
+                if (rec.new_prime == poly_new_prime && zi == rec.next_zi + 1) {
+                  rec.feed(yis, coef.second);
+                }
+
+                curr_zi = std::min(rec.next_zi + 1, curr_zi);
+                done = false;
+                if (!rec.new_prime) new_prime = false;
+
+              }
+
+            }
+
+            for (const auto coef : canonical.second.coef) {
+              PolyReconst& rec = coef_d[coef.first[0]];
+
+              if (!rec.done) {
+                if (curr_zi == 0) curr_zi = rec.next_zi + 1;
+
+                if (rec.new_prime == poly_new_prime && zi == rec.next_zi + 1) {
+                  rec.feed(yis, coef.second);
+                }
+
+                curr_zi = std::min(rec.next_zi + 1, curr_zi);
+                done = false;
+                if (!rec.new_prime) new_prime = false;
+              }
+
+            }
           }
 
-          // denominator
-          for (auto it = combined_di.begin(); it != combined_di.end(); ++it) {
-            p1 = std::make_pair(it->second, combined_prime);
-            p2 = std::make_pair(tmp.second[it->first], FFInt::p);
-            p3 = run_chinese_remainder(p1, p2);
-            combined_di[it->first] = p3.first;
-          }
+          zi = curr_zi;
 
-          combined_prime = p3.second;
+          poly_new_prime = new_prime;
+          ai.clear();
+          ti.clear();
         }
 
-        new_prime = true;
         return;
         // }
       }
@@ -105,8 +193,28 @@ namespace firefly {
   }
 
   RationalFunction RatReconst::get_result() {
-    result = RationalFunction(Polynomial(g_ni), Polynomial(g_di));
-    RationalNumber first_coef = result.denominator.coefs[0].coef;
+    Polynomial numerator;
+    Polynomial denominator;
+
+    if (n == 1) {
+      numerator = Polynomial(g_ni);
+      denominator = Polynomial(g_di);
+
+    } else {
+      for (auto & el : coef_n) {
+        numerator += el.second.get_result().homogenize(el.first);
+      }
+
+      for (auto & el : coef_d) {
+        denominator += el.second.get_result().homogenize(el.first);
+      }
+    }
+
+    numerator.sort();
+    denominator.sort();
+    result = RationalFunction(numerator, denominator);
+
+    RationalNumber first_coef = denominator.coefs[0].coef;
 
     if (first_coef.numerator != 1 || first_coef.denominator != 1) normalize();
 
@@ -247,4 +355,5 @@ namespace firefly {
   }
 
 }
+
 

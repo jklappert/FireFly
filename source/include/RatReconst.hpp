@@ -23,14 +23,14 @@ namespace firefly {
     /**
      *
      */
-    void feed(const FFInt& new_ti, const std::vector<FFInt>& yis, const FFInt& num);
+    void feed(FFInt& new_ti, std::vector<FFInt>& yis, const FFInt& num);
     /**
      *
      */
     RationalFunction get_result();
     bool done = false;
     bool new_prime = false;
-    int zi = -1;
+    uint zi = 1;
   private:
     FFInt comp_ai(int i, int ip, const FFInt& num);
     /**
@@ -93,6 +93,8 @@ namespace firefly {
     int n; /**< The number of parameters */
     bool check = false;
     bool use_chinese_remainder = false;
+    bool poly_new_prime = false;
+    uint curr_zi = 0;
     std::vector<FFInt> ai {};
     std::unordered_map<uint, PolyReconst> coef_n {};
     std::unordered_map<uint, PolyReconst> coef_d {};

@@ -147,4 +147,36 @@ namespace firefly {
     return false;
   }
 
+  std::vector<uint> PolynomialFF::max_deg() {
+    if (max_degree.empty()) {
+      int tmp_max;
+      int tmp_min;
+      for (const auto c : coef) {
+        int tmp_deg = 0;
+
+        for (const auto i : c.first) {
+          tmp_deg = + i;
+        }
+
+        if (max_degree.empty()) {
+          tmp_max = tmp_deg;
+          tmp_min = tmp_deg;
+        }
+
+        tmp_max = std::max(tmp_deg, tmp_max);
+        tmp_min = std::min(tmp_deg, tmp_min);
+
+        if(tmp_max == tmp_deg) max_degree = c.first;
+        if(tmp_min == tmp_deg) min_degree = c.first;
+
+      }
+    }
+
+    return max_degree;
+  }
+
+  std::vector<uint> PolynomialFF::min_deg() {
+    max_deg();
+    return min_degree;
+  }
 }

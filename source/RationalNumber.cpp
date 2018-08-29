@@ -36,6 +36,18 @@ namespace firefly {
     return out;
   }
 
+  RationalNumber& RationalNumber::operator+=(const RationalNumber& a) {
+    if(a.denominator != denominator){
+      numerator += a.numerator*denominator;
+      mpz_class gcd_(gcd(numerator, denominator));
+      numerator = numerator / gcd_;
+      denominator = denominator / gcd_;
+    } else {
+      numerator += a.numerator;
+    }
+    return *this;
+  }
+
 }
 
 

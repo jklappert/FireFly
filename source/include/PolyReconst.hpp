@@ -22,12 +22,16 @@ namespace firefly {
      */
     PolyReconst(uint n_);
     /**
+     *    Default constructor. Should not be used explicitly.
+     */
+    PolyReconst();
+    /**
      *    Calls the reconstruction algorithm
      *    @return the reconstructed Polynomial
      *    @throw runtimeerror if the prime numbers are not sufficient to reconstruct
      *    rational coefficients
      */
-    void feed(const std::vector<FFInt>& yis, FFInt& num);
+    void feed(const std::vector<FFInt>& yis, const FFInt& num);
     bool done = false;
     bool new_prime = false;
     uint next_zi = 1;

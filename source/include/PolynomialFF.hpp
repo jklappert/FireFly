@@ -23,7 +23,11 @@ namespace firefly {
     ff_map coef;
     bool zero();
     PolynomialFF mul(const uint zi);
-    FFInt get_nz_coef();
+    std::vector<uint> min_deg();
+    std::vector<uint> max_deg();
+  private:
+    std::vector<uint> min_degree {};
+    std::vector<uint> max_degree {};
   };
 
   std::ostream& operator<<(std::ostream& out, const PolynomialFF& a);
