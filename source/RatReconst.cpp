@@ -6,7 +6,7 @@
 
 namespace firefly {
 
-  RatReconst::RatReconst(int n_) : n(n_) {
+  RatReconst::RatReconst(uint n_) : n(n_) {
     ti.reserve(5000);
     ai.reserve(5000);
     combined_prime = FFInt::p;
@@ -454,5 +454,3 @@ namespace firefly {
     std::cout << diff.count() << "s\n";
   }
 }
-
-

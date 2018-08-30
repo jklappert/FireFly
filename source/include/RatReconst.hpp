@@ -19,7 +19,7 @@ namespace firefly {
      *    A constructor
      *    @param n_ the number of parameters
      */
-    RatReconst(int n_);
+    RatReconst(uint n_);
     /**
      *
      */
@@ -91,11 +91,11 @@ namespace firefly {
      */
     ff_map convert_to_ffint(const rn_map& ri) const;
     /**
-     * 
+     *
      */
     void remove_shift();
     bool rec_rat_coef();
-    int n; /**< The number of parameters */
+    uint n; /**< The number of parameters */
     bool check = false;
     bool use_chinese_remainder = false;
     bool poly_new_prime = false;
