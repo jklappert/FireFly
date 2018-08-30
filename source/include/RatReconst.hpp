@@ -23,7 +23,7 @@ namespace firefly {
     /**
      *
      */
-    void feed(FFInt& new_ti, std::vector<FFInt>& yis, const FFInt& num);
+    void feed(const FFInt& new_ti, const std::vector<FFInt>& yis, const FFInt& num);
     /**
      *
      */
@@ -99,6 +99,7 @@ namespace firefly {
     bool check = false;
     bool use_chinese_remainder = false;
     bool poly_new_prime = false;
+    bool shifted = false;
     uint curr_zi = 0;
     std::vector<FFInt> ai {};
     std::unordered_map<uint, PolyReconst> coef_n {};

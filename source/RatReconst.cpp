@@ -10,10 +10,10 @@ namespace firefly {
     ti.reserve(5000);
     ai.reserve(5000);
     combined_prime = FFInt::p;
-    shift = std::vector<FFInt> (n - 1);
+    shift = std::vector<FFInt> (n);
   }
 
-  void RatReconst::feed(FFInt& new_ti, std::vector<FFInt>& yis, const FFInt& num) {
+  void RatReconst::feed(const FFInt& new_ti, const std::vector<FFInt>& yis, const FFInt& num) {
     if (!done) {
       // first check if we are done. If not start the reconstruction again using
       // the chinese remainder theorem in combining the previous results
@@ -115,12 +115,11 @@ namespace firefly {
           if (denominator.min_deg()[0] > 0) {
             INFO_MSG("No constant term in denominator! Trying again with new paramter shift...");
 
-            for (int j = 0; j < n - 1; j++) {
+            for (int j = 0; j < n; j++) {
               shift[j] = FFInt(j + 1);
             }
 
-            zi = 1;
-
+            shifted = true;
             poly_new_prime = false;
             done = false;
             ai.clear();
@@ -133,7 +132,6 @@ namespace firefly {
           canonical.first = canonical.first * equializer;
           canonical.second = canonical.second * equializer;
 
-          //std::cout << "num " << canonical.first << "den " << canonical.second;
           // check whether there is already a map for numerator and denominator
           if (coef_n.empty()) {
             for (const auto coef : canonical.first.coef) {
@@ -180,7 +178,6 @@ namespace firefly {
                 if (!rec.new_prime) new_prime = false;
 
               }
-
             }
 
             for (const auto coef : canonical.second.coef) {
@@ -198,7 +195,6 @@ namespace firefly {
 
                 if (!rec.new_prime) new_prime = false;
               }
-
             }
           }
 
@@ -210,7 +206,6 @@ namespace firefly {
         }
 
         return;
-        // }
       }
     }
   }
@@ -237,7 +232,7 @@ namespace firefly {
     denominator.sort();
     result = RationalFunction(numerator, denominator);
 
-    if (n > 1 && shift[0].n > 0) remove_shift();
+    if (shifted) remove_shift();
 
     RationalNumber first_coef = result.denominator.coefs[0].coef;
 
@@ -381,7 +376,7 @@ namespace firefly {
 
   void RatReconst::remove_shift() {
     auto start = std::chrono::system_clock::now();
-    std::vector<RationalNumber> rn_shift(n - 1);
+    std::vector<RationalNumber> rn_shift(n);
     std::vector<uint> zero_deg(4);
     std::vector<Polynomial> polys(2);
     polys[0] = result.numerator;
@@ -389,7 +384,7 @@ namespace firefly {
 
     Polynomial tmp_poly;
 
-    for (int i = 0; i < shift.size(); i++) {
+    for (int i = 0; i < n; i++) {
       rn_shift[i] = RationalNumber(-mpz_class(shift[i].n), 1);
     }
 
@@ -399,40 +394,29 @@ namespace firefly {
         Polynomial pow_poly;
         std::vector<uint> decr_power = powers;
 
-        // check if there is an entry with only z1 dependence and add it to tmp_ply
-        // since it would be not restored otherwise
-        std::vector<uint> zi_powers = powers;
-        zi_powers.erase(zi_powers.begin());
+        for (int j = 0; j < n; j++) {
+          uint deg = powers[j];
 
-        if (std::all_of(zi_powers.begin(), zi_powers.end(), [](uint j) {return j == 0;}) && powers[0] != 0) {
-          tmp_poly += mon;
-        }
-        else {
-          for (int j = 1; j < powers.size(); j++) {
-            uint deg = powers[j];
+          if (deg > 0) {
+            std::vector<uint> i_power(n);
+            i_power[j] = 1;
+            decr_power[j] = 0;
+            rn_map sub_shift;
+            sub_shift.emplace(std::make_pair(i_power, RationalNumber(1, 1)));
+            sub_shift.emplace(std::make_pair(zero_deg, rn_shift[j]));
+            Polynomial tmp_pow_poly(sub_shift);
+            Polynomial mult_tmp_pow_poly = tmp_pow_poly;
 
-            if (deg > 0) {
-              std::vector<uint> i_power(n);
-              i_power[j] = 1;
-              decr_power[j] = 0;
-              rn_map sub_shift;
-              sub_shift.emplace(std::make_pair(i_power, RationalNumber(1, 1)));
-              sub_shift.emplace(std::make_pair(zero_deg, rn_shift[j - 1]));
-              Polynomial tmp_pow_poly(sub_shift);
-              Polynomial mult_tmp_pow_poly = tmp_pow_poly;
-
-              for (int k = 1; k < deg; k++) {
-                tmp_pow_poly = tmp_pow_poly * mult_tmp_pow_poly;
-              }
-
-              if (pow_poly.coefs.empty()) pow_poly = tmp_pow_poly;
-              else pow_poly = pow_poly * tmp_pow_poly;
+            for (int k = 1; k < deg; k++) {
+              tmp_pow_poly = tmp_pow_poly * mult_tmp_pow_poly;
             }
+
+            if (pow_poly.coefs.empty()) pow_poly = tmp_pow_poly;
+            else pow_poly = pow_poly * tmp_pow_poly;
           }
-
-          if (!pow_poly.coefs.empty()) tmp_poly += pow_poly * Monomial(decr_power, mon.coef);
-
         }
+
+        if (!pow_poly.coefs.empty()) tmp_poly += pow_poly * Monomial(decr_power, mon.coef);
       }
 
       if (i == 0) {
@@ -449,6 +433,7 @@ namespace firefly {
 
       tmp_poly.clear();
     }
+
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end - start;
     std::cout << diff.count() << "s\n";
