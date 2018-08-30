@@ -48,32 +48,94 @@ namespace firefly {
   }
 
   Polynomial Polynomial::homogenize(uint degree) {
-    for(auto & mon : coefs){
+    for (auto & mon : coefs) {
       uint old_degree = 0;
-      for(auto & power : mon.powers) old_degree += power;
+
+      for (auto & power : mon.powers) old_degree += power;
+
       mon.powers.insert(mon.powers.begin(), degree - old_degree);
     }
+
     return *this;
   }
 
   //todo can be optimized using an unordered_map
-  Polynomial& Polynomial::operator+=(const Polynomial& a) {
-    for(auto & coef_a : a.coefs){
+  Polynomial& Polynomial::operator+=(const Polynomial& b) {
+    for (auto & coef_b : b.coefs) {
       int pos = -1;
-      for(uint i = 0; i < (uint) coefs.size(); i++){
-        if(coef_a.powers == coefs[i].powers) pos = i;
+
+      for (uint i = 0; i < (uint) coefs.size(); i++) {
+        if (coef_b.powers == coefs[i].powers) pos = i;
       }
-      if(pos == -1) {
-        coefs.emplace_back(coef_a);
-      } else{
-        coefs[pos].coef += coef_a.coef;
+
+      if (pos == -1 && coef_b.coef.numerator != 0) {
+        coefs.emplace_back(coef_b);
+      } else {
+        coefs[pos].coef += coef_b.coef;
+
+        if (coefs[pos].coef.numerator == 0) coefs.erase(coefs.begin() + pos);
       }
     }
+
     return *this;
+  }
+
+  Polynomial& Polynomial::operator+=(const Monomial& b) {
+    int pos = -1;
+
+    for (uint i = 0; i < (uint) coefs.size(); i++) {
+      if (b.powers == coefs[i].powers) pos = i;
+    }
+
+    if (pos == -1 && b.coef.numerator != 0) {
+      coefs.emplace_back(b);
+    } else {
+      coefs[pos].coef += b.coef;
+
+      if (coefs[pos].coef.numerator == 0) coefs.erase(coefs.begin() + pos);
+    }
+
+    return *this;
+  }
+
+  Polynomial Polynomial::operator*(const Polynomial& b) {
+    //std::vector<Monomial> new_monomials;
+    rn_map new_monomials;
+    new_monomials.reserve(coefs.size());
+
+    for (auto & coef_a : coefs) {
+      for (auto & coef_b : b.coefs) {
+        Monomial new_coef = coef_a * coef_b;
+
+        if (new_coef.coef.numerator != 0) {
+          if (new_monomials.find(new_coef.powers) == new_monomials.end()) {
+            new_monomials.emplace(std::make_pair(new_coef.powers, new_coef.coef));
+          } else {
+            new_monomials[new_coef.powers] += new_coef.coef;
+          }
+        }
+      }
+    }
+
+    return Polynomial(new_monomials);
+  }
+
+  Polynomial Polynomial::operator*(const Monomial& b) {
+    Polynomial a = *this;
+
+    for (auto & coef_a : a.coefs) {
+      coef_a = coef_a * b;
+    }
+
+    return a;
   }
 
   void Polynomial::sort() {
     std::sort(coefs.begin(), coefs.end());
   }
 
+  void Polynomial::clear() {
+    coefs.clear();
+  }
 }
+

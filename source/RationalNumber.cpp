@@ -19,7 +19,10 @@ namespace firefly {
       den = -den;
     }
 
-    return RationalNumber(num, den);
+    mpz_class gcd_(gcd(num, den));
+    numerator = num / gcd_;
+    denominator = den / gcd_;
+    return *this;
   }
 
   std::ostream& operator<< (std::ostream& out, const RationalNumber& a) {
@@ -36,18 +39,42 @@ namespace firefly {
     return out;
   }
 
-  RationalNumber& RationalNumber::operator+=(const RationalNumber& a) {
-    if(a.denominator != denominator){
-      numerator += a.numerator*denominator;
-      mpz_class gcd_(gcd(numerator, denominator));
-      numerator = numerator / gcd_;
-      denominator = denominator / gcd_;
-    } else {
-      numerator += a.numerator;
+  RationalNumber& RationalNumber::operator+=(const RationalNumber& rn) {
+    if (rn.denominator != denominator) {
+      numerator = numerator * rn.denominator + rn.numerator * denominator;
+      denominator = denominator * rn.denominator;
     }
+    else numerator += rn.numerator;
+
+    mpz_class gcd_(gcd(numerator, denominator));
+    numerator = numerator / gcd_;
+    denominator = denominator / gcd_;
     return *this;
   }
 
+  RationalNumber& RationalNumber::operator*=(const RationalNumber& rn) {
+    mpz_class num(numerator * rn.numerator);
+    mpz_class den(denominator * rn.denominator);
+
+    if (den < 0) {
+      num = -num;
+      den = -den;
+    }
+
+    mpz_class gcd_(gcd(num, den));
+    numerator = num / gcd_;
+    denominator = den / gcd_;
+    return *this;
+  }
+
+  RationalNumber RationalNumber::operator-() {
+    numerator = - numerator;
+    return *this;
+  }
+
+  bool RationalNumber::operator==(const RationalNumber& b) const {
+    return (numerator == b.numerator && denominator == b.denominator);
+  }
 }
 
 

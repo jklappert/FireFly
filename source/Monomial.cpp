@@ -38,4 +38,12 @@ namespace firefly {
     }
   }
 
+  Monomial Monomial::operator*(const Monomial& b) {
+    Monomial a = *this;
+    a.coef = a.coef*b.coef;
+    for(int i = 0; i < powers.size(); i++){
+      a.powers[i] += b.powers[i];
+    }
+    return a;
+  }
 }

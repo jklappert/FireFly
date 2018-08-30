@@ -65,7 +65,7 @@ int main() {
       if(t_yis.size() == 0){
         for(uint j = 2; j <= n; j++){
           yis.emplace_back(firefly::FFInt(std::rand() % prime));
-          t_yis.emplace_back(t*yis[j - 2]);
+          t_yis.emplace_back(t*yis[j - 2] + rec.shift[j - 2]);
         }
       }
 
@@ -74,11 +74,11 @@ int main() {
           if(j <= rec.zi){
             yis[j - 2] = firefly::FFInt(std::rand() % prime);
           }
-          t_yis[j - 2] = t*yis[j - 2];
+          t_yis[j - 2] = t*yis[j - 2] + rec.shift[j - 2];
         }
       } else{
         for(uint j = 2; j <= n; j++){
-          t_yis[j - 2] = t*yis[j - 2];
+          t_yis[j - 2] = t*yis[j - 2] + rec.shift[j - 2];
         }
       }
 
@@ -91,8 +91,8 @@ int main() {
       firefly::FFInt a3(25);
       firefly::FFInt a4(10);
       firefly::FFInt a5(2);
-      firefly::FFInt a6(7);
-      firefly::FFInt num = (a1 -a2*t + t_yis[0]*(t*a2) + t_yis[1]*t_yis[0]*t_yis[2])/(a1 + t_yis[0] + t_yis[1]);
+      firefly::FFInt a6(3);
+      firefly::FFInt num = (a1 - a7/a6*t + t_yis[0]*(t*a2) + t_yis[1]*t_yis[0]*t_yis[2])/(t_yis[0] + t_yis[1].pow(a3)*t*t_yis[2]);//-a2*t + t_yis[0]*(t*a2) + t_yis[1]*t_yis[0]*t_yis[2] + t_yis[0]*a3*t_yis[2] + t_yis[1]*t_yis[1]);
       rec.feed(t, yis, num);
     }
 

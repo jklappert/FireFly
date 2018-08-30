@@ -28,6 +28,7 @@ namespace firefly {
      *
      */
     RationalFunction get_result();
+    std::vector<FFInt> shift {};
     bool done = false;
     bool new_prime = false;
     uint zi = 1;
@@ -89,6 +90,10 @@ namespace firefly {
      *    @return elements of ri converted to FFInts
      */
     ff_map convert_to_ffint(const rn_map& ri) const;
+    /**
+     * 
+     */
+    void remove_shift();
     bool rec_rat_coef();
     int n; /**< The number of parameters */
     bool check = false;

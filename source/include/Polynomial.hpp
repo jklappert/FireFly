@@ -19,9 +19,13 @@ namespace firefly {
     Polynomial();
     std::vector<Monomial> coefs;  /**< The vector which holds all coefficients*/
     Polynomial operator*(const RationalNumber&);
+    Polynomial operator*(const Monomial&);
+    Polynomial operator*(const Polynomial&);
     Polynomial& operator+=(const Polynomial&);
+    Polynomial& operator+=(const Monomial&);
     Polynomial homogenize(uint degree);
     void sort();
+    void clear();
   };
 
   std::ostream& operator<< (std::ostream& out, const Polynomial& pol);
