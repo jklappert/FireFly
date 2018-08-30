@@ -5,7 +5,7 @@
 #include "Logger.hpp"
 
 int main() {
-  uint n = 4;
+  uint n = 2;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec(n);
@@ -94,8 +94,17 @@ int main() {
       firefly::FFInt a4(10);
       firefly::FFInt a5(2);
       firefly::FFInt a6(3);
-      firefly::FFInt num = (a1 - a7/a6*z1 + t_yis[0]*(z1*a2) + t_yis[1]*t_yis[0]*t_yis[2].pow(a3))/(z1 + a2*t_yis[0]*z1 + t_yis[1].pow(a3)*t_yis[2]);//-a2*t + t_yis[0]*(t*a2) + t_yis[1]*t_yis[0]*t_yis[2] + t_yis[0]*a3*t_yis[2] + t_yis[1]*t_yis[1]);
-      rec.feed(t, yis, num);
+      firefly::FFInt num = a1;
+      firefly::FFInt den = firefly::FFInt(0);
+      //firefly::FFInt den = a1;
+      for(uint i = 1; i < 20; i++){
+        num += z1.pow(firefly::FFInt(i));
+        for(uint j = 0; j < n - 1; j++){
+          num += t_yis[j].pow(firefly::FFInt(i));
+          den += t_yis[j].pow(firefly::FFInt(i));
+        }
+      }
+      rec.feed(t, yis, num/den);
     }
 
     std::cout << rec.get_result();

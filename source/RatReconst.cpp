@@ -377,13 +377,13 @@ namespace firefly {
   void RatReconst::remove_shift() {
     auto start = std::chrono::system_clock::now();
     std::vector<RationalNumber> rn_shift(n);
-    std::vector<uint> zero_deg(4);
+    std::vector<uint> zero_deg(n);
     std::vector<Polynomial> polys(2);
     polys[0] = result.numerator;
     polys[1] = result.denominator;
 
     Polynomial tmp_poly;
-
+    std::cout << result.denominator << "\n";
     for (int i = 0; i < n; i++) {
       rn_shift[i] = RationalNumber(-mpz_class(shift[i].n), 1);
     }
