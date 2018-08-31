@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "RationalNumber.hpp"
 #include "Polynomial.hpp"
 
@@ -14,9 +17,11 @@ namespace firefly {
      */
     RationalFunction(Polynomial n, Polynomial d);
     RationalFunction();
+    std::string string(const std::vector<std::string>& symbols) const;
+
     Polynomial numerator;  /**< The coefficients of the numerator */
     Polynomial denominator; /**< The coefficients of the denominator */
   };
 
-  std::ostream& operator<< (std::ostream& out, const RationalFunction& rf);
+  std::ostream& operator<<(std::ostream& out, const RationalFunction& rf);
 }

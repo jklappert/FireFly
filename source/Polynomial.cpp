@@ -18,35 +18,6 @@ namespace firefly {
     return *this;
   }
 
-  std::ostream& operator<<(std::ostream& out, const Polynomial& pol) {
-    bool first = true;
-
-    for (const auto & mono : pol.coefs) {
-      if (first) {
-        out <<  mono.coef << "*x^(";
-
-        for (const auto i : mono.powers) {
-          out << i << ",";
-        }
-
-        out << "\b)";
-        first = false;
-      } else {
-        out << " + " << mono.coef << "*x^(";
-
-        for (const auto i : mono.powers) {
-          out << i << ",";
-        }
-
-        out << "\b)";
-      }
-
-    }
-
-    out << "\n";
-    return out;
-  }
-
   Polynomial Polynomial::homogenize(uint degree) {
     for (auto & mon : coefs) {
       uint old_degree = 0;
@@ -137,5 +108,55 @@ namespace firefly {
   void Polynomial::clear() {
     coefs.clear();
   }
-}
 
+  std::string Polynomial::string(const std::vector<std::string>& symbols) const {
+    std::string str;
+
+    for (const auto& mono : coefs) {
+      str += mono.coef.string() + "*";
+
+      for (uint i = 0; i < mono.powers.size(); i++) {
+        if (mono.powers[i] > 1) {
+          str += symbols[i] + "^" + std::to_string(mono.powers[i]) + "*";
+        } else if (mono.powers[i] == 1) {
+          str += symbols[i] + "*";
+        }
+      }
+
+      str.erase(--str.end());
+      str += "+";
+    }
+
+    str.erase(--str.end());
+    return str;
+  }
+
+  std::ostream& operator<<(std::ostream& out, const Polynomial& pol) {
+    bool first = true;
+
+    for (const auto & mono : pol.coefs) {
+      if (first) {
+        out <<  mono.coef << "*x^(";
+
+        for (const auto i : mono.powers) {
+          out << i << ",";
+        }
+
+        out << "\b)";
+        first = false;
+      } else {
+        out << " + " << mono.coef << "*x^(";
+
+        for (const auto i : mono.powers) {
+          out << i << ",";
+        }
+
+        out << "\b)";
+      }
+
+    }
+
+    out << "\n";
+    return out;
+  }
+}

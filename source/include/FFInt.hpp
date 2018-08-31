@@ -14,7 +14,8 @@ namespace firefly {
      *    @param n_ an integer which is a member of the finite fild
      *    @param p_ a prime number
      */
-    FFInt(const uint64_t n_);
+    template<typename T>
+    FFInt(const T n_);
     /**
      *    A constructor
      *    @param ffint a FFInt object
@@ -64,4 +65,17 @@ namespace firefly {
   FFInt operator*(const FFInt&, const FFInt&);
   FFInt pow(const FFInt& ffint, const FFInt& power);
   std::ostream& operator<<(std::ostream& out, const FFInt& ffint);
+
+  template<typename T>
+  FFInt::FFInt(const T n_) {
+    if (n_ >= 0) {
+      if ((uint64_t) n_ < p) {
+        n = n_;
+      } else {
+        n = n_ % p;
+      }
+    } else if (n_ < 0) {
+      n = p - (-n_) % p;
+    }
+  }
 }

@@ -5,14 +5,16 @@ namespace firefly {
 
   uint64_t FFInt::p;
 
-  FFInt::FFInt(const uint64_t n_) : n(n_) {}
-
   FFInt::FFInt(const FFInt& ffint) : n(ffint.n) {}
 
   FFInt::FFInt(const std::string& str, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
     for (const auto & var : replacements) {
       if (var.first == str) {
-        n = var.second;
+        if (var.second > p) {
+          n = var.second % p;
+        } else {
+          n = var.second;
+        }
         return;
       }
     }

@@ -108,6 +108,11 @@ int main() {
     }
 
     std::cout << rec.get_result();
+
+    if (n == 2) {
+      std::vector<std::string> symbols = {"a","b"};
+      std::cout << rec.get_result().string(symbols) << "\n";
+    }
     //std::cout << "f(x) = " << rec_2.get_result();
   } catch (std::exception& e) {
     ERROR_MSG(e.what());

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <vector>
+#include <string>
 #include <unordered_map>
+#include <vector>
 #include "UintHasher.hpp"
 #include "Monomial.hpp"
 
@@ -17,7 +18,6 @@ namespace firefly {
      */
     Polynomial(const rn_map& coef);
     Polynomial();
-    std::vector<Monomial> coefs;  /**< The vector which holds all coefficients*/
     Polynomial operator*(const RationalNumber&);
     Polynomial operator*(const Monomial&);
     Polynomial operator*(const Polynomial&);
@@ -26,6 +26,9 @@ namespace firefly {
     Polynomial homogenize(uint degree);
     void sort();
     void clear();
+    std::string string(const std::vector<std::string>& symbols) const;
+
+    std::vector<Monomial> coefs;  /**< The vector which holds all coefficients*/
   };
 
   std::ostream& operator<< (std::ostream& out, const Polynomial& pol);

@@ -25,20 +25,6 @@ namespace firefly {
     return *this;
   }
 
-  std::ostream& operator<< (std::ostream& out, const RationalNumber& a) {
-    if (a.denominator == 1) {
-      if (a.numerator < 1) {
-        out << "(" << a.numerator.get_str() << ")";
-      } else {
-        out << a.numerator.get_str();
-      }
-    } else {
-      out << "(" << a.numerator.get_str() << "/" << a.denominator.get_str() << ")";
-    }
-
-    return out;
-  }
-
   RationalNumber& RationalNumber::operator+=(const RationalNumber& rn) {
     if (rn.denominator != denominator) {
       numerator = numerator * rn.denominator + rn.numerator * denominator;
@@ -75,6 +61,39 @@ namespace firefly {
   bool RationalNumber::operator==(const RationalNumber& b) const {
     return (numerator == b.numerator && denominator == b.denominator);
   }
+
+  std::string RationalNumber::string() const {
+    std::string str;
+
+    if (denominator == 1) {
+      if (numerator < 1) {
+        str += "(" + numerator.get_str() + ")";
+      } else {
+        str += numerator.get_str();
+      }
+    } else {
+      if (numerator < 1) {
+        str += "(" + numerator.get_str() + "/" + denominator.get_str() + ")";
+      } else {
+        str += numerator.get_str() + "/" + denominator.get_str();
+      }
+    }
+
+    return str;
+  }
+
+  std::ostream& operator<< (std::ostream& out, const RationalNumber& a) {
+    if (a.denominator == 1) {
+      if (a.numerator < 1) {
+        out << "(" << a.numerator.get_str() << ")";
+      } else {
+        out << a.numerator.get_str();
+      }
+    } else {
+      out << "(" << a.numerator.get_str() << "/" << a.denominator.get_str() << ")";
+    }
+
+    return out;
+  }
+
 }
-
-
