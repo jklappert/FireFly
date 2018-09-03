@@ -21,8 +21,8 @@ namespace firefly {
         for (uint i = 1; i <= n; i++) {
           std::vector<FFInt> yi;
           std::vector<PolynomialFF> ai;
-          yi.reserve(5000);
-          ai.reserve(5000);
+          yi.reserve(300);
+          ai.reserve(300);
           yi.emplace_back(new_yis[i - 1]);
           yis.emplace(std::make_pair(i, std::move(yi)));
           ais.emplace(std::make_pair(i, std::move(ai)));
@@ -55,7 +55,16 @@ namespace firefly {
         if (runtest) {
           done = test_guess(num);
 
-          if (done) return;
+          if (done) {
+            yis.clear();
+            ais.clear();
+            combined_prime = 0;
+            combined_ci.clear();
+            max_deg.clear();
+            new_prime = false;
+            use_chinese_remainder = false;
+            return;
+          }
         }
 
         gi.clear();

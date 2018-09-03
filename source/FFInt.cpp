@@ -37,7 +37,9 @@ namespace firefly {
     }
   }
 
-  FFInt::FFInt() {}
+  FFInt::FFInt() {
+    n = 0;
+  }
 
   FFInt& FFInt::operator+=(const FFInt& ffint) {
     n += ffint.n;

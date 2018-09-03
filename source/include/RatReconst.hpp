@@ -28,7 +28,7 @@ namespace firefly {
      *
      */
     RationalFunction get_result();
-    std::vector<FFInt> shift {};
+    static std::vector<FFInt> shift;
     bool done = false;
     bool new_prime = false;
     uint zi = 1;
@@ -99,7 +99,7 @@ namespace firefly {
     bool check = false;
     bool use_chinese_remainder = false;
     bool poly_new_prime = false;
-    bool shifted = false;
+    static bool shifted;
     uint curr_zi = 0;
     std::vector<FFInt> ai {};
     std::unordered_map<uint, PolyReconst> coef_n {};

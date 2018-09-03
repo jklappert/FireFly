@@ -5,12 +5,25 @@
 #include <chrono>
 
 namespace firefly {
+  std::vector<FFInt> RatReconst::shift {};
+  bool RatReconst::shifted = false;
+
 
   RatReconst::RatReconst(uint n_) : n(n_) {
-    ti.reserve(5000);
-    ai.reserve(5000);
+    ti.reserve(300);
+    ai.reserve(300);
     combined_prime = FFInt::p;
+
+    if (!shifted) {
     shift = std::vector<FFInt> (n);
+      if (n > 0) {
+        for (int j = 0; j < n; j++) {
+          shift[j] = FFInt(std::rand() % 100) + 1;
+        }
+      }
+
+      shifted = true;
+    }
   }
 
   void RatReconst::feed(const FFInt& new_ti, const std::vector<FFInt>& yis, const FFInt& num) {
@@ -27,6 +40,11 @@ namespace firefly {
             done = test_guess(num);
 
             if (done) {
+              coef_n.clear();
+              coef_d.clear();
+              combined_di.clear();
+              combined_ni.clear();
+              combined_prime = 0;
               new_prime = false;
               use_chinese_remainder = false;
               return;
@@ -112,14 +130,14 @@ namespace firefly {
           std::pair<PolynomialFF, PolynomialFF> canonical = construct_canonical();
           PolynomialFF denominator = canonical.second;
 
+          //TODO catch new shift
           if (denominator.min_deg()[0] > 0) {
             INFO_MSG("No constant term in denominator! Trying again with new paramter shift...");
 
-            for (int j = 1; j < n; j++) {
-              shift[j] = FFInt(std::rand() % 99);
+            for (int j = 0; j < n; j++) {
+              shift[j] = FFInt(std::rand() % 100);
             }
 
-            shifted = true;
             poly_new_prime = false;
             done = false;
             ai.clear();
@@ -232,7 +250,7 @@ namespace firefly {
     denominator.sort();
     result = RationalFunction(numerator, denominator);
 
-    if (shifted) remove_shift();
+    if (n > 1) remove_shift();
 
     RationalNumber first_coef = result.denominator.coefs[0].coef;
 
@@ -375,7 +393,6 @@ namespace firefly {
   }
 
   void RatReconst::remove_shift() {
-    auto start = std::chrono::system_clock::now();
     std::vector<RationalNumber> rn_shift(n);
     std::vector<uint> zero_deg(n);
     std::vector<Polynomial> polys(2);
@@ -433,9 +450,5 @@ namespace firefly {
 
       tmp_poly.clear();
     }
-
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> diff = end - start;
-    std::cout << diff.count() << "s\n";
   }
 }
