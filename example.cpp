@@ -94,10 +94,10 @@ int main() {
       firefly::FFInt a4(10);
       firefly::FFInt a5(2);
       firefly::FFInt a6(3);
-      firefly::FFInt num = a1;
+      firefly::FFInt num = a1 + t_yis[0]*z1;
       firefly::FFInt den = firefly::FFInt(0);
       //firefly::FFInt den = a1;
-      for(uint i = 1; i < 20; i++){
+      for(uint i = 1; i < 5; i++){
         num += z1.pow(firefly::FFInt(i));
         for(uint j = 0; j < n - 1; j++){
           num += t_yis[j].pow(firefly::FFInt(i));

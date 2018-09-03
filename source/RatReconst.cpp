@@ -115,8 +115,8 @@ namespace firefly {
           if (denominator.min_deg()[0] > 0) {
             INFO_MSG("No constant term in denominator! Trying again with new paramter shift...");
 
-            for (int j = 0; j < n; j++) {
-              shift[j] = FFInt(j + 1);
+            for (int j = 1; j < n; j++) {
+              shift[j] = FFInt(std::rand() % 99);
             }
 
             shifted = true;
@@ -383,7 +383,7 @@ namespace firefly {
     polys[1] = result.denominator;
 
     Polynomial tmp_poly;
-    std::cout << result.denominator << "\n";
+
     for (int i = 0; i < n; i++) {
       rn_shift[i] = RationalNumber(-mpz_class(shift[i].n), 1);
     }

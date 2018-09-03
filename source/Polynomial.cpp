@@ -41,7 +41,7 @@ namespace firefly {
 
       if (pos == -1 && coef_b.coef.numerator != 0) {
         coefs.emplace_back(coef_b);
-      } else {
+      } else if(pos != -1) {
         coefs[pos].coef += coef_b.coef;
 
         if (coefs[pos].coef.numerator == 0) coefs.erase(coefs.begin() + pos);
@@ -53,14 +53,13 @@ namespace firefly {
 
   Polynomial& Polynomial::operator+=(const Monomial& b) {
     int pos = -1;
-
     for (uint i = 0; i < (uint) coefs.size(); i++) {
       if (b.powers == coefs[i].powers) pos = i;
     }
 
     if (pos == -1 && b.coef.numerator != 0) {
       coefs.emplace_back(b);
-    } else {
+    } else if(pos != -1) {
       coefs[pos].coef += b.coef;
 
       if (coefs[pos].coef.numerator == 0) coefs.erase(coefs.begin() + pos);
@@ -70,7 +69,6 @@ namespace firefly {
   }
 
   Polynomial Polynomial::operator*(const Polynomial& b) {
-    //std::vector<Monomial> new_monomials;
     rn_map new_monomials;
     new_monomials.reserve(coefs.size());
 
