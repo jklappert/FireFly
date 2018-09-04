@@ -19,7 +19,7 @@ namespace firefly {
 
       if (n > 0) {
         for (int j = 0; j < n; j++) {
-          shift[j] = FFInt(std::rand() % 100) + 1;
+          shift[j] = FFInt(std::rand() % 5) + FFInt(1);
         }
       }
 
@@ -166,7 +166,7 @@ namespace firefly {
               INFO_MSG("No constant term in denominator! Trying again with new paramter shift...");
 
               for (int j = 0; j < n; j++) {
-                shift[j] = FFInt(std::rand() % 100);
+                shift[j] = FFInt(std::rand() % 5) + FFInt(1);
               }
 
               poly_new_prime = false;

@@ -111,8 +111,8 @@ int main() {
         firefly::FFInt a4(10);
         firefly::FFInt a5(2);
         firefly::FFInt a6(3);
-        firefly::FFInt num = t_yis[0]*(z1 + a7);
-        firefly::FFInt den = z1 + a3*t_yis[1] + a3*t_yis[2].pow(firefly::FFInt(5));
+        firefly::FFInt num = t_yis[0]*(z1 + a3);
+        firefly::FFInt den = z1 - t_yis[1] + t_yis[2] + a3*t_yis[2].pow(firefly::FFInt(25));
 
         //firefly::FFInt den = a1;
         /*for (uint i = 1; i < 5; i++) {
