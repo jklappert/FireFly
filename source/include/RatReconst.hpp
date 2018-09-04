@@ -94,16 +94,27 @@ namespace firefly {
      *
      */
     void remove_shift();
+    /**
+     * 
+     */
     bool rec_rat_coef();
+    /**
+     * 
+     */
+    std::pair<PolynomialFF, PolynomialFF> solve_gauss();
     uint n; /**< The number of parameters */
     bool check = false;
     bool use_chinese_remainder = false;
     bool poly_new_prime = false;
     static bool shifted;
+    std::vector<std::vector<FFInt>> coef_mat {};
     uint curr_zi = 0;
     std::vector<FFInt> ai {};
     std::unordered_map<uint, PolyReconst> coef_n {};
     std::unordered_map<uint, PolyReconst> coef_d {};
+    int max_deg_num = -1;
+    int max_deg_den = -1;
+    uint num_eqn;
     RationalFunction result;
     mpz_class combined_prime {};  /**< The combination of the used prime numbers with the chinese remained theorem */
     std::vector<FFInt> ti {}; /**< A vector which holds all arguments t_i */

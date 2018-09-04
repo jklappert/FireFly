@@ -15,7 +15,8 @@ namespace firefly {
     combined_prime = FFInt::p;
 
     if (!shifted) {
-    shift = std::vector<FFInt> (n);
+      shift = std::vector<FFInt> (n);
+
       if (n > 0) {
         for (int j = 0; j < n; j++) {
           shift[j] = FFInt(std::rand() % 100) + 1;
@@ -66,15 +67,42 @@ namespace firefly {
       // to numeric input and calculate coefficients a_i, check chinese chinese remainder
       // theorem
       zi = 1;
-      ti.emplace_back(new_ti);
-      const uint i = ti.size() - 1;
 
-      if (i == 0) {
-        ai.emplace_back(num);
+      if (max_deg_num == -1) {
+        ti.emplace_back(new_ti);
+        const uint i = ti.size() - 1;
+
+        if (i == 0) {
+          ai.emplace_back(num);
+        } else {
+          if (num == comp_fyi(i - 1, i - 1, ti.back())) check = true;
+
+          ai.emplace_back(comp_ai(i, i, num));
+        }
       } else {
-        if (num == comp_fyi(i - 1, i - 1, ti.back())) check = true;
+        uint size = coef_mat.size();
 
-        ai.emplace_back(comp_ai(i, i, num));
+        if (size == 0) {
+          coef_mat.reserve(num_eqn);
+        }
+
+        // fill matrix
+        std::vector<FFInt> eq;
+        eq.reserve(num_eqn + 1);
+
+        for (int r = 0; r <= max_deg_num; r++) {
+          eq.emplace_back(new_ti.pow(FFInt(r)));
+        }
+
+        for (int rp = 1; rp <= max_deg_den; rp++) {
+          eq.emplace_back(-new_ti.pow(FFInt(rp)) * num);
+        }
+
+        eq.emplace_back(num);
+
+        coef_mat.emplace_back(std::move(eq));
+
+        if (coef_mat.size() == num_eqn) check = true;
       }
 
       if (check) {
@@ -127,28 +155,36 @@ namespace firefly {
           new_prime = true;
           done = true;
 
-          std::pair<PolynomialFF, PolynomialFF> canonical = construct_canonical();
-          PolynomialFF denominator = canonical.second;
+          std::pair<PolynomialFF, PolynomialFF> canonical;
 
-          //TODO catch new shift
-          if (denominator.min_deg()[0] > 0) {
-            INFO_MSG("No constant term in denominator! Trying again with new paramter shift...");
+          if (max_deg_num == -1) {
+            canonical = construct_canonical();
+            PolynomialFF denominator = canonical.second;
 
-            for (int j = 0; j < n; j++) {
-              shift[j] = FFInt(std::rand() % 100);
+            //TODO catch new shift
+            if (denominator.min_deg()[0] > 0) {
+              INFO_MSG("No constant term in denominator! Trying again with new paramter shift...");
+
+              for (int j = 0; j < n; j++) {
+                shift[j] = FFInt(std::rand() % 100);
+              }
+
+              poly_new_prime = false;
+              done = false;
+              ai.clear();
+              ti.clear();
+              return;
             }
 
-            poly_new_prime = false;
-            done = false;
-            ai.clear();
-            ti.clear();
-            return;
-          }
+            FFInt equializer = FFInt(1) / canonical.second.coef[denominator.min_deg()];
 
-          FFInt equializer = FFInt(1) / canonical.second.coef[denominator.min_deg()];
+            canonical.first = canonical.first * equializer;
+            canonical.second = canonical.second * equializer;
 
-          canonical.first = canonical.first * equializer;
-          canonical.second = canonical.second * equializer;
+            max_deg_num = canonical.first.max_deg()[0];
+            max_deg_den = canonical.second.max_deg()[0];
+            num_eqn = max_deg_den + max_deg_num + 1;
+          } else canonical = solve_gauss();
 
           // check whether there is already a map for numerator and denominator
           if (coef_n.empty()) {
@@ -250,7 +286,7 @@ namespace firefly {
     denominator.sort();
     result = RationalFunction(numerator, denominator);
 
-    if (n > 1) remove_shift();
+    if (n > 1 && shifted) remove_shift();
 
     RationalNumber first_coef = result.denominator.coefs[0].coef;
 
@@ -303,6 +339,75 @@ namespace firefly {
     } else {
       return ai[i - ip] + (-ti[i - ip] + y) / comp_fyi(i, ip - 1, y);
     }
+  }
+
+  std::pair< PolynomialFF, PolynomialFF > RatReconst::solve_gauss() {
+    // Transform the matrix in upper triangular form
+    for (uint i = 0; i < num_eqn; i++) {
+      // search for maximum in this column
+      FFInt max_el = coef_mat[i][i];
+      uint max_row = i;
+
+      for (uint k = i + 1; k < num_eqn; k++) {
+        FFInt tmp = coef_mat[k][i];
+
+        if (tmp.n > max_el.n) {
+          max_el = tmp;
+          max_row = k;
+        }
+      }
+
+      // swap maximum row with current row (column by column)
+      for (uint k = i; k < num_eqn + 1; k++) {
+        FFInt tmp = coef_mat[max_row][k];
+        coef_mat[max_row][k] = coef_mat[i][k];
+        coef_mat[i][k] = tmp;
+      }
+
+      // Make all rows below this one zeroin the current column
+      for (uint k = i + 1; k < num_eqn; k++) {
+        FFInt c = -coef_mat[k][i] / coef_mat[i][i];
+
+        for (uint j = i; j < num_eqn + 1; j++) {
+          if (i == j) coef_mat[k][j] = FFInt(0);
+          else coef_mat[k][j] += c * coef_mat[i][j];
+        }
+      }
+    }
+
+    // Solve equation A * x = b for an upper triangular matrix
+    std::vector<FFInt> results(num_eqn);
+
+    for (int i = num_eqn - 1; i >= 0; i--) {
+      results[i] = coef_mat[i][num_eqn] / coef_mat[i][i];
+
+      for (int k = i - 1; k >= 0; k--) {
+        coef_mat[k][num_eqn] -= coef_mat[k][i] * results[i];
+      }
+    }
+
+    coef_mat.clear();
+    // Bring result in canonical form
+    ff_map numerator;
+    ff_map denominator;
+
+    for(uint i = 0; i <= max_deg_num; i++){
+      if(results[i] != FFInt(0)){
+        std::vector<uint> power = {i};
+        numerator.emplace(std::make_pair(std::move(power), results[i]));
+      }
+    }
+
+    const std::vector<uint> zero_power = {0};
+    denominator.emplace(std::make_pair(std::move(zero_power), FFInt(1)));
+    for(uint i = 1; i <= max_deg_den; i++){
+      if(results[i + max_deg_num] != FFInt(0)){
+        std::vector<uint> power = {i};
+        denominator.emplace(std::make_pair(std::move(power), results[i + max_deg_num]));
+      }
+    }
+
+    return std::make_pair(PolynomialFF(1, numerator), PolynomialFF(1, denominator));
   }
 
   std::pair<PolynomialFF, PolynomialFF> RatReconst::construct_canonical() {
@@ -452,3 +557,4 @@ namespace firefly {
     }
   }
 }
+

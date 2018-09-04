@@ -50,7 +50,6 @@ int main() {
       firefly::FFInt num = (a6 + a3 * yis_2[0] + yis_2[0]*a3*yis_2[2] + yis_2[1]*yis_2[1] + yis_2[3]);
       rec_2.feed(yis_2, num);
     }*/
-    std::cout << "go\n";
     for (int m = 0; m < 1; m++) {
       if(m >= 1) std::cout << map.at(m - 1).get_result() << "\n";
       int i = 1;
@@ -112,8 +111,8 @@ int main() {
         firefly::FFInt a4(10);
         firefly::FFInt a5(2);
         firefly::FFInt a6(3);
-        firefly::FFInt num = t_yis[0]*(z1 + a1);
-        firefly::FFInt den = z1 + t_yis[1] + t_yis[2].pow(a3);
+        firefly::FFInt num = t_yis[0]*(z1 + a7);
+        firefly::FFInt den = z1 + a3*t_yis[1] + a3*t_yis[2].pow(firefly::FFInt(5));
 
         //firefly::FFInt den = a1;
         /*for (uint i = 1; i < 5; i++) {

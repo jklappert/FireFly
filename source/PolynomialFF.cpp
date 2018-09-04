@@ -171,7 +171,6 @@ namespace firefly {
 
       }
     }
-
     return max_degree;
   }
 
