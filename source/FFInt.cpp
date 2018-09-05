@@ -19,6 +19,8 @@ namespace firefly {
       }
     }
 
+    if (str.front() == '-') throw std::runtime_error("Negative number\n");
+
     std::istringstream ss {str};
     auto success = static_cast<bool>(ss >> n);
 

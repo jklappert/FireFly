@@ -17,7 +17,7 @@ namespace firefly {
     if (!shifted) {
       shift = std::vector<FFInt> (n);
 
-      if (n > 0) {
+      if (n > 1) {
         for (int j = 0; j < n; j++) {
           shift[j] = FFInt(std::rand() % 5) + FFInt(1);
         }
@@ -220,17 +220,16 @@ namespace firefly {
               PolyReconst& rec = coef_n[coef.first[0]];
 
               if (!rec.done) {
-                if (curr_zi == 0) curr_zi = rec.next_zi + 1;
-
                 if (rec.new_prime == poly_new_prime && zi == rec.next_zi + 1) {
                   rec.feed(yis, coef.second);
                 }
+
+                if (curr_zi == 0) curr_zi = rec.next_zi + 1;
 
                 curr_zi = std::min(rec.next_zi + 1, curr_zi);
                 done = false;
 
                 if (!rec.new_prime) new_prime = false;
-
               }
             }
 
@@ -238,11 +237,11 @@ namespace firefly {
               PolyReconst& rec = coef_d[coef.first[0]];
 
               if (!rec.done) {
-                if (curr_zi == 0) curr_zi = rec.next_zi + 1;
-
                 if (rec.new_prime == poly_new_prime && zi == rec.next_zi + 1) {
                   rec.feed(yis, coef.second);
                 }
+
+                if (curr_zi == 0) curr_zi = rec.next_zi + 1;
 
                 curr_zi = std::min(rec.next_zi + 1, curr_zi);
                 done = false;
@@ -543,13 +542,21 @@ namespace firefly {
 
       if (i == 0) {
         std::vector<Monomial>& n_coefs = result.numerator.coefs;
-        n_coefs.erase(n_coefs.begin() + 1, n_coefs.end());
+        if (std::all_of(n_coefs.begin()->powers.begin(), n_coefs.begin()->powers.end(), [](int i) { return i == 0; })) {
+          n_coefs.erase(n_coefs.begin() + 1, n_coefs.end());
+        } else {
+          n_coefs.erase(n_coefs.begin(), n_coefs.end());
+        }
         result.numerator += tmp_poly;
       }
 
       if (i == 1) {
         std::vector<Monomial>& d_coefs = result.denominator.coefs;
-        d_coefs.erase(d_coefs.begin() + 1, d_coefs.end());
+        if (std::all_of(d_coefs.begin()->powers.begin(), d_coefs.begin()->powers.end(), [](int i) { return i == 0; })) {
+          d_coefs.erase(d_coefs.begin() + 1, d_coefs.end());
+        } else {
+          d_coefs.erase(d_coefs.begin(), d_coefs.end());
+        }
         result.denominator += tmp_poly;
       }
 
@@ -557,4 +564,3 @@ namespace firefly {
     }
   }
 }
-

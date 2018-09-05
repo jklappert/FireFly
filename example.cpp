@@ -5,7 +5,7 @@
 #include "Logger.hpp"
 
 int main() {
-  uint n = 4;
+  uint n = 3;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec_1(n);
@@ -51,7 +51,12 @@ int main() {
       rec_2.feed(yis_2, num);
     }*/
     for (int m = 0; m < 1; m++) {
-      if(m >= 1) std::cout << map.at(m - 1).get_result() << "\n";
+//      if(m >= 1) std::cout << map.at(m - 1).get_result() << "\n";
+/*      if (m == 0) {
+        firefly::RatReconst::shift[0] = 1;
+      } else if (m == 1) {
+        firefly::RatReconst::shift[0] = 2;
+      }*/
       int i = 1;
       prime = firefly::primes()[0];
       firefly::FFInt::p = prime;
@@ -109,20 +114,19 @@ int main() {
         firefly::FFInt a2(18);
         firefly::FFInt a3(25);
         firefly::FFInt a4(10);
-        firefly::FFInt a5(2);
+        firefly::FFInt a5(1);
         firefly::FFInt a6(3);
-        firefly::FFInt num = t_yis[0]*(z1 + a3);
-        firefly::FFInt den = z1 - t_yis[1] + t_yis[2] + a3*t_yis[2].pow(firefly::FFInt(25));
 
-        //firefly::FFInt den = a1;
-        /*for (uint i = 1; i < 5; i++) {
+        firefly::FFInt num = a1;
+        firefly::FFInt den = a1;
+        for (uint i = 1; i < 5; i++) {
           num += z1.pow(firefly::FFInt(i));
 
           for (uint j = 0; j < n - 1; j++) {
             num += t_yis[j].pow(firefly::FFInt(i));
             den += t_yis[j].pow(firefly::FFInt(i));
           }
-        }*/
+        }
 
         rec.feed(t, yis, num / den);
         kk++;
