@@ -148,7 +148,6 @@ namespace firefly {
 
         if (check && next_zi == curr_zi && curr_zi == n) {
           mpz_map ci_tmp = convert_to_mpz(construct_canonical(n, ais[n]));
-
           if (!use_chinese_remainder) {
             combined_ci = ci_tmp;
           } else {
@@ -170,6 +169,7 @@ namespace firefly {
           }
 
           new_prime = true;
+          prime_number ++;
           return;
         }
 
@@ -179,8 +179,11 @@ namespace firefly {
   }
 
   Polynomial PolyReconst::get_result() {
-    Polynomial result(gi);
-    result.sort();
+    if(result.coefs.empty()){
+      result = Polynomial(gi);
+      result.sort();
+      gi.clear();
+    }
     return result;
   }
 

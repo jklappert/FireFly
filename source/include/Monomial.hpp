@@ -11,6 +11,7 @@ namespace firefly {
     bool operator<(const Monomial&);
     bool operator>(const Monomial&);
     Monomial operator*(const Monomial&);
+    Monomial operator-() const;
     std::vector<uint> powers;
     RationalNumber coef;
   };

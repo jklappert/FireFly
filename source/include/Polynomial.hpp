@@ -5,6 +5,7 @@
 #include <vector>
 #include "UintHasher.hpp"
 #include "Monomial.hpp"
+#include "PolynomialFF.hpp"
 
 namespace firefly {
   typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
@@ -17,10 +18,14 @@ namespace firefly {
      *    @param coefs_ an unordered map of coefficients and degrees
      */
     Polynomial(const rn_map& coef);
+    Polynomial(const Monomial& coef);
     Polynomial();
+    PolynomialFF convert_to_PolynomialFF();
+    Polynomial add_shift(std::vector<FFInt> &shift);
     Polynomial operator*(const RationalNumber&);
     Polynomial operator*(const Monomial&);
     Polynomial operator*(const Polynomial&);
+    Polynomial& operator-=(const Polynomial&);
     Polynomial& operator+=(const Polynomial&);
     Polynomial& operator+=(const Monomial&);
     Polynomial homogenize(uint degree);

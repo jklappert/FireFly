@@ -33,8 +33,8 @@ namespace firefly {
      */
     void feed(const std::vector<FFInt>& yis, const FFInt& num);
     bool done = false;
-    bool new_prime = false;
     uint next_zi = 1;
+    uint prime_number = 0;
     Polynomial get_result();
   private:
     /**
@@ -88,7 +88,9 @@ namespace firefly {
     uint n; /**< The number of parameters */
     bool use_chinese_remainder = false;
     bool check = false;
+    bool new_prime = false;
     uint curr_zi = 1;
+    Polynomial result;
     mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */

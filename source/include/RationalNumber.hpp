@@ -11,9 +11,10 @@ namespace firefly {
     RationalNumber();
     RationalNumber operator*(const RationalNumber&);
     RationalNumber& operator+=(const RationalNumber& rn);
+    RationalNumber& operator-=(const RationalNumber& rn);
     RationalNumber& operator*=(const RationalNumber& rn);
     bool operator==(const RationalNumber&) const;
-    RationalNumber operator-();
+    RationalNumber operator-() const;
     std::string string() const;
 
     mpz_class numerator;

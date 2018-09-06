@@ -25,12 +25,28 @@ namespace firefly {
     return *this;
   }
 
+  RationalNumber& RationalNumber::operator-=(const RationalNumber& rn) {
+    if (rn.denominator != denominator) {
+      numerator = numerator * rn.denominator - rn.numerator * denominator;
+      denominator = denominator * rn.denominator;
+    } else numerator -= rn.numerator;
+
+    if (denominator < 0) {
+      numerator = -numerator;
+      denominator = -denominator;
+    }
+
+    mpz_class gcd_(gcd(numerator, denominator));
+    numerator = numerator / gcd_;
+    denominator = denominator / gcd_;
+    return *this;
+  }
+
   RationalNumber& RationalNumber::operator+=(const RationalNumber& rn) {
     if (rn.denominator != denominator) {
       numerator = numerator * rn.denominator + rn.numerator * denominator;
       denominator = denominator * rn.denominator;
-    }
-    else numerator += rn.numerator;
+    } else numerator += rn.numerator;
 
     mpz_class gcd_(gcd(numerator, denominator));
     numerator = numerator / gcd_;
@@ -53,9 +69,8 @@ namespace firefly {
     return *this;
   }
 
-  RationalNumber RationalNumber::operator-() {
-    numerator = - numerator;
-    return *this;
+  RationalNumber RationalNumber::operator-() const {
+    return RationalNumber(-numerator, denominator);
   }
 
   bool RationalNumber::operator==(const RationalNumber& b) const {

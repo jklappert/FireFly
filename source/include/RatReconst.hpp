@@ -12,6 +12,7 @@
 namespace firefly {
   typedef std::unordered_map<std::vector<uint>, mpz_class, UintHasher> mpz_map;
   typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
+  typedef std::unordered_map<std::vector<uint>, std::unordered_map<std::vector<uint>, FFInt, UintHasher>, UintHasher> ff_map_map;
 
   class RatReconst {
   public:
@@ -23,15 +24,16 @@ namespace firefly {
     /**
      *
      */
-    void feed(const FFInt& new_ti, const std::vector<FFInt>& yis, const FFInt& num);
+    void feed(const FFInt& new_ti, const FFInt& num);
     /**
      *
      */
     RationalFunction get_result();
     static std::vector<FFInt> shift;
     bool done = false;
-    bool new_prime = false;
     uint zi = 1;
+    uint prime_number = 0;
+    std::vector<uint> curr_zi_order {};
   private:
     FFInt comp_ai(int i, int ip, const FFInt& num);
     /**
@@ -89,11 +91,7 @@ namespace firefly {
      *    @param prime the prime number defining the corresponding finite field
      *    @return elements of ri converted to FFInts
      */
-    ff_map convert_to_ffint(const rn_map& ri) const;
-    /**
-     *
-     */
-    void remove_shift();
+    ff_map convert_to_ffint(const rn_map& ri) const;;
     /**
      * 
      */
@@ -105,15 +103,25 @@ namespace firefly {
     uint n; /**< The number of parameters */
     bool check = false;
     bool use_chinese_remainder = false;
-    bool poly_new_prime = false;
+    bool new_prime = false;
+    bool first_run = true;
+    bool first_den_rec = true;
     static bool shifted;
     std::vector<std::vector<FFInt>> coef_mat {};
-    uint curr_zi = 0;
+    uint curr_zi = 2;
     std::vector<FFInt> ai {};
     std::unordered_map<uint, PolyReconst> coef_n {};
     std::unordered_map<uint, PolyReconst> coef_d {};
+    std::vector<int> deg_num {};
+    std::vector<int> deg_den {};
+    std::unordered_map<uint, Polynomial> sub_num {};
+    std::unordered_map<uint, Polynomial> sub_den {};
+    ff_map_map saved_num_num {};
+    ff_map_map saved_num_den {};
     int max_deg_num = -1;
     int max_deg_den = -1;
+    int curr_deg_num = -1;
+    int curr_deg_den = -1;
     uint num_eqn;
     RationalFunction result;
     mpz_class combined_prime {};  /**< The combination of the used prime numbers with the chinese remained theorem */

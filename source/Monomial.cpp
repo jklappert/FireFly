@@ -46,4 +46,8 @@ namespace firefly {
     }
     return a;
   }
+
+  Monomial Monomial::operator-() const {
+    return Monomial(powers, - coef);
+  }
 }

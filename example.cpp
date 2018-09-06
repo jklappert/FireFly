@@ -51,23 +51,18 @@ int main() {
       rec_2.feed(yis_2, num);
     }*/
     for (int m = 0; m < 1; m++) {
-//      if(m >= 1) std::cout << map.at(m - 1).get_result() << "\n";
-/*      if (m == 0) {
-        firefly::RatReconst::shift[0] = 1;
-      } else if (m == 1) {
-        firefly::RatReconst::shift[0] = 2;
-      }*/
-      int i = 1;
-      prime = firefly::primes()[0];
-      firefly::FFInt::p = prime;
       std::vector<firefly::FFInt> t_yis;
       std::vector<firefly::FFInt> yis;
       yis.reserve(n - 1);
       t_yis.reserve(n - 1);
       firefly::FFInt t;
       firefly::RatReconst& rec = map.at(m);
-      std::cout << "Reconstruction: " << m << " shift " << firefly::RatReconst::shift[3] << " " << firefly::RatReconst::shift[2] << "\n";
+      prime = firefly::primes()[rec.prime_number];
+      firefly::FFInt::p = prime;
+      std::cout << "Reconstruction: " << m << " shift " << rec.shift[0] << " " << rec.shift[1] << "\n";
       int kk = 0;
+      uint primes_used = 0;
+
       while (!rec.done) {
         if (yis.size() > 0) {
           for (uint j = 2; j <= n; j++) {
@@ -75,27 +70,23 @@ int main() {
           }
         }
 
-        if (rec.new_prime) {
-          prime = firefly::primes()[i];
-          firefly::FFInt::p = prime;
-          i++;
-        }
+        primes_used = std::max(primes_used, rec.prime_number);
+        prime = firefly::primes()[rec.prime_number];
+        firefly::FFInt::p = prime;
 
-        t = firefly::FFInt(std::rand() % prime);
+        t = firefly::FFInt(kk + 2);
 
         if (t_yis.size() == 0) {
           for (uint j = 2; j <= n; j++) {
-            yis.emplace_back(firefly::FFInt(std::rand() % prime));
+            yis = std::vector<firefly::FFInt> (rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
             t_yis.emplace_back(t * yis[j - 2] + firefly::RatReconst::shift[j - 1]);
           }
         }
 
         if (rec.zi >= 2) {
-          for (uint j = 2; j <= n; j++) {
-            if (j <= rec.zi) {
-              yis[j - 2] = firefly::FFInt(std::rand() % prime);
-            }
+          yis = std::vector<firefly::FFInt> (rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
 
+          for (uint j = 2; j <= n; j++) {
             t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
           }
         } else {
@@ -117,32 +108,16 @@ int main() {
         firefly::FFInt a5(1);
         firefly::FFInt a6(3);
 
-        firefly::FFInt num = a1;
-        firefly::FFInt den = a1;
-        for (uint i = 1; i < 5; i++) {
-          num += z1.pow(firefly::FFInt(i));
+        firefly::FFInt num = a1 + a2*t_yis[1] + a3*t_yis[0].pow(a4);
+        firefly::FFInt den = a1 + a4*z1.pow(a2)*t_yis[0].pow(a2);
 
-          for (uint j = 0; j < n - 1; j++) {
-            num += t_yis[j].pow(firefly::FFInt(i));
-            den += t_yis[j].pow(firefly::FFInt(i));
-          }
-        }
-
-        rec.feed(t, yis, num / den);
         kk++;
+        rec.feed(t, num / den);
       }
-      std::cout << "times iterated " << kk << " new primes " << i << "\n";
-      std::cout << rec.get_result() << "\n";
+
+      std::cout << "times iterated: " << kk << ", primes used: " << primes_used + 1 << "\n";
+      std::cout << rec.get_result();
     }
-
-    /*std::cout << map.at(0).get_result();
-
-    if (n == 2) {
-      std::vector<std::string> symbols = {"z1", "z2"};
-      std::cout << rec_1.get_result().string(symbols) << "\n";
-    }
-
-    //std::cout << "f(x) = " << rec_2.get_result();*/
   } catch (std::exception& e) {
     ERROR_MSG(e.what());
   }
