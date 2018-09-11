@@ -15,9 +15,9 @@ namespace firefly {
     combined_prime = FFInt::p;
 
     if (!shifted) {
-//       if (n > 1)
-//         shift = std::vector<FFInt> (n, FFInt(std::rand() % 1000000) + FFInt(1));
-//       else
+      //if (n > 1)
+        //shift = std::vector<FFInt> (n, FFInt(std::rand() % 1000000) + FFInt(1));
+      //else
         shift = std::vector<FFInt> (n);
 
       shifted = true;
@@ -242,7 +242,8 @@ namespace firefly {
           canonical = solve_gauss();
 
           if (n > 1 && shift[0].n != 0) {
-               std::cout << canonical.first << "\n";
+            std::cout << canonical.first << "\n";
+
             if (shift[0].n != 0) {
 
               if (curr_deg_num > canonical.first.max_deg()[0]) curr_deg_num = canonical.first.max_deg()[0];
@@ -788,15 +789,19 @@ namespace firefly {
         denominator.emplace(std::make_pair(std::move(power), results[i + non_solved_num_size]));
       } else {
         uint deg = non_solved_coef_den_back[i];
-        std::vector<uint> pow(n, 0);
-        pow[0] = deg;
-        solved_coefs_den[deg] += Monomial(pow, RationalNumber(0, 1));
-        non_solved_coef_den.erase(std::remove(non_solved_coef_den.begin(),
-                                              non_solved_coef_den.end(), deg),
-                                  non_solved_coef_den.end());
-        solved_coefs ++;
+
+        if (deg != min_deg_den) {
+          std::vector<uint> pow(n, 0);
+          pow[0] = deg;
+          solved_coefs_den[deg] += Monomial(pow, RationalNumber(0, 1));
+          non_solved_coef_den.erase(std::remove(non_solved_coef_den.begin(),
+                                                non_solved_coef_den.end(), deg),
+                                    non_solved_coef_den.end());
+          solved_coefs ++;
+        }
       }
     }
+
     return std::make_pair(PolynomialFF(1, numerator), PolynomialFF(1, denominator));
   }
 
