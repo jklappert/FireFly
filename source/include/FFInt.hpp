@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <gmpxx.h>
 
 namespace firefly {
 
@@ -21,6 +22,7 @@ namespace firefly {
      *    @param ffint a FFInt object
      */
     FFInt(const FFInt& ffint);
+    FFInt(mpz_class& in);
     FFInt(const std::string& str, const std::vector<std::pair<std::string, uint64_t>>& replacements);
     /**
      *    Default constructor

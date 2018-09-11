@@ -2,11 +2,8 @@
 
 #include <cstdint>
 #include <vector>
-#include <unordered_map>
 #include <gmpxx.h>
-#include "FFInt.hpp"
 #include "Polynomial.hpp"
-#include "PolynomialFF.hpp"
 #include "RationalNumber.hpp"
 
 namespace firefly {
@@ -33,6 +30,7 @@ namespace firefly {
      */
     void feed(const std::vector<FFInt>& yis, const FFInt& num);
     bool done = false;
+    bool new_prime = false;
     uint next_zi = 1;
     uint prime_number = 0;
     Polynomial get_result();
@@ -88,7 +86,6 @@ namespace firefly {
     uint n; /**< The number of parameters */
     bool use_chinese_remainder = false;
     bool check = false;
-    bool new_prime = false;
     uint curr_zi = 1;
     Polynomial result;
     mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */

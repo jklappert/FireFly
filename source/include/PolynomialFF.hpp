@@ -1,13 +1,15 @@
 #pragma once
 
 #include <iostream>
-#include "UintHasher.hpp"
 #include <unordered_map>
+#include "RationalNumber.hpp"
+#include "UintHasher.hpp"
 #include "FFInt.hpp"
 
 namespace firefly {
 
   typedef std::unordered_map<std::vector<uint>, FFInt, UintHasher> ff_map;
+  typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
 
   class PolynomialFF {
   public:

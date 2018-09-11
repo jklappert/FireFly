@@ -148,6 +148,7 @@ namespace firefly {
 
         if (check && next_zi == curr_zi && curr_zi == n) {
           mpz_map ci_tmp = convert_to_mpz(construct_canonical(n, ais[n]));
+
           if (!use_chinese_remainder) {
             combined_ci = ci_tmp;
           } else {
@@ -179,11 +180,23 @@ namespace firefly {
   }
 
   Polynomial PolyReconst::get_result() {
-    if(result.coefs.empty()){
-      result = Polynomial(gi);
-      result.sort();
-      gi.clear();
+    if (result.coefs.empty()) {
+      if (done) {
+        result = Polynomial(gi);
+        result.sort();
+        gi.clear();
+      } else {
+        PolynomialFF poly = construct_canonical(n, ais[n]);
+        rn_map res;
+
+        for (auto & el : poly.coef) {
+          res.emplace(std::make_pair(el.first, RationalNumber(el.second.n, 1)));
+        }
+
+        return Polynomial(res);
+      }
     }
+
     return result;
   }
 

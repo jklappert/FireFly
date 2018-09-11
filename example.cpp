@@ -5,7 +5,7 @@
 #include "Logger.hpp"
 
 int main() {
-  uint n = 3;
+  uint n = 1;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec_1(n);
@@ -59,7 +59,8 @@ int main() {
       firefly::RatReconst& rec = map.at(m);
       prime = firefly::primes()[rec.prime_number];
       firefly::FFInt::p = prime;
-      std::cout << "Reconstruction: " << m << " shift " << rec.shift[0] << " " << rec.shift[1] << "\n";
+      std::cout << "Reconstruction: " << m << "\n";
+      int count = 0;
       int kk = 0;
       uint primes_used = 0;
 
@@ -70,9 +71,22 @@ int main() {
           }
         }
 
-        primes_used = std::max(primes_used, rec.prime_number);
-        prime = firefly::primes()[rec.prime_number];
-        firefly::FFInt::p = prime;
+        if (primes_used != rec.prime_number) {
+          std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
+          primes_used = std::max(primes_used, rec.prime_number);
+          prime = firefly::primes()[rec.prime_number];
+          firefly::FFInt::p = prime;
+          if(primes_used > 13) throw std::runtime_error("2");
+
+          if (n > 1)
+            yis = std::vector<firefly::FFInt> (rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
+
+          kk = 0;
+
+          for (uint j = 2; j <= n; j++) {
+            t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
+          }
+        }
 
         t = firefly::FFInt(kk + 2);
 
@@ -98,24 +112,30 @@ int main() {
         firefly::FFInt z1 = t + firefly::RatReconst::shift[0];
 
         mpz_class test;
-        test = "1234567891098987998798709805302432022989874343098";
-        test = test % prime;
-        firefly::FFInt a7(std::stoull(test.get_str()));
+        test = "12345678910989879987987098053024320229898743430981234567891098987998798709805302432022989874343098";
+        mpz_class test2;
+        test2 = "123456789109898799879";
+        firefly::FFInt a7(test);
+        firefly::FFInt a8(test2);
         firefly::FFInt a1(1);
         firefly::FFInt a2(18);
         firefly::FFInt a3(25);
         firefly::FFInt a4(10);
-        firefly::FFInt a5(1);
+        firefly::FFInt a5(2);
         firefly::FFInt a6(3);
-
-        firefly::FFInt num = a1 + a2*t_yis[1] + a3*t_yis[0].pow(a4);
-        firefly::FFInt den = a1 + a4*z1.pow(a2)*t_yis[0].pow(a2);
+        /*firefly::FFInt num = -a7 + a4*t_yis[1] + a3*t_yis[0].pow(a4) + a1*z1.pow(a3)*t_yis[2];
+        firefly::FFInt den = a1 + a1*z1.pow(a2)*t_yis[0].pow(a2);*/
+//         firefly::FFInt num = a7 + a1*z1.pow(a3)*t_yis[2];
+//         firefly::FFInt den = a1;// + a1*z1.pow(a2)*t_yis[0].pow(a2) + z1*t_yis[1] - a8/a6*z1*t_yis[2] + a4*t_yis[1]*t_yis[0];
+        firefly::FFInt num = a7/a6 + a2/a3*t.pow(a6);
+        firefly::FFInt den = a1 + a4/a6*t*t;
 
         kk++;
+        count++;
         rec.feed(t, num / den);
       }
 
-      std::cout << "times iterated: " << kk << ", primes used: " << primes_used + 1 << "\n";
+      std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
       std::cout << rec.get_result();
     }
   } catch (std::exception& e) {

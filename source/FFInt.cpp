@@ -7,6 +7,14 @@ namespace firefly {
 
   FFInt::FFInt(const FFInt& ffint) : n(ffint.n) {}
 
+  FFInt::FFInt(mpz_class& in) {
+    in = in % p;
+
+    if (in < 0) in = p + in;
+
+    n = std::stoull(in.get_str());
+  }
+
   FFInt::FFInt(const std::string& str, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
     for (const auto & var : replacements) {
       if (var.first == str) {

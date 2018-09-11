@@ -1,13 +1,7 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-#include "FFInt.hpp"
 #include "PolyReconst.hpp"
-#include "PolynomialFF.hpp"
-#include "RationalNumber.hpp"
 #include "RationalFunction.hpp"
-#include "gmpxx.h"
 
 namespace firefly {
   typedef std::unordered_map<std::vector<uint>, mpz_class, UintHasher> mpz_map;
@@ -43,7 +37,7 @@ namespace firefly {
      *    @param prime a prime number defining the finite field
      *    @return A normalized version of ratFun
      */
-    void normalize();
+    RationalFunction normalize(RationalFunction& rf);
     /**
      *    Constructs the canonical form of the rational function recursivly
      *    @param ai a vector of the coefficients ai as FFints
@@ -93,13 +87,21 @@ namespace firefly {
      */
     ff_map convert_to_ffint(const rn_map& ri) const;;
     /**
-     * 
+     *
      */
     bool rec_rat_coef();
     /**
-     * 
+     *
      */
     std::pair<PolynomialFF, PolynomialFF> solve_gauss();
+    /**
+     *
+     */
+    void feed_poly();
+    /**
+     *
+     */
+    void combine_primes(std::pair<mpz_map, mpz_map>& tmp);
     uint n; /**< The number of parameters */
     bool check = false;
     bool use_chinese_remainder = false;
@@ -114,14 +116,20 @@ namespace firefly {
     std::unordered_map<uint, PolyReconst> coef_d {};
     std::vector<int> deg_num {};
     std::vector<int> deg_den {};
+    std::vector<uint> non_solved_coef_num {};
+    std::vector<uint> non_solved_coef_den {};
     std::unordered_map<uint, Polynomial> sub_num {};
     std::unordered_map<uint, Polynomial> sub_den {};
+    std::vector<Polynomial> solved_coefs_num {};
+    std::vector<Polynomial> solved_coefs_den {};
     ff_map_map saved_num_num {};
     ff_map_map saved_num_den {};
     int max_deg_num = -1;
     int max_deg_den = -1;
+    int min_deg_den = -1;
     int curr_deg_num = -1;
     int curr_deg_den = -1;
+    int solved_coefs = 0;
     uint num_eqn;
     RationalFunction result;
     mpz_class combined_prime {};  /**< The combination of the used prime numbers with the chinese remained theorem */
