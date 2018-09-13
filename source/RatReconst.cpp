@@ -15,9 +15,9 @@ namespace firefly {
     combined_prime = FFInt::p;
 
     if (!shifted) {
-      //if (n > 1)
-        //shift = std::vector<FFInt> (n, FFInt(std::rand() % 1000000) + FFInt(1));
-      //else
+        if (n > 1)
+          shift = std::vector<FFInt> (n, FFInt(std::rand() % 1000000) + FFInt(1));
+        else
         shift = std::vector<FFInt> (n);
 
       shifted = true;
@@ -109,7 +109,6 @@ namespace firefly {
         }
 
         yis[0] += shift[0];
-//         std::cout << yis[0] << " " << yis[1] << " " << yis[2] << " " << yis[3] << " " << num_eqn << " " << coef_mat.size() << "\n";
 
         for (int r = 0; r <= max_deg_num; r++) {
           if (std::find(non_solved_coef_num.begin(), non_solved_coef_num.end(), r) != non_solved_coef_num.end()) {
@@ -235,25 +234,12 @@ namespace firefly {
           solved_coefs = solved_coef_num + solved_coef_den;
 
           num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
-
           ai.clear();
           ti.clear();
-        } else {
+        } else
           canonical = solve_gauss();
 
-          if (n > 1 && shift[0].n != 0) {
-            std::cout << canonical.first << "\n";
-
-            if (shift[0].n != 0) {
-
-              if (curr_deg_num > canonical.first.max_deg()[0]) curr_deg_num = canonical.first.max_deg()[0];
-
-              if (curr_deg_den > canonical.second.max_deg()[0]) curr_deg_den = canonical.second.max_deg()[0];
-
-              //min_deg_den = canonical.second.min_deg()[0];
-            }
-          }
-        }
+        //std::cout << curr_deg_num << " " << canonical.first;
 
         if (n == 1) {
           std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(canonical);
@@ -284,8 +270,15 @@ namespace firefly {
             }
 
             if (deg <= curr_deg_num) {
-              std::vector<uint> key = {deg, zi};
-              saved_num_num[curr_zi_order][key] = num_coef[ {deg}];
+              // this saves some memory since we only need one numerical value
+              // for the constant coefficient
+              if(deg == 0 && first_run){
+                std::vector<uint> key = {deg, zi};
+                saved_num_num[curr_zi_order][key] = num_coef[ {deg}];
+              } else {
+                std::vector<uint> key = {deg, zi};
+                saved_num_num[curr_zi_order][key] = num_coef[ {deg}];
+              }
             }
           }
 
@@ -306,8 +299,15 @@ namespace firefly {
             }
 
             if (deg <= curr_deg_den) {
-              std::vector<uint> key = {deg, zi};
-              saved_num_den[curr_zi_order][key] = den_coef[ {deg}];
+              // this saves some memory since we only need one numerical value
+              // for the constant coefficient
+              if(deg == 0 && first_run){
+                std::vector<uint> key = {deg, zi};
+                saved_num_den[curr_zi_order][key] = den_coef[ {deg}];
+              } else {
+                std::vector<uint> key = {deg, zi};
+                saved_num_den[curr_zi_order][key] = den_coef[ {deg}];
+              }
             }
           }
 
@@ -341,21 +341,45 @@ namespace firefly {
           saved_num_num[tmp_zi_ord].erase(key);
 
           // feed to PolyReconst
-          if (curr_deg_num == max_deg_num) rec_num.feed(std::vector<FFInt> (tmp_zi_ord.begin(), tmp_zi_ord.end() - 1), food);
-          else {
-            std::vector<FFInt> yis(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
-            yis.emplace(yis.begin(), FFInt(1));
-            FFInt num_subtraction = sub_num[curr_deg_num].convert_to_PolynomialFF().calc(yis);
+          // since the constant is just a constant, we do not have to get mutliple
+          // numerical values to reconstruct the coefficient
+          if (curr_deg_num == 0) {
+            while (!rec_num.new_prime) {
+              if (curr_deg_num == max_deg_num)
+                rec_num.feed(std::vector<FFInt> (tmp_zi_ord.begin(), tmp_zi_ord.end() - 1), food);
+              else {
+                std::vector<FFInt> yis(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
+                yis.emplace(yis.begin(), FFInt(1));
+                FFInt num_subtraction = sub_num[curr_deg_num].convert_to_PolynomialFF().calc(yis);
 
-            yis.erase(yis.begin());
-            rec_num.feed(yis, food - num_subtraction);
+                yis.erase(yis.begin());
+                rec_num.feed(yis, food - num_subtraction);
+              }
+
+              if (rec_num.next_zi + 1 != zi || n == 2) {
+                zi = rec_num.next_zi + 1;
+                tmp_zi_ord[zi - 2] ++;
+                std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
+              } else tmp_zi_ord[zi - 2] ++;
+            }
+          } else {
+            if (curr_deg_num == max_deg_num)
+              rec_num.feed(std::vector<FFInt> (tmp_zi_ord.begin(), tmp_zi_ord.end() - 1), food);
+            else {
+              std::vector<FFInt> yis(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
+              yis.emplace(yis.begin(), FFInt(1));
+              FFInt num_subtraction = sub_num[curr_deg_num].convert_to_PolynomialFF().calc(yis);
+
+              yis.erase(yis.begin());
+              rec_num.feed(yis, food - num_subtraction);
+            }
+
+            if (rec_num.next_zi + 1 != zi || n == 2) {
+              zi = rec_num.next_zi + 1;
+              tmp_zi_ord[zi - 2] ++;
+              std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
+            } else tmp_zi_ord[zi - 2] ++;
           }
-
-          if (rec_num.next_zi + 1 != zi || n == 2) {
-            zi = rec_num.next_zi + 1;
-            tmp_zi_ord[zi - 2] ++;
-            std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
-          } else tmp_zi_ord[zi - 2] ++;
         } catch (std::out_of_range& e) {
           coef_n[curr_deg_num] = rec_num;
           curr_zi = zi;
@@ -412,21 +436,45 @@ namespace firefly {
           saved_num_den[tmp_zi_ord].erase(key);
 
           // feed to PolyReconst
-          if (curr_deg_den == max_deg_den) rec_den.feed(std::vector<FFInt> (tmp_zi_ord.begin(), tmp_zi_ord.end() - 1), food);
-          else {
-            std::vector<FFInt> yis(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
-            yis.emplace(yis.begin(), FFInt(1));
-            FFInt num_subtraction = sub_den[curr_deg_den].convert_to_PolynomialFF().calc(yis);
+          // since the constant is just a constant, we do not have to get mutliple
+          // numerical values to reconstruct the coefficient
+          if (curr_deg_den == 0) {
+            while (!rec_den.new_prime) {
+              if (curr_deg_den == max_deg_den)
+                rec_den.feed(std::vector<FFInt> (tmp_zi_ord.begin(), tmp_zi_ord.end() - 1), food);
+              else {
+                std::vector<FFInt> yis(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
+                yis.emplace(yis.begin(), FFInt(1));
+                FFInt num_subtraction = sub_den[curr_deg_den].convert_to_PolynomialFF().calc(yis);
 
-            yis.erase(yis.begin());
-            rec_den.feed(yis, food - num_subtraction);
+                yis.erase(yis.begin());
+                rec_den.feed(yis, food - num_subtraction);
+              }
+
+              if (rec_den.next_zi + 1 != zi || n == 2) {
+                zi = rec_den.next_zi + 1;
+                tmp_zi_ord[zi - 2] ++;
+                std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
+              } else tmp_zi_ord[zi - 2] ++;
+            }
+          } else {
+            if (curr_deg_den == max_deg_den)
+              rec_den.feed(std::vector<FFInt> (tmp_zi_ord.begin(), tmp_zi_ord.end() - 1), food);
+            else {
+              std::vector<FFInt> yis(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
+              yis.emplace(yis.begin(), FFInt(1));
+              FFInt num_subtraction = sub_den[curr_deg_den].convert_to_PolynomialFF().calc(yis);
+
+              yis.erase(yis.begin());
+              rec_den.feed(yis, food - num_subtraction);
+            }
+
+            if (rec_den.next_zi + 1 != zi || n == 2) {
+              zi = rec_den.next_zi + 1;
+              tmp_zi_ord[zi - 2] ++;
+              std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
+            } else tmp_zi_ord[zi - 2] ++;
           }
-
-          if (rec_den.next_zi + 1 != zi || n == 2) {
-            zi = rec_den.next_zi + 1;
-            tmp_zi_ord[zi - 2] ++;
-            std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
-          } else tmp_zi_ord[zi - 2] ++;
         } catch (std::out_of_range& e) {
           coef_d[curr_deg_den] = rec_den;
           curr_zi_order = tmp_zi_ord;
@@ -518,7 +566,7 @@ namespace firefly {
       std::pair<mpz_class, mpz_class> p2;
       std::pair<mpz_class, mpz_class> p3;
 
-      //numerator
+      //numerator TODO am beginn machen primes combinen und checken, ob sich rationale zahl aendert!
       for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
         p1 = std::make_pair(it->second, combined_prime);
         p2 = std::make_pair(tmp.first[it->first], FFInt::p);
@@ -537,108 +585,141 @@ namespace firefly {
       combined_prime = p3.second;
 
       // Remove already known coefficients from solve algorithm to save numerical runs
-      for (auto & c_ni : combined_ni_back) {
-        try {
-          RationalNumber last_rn = get_rational_coef(c_ni.second, combined_prime_back);
-          RationalNumber curr_rn = get_rational_coef(combined_ni[c_ni.first], combined_prime);
-
-          uint deg = 0;
-
-          for (auto & el : c_ni.first) deg += el;
-
-          if (last_rn == curr_rn) {
-            g_ni[c_ni.first] =  curr_rn;
-            combined_ni.erase(c_ni.first);
-            solved_coefs_num[deg] += Monomial(c_ni.first, curr_rn);
-            bool remove = true;
-
-            for (auto & c_ni_test : combined_ni) {
-              uint deg_test = 0;
-
-              for (auto & el : c_ni_test.first) deg_test += el;
-
-              if (deg_test == deg) remove = false;
-            }
-
-            if (remove) {
-              solved_coefs ++;
-              non_solved_coef_num.erase(std::remove(non_solved_coef_num.begin(),
-                                                    non_solved_coef_num.end(), deg),
-                                        non_solved_coef_num.end());
-            }
-          }
-        } catch (std::exception& e) {
-          // don't do anything
-        }
-      }
-
-      for (auto & c_di : combined_di_back) {
-        uint deg = 0;
-
-        for (auto & el : c_di.first) deg += el;
-
-        if (deg != min_deg_den) {
+      if (shift[0].n == 0) {
+        for (auto & c_ni : combined_ni_back) {
           try {
-            RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
-            RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
+            RationalNumber last_rn = get_rational_coef(c_ni.second, combined_prime_back);
+            RationalNumber curr_rn = get_rational_coef(combined_ni[c_ni.first], combined_prime);
+
+            uint deg = 0;
+
+            for (auto & el : c_ni.first) deg += el;
 
             if (last_rn == curr_rn) {
-              g_di[c_di.first] =  curr_rn;
-              combined_di.erase(c_di.first);
-              solved_coefs_den[deg - (min_deg_den + 1)] += Monomial(c_di.first, curr_rn);
+              g_ni[c_ni.first] =  curr_rn;
+              combined_ni.erase(c_ni.first);
+              solved_coefs_num[deg] += Monomial(c_ni.first, curr_rn);
               bool remove = true;
 
-              for (auto & c_di_test : combined_di) {
+              for (auto & c_ni_test : combined_ni) {
                 uint deg_test = 0;
 
-                for (auto & el : c_di_test.first) deg_test += el;
+                for (auto & el : c_ni_test.first) deg_test += el;
 
                 if (deg_test == deg) remove = false;
               }
 
               if (remove) {
                 solved_coefs ++;
-                non_solved_coef_den.erase(std::remove(non_solved_coef_den.begin(),
-                                                      non_solved_coef_den.end(), deg),
-                                          non_solved_coef_den.end());
+                non_solved_coef_num.erase(std::remove(non_solved_coef_num.begin(),
+                                                      non_solved_coef_num.end(), deg),
+                                          non_solved_coef_num.end());
               }
             }
           } catch (std::exception& e) {
-            // don't do anything
+            if (c_ni.second == combined_ni[c_ni.first]) {
+              uint deg = 0;
+
+              for (auto & el : c_ni.first) deg += el;
+
+              g_ni[c_ni.first] =  RationalNumber(c_ni.second, 1);
+              combined_ni.erase(c_ni.first);
+              solved_coefs_num[deg] += Monomial(c_ni.first, RationalNumber(c_ni.second, 1));
+              bool remove = true;
+
+              for (auto & c_ni_test : combined_ni) {
+                uint deg_test = 0;
+
+                for (auto & el : c_ni_test.first) deg_test += el;
+
+                if (deg_test == deg) remove = false;
+              }
+
+              if (remove) {
+                solved_coefs ++;
+                non_solved_coef_num.erase(std::remove(non_solved_coef_num.begin(),
+                                                      non_solved_coef_num.end(), deg),
+                                          non_solved_coef_num.end());
+              }
+            }
           }
         }
+
+        for (auto & c_di : combined_di_back) {
+          uint deg = 0;
+
+          for (auto & el : c_di.first) deg += el;
+
+          if (deg != min_deg_den) {
+            try {
+              RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
+              RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
+
+              if (last_rn == curr_rn) {
+                g_di[c_di.first] =  curr_rn;
+                combined_di.erase(c_di.first);
+                solved_coefs_den[deg - (min_deg_den + 1)] += Monomial(c_di.first, curr_rn);
+                bool remove = true;
+
+                for (auto & c_di_test : combined_di) {
+                  uint deg_test = 0;
+
+                  for (auto & el : c_di_test.first) deg_test += el;
+
+                  if (deg_test == deg) remove = false;
+                }
+
+                if (remove) {
+                  solved_coefs ++;
+                  non_solved_coef_den.erase(std::remove(non_solved_coef_den.begin(),
+                                                        non_solved_coef_den.end(), deg),
+                                            non_solved_coef_den.end());
+                }
+              }
+            } catch (std::exception& e) {
+              if (c_di.second == combined_di[c_di.first]) {
+                uint deg = 0;
+
+                for (auto & el : c_di.first) deg += el;
+
+                g_di[c_di.first] =  RationalNumber(c_di.second, 1);
+                combined_di.erase(c_di.first);
+                solved_coefs_den[deg] += Monomial(c_di.first, RationalNumber(c_di.second, 1));
+                bool remove = true;
+
+                for (auto & c_di_test : combined_di) {
+                  uint deg_test = 0;
+
+                  for (auto & el : c_di_test.first) deg_test += el;
+
+                  if (deg_test == deg) remove = false;
+                }
+
+                if (remove) {
+                  solved_coefs ++;
+                  non_solved_coef_den.erase(std::remove(non_solved_coef_den.begin(),
+                                                        non_solved_coef_den.end(), deg),
+                                            non_solved_coef_den.end());
+                }
+              }
+            }
+          }
+        }
+
+        combined_ni_back.clear();
+        combined_di_back.clear();
+        combined_prime_back = 0;
+
+        num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
       }
-
-      combined_ni_back.clear();
-      combined_di_back.clear();
-      combined_prime_back = 0;
-
-      num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
     }
 
     curr_deg_num = *std::max_element(non_solved_coef_num.begin(), non_solved_coef_num.end());
     curr_deg_den = *std::max_element(non_solved_coef_den.begin(), non_solved_coef_den.end());
+    //std::cout << curr_deg_den << " " << curr_deg_num << "\n";
 
     sub_num.clear();
     sub_den.clear();
-
-    for (uint i = 0; i < non_solved_coef_num.size(); i ++) {
-      const uint deg = non_solved_coef_num[i];
-
-      std::vector<uint> zero_deg(n);
-      Monomial zero_mon(zero_deg, RationalNumber(0, 1));
-
-      if (deg < max_deg_num) sub_num.emplace(std::make_pair(deg, Polynomial(zero_mon)));
-    }
-
-    for (uint i = 0; i < non_solved_coef_den.size(); i ++) {
-      const uint deg = non_solved_coef_den[i];
-
-      std::vector<uint> zero_deg(n);
-      Monomial zero_mon(zero_deg, RationalNumber(0, 1));
-
-      if (deg < max_deg_den) sub_den.emplace(std::make_pair(deg, Polynomial(zero_mon)));
-    }
   }
 
   RationalFunction RatReconst::get_result() {
@@ -764,41 +845,17 @@ namespace firefly {
 
     uint non_solved_num_size = non_solved_coef_num.size();
 
-    std::vector<uint> non_solved_coef_num_back = non_solved_coef_num;
-    std::vector<uint> non_solved_coef_den_back = non_solved_coef_den;
-
     for (uint i = 0; i < non_solved_num_size; i ++) {
-      if (results[i].n != 0) {
-        std::vector<uint> power = {non_solved_coef_num_back[i]};
-        numerator.emplace(std::make_pair(std::move(power), results[i]));
-      } else {
-        uint deg = non_solved_coef_num_back[i];
-        std::vector<uint> pow(n, 0);
-        pow[0] = deg;
-        solved_coefs_num[deg] += Monomial(pow, RationalNumber(0, 1));
-        non_solved_coef_num.erase(std::remove(non_solved_coef_num.begin(),
-                                              non_solved_coef_num.end(), deg),
-                                  non_solved_coef_num.end());
-        solved_coefs ++;
-      }
+      std::vector<uint> power = {non_solved_coef_num[i]};
+      numerator.emplace(std::make_pair(std::move(power), results[i]));
     }
 
     for (uint i = 0; i < non_solved_coef_den.size(); i ++) {
-      if (results[i + non_solved_num_size].n != 0) {
-        std::vector<uint> power = {non_solved_coef_den_back[i]};
-        denominator.emplace(std::make_pair(std::move(power), results[i + non_solved_num_size]));
-      } else {
-        uint deg = non_solved_coef_den_back[i];
+      uint pow = non_solved_coef_den[i];
 
-        if (deg != min_deg_den) {
-          std::vector<uint> pow(n, 0);
-          pow[0] = deg;
-          solved_coefs_den[deg] += Monomial(pow, RationalNumber(0, 1));
-          non_solved_coef_den.erase(std::remove(non_solved_coef_den.begin(),
-                                                non_solved_coef_den.end(), deg),
-                                    non_solved_coef_den.end());
-          solved_coefs ++;
-        }
+      if (pow != min_deg_den) {
+        std::vector<uint> power = {pow};
+        denominator.emplace(std::make_pair(std::move(power), results[i + non_solved_num_size]));
       }
     }
 
@@ -899,4 +956,8 @@ namespace firefly {
     return (g_ny.calc(yis) / g_dy.calc(yis)) == num;
   }
 }
+
+
+
+
 
