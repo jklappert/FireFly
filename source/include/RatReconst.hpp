@@ -130,6 +130,8 @@ namespace firefly {
     int curr_deg_num = -1;
     int curr_deg_den = -1;
     int solved_coefs = 0;
+    void remove_ni(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
+    void remove_di(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
     uint num_eqn;
     RationalFunction result;
     mpz_class combined_prime {};  /**< The combination of the used prime numbers with the chinese remained theorem */

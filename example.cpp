@@ -5,7 +5,7 @@
 #include "Logger.hpp"
 
 int main() {
-  uint n = 1;
+  uint n = 4;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec_1(n);
@@ -112,7 +112,7 @@ int main() {
         firefly::FFInt z1 = t + firefly::RatReconst::shift[0];
 
         mpz_class test;
-        test = "12345678910989879987987098053024320229898";//743430981234567891098987998798709805302432022989874343098";
+        test = "12345678910989879987987098053024320229898743430981234567891098987998798709805302432022989874343098";
         mpz_class test2;
         test2 = "123456789109898799879";
         firefly::FFInt a7(test);
@@ -123,12 +123,10 @@ int main() {
         firefly::FFInt a4(10);
         firefly::FFInt a5(2);
         firefly::FFInt a6(3);
-        /*firefly::FFInt num = -a7 + a4*t_yis[1] + a3*t_yis[0].pow(a4) + a1*z1.pow(a3)*t_yis[2];
-        firefly::FFInt den = a1 + a1*z1.pow(a2)*t_yis[0].pow(a2);*/
-        /*firefly::FFInt num = a7 + a4/a6*z1.pow(a6)*t_yis[2];
-        firefly::FFInt den = a1 + a1*t_yis[1].pow(a6);// + a1*z1.pow(a2)*t_yis[0].pow(a2) + z1*t_yis[1] - a8/a6*z1*t_yis[2] + a4*t_yis[1]*t_yis[0];*/
-        firefly::FFInt num = a7/a6 + a2/a3*t.pow(a6);
-        firefly::FFInt den = a4/a6*t*t;
+        firefly::FFInt num = a7 + a4*t_yis[1] + a3*t_yis[0].pow(a4) + a1*z1.pow(a3)*t_yis[2];
+        firefly::FFInt den = a1 + a1*z1.pow(a2)*t_yis[0].pow(a2);
+        /*firefly::FFInt num = a7/a6 + a2/a3*t.pow(a6);
+        firefly::FFInt den = a4/a6*t*t;*/
 
         kk++;
         count++;
