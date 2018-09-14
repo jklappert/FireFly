@@ -115,7 +115,9 @@ namespace firefly {
             eq.emplace_back(new_ti.pow(FFInt(r)));
             solved_coef_sub_num.emplace_back(solved_coefs_num[r].convert_to_PolynomialFF().calc(yis));
           } else {
-            solved_coef_sub_num.emplace_back(solved_coefs_num[r].convert_to_PolynomialFF().calc(yis));
+            FFInt sub = solved_coefs_num[r].convert_to_PolynomialFF().calc(yis);
+            if(sub.n > 0)
+              solved_coef_sub_num.emplace_back(sub);
           }
         }
 
@@ -123,8 +125,11 @@ namespace firefly {
           if (std::find(non_solved_coef_den.begin(), non_solved_coef_den.end(), rp) != non_solved_coef_den.end()) {
             eq.emplace_back(-new_ti.pow(FFInt(rp)) * num);
             solved_coef_sub_den.emplace_back(solved_coefs_den[rp - (min_deg_den + 1)].convert_to_PolynomialFF().calc(yis));
-          } else
-            solved_coef_sub_den.emplace_back(solved_coefs_den[rp - (min_deg_den + 1)].convert_to_PolynomialFF().calc(yis));
+          } else{
+            FFInt sub = solved_coefs_den[rp - (min_deg_den + 1)].convert_to_PolynomialFF().calc(yis);
+            if(sub.n > 0)
+              solved_coef_sub_den.emplace_back(solved_coefs_den[rp - (min_deg_den + 1)].convert_to_PolynomialFF().calc(yis));
+          }
         }
 
         eq.emplace_back(new_ti.pow(FFInt(min_deg_den)) * num);
@@ -564,8 +569,6 @@ namespace firefly {
       // numerical runs
       if (shift[0].n == 0) {
         mpz_map combined_ni_back = combined_ni;
-        mpz_map combined_di_back = combined_di;
-
         for (auto & c_ni : combined_ni_back) {
           try {
             RationalNumber rn = get_rational_coef(c_ni.second, combined_prime);
@@ -581,6 +584,8 @@ namespace firefly {
             // do nothing
           }
         }
+
+        mpz_map combined_di_back = combined_di;
 
         for (auto & c_di : combined_di_back) {
           try {
@@ -598,10 +603,9 @@ namespace firefly {
             // do nothing
           }
         }
+
         combined_ni_back.clear();
         combined_di_back.clear();
-
-        num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
       }
     } else {
       mpz_map combined_ni_back = combined_ni;
@@ -674,11 +678,10 @@ namespace firefly {
         combined_ni_back.clear();
         combined_di_back.clear();
         combined_prime_back = 0;
-
-        num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
       }
     }
 
+    num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
     curr_deg_num = *std::max_element(non_solved_coef_num.begin(), non_solved_coef_num.end());
     curr_deg_den = *std::max_element(non_solved_coef_den.begin(), non_solved_coef_den.end());
 
@@ -964,3 +967,4 @@ namespace firefly {
     }
   }
 }
+
