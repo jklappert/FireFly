@@ -123,7 +123,7 @@ int main() {
         firefly::FFInt a4(10);
         firefly::FFInt a5(2);
         firefly::FFInt a6(3);
-        firefly::FFInt num = a7 + a4*t_yis[1] + a3*t_yis[0].pow(a4) + a1*z1.pow(a3)*t_yis[2];
+	      firefly::FFInt num = a7 + a4*t_yis[1] + a3*t_yis[0].pow(a4) + a1*z1.pow(a3)*t_yis[2];
         firefly::FFInt den = a1 + a1*z1.pow(a2)*t_yis[0].pow(a2);
         /*firefly::FFInt num = a7/a6 + a2/a3*t.pow(a6);
         firefly::FFInt den = a4/a6*t*t;*/

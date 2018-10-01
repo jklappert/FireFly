@@ -25,7 +25,7 @@ namespace firefly {
     uint deg1 = 0;
     uint deg2 = 0;
 
-    for (uint i = 0; i < powers.size(); i++) {
+    for (uint i = 0; i < (uint) powers.size(); i++) {
       deg1 += powers[i];
       deg2 += m2.powers[i];
     }
@@ -41,7 +41,7 @@ namespace firefly {
   Monomial Monomial::operator*(const Monomial& b) {
     Monomial a = *this;
     a.coef = a.coef*b.coef;
-    for(int i = 0; i < powers.size(); i++){
+    for(uint i = 0; i < (uint) powers.size(); i++){
       a.powers[i] += b.powers[i];
     }
     return a;

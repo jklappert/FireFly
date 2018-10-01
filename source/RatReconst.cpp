@@ -171,7 +171,7 @@ namespace firefly {
           if (n > 1 && denominator.min_deg()[0] > 0) {
             INFO_MSG("No constant term in denominator! Trying again with new paramter shift...");
 
-            for (int j = 0; j < n; j++) {
+            for (uint j = 0; j < n; j++) {
               shift[j] = FFInt(std::rand() % 1000000) + FFInt(1);
             }
 
@@ -204,9 +204,9 @@ namespace firefly {
           uint solved_coef_den = 0;
 
           // check for coefficients which are zero and remove them to save numerical runs
-          for (uint i = 0; i <= max_deg_num; i++) {
+          for (int i = 0; i <= max_deg_num; i++) {
             try {
-              std::vector<uint> pow = {i};
+              std::vector<uint> pow = {(uint) i};
               numerator.coef.at(pow);
               non_solved_coef_num[i - deleted_coefs] = i;
             } catch (std::out_of_range& e) {
@@ -221,9 +221,9 @@ namespace firefly {
 
           deleted_coefs = 0;
 
-          for (uint i = min_deg_den + 1; i <= max_deg_den; i++) {
+          for (int i = min_deg_den + 1; i <= max_deg_den; i++) {
             try {
-              std::vector<uint> pow = {i};
+              std::vector<uint> pow = {(uint) i};
               denominator.coef.at(pow);
               non_solved_coef_den[i - deleted_coefs - 1] = i;
             } catch (std::out_of_range& e) {
@@ -267,14 +267,14 @@ namespace firefly {
               coef_n.emplace(std::make_pair(deg, std::move(rec)));
               deg_num.emplace_back(deg);
 
-              if (deg < max_deg_num) {
+              if ((int) deg < max_deg_num) {
                 std::vector<uint> zero_deg(n);
                 Monomial zero_mon(zero_deg, RationalNumber(0, 1));
                 sub_num.emplace(std::make_pair(deg, Polynomial(zero_mon)));
               }
             }
 
-            if (deg <= curr_deg_num) {
+            if ((int) deg <= curr_deg_num) {
               // this saves some memory since we only need one numerical value
               // for the constant coefficient
               if (deg == 0 && first_run) {
@@ -295,7 +295,7 @@ namespace firefly {
               coef_d.emplace(std::make_pair(deg, std::move(rec)));
               deg_den.emplace_back(deg);
 
-              if (deg < max_deg_den) {
+              if ((int) deg < max_deg_den) {
                 std::vector<uint> zero_deg(n);
                 Monomial zero_mon(zero_deg, RationalNumber(0, 1));
                 sub_den.emplace(std::make_pair(deg, Polynomial(zero_mon)));
@@ -303,7 +303,7 @@ namespace firefly {
 
             }
 
-            if (deg <= curr_deg_den) {
+            if ((int) deg <= curr_deg_den) {
               // this saves some memory since we only need one numerical value
               // for the constant coefficient
               if (deg == 0 && first_run) {
@@ -596,7 +596,7 @@ namespace firefly {
 
               for (auto & el : c_di.first) deg += el;
 
-              if (deg != min_deg_den)
+              if ((int) deg != min_deg_den)
                 remove_di(deg, c_di.first, rn);
             }
           } catch (std::exception& e) {
@@ -659,7 +659,7 @@ namespace firefly {
 
           for (auto & el : c_di.first) deg += el;
 
-          if (deg != min_deg_den) {
+          if ((int) deg != min_deg_den) {
             try {
               RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
               RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
@@ -820,7 +820,7 @@ namespace firefly {
     for (uint i = 0; i < non_solved_coef_den.size(); i ++) {
       uint pow = non_solved_coef_den[i];
 
-      if (pow != min_deg_den) {
+      if ((int) pow != min_deg_den) {
         std::vector<uint> power = {pow};
         denominator.emplace(std::make_pair(std::move(power), results[i + non_solved_num_size]));
       }

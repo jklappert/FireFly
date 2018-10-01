@@ -209,7 +209,7 @@ namespace firefly {
     std::vector<RationalNumber> rn_shift(n);
     std::vector<uint> zero_deg(n);
 
-    for (int i = 0; i < n; i++) {
+    for (uint i = 0; i < n; i++) {
       rn_shift[i] = RationalNumber(mpz_class(shift[i].n), 1);
     }
 
@@ -220,7 +220,7 @@ namespace firefly {
       std::vector<uint> powers = mon.powers;
       std::vector<uint> decr_power = powers;
 
-      for (int j = 0; j < n; j++) {
+      for (uint j = 0; j < n; j++) {
         uint deg = powers[j];
 
         if (deg > 0) {
@@ -234,7 +234,7 @@ namespace firefly {
           Polynomial mult_tmp_pow_poly = tmp_pow_poly;
 
           // TODO calc binomial coefficients to save some time
-          for (int k = 1; k < deg; k++) {
+          for (uint k = 1; k < deg; k++) {
             tmp_pow_poly = tmp_pow_poly * mult_tmp_pow_poly;
           }
 

@@ -85,7 +85,7 @@ namespace firefly {
      *    @param prime the prime number defining the corresponding finite field
      *    @return elements of ri converted to FFInts
      */
-    ff_map convert_to_ffint(const rn_map& ri) const;;
+    ff_map convert_to_ffint(const rn_map& ri) const;
     /**
      *
      */
