@@ -141,7 +141,9 @@ namespace firefly {
     return (n != ffint.n);
   }
 
+#ifndef VALGRIND
   uint64_t FFInt::mod_mul(uint64_t a, uint64_t b) const {
+    // Note: this version does not work in valgrind.
     long double x;
     uint64_t c;
     int64_t r;
@@ -155,6 +157,20 @@ namespace firefly {
     r = (int64_t)(a * b - c * p) % (int64_t) p;
     return r < 0 ? r + p : r;
   }
+#else
+  // the version below works with valgrind
+  uint64_t FFInt::mod_mul(uint64_t a, uint64_t b) const {
+    uint64_t d = 0;
+    uint64_t mp2 = p >> 1;
+    for (int i = 0; i != 64; ++i) {
+      d = (d > mp2) ? (d << 1) - p : d << 1;
+      if (a & 0x8000000000000000ULL) d += b;
+      if (d > p) d -= p;
+      a <<= 1;
+    }
+    return d;
+  }
+#endif
 
   uint64_t FFInt::mod_inv(const uint64_t a) const {
     int64_t t {0};

@@ -5,8 +5,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(GMP REQUIRED)
 
-#set (CMAKE_CXX_COMPILER clang++-3.8)
+# set your favorite compile here
 set (CMAKE_CXX_COMPILER clang++-6.0)
+
+# to use Valgrind uncomment the following line
+add_definitions(-DVALGRIND)
 
 set(CMAKE_BUILD_TYPE Release)
 # set the build type to release. If one needs debugging symbols, compile

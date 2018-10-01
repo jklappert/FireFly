@@ -744,7 +744,6 @@ namespace firefly {
       return num;
     } else {
       FFInt ai_i = comp_ai(i, ip - 1, num);
-
       return (ti[i] - ti[ip - 1]) / (ai_i - ai[ip - 1]);
     }
   }
