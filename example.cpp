@@ -128,11 +128,10 @@ int main() {
         firefly::FFInt den = a1 + a1*z1.pow(a2)*t_yis[0].pow(a2);
         kk++;
         count++;
-        //if(n > 1)
-        std::vector<uint> tmp_vec = std::vector<uint>(rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
+        std::vector<uint> tmp_vec;
+        if(n > 1)
+          tmp_vec = std::vector<uint>(rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
         rec.feed(t, num/den, tmp_vec);
-        //else
-        //rec.feed(t, num/den);
       }
       std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
       std::cout << rec.get_result();
