@@ -15,11 +15,11 @@ namespace firefly {
     combined_prime = FFInt::p;
 
     if (!shifted) {
-//       if (n > 1)
-//         shift = std::vector<FFInt> (n, FFInt(std::rand() % 1000000) + FFInt(1));
-//       else
       shift = std::vector<FFInt> (n);
-
+       if (n > 1) {
+         for (auto& el : shift) el = FFInt(std::rand() % 1000000) + FFInt(1);
+       }
+       
       shifted = true;
     }
 
@@ -45,7 +45,7 @@ namespace firefly {
         std::reverse(tmp_vec_rev.begin(), tmp_vec_rev.end());
       }
 
-      if (tmp_vec_rev >= feed_zi_ord_rev) {
+      if (feed_zi_ord_rev >= tmp_vec_rev) {
         if (feed_zi_ord == tmp_vec) {
           // first check if we are done. If not start the reconstruction again using
           // the chinese remainder theorem in combining the previous results
@@ -1040,4 +1040,3 @@ namespace firefly {
     }
   }
 }
-
