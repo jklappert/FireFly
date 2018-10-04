@@ -7,6 +7,7 @@ namespace firefly {
   typedef std::unordered_map<std::vector<uint>, mpz_class, UintHasher> mpz_map;
   typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
   typedef std::unordered_map<std::vector<uint>, std::unordered_map<std::vector<uint>, FFInt, UintHasher>, UintHasher> ff_map_map;
+  typedef std::unordered_map<std::vector<uint>, std::vector<std::pair<FFInt, FFInt>>, UintHasher> ff_vec_map;
 
   class RatReconst {
   public:
@@ -18,7 +19,7 @@ namespace firefly {
     /**
      *
      */
-    void feed(const FFInt& new_ti, const FFInt& num);
+    void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord);
     /**
      *
      */
@@ -99,7 +100,7 @@ namespace firefly {
      */
     void feed_poly();
     /**
-     *
+     * 
      */
     void combine_primes(std::pair<mpz_map, mpz_map>& tmp);
     uint n; /**< The number of parameters */
@@ -111,6 +112,7 @@ namespace firefly {
     static bool shifted;
     std::vector<std::vector<FFInt>> coef_mat {};
     uint curr_zi = 2;
+    ff_vec_map saved_ti {};
     std::vector<FFInt> ai {};
     std::unordered_map<uint, PolyReconst> coef_n {};
     std::unordered_map<uint, PolyReconst> coef_d {};

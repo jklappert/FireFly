@@ -9,7 +9,8 @@ find_package(GMP REQUIRED)
 set (CMAKE_CXX_COMPILER clang++)
 
 # to use Valgrind uncomment the following line
-add_definitions(-DVALGRIND -g)
+#add_definitions(-DVALGRIND -g)
+
 
 set(CMAKE_BUILD_TYPE Release)
 # set the build type to release. If one needs debugging symbols, compile

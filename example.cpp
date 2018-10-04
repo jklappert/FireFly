@@ -3,6 +3,7 @@
 #include "RatReconst.hpp"
 #include "ReconstHelper.hpp"
 #include "Logger.hpp"
+#include <algorithm>
 
 int main() {
   uint n = 4;
@@ -125,13 +126,14 @@ int main() {
         firefly::FFInt a6(3);
         firefly::FFInt num = a7 + a4*t_yis[1] + a3*t_yis[0].pow(a4) + a1*z1.pow(a3)*t_yis[2];
         firefly::FFInt den = a1 + a1*z1.pow(a2)*t_yis[0].pow(a2);
-
         kk++;
         count++;
-        //std::cout << "num1 " << num/den << " " << firefly::FFInt(9223372035897417286) / firefly::FFInt(9223372019622322837) << "\n";
-        rec.feed(t, num/den);
+        //if(n > 1)
+        std::vector<uint> tmp_vec = std::vector<uint>(rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
+        rec.feed(t, num/den, tmp_vec);
+        //else
+        //rec.feed(t, num/den);
       }
-
       std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
       std::cout << rec.get_result();
     }
@@ -141,3 +143,4 @@ int main() {
 
   return 0;
 }
+
