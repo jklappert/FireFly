@@ -123,9 +123,14 @@ int main() {
         firefly::FFInt a4(10);
         firefly::FFInt a5(2);
         firefly::FFInt a6(3);
+        firefly::FFInt num = -a7;
+        /*firefly::FFInt num = ((z1*z1 -firefly::FFInt(5)*z1+firefly::FFInt(6))*t_yis[0]
+          +firefly::FFInt(2)*z1*z1-firefly::FFInt(10)*z1+firefly::FFInt(12));
+        firefly::FFInt den = (((firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1])*t_yis[0]*t_yis[0]
+          +((-firefly::FFInt(4)*z1+firefly::FFInt(16))*t_yis[1])*t_yis[0]+(firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1]);*/
         //firefly::FFInt num = a7 + a4*t_yis[1] + a3*t_yis[0].pow(a4) + a1*z1.pow(a3)*t_yis[2];
         //firefly::FFInt den = a1 + a1*z1.pow(a2)*t_yis[0].pow(a2);
-        firefly::FFInt num = (firefly::FFInt(576)*t.pow(firefly::FFInt(12)) - firefly::FFInt(35145)*t.pow(firefly::FFInt(11))
+        /*firefly::FFInt num = (firefly::FFInt(576)*t.pow(firefly::FFInt(12)) - firefly::FFInt(35145)*t.pow(firefly::FFInt(11))
           +firefly::FFInt(946716)*t.pow(firefly::FFInt(10))-firefly::FFInt(14842335)*t.pow(firefly::FFInt(9))
           +firefly::FFInt(150236238)*t.pow(firefly::FFInt(8))-firefly::FFInt(1028892363)*t.pow(firefly::FFInt(7))
           +firefly::FFInt(4853217576)*t.pow(firefly::FFInt(6))-firefly::FFInt(15724949577)*t.pow(firefly::FFInt(5))
@@ -136,14 +141,14 @@ int main() {
           +firefly::FFInt(3934768)*t.pow(firefly::FFInt(8))-firefly::FFInt(26714240)*t.pow(firefly::FFInt(7))
           +firefly::FFInt(125545488)*t.pow(firefly::FFInt(6))-firefly::FFInt(408157280)*t.pow(firefly::FFInt(5))
           +firefly::FFInt(899198016)*t.pow(firefly::FFInt(4))-firefly::FFInt(1278172800)*t.pow(firefly::FFInt(3))
-          +firefly::FFInt(1055033856)*t.pow(firefly::FFInt(2))-firefly::FFInt(383201280)*t);
+          +firefly::FFInt(1055033856)*t.pow(firefly::FFInt(2))-firefly::FFInt(383201280)*t);*/
         kk++;
         count++;
         std::vector<uint> tmp_vec;
 
         if(n > 1)
           tmp_vec = std::vector<uint>(rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
-        rec.feed(t, num/den, tmp_vec);
+        rec.feed(t, num, tmp_vec);
       }
       std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
       std::cout << rec.get_result();

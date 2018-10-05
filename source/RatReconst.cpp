@@ -755,8 +755,10 @@ namespace firefly {
     }
 
     num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
-    curr_deg_num = *std::max_element(non_solved_coef_num.begin(), non_solved_coef_num.end());
-    curr_deg_den = *std::max_element(non_solved_coef_den.begin(), non_solved_coef_den.end());
+    if(max_deg_num != 0 && max_deg_den != 0){
+      curr_deg_num = *std::max_element(non_solved_coef_num.begin(), non_solved_coef_num.end());
+      curr_deg_den = *std::max_element(non_solved_coef_den.begin(), non_solved_coef_den.end());
+    }
 
     sub_num.clear();
     sub_den.clear();
