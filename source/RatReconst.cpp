@@ -19,7 +19,7 @@ namespace firefly {
        if (n > 1) {
          for (auto& el : shift) el = FFInt(std::rand() % 1000000) + FFInt(1);
        }
-       
+
       shifted = true;
     }
 
@@ -228,7 +228,7 @@ namespace firefly {
               curr_deg_den = max_deg_den;
               min_deg_den = canonical.second.min_deg()[0];
               non_solved_coef_num = std::vector<uint> (max_deg_num + 1);
-              non_solved_coef_den = std::vector<uint> (max_deg_den + 1);
+              non_solved_coef_den = std::vector<uint> (max_deg_den);
 
               FFInt equializer = FFInt(1) / denominator.coef[denominator.min_deg()];
 
@@ -266,7 +266,7 @@ namespace firefly {
                 try {
                   std::vector<uint> pow = {(uint) i};
                   denominator.coef.at(pow);
-                  non_solved_coef_den[i - deleted_coefs - 1] = i;
+                  non_solved_coef_den[i - deleted_coefs - 1 - min_deg_den] = i;
                 } catch (std::out_of_range& e) {
                   std::vector<uint> pow(n, 0);
                   pow[0] = i - 1;
@@ -434,7 +434,6 @@ namespace firefly {
               zi = rec_num.next_zi + 1;
               tmp_zi_ord[zi - 2] ++;
               std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
-              //TODO check if ti's a re saved and start feeding here
             } else tmp_zi_ord[zi - 2] ++;
           }
         } catch (std::out_of_range& e) {
