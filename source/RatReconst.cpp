@@ -16,11 +16,12 @@ namespace firefly {
 
     if (!shifted) {
       shift = std::vector<FFInt> (n);
-       if (n > 1) {
-         for (auto& el : shift) el = FFInt(std::rand() % 1000000) + FFInt(1);
-       }
 
-      shifted = true;
+      if (n > 1) {
+        for (auto & el : shift) el = FFInt(std::rand() % 1000000) + FFInt(1);
+
+        shifted = true;
+      }
     }
 
     if (n > 1) {
@@ -227,8 +228,9 @@ namespace firefly {
               curr_deg_num = max_deg_num;
               curr_deg_den = max_deg_den;
               min_deg_den = canonical.second.min_deg()[0];
+
               non_solved_coef_num = std::vector<uint> (max_deg_num + 1);
-              non_solved_coef_den = std::vector<uint> (max_deg_den);
+              non_solved_coef_den = std::vector<uint> (max_deg_den + 1);
 
               FFInt equializer = FFInt(1) / denominator.coef[denominator.min_deg()];
 
@@ -284,8 +286,6 @@ namespace firefly {
               ti.clear();
             } else
               canonical = solve_gauss();
-
-            //std::cout << curr_deg_num << " " << canonical.first;
 
             if (n == 1) {
               std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(canonical);
@@ -755,10 +755,9 @@ namespace firefly {
     }
 
     num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
-    if(max_deg_num != 0 && max_deg_den != 0){
-      curr_deg_num = *std::max_element(non_solved_coef_num.begin(), non_solved_coef_num.end());
-      curr_deg_den = *std::max_element(non_solved_coef_den.begin(), non_solved_coef_den.end());
-    }
+
+    curr_deg_num = *std::max_element(non_solved_coef_num.begin(), non_solved_coef_num.end());
+    curr_deg_den = *std::max_element(non_solved_coef_den.begin(), non_solved_coef_den.end());
 
     sub_num.clear();
     sub_den.clear();
