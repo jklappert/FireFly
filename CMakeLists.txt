@@ -26,14 +26,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # enable all warnings in Debug mode
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
   if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -g")
   endif()
 endif()
 
 # enable optimization
 if(CMAKE_BUILD_TYPE STREQUAL Release)
   if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g")
   endif()
 endif()
 
