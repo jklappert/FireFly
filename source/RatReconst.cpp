@@ -271,16 +271,15 @@ namespace firefly {
                   non_solved_coef_den[i - deleted_coefs - 1 - min_deg_den] = i;
                 } catch (std::out_of_range& e) {
                   std::vector<uint> pow(n, 0);
-                  pow[0] = i - 1;
-                  solved_coefs_den[i - 1] = Polynomial(Monomial(pow, RationalNumber(0, 1)));
-                  non_solved_coef_den.erase(non_solved_coef_den.begin() + i - 1 - deleted_coefs);
+                  pow[0] = i;
+                  solved_coefs_den[i - 1 - min_deg_den] = Polynomial(Monomial(pow, RationalNumber(0, 1)));
+                  non_solved_coef_den.erase(non_solved_coef_den.begin() + i - 1 - deleted_coefs - min_deg_den);
                   deleted_coefs ++;
                   solved_coef_den ++;
                 }
               }
 
               solved_coefs = solved_coef_num + solved_coef_den;
-
               num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
               ai.clear();
               ti.clear();
@@ -1021,7 +1020,7 @@ namespace firefly {
   void RatReconst::remove_di(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn) {
     g_di[deg_vec] =  rn;
     combined_di.erase(deg_vec);
-    solved_coefs_den[deg - (min_deg_den + 1)] += Monomial(deg_vec, rn);
+    solved_coefs_den[deg - 1 - min_deg_den] += Monomial(deg_vec, rn);
     bool remove = true;
 
     for (auto & c_di_test : combined_di) {

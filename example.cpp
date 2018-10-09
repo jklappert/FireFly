@@ -60,7 +60,6 @@ int main() {
       firefly::RatReconst& rec = map.at(m);
       prime = firefly::primes()[rec.prime_number];
       firefly::FFInt::p = prime;
-      //std::cout << "Reconstruction: " << m << "\n";
       int count = 0;
       int kk = 0;
       uint primes_used = 0;
