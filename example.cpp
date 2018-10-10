@@ -127,6 +127,10 @@ int main() {
           +firefly::FFInt(2)*z1*z1-firefly::FFInt(10)*z1+firefly::FFInt(12));
         firefly::FFInt den = (((firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1])*t_yis[0]*t_yis[0]
           +((-firefly::FFInt(4)*z1+firefly::FFInt(16))*t_yis[1])*t_yis[0]+(firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1]);*/
+//        firefly::FFInt num = t_yis[1]-t_yis[0];
+//        firefly::FFInt num = (z1-firefly::FFInt(2))*t_yis[1]+(-z1+firefly::FFInt(4))*t_yis[0]+firefly::FFInt(2)*z1-firefly::FFInt(6);
+//        firefly::FFInt den = firefly::FFInt(1);
+//        firefly::FFInt den = (firefly::FFInt(3)*z1-firefly::FFInt(8))*t_yis[1];
 
         // example for n = 1
         firefly::FFInt num = (firefly::FFInt(576)*z1.pow(firefly::FFInt(12)) - firefly::FFInt(35145)*z1.pow(firefly::FFInt(11))
@@ -148,6 +152,11 @@ int main() {
 
         if(n > 1)
           tmp_vec = std::vector<uint>(rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
+/*        std::cout << "zi_order: ";
+        for (auto el : rec.curr_zi_order) {
+          std::cout << el << " ";
+        }
+        std::cout << "\n";*/
         rec.feed(t, num/den, tmp_vec);
       }
       std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
@@ -159,4 +168,3 @@ int main() {
 
   return 0;
 }
-
