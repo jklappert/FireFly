@@ -72,7 +72,6 @@ int main() {
         }
 
         if (primes_used != rec.prime_number) {
-          if(rec.prime_number == 3) exit(-1);
           rec.rand_zi.clear();
 
           for (uint i = 2; i <= n; i++) {
