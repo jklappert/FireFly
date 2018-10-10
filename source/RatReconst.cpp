@@ -8,6 +8,7 @@
 namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
   bool RatReconst::shifted = false;
+  ff_pair_map RatReconst::rand_zi;
 
   RatReconst::RatReconst(uint n_) : n(n_) {
     ti.reserve(300);
@@ -29,6 +30,13 @@ namespace firefly {
       deg_den.emplace_back(-1);
       curr_zi_order = std::vector<uint> (n, 1);
       curr_zi_order[n - 1] = 0;
+
+      // fill in the rand_vars for zi_order = 1
+      if (rand_zi.empty()) {
+        for (uint i = 2; i <= n; i++) {
+          rand_zi.emplace(std::make_pair(std::make_pair(i, 1), get_rand()));
+        }
+      }
     }
   }
 
@@ -116,8 +124,11 @@ namespace firefly {
 
             std::vector<FFInt> yis;
 
-            if (n > 1)
-              yis = std::vector<firefly::FFInt> (curr_zi_order.begin(), curr_zi_order.end() - 1);
+            if (n > 1) {
+              for (uint i = 0; i < curr_zi_order.size() - 1; i ++) {
+                yis.emplace_back(rand_zi[std::make_pair(i + 2, curr_zi_order[i])]);
+              }
+            }
 
             yis.insert(yis.begin(), new_ti);
 
@@ -396,6 +407,12 @@ namespace firefly {
           FFInt food = saved_num_num.at(tmp_zi_ord).at(key);
           // delete unused saved data
           saved_num_num[tmp_zi_ord].erase(key);
+          // set random values for the yis
+          std::vector<FFInt> yis {};
+
+          for (uint i = 0; i < tmp_zi_ord.size() - 1; i ++) {
+            yis.emplace_back(rand_zi[std::make_pair(i + 2, tmp_zi_ord[i])]);
+          }
 
           // feed to PolyReconst
           // since the constant is just a constant, we do not have to get mutliple
@@ -403,27 +420,19 @@ namespace firefly {
           if (curr_deg_num == 0) {
             while (!rec_num.new_prime) {
               if (curr_deg_num == max_deg_num)
-                rec_num.feed(std::vector<FFInt> (tmp_zi_ord.begin(), tmp_zi_ord.end() - 1), food);
+                rec_num.feed(yis, food);
               else {
-                std::vector<FFInt> yis(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
                 yis.emplace(yis.begin(), FFInt(1));
                 FFInt num_subtraction = sub_num[curr_deg_num].convert_to_PolynomialFF().calc(yis);
 
                 yis.erase(yis.begin());
                 rec_num.feed(yis, food - num_subtraction);
               }
-
-              if (rec_num.next_zi + 1 != zi || n == 2) {
-                zi = rec_num.next_zi + 1;
-                tmp_zi_ord[zi - 2] ++;
-                std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
-              } else tmp_zi_ord[zi - 2] ++;
             }
           } else {
             if (curr_deg_num == max_deg_num)
-              rec_num.feed(std::vector<FFInt> (tmp_zi_ord.begin(), tmp_zi_ord.end() - 1), food);
+              rec_num.feed(yis, food);
             else {
-              std::vector<FFInt> yis(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
               yis.emplace(yis.begin(), FFInt(1));
               FFInt num_subtraction = sub_num[curr_deg_num].convert_to_PolynomialFF().calc(yis);
 
@@ -435,13 +444,15 @@ namespace firefly {
               zi = rec_num.next_zi + 1;
               tmp_zi_ord[zi - 2] ++;
               std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
-            } else tmp_zi_ord[zi - 2] ++;
+            } else
+              tmp_zi_ord[zi - 2] ++;
           }
         } catch (std::out_of_range& e) {
           coef_n[curr_deg_num] = rec_num;
           curr_zi = zi;
           curr_zi_order = tmp_zi_ord;
-
+          auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
+          set_new_rand(key);
           try {
             std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1);
             std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
@@ -501,34 +512,31 @@ namespace firefly {
           FFInt food = saved_num_den.at(tmp_zi_ord).at(key);
           // delete unused saved data
           saved_num_den[tmp_zi_ord].erase(key);
+          // set random values for the yis
+          std::vector<FFInt> yis {};
 
+          for (uint i = 0; i < tmp_zi_ord.size() - 1; i ++) {
+            yis.emplace_back(rand_zi[std::make_pair(i + 2, tmp_zi_ord[i])]);
+          }
           // feed to PolyReconst
           // since the constant is just a constant, we do not have to get mutliple
           // numerical values to reconstruct the coefficient
           if (curr_deg_den == 0) {
             while (!rec_den.new_prime) {
               if (curr_deg_den == max_deg_den)
-                rec_den.feed(std::vector<FFInt> (tmp_zi_ord.begin(), tmp_zi_ord.end() - 1), food);
+                rec_den.feed(yis, food);
               else {
-                std::vector<FFInt> yis(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
                 yis.emplace(yis.begin(), FFInt(1));
                 FFInt num_subtraction = sub_den[curr_deg_den].convert_to_PolynomialFF().calc(yis);
 
                 yis.erase(yis.begin());
                 rec_den.feed(yis, food - num_subtraction);
               }
-
-              if (rec_den.next_zi + 1 != zi || n == 2) {
-                zi = rec_den.next_zi + 1;
-                tmp_zi_ord[zi - 2] ++;
-                std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
-              } else tmp_zi_ord[zi - 2] ++;
             }
           } else {
             if (curr_deg_den == max_deg_den)
-              rec_den.feed(std::vector<FFInt> (tmp_zi_ord.begin(), tmp_zi_ord.end() - 1), food);
+              rec_den.feed(yis, food);
             else {
-              std::vector<FFInt> yis(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
               yis.emplace(yis.begin(), FFInt(1));
               FFInt num_subtraction = sub_den[curr_deg_den].convert_to_PolynomialFF().calc(yis);
 
@@ -546,7 +554,8 @@ namespace firefly {
           coef_d[curr_deg_den] = rec_den;
           curr_zi_order = tmp_zi_ord;
           curr_zi = zi;
-
+          auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
+          set_new_rand(key);
           try {
             std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1);
             std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
@@ -989,7 +998,7 @@ namespace firefly {
     yis[0] = ti[0];
 
     for (uint i = 1; i < n; i++) {
-      yis[i] = yis[0] * yis[i] + shift[i];
+      yis[i] = yis[0] * rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])] + shift[i];
     }
 
     yis[0] += shift[0];
@@ -1040,4 +1049,19 @@ namespace firefly {
                                 non_solved_coef_den.end());
     }
   }
+
+  //TODO allow for seed with std::srand(std::time(nullptr));
+  FFInt RatReconst::get_rand() {
+    return FFInt(std::rand() % (FFInt::p - 1)) + FFInt(1);
+  }
+
+  void RatReconst::set_new_rand(std::pair<uint, uint>& key) {
+    try {
+      rand_zi.at(key);
+    } catch (std::out_of_range& e) {
+      rand_zi.emplace(std::make_pair(key, get_rand()));
+    }
+  }
+
 }
+

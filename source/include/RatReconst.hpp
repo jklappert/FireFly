@@ -8,6 +8,7 @@ namespace firefly {
   typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
   typedef std::unordered_map<std::vector<uint>, std::unordered_map<std::vector<uint>, FFInt, UintHasher>, UintHasher> ff_map_map;
   typedef std::unordered_map<std::vector<uint>, std::vector<std::pair<FFInt, FFInt>>, UintHasher> ff_vec_map;
+  typedef std::unordered_map<std::pair<uint, uint>, FFInt, UintPairHasher> ff_pair_map;
 
   class RatReconst {
   public:
@@ -25,10 +26,15 @@ namespace firefly {
      */
     RationalFunction get_result();
     static std::vector<FFInt> shift;
+    static ff_pair_map rand_zi;
     bool done = false;
     uint zi = 1;
     uint prime_number = 0;
     std::vector<uint> curr_zi_order {};
+    /*
+     * 
+     */
+    FFInt get_rand();
   private:
     FFInt comp_ai(int i, int ip, const FFInt& num);
     /**
@@ -103,6 +109,10 @@ namespace firefly {
      * 
      */
     void combine_primes(std::pair<mpz_map, mpz_map>& tmp);
+    /*
+     * 
+     */
+    void set_new_rand(std::pair<uint, uint>& key);
     uint n; /**< The number of parameters */
     bool check = false;
     bool use_chinese_remainder = false;

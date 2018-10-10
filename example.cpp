@@ -72,34 +72,38 @@ int main() {
         }
 
         if (primes_used != rec.prime_number) {
+          if(rec.prime_number == 3) exit(-1);
+          rec.rand_zi.clear();
+
+          for (uint i = 2; i <= n; i++) {
+            rec.rand_zi.emplace(std::make_pair(std::make_pair(i, 1), rec.get_rand()));
+          }
+
           std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
           primes_used = std::max(primes_used, rec.prime_number);
           prime = firefly::primes()[rec.prime_number];
           firefly::FFInt::p = prime;
 
-          if (n > 1)
-            yis = std::vector<firefly::FFInt> (rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
-
           kk = 0;
 
           for (uint j = 2; j <= n; j++) {
+            yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.curr_zi_order[j - 2])];
             t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
           }
         }
 
-        t = firefly::FFInt(std::rand() % (prime - 1)) + firefly::FFInt(1);
+        t = rec.get_rand();
 
         if (t_yis.size() == 0) {
           for (uint j = 2; j <= n; j++) {
-            yis = std::vector<firefly::FFInt> (rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
+            yis.emplace_back(rec.rand_zi[std::make_pair(j, rec.curr_zi_order[j - 2])]);
             t_yis.emplace_back(t * yis[j - 2] + firefly::RatReconst::shift[j - 1]);
           }
         }
 
         if (rec.zi >= 2) {
-          yis = std::vector<firefly::FFInt> (rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
-
           for (uint j = 2; j <= n; j++) {
+            yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.curr_zi_order[j - 2])];
             t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
           }
         } else {
@@ -150,7 +154,7 @@ int main() {
         count++;
         std::vector<uint> tmp_vec;
 
-        if(n > 1)
+        if (n > 1)
           tmp_vec = std::vector<uint>(rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
 /*        std::cout << "zi_order: ";
         for (auto el : rec.curr_zi_order) {
@@ -159,6 +163,7 @@ int main() {
         std::cout << "\n";*/
         rec.feed(t, num/den, tmp_vec);
       }
+
       std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
       std::cout << rec.get_result();
     }
@@ -168,3 +173,4 @@ int main() {
 
   return 0;
 }
+
