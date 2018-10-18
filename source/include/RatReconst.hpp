@@ -104,7 +104,10 @@ namespace firefly {
     /**
      *
      */
-    void feed_poly();
+    std::tuple<int, uint, std::vector<uint>> feed_poly(int curr_deg,
+                             uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
+                             PolyReconst& rec, ff_map_map& saved_num,
+                             std::unordered_map<uint, Polynomial>& sub_save, bool is_num);
     /**
      * 
      */
@@ -118,7 +121,6 @@ namespace firefly {
     bool use_chinese_remainder = false;
     bool new_prime = false;
     bool first_run = true;
-    bool first_den_rec = true;
     static bool shifted;
     std::vector<std::vector<FFInt>> coef_mat {};
     uint curr_zi = 2;
@@ -139,9 +141,14 @@ namespace firefly {
     int max_deg_num = -1;
     int max_deg_den = -1;
     int min_deg_den = -1;
+    int min_deg_num = -1;
     int curr_deg_num = -1;
     int curr_deg_den = -1;
+    std::vector<uint> curr_zi_order_num {};
+    std::vector<uint> curr_zi_order_den {};
     int solved_coefs = 0;
+    uint tmp_solved_coefs_num = 0;
+    uint tmp_solved_coefs_den = 0;
     void remove_ni(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
     void remove_di(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
     uint num_eqn;

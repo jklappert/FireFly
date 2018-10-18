@@ -34,6 +34,7 @@ namespace firefly {
     uint next_zi = 1;
     uint prime_number = 0;
     Polynomial get_result();
+    std::vector<uint> curr_zi_order{};
   private:
     /**
      *    Computes the coefficient a(i) = ai.at(i) recursively using eq. (3.11) of

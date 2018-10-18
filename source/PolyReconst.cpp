@@ -10,6 +10,7 @@ namespace firefly {
     next_zi = 1;
     curr_zi = 1;
     combined_prime = FFInt::p;
+    curr_zi_order = std::vector<uint>(n, 1);
   }
 
   PolyReconst::PolyReconst() {}

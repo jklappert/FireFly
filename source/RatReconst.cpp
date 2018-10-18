@@ -21,6 +21,8 @@ namespace firefly {
       if (n > 1) {
         for (auto & el : shift) el = FFInt(std::rand() % 1000000) + FFInt(1);
 
+        curr_zi_order_num = std::vector<uint> (n, 1);
+        curr_zi_order_den = std::vector<uint> (n, 1);
         shifted = true;
       }
     }
@@ -62,6 +64,15 @@ namespace firefly {
           // the chinese remainder theorem in combining the previous results
           if (new_prime) {
             ti.emplace_back(new_ti);
+            sub_num.clear();
+            sub_den.clear();
+
+            if (shift[0] != 0) {
+              tmp_solved_coefs_num = 0;
+              tmp_solved_coefs_den = 0;
+              num_eqn = max_deg_den + max_deg_num + 1 - min_deg_num - min_deg_den
+                        - solved_coefs - tmp_solved_coefs_num - tmp_solved_coefs_den;
+            }
 
             if (rec_rat_coef()) {
               done = test_guess(num);
@@ -130,6 +141,10 @@ namespace firefly {
               }
             }
 
+            std::vector<FFInt> ns_yis = yis;
+            std::vector<FFInt> ns_yis_wo_t = yis;
+            ns_yis.insert(ns_yis.begin(), FFInt(1));
+
             yis.insert(yis.begin(), new_ti);
 
             for (uint i = 1; i < n; i++) {
@@ -154,7 +169,16 @@ namespace firefly {
               FFInt tmp_num = food.second;
 
               for (int r = 0; r <= max_deg_num; r++) {
-                if (std::find(non_solved_coef_num.begin(), non_solved_coef_num.end(), r) != non_solved_coef_num.end()) {
+                if (r > min_deg_num && shift[0] != 0 && coef_n.size() > 0 && coef_n[r].new_prime) {
+                  FFInt sub;
+
+                  if (r < max_deg_num)
+                    sub = (coef_n[r].get_result().convert_to_PolynomialFF().calc(ns_yis_wo_t) + sub_num[r].convert_to_PolynomialFF().calc(ns_yis)) * tmp_ti.pow(FFInt(r));
+                  else
+                    sub = (coef_n[r].get_result().convert_to_PolynomialFF().calc(ns_yis_wo_t)) * tmp_ti.pow(FFInt(r));
+
+                  solved_coef_sub_num.emplace_back(sub);
+                } else if (std::find(non_solved_coef_num.begin(), non_solved_coef_num.end(), r) != non_solved_coef_num.end()) {
                   eq.emplace_back(tmp_ti.pow(FFInt(r)));
                   solved_coef_sub_num.emplace_back(solved_coefs_num[r].convert_to_PolynomialFF().calc(yis));
                 } else {
@@ -166,7 +190,16 @@ namespace firefly {
               }
 
               for (int rp = min_deg_den + 1; rp <= max_deg_den; rp++) {
-                if (std::find(non_solved_coef_den.begin(), non_solved_coef_den.end(), rp) != non_solved_coef_den.end()) {
+                if (shift[0] != 0  && coef_d.size() > 0 && coef_d[rp].new_prime) {
+                  FFInt sub;
+
+                  if (rp < max_deg_den)
+                    sub = (coef_d[rp].get_result().convert_to_PolynomialFF().calc(ns_yis_wo_t) + sub_den[rp].convert_to_PolynomialFF().calc(ns_yis)) * tmp_ti.pow(FFInt(rp));
+                  else
+                    sub = (coef_d[rp].get_result().convert_to_PolynomialFF().calc(ns_yis_wo_t)) * tmp_ti.pow(FFInt(rp));
+
+                  solved_coef_sub_den.emplace_back(sub);
+                } else if (std::find(non_solved_coef_den.begin(), non_solved_coef_den.end(), rp) != non_solved_coef_den.end()) {
                   eq.emplace_back(-tmp_ti.pow(FFInt(rp)) * tmp_num);
                   solved_coef_sub_den.emplace_back(solved_coefs_den[rp - (min_deg_den + 1)].convert_to_PolynomialFF().calc(yis));
                 } else {
@@ -241,6 +274,7 @@ namespace firefly {
               curr_deg_num = max_deg_num;
               curr_deg_den = max_deg_den;
               min_deg_den = canonical.second.min_deg()[0];
+              min_deg_num = canonical.first.min_deg()[0];
 
               non_solved_coef_num = std::vector<uint> (max_deg_num + 1);
               non_solved_coef_den = std::vector<uint> (max_deg_den + 1);
@@ -266,12 +300,14 @@ namespace firefly {
                   numerator.coef.at(pow);
                   non_solved_coef_num[i - deleted_coefs] = i;
                 } catch (std::out_of_range& e) {
-                  std::vector<uint> pow(n, 0);
-                  pow[0] = i;
-                  solved_coefs_num[i] = Polynomial(Monomial(pow, RationalNumber(0, 1)));
-                  non_solved_coef_num.erase(non_solved_coef_num.begin() + i - deleted_coefs);
-                  deleted_coefs ++;
-                  solved_coef_num ++;
+                  if (shift[0] == 0) {
+                    std::vector<uint> pow(n, 0);
+                    pow[0] = i;
+                    solved_coefs_num[i] = Polynomial(Monomial(pow, RationalNumber(0, 1)));
+                    non_solved_coef_num.erase(non_solved_coef_num.begin() + i - deleted_coefs);
+                    deleted_coefs ++;
+                    solved_coef_num ++;
+                  }
                 }
               }
 
@@ -284,16 +320,21 @@ namespace firefly {
                   non_solved_coef_den[i - deleted_coefs - 1 - min_deg_den] = i;
                 } catch (std::out_of_range& e) {
                   std::vector<uint> pow(n, 0);
-                  pow[0] = i;
-                  solved_coefs_den[i - 1 - min_deg_den] = Polynomial(Monomial(pow, RationalNumber(0, 1)));
-                  non_solved_coef_den.erase(non_solved_coef_den.begin() + i - 1 - deleted_coefs - min_deg_den);
-                  deleted_coefs ++;
-                  solved_coef_den ++;
+
+                  if (shift[0] == 0) {
+                    pow[0] = i;
+                    solved_coefs_den[i - 1 - min_deg_den] = Polynomial(Monomial(pow, RationalNumber(0, 1)));
+                    non_solved_coef_den.erase(non_solved_coef_den.begin() + i - 1 - deleted_coefs - min_deg_den);
+                    deleted_coefs ++;
+                    solved_coef_den ++;
+                  }
                 }
+
+                solved_coefs = solved_coef_num + solved_coef_den;
+                num_eqn = max_deg_den + max_deg_num + 1 - min_deg_num - min_deg_den
+                          - solved_coefs - tmp_solved_coefs_num - tmp_solved_coefs_den;
               }
 
-              solved_coefs = solved_coef_num + solved_coef_den;
-              num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
               ai.clear();
               ti.clear();
             } else
@@ -376,7 +417,151 @@ namespace firefly {
                 first_run = false;
               }
 
-              feed_poly();
+              uint zi_num = 0;
+              uint zi_den = 0;
+
+              // reconstruct the numerator
+              if (curr_deg_num >= 0) {
+                PolyReconst rec = coef_n[curr_deg_num];
+
+                if (rec.curr_zi_order == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1)) {
+                  auto res = feed_poly(curr_deg_num, max_deg_num, coef_n, rec,
+                                       saved_num_num, sub_num, true);
+                  curr_deg_num = std::get<0>(res);
+                  zi_num = std::get<1>(res);
+                  curr_zi_order_num = std::get<2>(res);
+                }
+              }
+
+              // reconstruct the denominator
+              if (curr_deg_den >= 0) {
+                PolyReconst rec = coef_d[curr_deg_den];
+
+                // if the numerator is done, get the current zi order of the
+                // denominator
+                if (curr_deg_num == -1) {
+                  curr_zi_order = rec.curr_zi_order;
+                  curr_zi_order.emplace_back(prime_number);
+                  curr_zi = rec.next_zi + 1;
+                  zi = curr_zi;
+                }
+
+                if (rec.curr_zi_order == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1)) {
+                  auto res = feed_poly(curr_deg_den, max_deg_den, coef_d, rec,
+                                       saved_num_den, sub_den, false);
+                  curr_deg_den = std::get<0>(res);
+                  zi_den = std::get<1>(res);
+                  curr_zi_order_den = std::get<2>(res);
+
+                  // if the denominator is done, check if the numerator is still undone
+                  if (curr_deg_den == -1 && curr_deg_num >= 0) {
+                    PolyReconst rec_new = coef_n[curr_deg_num];
+                    curr_zi_order = rec_new.curr_zi_order;
+                    curr_zi_order.emplace_back(prime_number);
+                    curr_zi = rec_new.next_zi + 1;
+                    zi = curr_zi;
+
+                    if (rec_new.curr_zi_order == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1)) {
+                      auto res_new = feed_poly(curr_deg_num, max_deg_num, coef_n, rec,
+                                               saved_num_num, sub_num, true);
+                      curr_deg_num = std::get<0>(res_new);
+                      zi_num = std::get<1>(res_new);
+                      curr_zi_order_num = std::get<2>(res_new);
+                    }
+                  }
+                }
+              }
+
+              // check which poly reconst should be feeded next
+              // it is promising that feeding a PolyReconst with a higher
+              // zi degree will be finished next leading to less numerical runs
+              if (curr_deg_den >= 0 && curr_deg_num >= 0) {
+                std::vector<uint> zi_order_num_rev = curr_zi_order_num;
+                std::reverse(zi_order_num_rev.begin(), zi_order_num_rev.end());
+                std::vector<uint> zi_order_den_rev = curr_zi_order_den;
+                std::reverse(zi_order_den_rev.begin(), zi_order_den_rev.end());
+
+                if (zi_order_num_rev > zi_order_den_rev) {
+                  curr_zi_order = curr_zi_order_num;
+                  curr_zi = zi_num;
+                  zi = zi_num;
+                } else {
+                  curr_zi_order = curr_zi_order_den;
+                  curr_zi = zi_den;
+                  zi = zi_den;
+                }
+              } else if (curr_deg_num >= 0) {
+                curr_zi_order = curr_zi_order_num;
+                curr_zi = zi_num;
+                zi = zi_num;
+              } else if (curr_deg_den >= 0) {
+                curr_zi_order = curr_zi_order_den;
+                curr_zi = zi_den;
+                zi = zi_den;
+              }
+
+//               std::cout << zi << " " << curr_zi_order[0] << " " << curr_zi_order[1] << " " << curr_zi_order[2] << " " << curr_zi_order[3] << " " << curr_zi_order[4] << " " << "\n";
+
+              // combine results
+              if (curr_deg_den == - 1 && curr_deg_num == -1) {
+                saved_num_num.clear();
+                saved_num_den.clear();
+
+                first_run = true;
+
+                // Remove normalization due to the shift
+                PolynomialFF numerator;
+                PolynomialFF denominator;
+
+                for (auto & el : coef_n) {
+                  numerator = numerator + el.second.get_result().homogenize(el.first).convert_to_PolynomialFF();
+                }
+
+                for (auto & el : coef_d) {
+                  denominator = denominator + el.second.get_result().homogenize(el.first).convert_to_PolynomialFF();
+                }
+
+                coef_n.clear();
+                coef_d.clear();
+
+                FFInt first_coef = denominator.coef[denominator.min_deg()];
+
+                // normalize
+                FFInt equializer = FFInt(1) / first_coef;
+
+                numerator = numerator * equializer;
+                denominator = denominator * equializer;
+
+                std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(std::make_pair(numerator, denominator));
+
+                combine_primes(tmp);
+
+                prime_number ++;
+                saved_ti.clear();
+                std::fill(curr_zi_order.begin(), curr_zi_order.end() - 1, 1);
+                curr_zi_order[n - 1] = prime_number;
+                curr_zi = 2;
+                zi = 1;
+                new_prime = true;
+              } else if (zi > 0) {
+                // set new random
+                auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
+                set_new_rand(key);
+              }
+
+//               if (curr_zi_order[0] > 20) exit(-1);
+
+              /*
+               * If not finished, check if we can use some saved runs
+               */
+              try {
+                std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1);
+                std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
+                saved_ti.at(tmp_vec).pop_back();
+                feed(key_val.first, key_val.second, tmp_vec);
+              } catch (std::out_of_range& e) {
+                // do nothing
+              }
 
               return;
             }
@@ -393,252 +578,114 @@ namespace firefly {
     }
   }
 
-  void RatReconst::feed_poly() {
-    // first reconstruct the numerator
-    if (curr_deg_num >= 0) {
-      PolyReconst rec_num = coef_n[curr_deg_num];
-      zi = rec_num.next_zi + 1;
+  std::tuple<int, uint, std::vector<uint>> RatReconst::feed_poly(int curr_deg,
+                                                                 uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
+                                                                 PolyReconst& rec, ff_map_map& saved_num,
+  std::unordered_map<uint, Polynomial>& sub_save, bool is_num) {
+    uint tmp_zi = rec.next_zi + 1;
+    std::vector<uint> tmp_zi_ord = curr_zi_order;
 
-      std::vector<uint> tmp_zi_ord = curr_zi_order;
+    while (!rec.new_prime) {
+      try {
+        std::vector<uint> key = {(uint) curr_deg, tmp_zi};
+        FFInt food = saved_num.at(tmp_zi_ord).at(key);
+        // delete unused saved data
+        saved_num[tmp_zi_ord].erase(key);
+        // set random values for the yis
+        std::vector<FFInt> yis {};
 
-      while (!rec_num.new_prime) {
-        try {
-          std::vector<uint> key = {(uint) curr_deg_num, zi};
-          FFInt food = saved_num_num.at(tmp_zi_ord).at(key);
-          // delete unused saved data
-          saved_num_num[tmp_zi_ord].erase(key);
-          // set random values for the yis
-          std::vector<FFInt> yis {};
-
-          for (uint i = 0; i < tmp_zi_ord.size() - 1; i ++) {
-            yis.emplace_back(rand_zi[std::make_pair(i + 2, tmp_zi_ord[i])]);
-          }
-
-          // feed to PolyReconst
-          // since the constant is just a constant, we do not have to get mutliple
-          // numerical values to reconstruct the coefficient
-          if (curr_deg_num == 0) {
-            while (!rec_num.new_prime) {
-              if (curr_deg_num == max_deg_num)
-                rec_num.feed(yis, food);
-              else {
-                yis.emplace(yis.begin(), FFInt(1));
-                FFInt num_subtraction = sub_num[curr_deg_num].convert_to_PolynomialFF().calc(yis);
-
-                yis.erase(yis.begin());
-                rec_num.feed(yis, food - num_subtraction);
-              }
-            }
-          } else {
-            if (curr_deg_num == max_deg_num)
-              rec_num.feed(yis, food);
-            else {
-              yis.emplace(yis.begin(), FFInt(1));
-              FFInt num_subtraction = sub_num[curr_deg_num].convert_to_PolynomialFF().calc(yis);
-
-              yis.erase(yis.begin());
-              rec_num.feed(yis, food - num_subtraction);
-            }
-
-            if (rec_num.next_zi + 1 != zi || n == 2) {
-              zi = rec_num.next_zi + 1;
-              tmp_zi_ord[zi - 2] ++;
-              std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
-            } else
-              tmp_zi_ord[zi - 2] ++;
-          }
-        } catch (std::out_of_range& e) {
-          coef_n[curr_deg_num] = rec_num;
-          curr_zi = zi;
-          curr_zi_order = tmp_zi_ord;
-          auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
-          set_new_rand(key);
-          try {
-            std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1);
-            std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
-            saved_ti.at(tmp_vec).pop_back();
-            feed(key_val.first, key_val.second, tmp_vec);
-          } catch (std::out_of_range& e) {
-            // do nothing
-          }
-
-          return;
+        for (uint i = 0; i < tmp_zi_ord.size() - 1; i ++) {
+          yis.emplace_back(rand_zi[std::make_pair(i + 2, tmp_zi_ord[i])]);
         }
 
-        if (rec_num.new_prime) {
-          sub_num.erase(curr_deg_num);
-          Polynomial sub_num_pol = rec_num.get_result().homogenize(curr_deg_num).add_shift(shift);
-          sub_num_pol -= rec_num.get_result().homogenize(curr_deg_num);
-          coef_n[curr_deg_num] = rec_num;
+        // feed to PolyReconst
+        // since the constant is just a constant, we do not have to get mutliple
+        // numerical values to reconstruct the coefficient
+        if (curr_deg == 0) {
+          while (!rec.new_prime) {
+            if (curr_deg == (int) max_deg)
+              rec.feed(yis, food);
+            else {
+              yis.emplace(yis.begin(), FFInt(1));
+              FFInt num_subtraction = sub_save[curr_deg].convert_to_PolynomialFF().calc(yis);
 
-          for (auto & el : sub_num_pol.coefs) {
-            uint tmp_deg = 0;
-
-            for (auto & n : el.powers) {
-              tmp_deg += n;
+              yis.erase(yis.begin());
+              rec.feed(yis, food - num_subtraction);
             }
+          }
+        } else {
+          if (curr_deg == (int) max_deg)
+            rec.feed(yis, food);
+          else {
+            yis.emplace(yis.begin(), FFInt(1));
+            FFInt num_subtraction = sub_save[curr_deg].convert_to_PolynomialFF().calc(yis);
+            yis.erase(yis.begin());
+            rec.feed(yis, food - num_subtraction);
+          }
 
-            sub_num[tmp_deg] += el;
+          if (rec.next_zi + 1 != tmp_zi || n == 2) {
+            tmp_zi = rec.next_zi + 1;
+            tmp_zi_ord[tmp_zi - 2] ++;
+            std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - tmp_zi) - 1, 1);
+          } else
+            tmp_zi_ord[tmp_zi - 2] ++;
+        }
+      } catch (std::out_of_range& e) {
+        rec.curr_zi_order = std::vector<uint>(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
+        coef[curr_deg] = rec;
+        break;
+      }
+
+      /*
+       * Check for new prime & save subtraction term
+       */
+      if (rec.new_prime) {
+        Polynomial sub_pol = rec.get_result().homogenize(curr_deg).add_shift(shift);
+        sub_pol -= rec.get_result().homogenize(curr_deg);
+        coef[curr_deg] = rec;
+
+        for (auto & el : sub_pol.coefs) {
+          uint tmp_deg = 0;
+
+          for (auto & n : el.powers) {
+            tmp_deg += n;
+          }
+
+          sub_save[tmp_deg] += el;
+        }
+
+        /*
+         * Remove already solved coefficients from Gauss eliminiation
+         */
+        if (is_num) {
+          if (shift[0] != 0 && curr_deg > min_deg_num) {
+            tmp_solved_coefs_num ++;
           }
 
           deg_num.pop_back();
-          curr_deg_num = deg_num.back();
-
-          if (curr_deg_num >= 0) {
-            rec_num = coef_n[curr_deg_num];
-            std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1, 1);
-            tmp_zi_ord[n - 1] = prime_number;
-            zi = rec_num.next_zi + 1;
-          } else break;
-        }
-      }
-    }
-
-    // reconstruct the denominator TODO make the code more elegant
-    if (curr_deg_num < 0 && curr_deg_den >= 0) {
-      PolyReconst rec_den = coef_d[curr_deg_den];
-      zi = rec_den.next_zi + 1;
-      std::vector<uint> tmp_zi_ord;
-
-      if (first_den_rec) {
-        first_den_rec = false;
-        tmp_zi_ord = std::vector<uint> (n, 1);
-        tmp_zi_ord[n - 1] = prime_number;
-      } else tmp_zi_ord = curr_zi_order;
-
-      while (!rec_den.new_prime) {
-        try {
-          std::vector<uint> key = {(uint) curr_deg_den, zi};
-          FFInt food = saved_num_den.at(tmp_zi_ord).at(key);
-          // delete unused saved data
-          saved_num_den[tmp_zi_ord].erase(key);
-          // set random values for the yis
-          std::vector<FFInt> yis {};
-
-          for (uint i = 0; i < tmp_zi_ord.size() - 1; i ++) {
-            yis.emplace_back(rand_zi[std::make_pair(i + 2, tmp_zi_ord[i])]);
-          }
-          // feed to PolyReconst
-          // since the constant is just a constant, we do not have to get mutliple
-          // numerical values to reconstruct the coefficient
-          if (curr_deg_den == 0) {
-            while (!rec_den.new_prime) {
-              if (curr_deg_den == max_deg_den)
-                rec_den.feed(yis, food);
-              else {
-                yis.emplace(yis.begin(), FFInt(1));
-                FFInt num_subtraction = sub_den[curr_deg_den].convert_to_PolynomialFF().calc(yis);
-
-                yis.erase(yis.begin());
-                rec_den.feed(yis, food - num_subtraction);
-              }
-            }
-          } else {
-            if (curr_deg_den == max_deg_den)
-              rec_den.feed(yis, food);
-            else {
-              yis.emplace(yis.begin(), FFInt(1));
-              FFInt num_subtraction = sub_den[curr_deg_den].convert_to_PolynomialFF().calc(yis);
-
-              yis.erase(yis.begin());
-              rec_den.feed(yis, food - num_subtraction);
-            }
-
-            if (rec_den.next_zi + 1 != zi || n == 2) {
-              zi = rec_den.next_zi + 1;
-              tmp_zi_ord[zi - 2] ++;
-              std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - zi) - 1, 1);
-            } else tmp_zi_ord[zi - 2] ++;
-          }
-        } catch (std::out_of_range& e) {
-          coef_d[curr_deg_den] = rec_den;
-          curr_zi_order = tmp_zi_ord;
-          curr_zi = zi;
-          auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
-          set_new_rand(key);
-          try {
-            std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1);
-            std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
-            saved_ti.at(tmp_vec).pop_back();
-            feed(key_val.first, key_val.second, tmp_vec);
-          } catch (std::out_of_range& e) {
-            // do nothing
-          }
-
-          return;
-        }
-
-        if (rec_den.new_prime) {
-          sub_den.erase(curr_deg_den);
-          Polynomial sub_den_pol = rec_den.get_result().homogenize(curr_deg_den).add_shift(shift);
-          sub_den_pol -= rec_den.get_result().homogenize(curr_deg_den);
-          coef_d[curr_deg_den] = rec_den;
-
-          for (auto & el : sub_den_pol.coefs) {
-            uint tmp_deg = 0;
-
-            for (auto & n : el.powers) {
-              tmp_deg += n;
-            }
-
-            sub_den[tmp_deg] += el;
+          curr_deg = deg_num.back();
+        } else {
+          if (shift[0] != 0 && curr_deg > min_deg_den) {
+            tmp_solved_coefs_den ++;
           }
 
           deg_den.pop_back();
-          curr_deg_den = deg_den.back();
-
-          if (curr_deg_den >= 0) {
-            rec_den = coef_d[curr_deg_den];
-            std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1, 1);
-            tmp_zi_ord[n - 1] = prime_number;
-            zi = rec_den.next_zi + 1;
-          } else break;
+          curr_deg = deg_den.back();
         }
+
+        num_eqn = max_deg_den + max_deg_num + 1 - min_deg_num - min_deg_den
+                  - solved_coefs - tmp_solved_coefs_num - tmp_solved_coefs_den;
+
+        if (curr_deg >= 0) {
+          rec = coef[curr_deg];
+          std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1, 1);
+          tmp_zi_ord[n - 1] = prime_number;
+          tmp_zi = rec.next_zi + 1;
+        } else break;
       }
     }
 
-    if (curr_deg_den == - 1 && curr_deg_num == -1) {
-      saved_num_num.clear();
-      saved_num_den.clear();
-
-      first_run = true;
-
-      // Remove normalization due to the shift
-      PolynomialFF numerator;
-      PolynomialFF denominator;
-
-      for (auto & el : coef_n) {
-        numerator = numerator + el.second.get_result().homogenize(el.first).convert_to_PolynomialFF();
-      }
-
-      for (auto & el : coef_d) {
-        denominator = denominator + el.second.get_result().homogenize(el.first).convert_to_PolynomialFF();
-      }
-
-      coef_n.clear();
-      coef_d.clear();
-
-      FFInt first_coef = denominator.coef[denominator.min_deg()];
-
-      // normalize
-      FFInt equializer = FFInt(1) / first_coef;
-
-      numerator = numerator * equializer;
-      denominator = denominator * equializer;
-
-      std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(std::make_pair(numerator, denominator));
-
-      combine_primes(tmp);
-
-      prime_number ++;
-      saved_ti.clear();
-      std::fill(curr_zi_order.begin(), curr_zi_order.end() - 1, 1);
-      curr_zi_order[n - 1] = prime_number;
-      curr_zi = 2;
-      zi = 1;
-      new_prime = true;
-      first_den_rec = true;
-    }
+    return std::make_tuple(curr_deg, tmp_zi, tmp_zi_ord);
   }
 
   void RatReconst::combine_primes(std::pair<mpz_map, mpz_map>& tmp) {
@@ -764,7 +811,8 @@ namespace firefly {
       }
     }
 
-    num_eqn = max_deg_den + max_deg_num + 1 - min_deg_den - solved_coefs;
+    num_eqn = max_deg_den + max_deg_num + 1 - min_deg_num - min_deg_den
+              - solved_coefs - tmp_solved_coefs_num - tmp_solved_coefs_den;
 
     curr_deg_num = *std::max_element(non_solved_coef_num.begin(), non_solved_coef_num.end());
     curr_deg_den = *std::max_element(non_solved_coef_den.begin(), non_solved_coef_den.end());
@@ -840,7 +888,7 @@ namespace firefly {
     }
   }
 
-  std::pair< PolynomialFF, PolynomialFF > RatReconst::solve_gauss() {
+  std::pair<PolynomialFF, PolynomialFF> RatReconst::solve_gauss() {
     // Transform the matrix in upper triangular form
     for (uint i = 0; i < num_eqn; i++) {
       // search for maximum in this column
@@ -895,12 +943,19 @@ namespace firefly {
 
     uint non_solved_num_size = non_solved_coef_num.size();
 
-    for (uint i = 0; i < non_solved_num_size; i ++) {
-      std::vector<uint> power = {non_solved_coef_num[i]};
-      numerator.emplace(std::make_pair(std::move(power), results[i]));
+    if (shift[0] != FFInt(0)) non_solved_num_size -= tmp_solved_coefs_num;
+
+    if (non_solved_num_size == 0) {
+      const std::vector<uint> min_power_num = {(uint) min_deg_num};
+      numerator.emplace(std::make_pair(std::move(min_power_num), FFInt(0)));
+    } else {
+      for (uint i = 0; i < non_solved_num_size; i ++) {
+        std::vector<uint> power = {non_solved_coef_num[i]};
+        numerator.emplace(std::make_pair(std::move(power), results[i]));
+      }
     }
 
-    for (uint i = 0; i < non_solved_coef_den.size(); i ++) {
+    for (int i = 0; i < (int)(non_solved_coef_den.size() - 1 - tmp_solved_coefs_den); i ++) {
       uint pow = non_solved_coef_den[i];
 
       if ((int) pow != min_deg_den) {
@@ -1064,4 +1119,6 @@ namespace firefly {
   }
 
 }
+
+
 
