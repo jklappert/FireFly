@@ -58,7 +58,7 @@ namespace firefly {
 
       // Compare if the food is the expected food; it should always be smaller
       // or equal; if it is smaller store it for later use
-      if (feed_zi_ord_rev <= tmp_vec_rev) {
+//       if (feed_zi_ord_rev <= tmp_vec_rev) {
         if (feed_zi_ord == tmp_vec) {
           // first check if we are done. If not start the reconstruction again using
           // the chinese remainder theorem in combining the previous results
@@ -418,7 +418,9 @@ namespace firefly {
               }
 
               uint zi_num = 0;
+              if(curr_deg_num > 0) zi_num = coef_n[curr_deg_num].next_zi + 1;
               uint zi_den = 0;
+              if(curr_deg_den > 0) zi_den = coef_d[curr_deg_den].next_zi + 1;
 
               // reconstruct the numerator
               if (curr_deg_num >= 0) {
@@ -500,7 +502,7 @@ namespace firefly {
                 zi = zi_den;
               }
 
-//               std::cout << zi << " " << curr_zi_order[0] << " " << curr_zi_order[1] << " " << curr_zi_order[2] << " " << curr_zi_order[3] << " " << curr_zi_order[4] << " " << "\n";
+//                std::cout << zi << " " << curr_zi_order[0] << " " << curr_zi_order[1] << " " << curr_zi_order[2] << " " << curr_zi_order[3] << " " << curr_zi_order[4] << " " << curr_deg_den << " " << curr_deg_num << "\n";
 
               // combine results
               if (curr_deg_den == - 1 && curr_deg_num == -1) {
@@ -574,7 +576,7 @@ namespace firefly {
             saved_ti[feed_zi_ord] = tmp_ti;
           }
         }
-      }
+//       }
     }
   }
 

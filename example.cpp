@@ -125,8 +125,8 @@ int main() {
         firefly::FFInt a5(2);
         firefly::FFInt a6(3);
         // example for n = 5
-        firefly::FFInt num = z1*t_yis[0].pow(a5) + z1.pow(a2);
-        firefly::FFInt den = a1 + t_yis[2]*z1 + z1.pow(a5);
+	        firefly::FFInt num = z1*t_yis[0].pow(a5) + z1.pow(a2);
+          firefly::FFInt den = a1 + t_yis[2]*z1 + z1.pow(a5);
         /*firefly::FFInt num = ((z1*z1 -firefly::FFInt(5)*z1+firefly::FFInt(6))*t_yis[0]
           +firefly::FFInt(2)*z1*z1-firefly::FFInt(10)*z1+firefly::FFInt(12));
         firefly::FFInt den = (((firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1])*t_yis[0]*t_yis[0]
@@ -149,7 +149,6 @@ int main() {
           +firefly::FFInt(125545488)*z1.pow(firefly::FFInt(6))-firefly::FFInt(408157280)*z1.pow(firefly::FFInt(5))
           +firefly::FFInt(899198016)*z1.pow(firefly::FFInt(4))-firefly::FFInt(1278172800)*z1.pow(firefly::FFInt(3))
           +firefly::FFInt(1055033856)*z1.pow(firefly::FFInt(2))-firefly::FFInt(383201280)*z1);*/
-
         kk++;
         count++;
         std::vector<uint> tmp_vec;
