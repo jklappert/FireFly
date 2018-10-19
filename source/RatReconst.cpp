@@ -635,7 +635,7 @@ namespace firefly {
       } catch (std::out_of_range& e) {
         rec.curr_zi_order = std::vector<uint>(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
         coef[curr_deg] = rec;
-        break;
+        return std::make_tuple(curr_deg, tmp_zi, tmp_zi_ord);
       }
 
       /*
