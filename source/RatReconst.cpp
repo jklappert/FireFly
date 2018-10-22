@@ -549,7 +549,7 @@ namespace firefly {
               set_new_rand(key);
             }
 
-            if (curr_zi_order[0] > 10) exit(-1);
+//             if (curr_zi_order[0] > 10) exit(-1);
 
             /*
              * If not finished, check if we can use some saved runs
