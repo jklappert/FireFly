@@ -6,7 +6,7 @@
 #include <algorithm>
 
 int main() {
-  uint n = 5;
+  uint n = 4;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec_1(n);
@@ -125,8 +125,8 @@ int main() {
         firefly::FFInt a5(2);
         firefly::FFInt a6(3);
         // example for n = 5
-	        firefly::FFInt num = z1*t_yis[0].pow(a5) + z1.pow(a2);
-          firefly::FFInt den = a1 + t_yis[2]*z1 + z1.pow(a5);
+	        firefly::FFInt den = z1*t_yis[0].pow(a5) + z1.pow(a4);
+          firefly::FFInt num = a1 + t_yis[2]*z1 + z1.pow(a5);
         /*firefly::FFInt num = ((z1*z1 -firefly::FFInt(5)*z1+firefly::FFInt(6))*t_yis[0]
           +firefly::FFInt(2)*z1*z1-firefly::FFInt(10)*z1+firefly::FFInt(12));
         firefly::FFInt den = (((firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1])*t_yis[0]*t_yis[0]
@@ -161,7 +161,7 @@ int main() {
         }
         std::cout << "\n";*/
         rec.feed(t, num/den, tmp_vec);
-        //std::cout << count <<"\n";
+//         std::cout << count <<"\n";
       }
 
       std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
