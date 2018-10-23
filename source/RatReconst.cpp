@@ -126,39 +126,12 @@ namespace firefly {
           if (size == 0)
             coef_mat.reserve(num_eqn);
 
-          std::vector<FFInt> solved_coef_sub_num {};
-          std::vector<FFInt> solved_coef_sub_den {};
-
-          // fill matrix
-          std::vector<FFInt> eq;
-          eq.reserve(num_eqn + 1);
-
-          std::vector<FFInt> yis;
-
-          if (n > 1) {
-            for (uint i = 0; i < curr_zi_order.size() - 1; i ++) {
-              yis.emplace_back(rand_zi[std::make_pair(i + 2, curr_zi_order[i])]);
-            }
-          }
-
-          std::vector<FFInt> ns_yis = yis;
-          std::vector<FFInt> ns_yis_wo_t = yis;
-          ns_yis.insert(ns_yis.begin(), FFInt(1));
-
-          yis.insert(yis.begin(), new_ti);
-
-          for (uint i = 1; i < n; i++) {
-            yis[i] = yis[0] * yis[i] + shift[i];
-          }
-
-          yis[0] += shift[0];
-
           std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
 
           if (n > 1) {
             try {
               std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1);
-//                 t_food.insert(t_food.end(), saved_ti.at(tmp_vec).begin(), saved_ti.at(tmp_vec).end());
+              t_food.insert(t_food.end(), saved_ti.at(tmp_vec).begin(), saved_ti.at(tmp_vec).end());
               saved_ti.erase(tmp_vec);
             } catch (std::out_of_range& e) {
               // do nothing
@@ -168,6 +141,33 @@ namespace firefly {
           for (auto food : t_food) {
             FFInt tmp_ti = food.first;
             FFInt tmp_num = food.second;
+
+            std::vector<FFInt> solved_coef_sub_num {};
+            std::vector<FFInt> solved_coef_sub_den {};
+
+            // fill matrix
+            std::vector<FFInt> eq;
+            eq.reserve(num_eqn + 1);
+
+            std::vector<FFInt> yis;
+
+            if (n > 1) {
+              for (uint i = 0; i < curr_zi_order.size() - 1; i ++) {
+                yis.emplace_back(rand_zi[std::make_pair(i + 2, curr_zi_order[i])]);
+              }
+            }
+
+            std::vector<FFInt> ns_yis = yis;
+            std::vector<FFInt> ns_yis_wo_t = yis;
+            ns_yis.insert(ns_yis.begin(), FFInt(1));
+
+            yis.insert(yis.begin(), tmp_ti);
+
+            for (uint i = 1; i < n; i++) {
+              yis[i] = yis[0] * yis[i] + shift[i];
+            }
+
+            yis[0] += shift[0];
 
             for (int r = 0; r <= max_deg_num; r++) {
               if (/*r > min_deg_num &&*/ shift[0] != 0 && coef_n.size() > 0 && coef_n[r].new_prime) {
@@ -556,9 +556,9 @@ namespace firefly {
              */
             try {
               std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1);
-//                 std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
-//                 saved_ti.at(tmp_vec).pop_back();
-//                 feed(key_val.first, key_val.second, tmp_vec);
+              std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
+              saved_ti.at(tmp_vec).pop_back();
+              feed(key_val.first, key_val.second, tmp_vec);
             } catch (std::out_of_range& e) {
               // do nothing
             }
@@ -1124,6 +1124,3 @@ namespace firefly {
   }
 
 }
-
-
-
