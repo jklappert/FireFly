@@ -56,8 +56,7 @@ namespace firefly {
         std::reverse(tmp_vec_rev.begin(), tmp_vec_rev.end());
       }
 
-      // Compare if the food is the expected food; it should always be smaller
-      // or equal; if it is smaller store it for later use
+      // Compare if the food is the expected food; if not, store it for later use
       if (feed_zi_ord == tmp_vec) {
         // first check if we are done. If not start the reconstruction again using
         // the chinese remainder theorem in combining the previous results
@@ -65,13 +64,6 @@ namespace firefly {
           ti.emplace_back(new_ti);
           sub_num.clear();
           sub_den.clear();
-
-          if (shift[0] != 0) {
-            tmp_solved_coefs_num = 0;
-            tmp_solved_coefs_den = 0;
-            num_eqn = max_deg_den + max_deg_num + 1 - min_deg_num - min_deg_den
-                      - solved_coefs - tmp_solved_coefs_num - tmp_solved_coefs_den;
-          }
 
           if (rec_rat_coef()) {
             done = test_guess(num);
@@ -808,6 +800,8 @@ namespace firefly {
       }
     }
 
+    tmp_solved_coefs_num = 0;
+    tmp_solved_coefs_den = 0;
     num_eqn = max_deg_den + max_deg_num + 1 - min_deg_num - min_deg_den
               - solved_coefs - tmp_solved_coefs_num - tmp_solved_coefs_den;
 
@@ -1113,6 +1107,10 @@ namespace firefly {
     } catch (std::out_of_range& e) {
       rand_zi.emplace(std::make_pair(key, get_rand()));
     }
+  }
+
+  uint RatReconst::get_num_eqn() const {
+    return num_eqn;
   }
 
 }

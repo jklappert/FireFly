@@ -32,9 +32,10 @@ namespace firefly {
     uint prime_number = 0;
     std::vector<uint> curr_zi_order {};
     /*
-     * 
+     *
      */
     FFInt get_rand();
+    uint get_num_eqn() const;
   private:
     FFInt comp_ai(int i, int ip, const FFInt& num);
     /**
@@ -109,11 +110,11 @@ namespace firefly {
                              PolyReconst& rec, ff_map_map& saved_num,
                              std::unordered_map<uint, Polynomial>& sub_save, bool is_num);
     /**
-     * 
+     *
      */
     void combine_primes(std::pair<mpz_map, mpz_map>& tmp);
     /*
-     * 
+     *
      */
     void set_new_rand(std::pair<uint, uint>& key);
     uint n; /**< The number of parameters */
