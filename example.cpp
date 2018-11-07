@@ -19,38 +19,7 @@ int main() {
   }
 
   try {
-    /*std::vector<firefly::FFInt> t_yis;
-    std::vector<firefly::FFInt> yis;
-    yis.reserve(n - 1);
-    t_yis.reserve(n - 1);
-    firefly::FFInt t;
-    std::vector<firefly::FFInt> yis_2;
-    yis_2.reserve(n);
-    yis_2.emplace_back(firefly::FFInt(std::rand() % prime));
-    yis_2.emplace_back(firefly::FFInt(std::rand() % prime));
-    yis_2.emplace_back(firefly::FFInt(std::rand() % prime));
-    yis_2.emplace_back(firefly::FFInt(std::rand() % prime));
-    while(!rec_2.done){
-      if (rec.new_prime) {
-        prime = firefly::primes()[i];
-        firefly::FFInt::p = prime;
-        i++;
-      }
-      yis_2[rec_2.next_zi - 1] = firefly::FFInt(std::rand() % prime);
 
-      mpz_class test;
-      test = "1234567891098987998798709805302432022989874343098";
-      test = test % prime;
-      firefly::FFInt a7(std::stoull(test.get_str()));
-      firefly::FFInt a1(1);
-      firefly::FFInt a2(18);
-      firefly::FFInt a3(25);
-      firefly::FFInt a4(10);
-      firefly::FFInt a5(2);
-      firefly::FFInt a6(7);
-      firefly::FFInt num = (a6 + a3 * yis_2[0] + yis_2[0]*a3*yis_2[2] + yis_2[1]*yis_2[1] + yis_2[3]);
-      rec_2.feed(yis_2, num);
-    }*/
     for (int m = 0; m < 1; m++) {
       std::vector<firefly::FFInt> t_yis;
       std::vector<firefly::FFInt> yis;
@@ -73,6 +42,7 @@ int main() {
 
         if (primes_used != rec.prime_number) {
           rec.rand_zi.clear();
+
           for (uint i = 2; i <= n; i++) {
             rec.rand_zi.emplace(std::make_pair(std::make_pair(i, 1), rec.get_rand()));
           }
@@ -125,8 +95,12 @@ int main() {
         firefly::FFInt a5(2);
         firefly::FFInt a6(3);
         // example for n = 5
-	        firefly::FFInt den = z1*t_yis[0].pow(a5) + z1.pow(a4);
-          firefly::FFInt num = a1 + t_yis[2]*z1 + z1.pow(a5);
+        //firefly::FFInt den = a1;
+        //firefly::FFInt num = z1.pow(20) + (t_yis[0] + t_yis[0].pow(2) + t_yis[0].pow(3) + t_yis[0].pow(4)) + t_yis[1].pow(20);
+        firefly::FFInt den = a1 + z1 * t_yis[0].pow(a5) + t_yis[2].pow(a4);
+        firefly::FFInt num = a1 + t_yis[2] * z1 + t_yis[2].pow(a3);
+        // firefly::FFInt den = z1*z1.pow(a5) + z1.pow(a4);
+        // firefly::FFInt num = a1 + z1*z1 + z1.pow(25*25);
         /*firefly::FFInt num = ((z1*z1 -firefly::FFInt(5)*z1+firefly::FFInt(6))*t_yis[0]
           +firefly::FFInt(2)*z1*z1-firefly::FFInt(10)*z1+firefly::FFInt(12));
         firefly::FFInt den = (((firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1])*t_yis[0]*t_yis[0]
@@ -137,31 +111,26 @@ int main() {
 //        firefly::FFInt den = (firefly::FFInt(3)*z1-firefly::FFInt(8))*t_yis[1];
 
         // example for n = 1
-        /*firefly::FFInt num = (firefly::FFInt(576)*z1.pow(firefly::FFInt(12)) - firefly::FFInt(35145)*z1.pow(firefly::FFInt(11))
-          +firefly::FFInt(946716)*z1.pow(firefly::FFInt(10))-firefly::FFInt(14842335)*z1.pow(firefly::FFInt(9))
-          +firefly::FFInt(150236238)*z1.pow(firefly::FFInt(8))-firefly::FFInt(1028892363)*z1.pow(firefly::FFInt(7))
-          +firefly::FFInt(4853217576)*z1.pow(firefly::FFInt(6))-firefly::FFInt(15724949577)*z1.pow(firefly::FFInt(5))
-          +firefly::FFInt(34208917206)*z1.pow(firefly::FFInt(4))-firefly::FFInt(47506433412)*z1.pow(firefly::FFInt(3))
-          +firefly::FFInt(37933483608)*z1.pow(firefly::FFInt(2))-firefly::FFInt(13296184128)*z1+firefly::FFInt(71850240));
-        firefly::FFInt den = (firefly::FFInt(16)*z1.pow(firefly::FFInt(12))-firefly::FFInt(960)*z1.pow(firefly::FFInt(11))
-          +firefly::FFInt(25456)*z1.pow(firefly::FFInt(10))-firefly::FFInt(393440)*z1.pow(firefly::FFInt(9))
-          +firefly::FFInt(3934768)*z1.pow(firefly::FFInt(8))-firefly::FFInt(26714240)*z1.pow(firefly::FFInt(7))
-          +firefly::FFInt(125545488)*z1.pow(firefly::FFInt(6))-firefly::FFInt(408157280)*z1.pow(firefly::FFInt(5))
-          +firefly::FFInt(899198016)*z1.pow(firefly::FFInt(4))-firefly::FFInt(1278172800)*z1.pow(firefly::FFInt(3))
-          +firefly::FFInt(1055033856)*z1.pow(firefly::FFInt(2))-firefly::FFInt(383201280)*z1);*/
+        /*        firefly::FFInt num = (firefly::FFInt(576)*z1.pow(firefly::FFInt(12)) - firefly::FFInt(35145)*z1.pow(firefly::FFInt(11))
+                +firefly::FFInt(946716)*z1.pow(firefly::FFInt(10))-firefly::FFInt(14842335)*z1.pow(firefly::FFInt(9))
+                +firefly::FFInt(150236238)*z1.pow(firefly::FFInt(8))-firefly::FFInt(1028892363)*z1.pow(firefly::FFInt(7))
+                +firefly::FFInt(4853217576)*z1.pow(firefly::FFInt(6))-firefly::FFInt(15724949577)*z1.pow(firefly::FFInt(5))
+                +firefly::FFInt(34208917206)*z1.pow(firefly::FFInt(4))-firefly::FFInt(47506433412)*z1.pow(firefly::FFInt(3))
+                +firefly::FFInt(37933483608)*z1.pow(firefly::FFInt(2))-firefly::FFInt(13296184128)*z1+firefly::FFInt(71850240));
+              firefly::FFInt den = (firefly::FFInt(16)*z1.pow(firefly::FFInt(12))-firefly::FFInt(960)*z1.pow(firefly::FFInt(11))
+                +firefly::FFInt(25456)*z1.pow(firefly::FFInt(10))-firefly::FFInt(393440)*z1.pow(firefly::FFInt(9))
+                +firefly::FFInt(3934768)*z1.pow(firefly::FFInt(8))-firefly::FFInt(26714240)*z1.pow(firefly::FFInt(7))
+                +firefly::FFInt(125545488)*z1.pow(firefly::FFInt(6))-firefly::FFInt(408157280)*z1.pow(firefly::FFInt(5))
+                +firefly::FFInt(899198016)*z1.pow(firefly::FFInt(4))-firefly::FFInt(1278172800)*z1.pow(firefly::FFInt(3))
+                +firefly::FFInt(1055033856)*z1.pow(firefly::FFInt(2))-firefly::FFInt(383201280)*z1);*/
         kk++;
         count++;
         std::vector<uint> tmp_vec;
 
         if (n > 1)
           tmp_vec = std::vector<uint>(rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
-/*        std::cout << "zi_order: ";
-        for (auto el : rec.curr_zi_order) {
-          std::cout << el << " ";
-        }
-        std::cout << "\n";*/
-        rec.feed(t, num/den, tmp_vec);
-//         std::cout << count <<"\n";
+
+        rec.feed(t, num / den, tmp_vec);
       }
 
       std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
