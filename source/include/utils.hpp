@@ -29,5 +29,5 @@ namespace firefly {
    * 
    */
   std::vector<FFInt> solve_gauss_system(uint num_eqn,
-                                 const std::vector<std::vector<FFInt>>& coef_mat);
+                                 std::vector<std::vector<FFInt>>& coef_mat);
 }
