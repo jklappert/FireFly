@@ -6,11 +6,15 @@
 
 namespace firefly {
 
-  PolyReconst::PolyReconst(uint n_) : n(n_) {
-    next_zi = 1;
-    curr_zi = 1;
+  PolyReconst::PolyReconst(uint n_, const std::vector<FFInt>& anchor_points) : n(n_) {
     combined_prime = FFInt::p;
     curr_zi_order = std::vector<uint>(n, 1);
+
+    if (n > 1) {
+      for (uint i = 1; i <= n; i ++) {
+        yis[i].emplace_back(anchor_points[i - 1]);
+      }
+    }
   }
 
   PolyReconst::PolyReconst() {}
@@ -70,7 +74,6 @@ namespace firefly {
 
         gi.clear();
         next_zi = 1;
-        curr_zi = 1;
 
         if (!use_chinese_remainder) use_chinese_remainder = true;
 
@@ -78,28 +81,51 @@ namespace firefly {
         yis[next_zi].pop_back();
       }
 
-      //if (yis[next_zi].back() != new_yis[next_zi - 1]) {
-      for (uint i = 1; i <= next_zi; i++) {
-        yis[i].emplace_back(new_yis[i - 1]);
-      }
+      if (n == 1 || yis[next_zi].size() > 1)
+        yis[next_zi].emplace_back(new_yis[next_zi - 1]);
 
-      //} else throw std::runtime_exception("Division by 0 error!");
-
-      next_zi = 1;
       uint i = yis[next_zi].size() - 1;
 
-      // calc ai's for the lowest stage. If check return otherwise set check
-      if (i == 0) {
-        std::vector<uint> zero_element(n);
-        ff_map zero_map;
-        zero_map.emplace(std::make_pair(std::move(zero_element), num));
-        ais[next_zi].emplace_back(PolynomialFF(n, zero_map));
+      // Univariate Newton interpolation for the lowest stage.
+      if (next_zi == 1) {
+        if (i == 0) {
+          std::vector<uint> zero_element(n);
+          ff_map zero_map;
+          zero_map.emplace(std::make_pair(std::move(zero_element), num));
+          ais[next_zi].emplace_back(PolynomialFF(n, zero_map));
+        } else {
+          std::vector<uint> zero_element(n);
+          ff_map zero_map;
+          zero_map.emplace(std::make_pair(std::move(zero_element), num));
+          ais[next_zi].emplace_back(comp_ai(next_zi, i, i, PolynomialFF(n, zero_map), ais[next_zi]));
+        }
+
+        curr_zi_order[next_zi - 1] ++;
       } else {
-        std::vector<uint> zero_element(n);
-        ff_map zero_map;
-        zero_map.emplace(std::make_pair(std::move(zero_element), num));
-        ais[next_zi].emplace_back(comp_ai(next_zi, i, i, PolynomialFF(n, zero_map), ais[next_zi]));
+        // Build Vandermonde system
+        std::vector<FFInt> eq;
+
+        for (const auto & deg : rec_degs) {
+          FFInt coef_num = 0;
+
+          for (uint j = 1; j < n; j++) {
+            coef_num *= yis[j][curr_zi_order[j - 1]].pow(deg[j - 1]);
+          }
+
+          eq.emplace_back(coef_num);
+        }
+
+        eq.emplace_back(num);
+
+        // TODO optimize and remove rec_degs which cannot be reconstructed due
+        // to total degree (save them in solved degs including their coefficient
+        // to subtract them)
+        // Solve Vandermonde system and calculate the next a_i
+        if (coef_mat.size() != rec_degs.size()) {
+          ais[next_zi].emplace_back(comp_ai(next_zi, i, i, solve_gauss(), ais[next_zi]));
+        }
       }
+
 
       // if the lowest stage ai is zero, combine them into an ai for a higher stage
       // and check if we are done
@@ -107,47 +133,29 @@ namespace firefly {
         ais[next_zi].pop_back();
         yis[next_zi].pop_back();
 
-        if (curr_zi == 1 && n > 1) curr_zi ++;
-
-        if (curr_zi == 1 && n == 1) check = true;
-
         if (n > 1) {
-          for (uint j = next_zi + 1; j <= curr_zi; j++) {
-            if (ais[j].empty()) {
-              ais[j].emplace_back(construct_canonical(j - 1, ais[j - 1]));
-            } else {
-              uint k = yis[j].size() - 1;
-              PolynomialFF num_ff = construct_canonical(j - 1, ais[j - 1]);
-              ais[j].emplace_back(comp_ai(j, k, k, num_ff, ais[j]));
-            }
+          // todo combine ai's to get the new polynomial, check degrees etc.
+          // combine the current stage with the multivariate polynomial of the
+          // previous stages and extract the reconstructed degrees to prepare
+          // the gauss system
+          rec_degs.clear();
+          PolynomialFF pol_ff = construct_canonical(next_zi - 1, ais[next_zi - 1]);
 
-            ais[j - 1].clear();
-            yis[j - 1].clear();
-
-            if (!ais[j].back().zero()) {
-              next_zi = j;
-              return;
-            }
-
-            ais[j].pop_back();
-            yis[j].pop_back();
-
-            if (max_deg[j] < 0) max_deg[j] = yis[j].size();
-
-            if (j == curr_zi) {
-              if (curr_zi == n) {
-                next_zi = j;
-                check = true;
-                break;
-              } else {
-                curr_zi ++;
-                next_zi = curr_zi;
-              }
-            }
+          for (auto & el : pol_ff.coef) {
+            rec_degs.emplace_back(el.first);
           }
-        }
 
-        if (check && next_zi == curr_zi && curr_zi == n) {
+          coef_mat.reserve(rec_degs.size());
+
+          if (next_zi != n)
+            next_zi ++;
+          else
+            check = true;
+        } else if (next_zi == 1 && n == 1)
+          check = true;
+
+        if (check && next_zi == n) {
+          curr_zi_order = std::vector<uint> (n, 1);
           mpz_map ci_tmp = convert_to_mpz(construct_canonical(n, ais[n]));
 
           if (!use_chinese_remainder) {
@@ -267,6 +275,68 @@ namespace firefly {
     }
 
     return gi_ffi;
+  }
+
+  //TODO put in utils to save some lines of code
+  PolynomialFF PolyReconst::solve_gauss() {
+    const uint num_eqn = rec_degs.size();
+
+    // Transform the matrix in upper triangular form
+    for (uint i = 0; i < num_eqn; i++) {
+      // search for maximum in this column
+      FFInt max_el = coef_mat[i][i];
+      uint max_row = i;
+
+      for (uint k = i + 1; k < num_eqn; k++) {
+        FFInt tmp = coef_mat[k][i];
+
+        if (tmp.n > max_el.n) {
+          max_el = tmp;
+          max_row = k;
+        }
+      }
+
+      // swap maximum row with current row (column by column)
+      for (uint k = i; k < num_eqn + 1; k++) {
+        FFInt tmp = coef_mat[max_row][k];
+        coef_mat[max_row][k] = coef_mat[i][k];
+        coef_mat[i][k] = tmp;
+      }
+
+      // Make all rows below this one zero in the current column
+      for (uint k = i + 1; k < num_eqn; k++) {
+        FFInt c = -coef_mat[k][i] / coef_mat[i][i];
+
+        for (uint j = i; j < num_eqn + 1; j++) {
+          if (i == j) coef_mat[k][j] = FFInt(0);
+          else coef_mat[k][j] += c * coef_mat[i][j];
+        }
+      }
+    }
+
+    // Solve equation A * x = b for an upper triangular matrix
+    std::vector<FFInt> results(num_eqn);
+
+    for (int i = num_eqn - 1; i >= 0; i--) {
+      results[i] = coef_mat[i][num_eqn] / coef_mat[i][i];
+
+      for (int k = i - 1; k >= 0; k--) {
+        coef_mat[k][num_eqn] -= coef_mat[k][i] * results[i];
+      }
+    }
+
+    coef_mat.clear();
+
+    // Bring result in canonical form
+    ff_map poly;
+
+
+    for (uint i = 0; i < num_eqn; i ++) {
+      std::vector<uint> power = {rec_degs[i]};
+      poly.emplace(std::make_pair(std::move(power), results[i]));
+    }
+
+    return PolynomialFF(1, poly);
   }
 
 }

@@ -6,11 +6,10 @@
 #include <algorithm>
 
 int main() {
-  uint n = 4;
+  uint n = 2;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec_1(n);
-  firefly::PolyReconst rec_2(n);
   std::unordered_map<int, firefly::RatReconst> map;
 
   for (int m = 0; m < 1; m++) {
@@ -97,10 +96,10 @@ int main() {
         // example for n = 5
         //firefly::FFInt den = a1;
         //firefly::FFInt num = z1.pow(20) + (t_yis[0] + t_yis[0].pow(2) + t_yis[0].pow(3) + t_yis[0].pow(4)) + t_yis[1].pow(20);
-        firefly::FFInt den = a1 + z1 * t_yis[0].pow(a5) + t_yis[2].pow(a4);
-        firefly::FFInt num = a1 + t_yis[2] * z1 + t_yis[2].pow(a3);
-        // firefly::FFInt den = z1*z1.pow(a5) + z1.pow(a4);
-        // firefly::FFInt num = a1 + z1*z1 + z1.pow(25*25);
+        //firefly::FFInt den = a1 + z1 * t_yis[0].pow(a5) + t_yis[2].pow(a4);
+        //firefly::FFInt num = a1 + t_yis[2] * z1 + t_yis[2].pow(a3);
+         firefly::FFInt den = a1;//z1*z1.pow(a5) + z1.pow(a4);
+         firefly::FFInt num = a1 + z1*z1 + t_yis[0].pow(25);
         /*firefly::FFInt num = ((z1*z1 -firefly::FFInt(5)*z1+firefly::FFInt(6))*t_yis[0]
           +firefly::FFInt(2)*z1*z1-firefly::FFInt(10)*z1+firefly::FFInt(12));
         firefly::FFInt den = (((firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1])*t_yis[0]*t_yis[0]

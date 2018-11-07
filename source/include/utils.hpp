@@ -1,6 +1,7 @@
 #pragma once
 #include <gmpxx.h>
 #include "RationalNumber.hpp"
+#include "FFInt.hpp"
 
 namespace firefly {
   /**
@@ -22,4 +23,11 @@ namespace firefly {
    *    rational reconstruction algorithm
    */
   RationalNumber get_rational_coef(const mpz_class& a, const mpz_class& p);
+
+  /**
+   * 
+   * 
+   */
+  std::vector<FFInt> solve_gauss_system(uint num_eqn,
+                                 const std::vector<std::vector<FFInt>>& coef_mat);
 }

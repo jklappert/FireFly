@@ -17,7 +17,7 @@ namespace firefly {
      *    A constructor
      *    @param n_ The number of parameters as an integer
      */
-    PolyReconst(uint n_);
+    PolyReconst(uint n_, const std::vector<FFInt> &anchor_points = std::vector<FFInt> ());
     /**
      *    Default constructor. Should not be used explicitly.
      */
@@ -84,11 +84,17 @@ namespace firefly {
      *    @return the vector ri converted to FFInt objects
      */
     ff_map convert_to_ffint(const rn_map& ri) const;
+    /**
+     * 
+     */
+    PolynomialFF solve_gauss();
     uint n; /**< The number of parameters */
     bool use_chinese_remainder = false;
     bool check = false;
-    uint curr_zi = 1;
     Polynomial result;
+    std::vector<std::vector<FFInt>> coef_mat {};
+    std::vector<std::vector<uint>> rec_degs {};
+    std::vector<std::vector<uint>> solved_degs {};
     mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */
