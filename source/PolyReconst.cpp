@@ -130,7 +130,6 @@ namespace firefly {
 
         coef_mat.emplace_back(std::move(eq));
 
-        // TODO optimize and remove rec_degs which cannot be reconstructed due
         // to total degree (save them in solved degs including their coefficient
         // to subtract them)
         // Solve Vandermonde system and calculate the next a_i
@@ -151,7 +150,7 @@ namespace firefly {
 
       // if the lowest stage ai is zero, combine them into an ai for a higher stage
       // and check if we are done
-      if (ais[next_zi].back().zero() || (deg != -1 && i == deg)) {
+      if (ais[next_zi].back().zero() || (deg != -1 && i == (uint) deg)) {
         if(deg == -1){
           ais[next_zi].pop_back();
           yis[next_zi].pop_back();
@@ -168,7 +167,7 @@ namespace firefly {
           PolynomialFF pol_ff = construct_canonical(next_zi, ais[next_zi]);
           PolynomialFF tmp_pol_ff = pol_ff;
           for (auto & el : tmp_pol_ff.coef) {
-            uint total_deg = 0;
+            int total_deg = 0;
             for(auto& e : el.first) total_deg += e;
             if(total_deg == deg){
               solved_degs.emplace(std::make_pair(el.first, el.second));
@@ -337,6 +336,6 @@ namespace firefly {
       poly.emplace(std::make_pair(std::move(power), results[i]));
     }
 
-    return PolynomialFF(1, poly);
+    return PolynomialFF(n, poly);
   }
 }

@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 find_package(GMP REQUIRED)
 
 # set your favorite compile here
-set (CMAKE_CXX_COMPILER clang++)
+set (CMAKE_CXX_COMPILER g++)
 
 # to use Valgrind uncomment the following line
 #add_definitions(-DVALGRIND -g)
