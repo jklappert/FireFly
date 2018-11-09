@@ -81,7 +81,6 @@ namespace firefly {
       }
 
       uint i = yis[next_zi].size() - 1;
-
       // Univariate Newton interpolation for the lowest stage.
       if (next_zi == 1) {
         if (i == 0) {
@@ -150,8 +149,8 @@ namespace firefly {
 
       // if the lowest stage ai is zero, combine them into an ai for a higher stage
       // and check if we are done
-      if (ais[next_zi].back().zero() || (deg != -1 && i == (uint) deg)) {
-        if(deg == -1){
+      if (ais[next_zi].back().zero() || (deg != -1 && ais[next_zi].size() - 1 == (uint) deg)) {
+        if(deg == -1 || ais[next_zi].back().zero()){
           ais[next_zi].pop_back();
           yis[next_zi].pop_back();
         }
@@ -194,6 +193,7 @@ namespace firefly {
             // reset zi order
             curr_zi_order = std::vector<uint> (n, 1);
             curr_zi_order[next_zi - 1] = 2;
+            new_yi = true;
           } else
             check = true;
         } else if (next_zi == 1 && n == 1)
@@ -327,7 +327,6 @@ namespace firefly {
     const uint num_eqn = rec_degs.size();
     std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
     coef_mat.clear();
-
     // Bring result in canonical form
     ff_map poly;
 

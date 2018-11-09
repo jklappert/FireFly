@@ -90,6 +90,8 @@ int main() {
         firefly::FFInt a5(2);
         firefly::FFInt a6(3);
         // example for n = 5
+        //firefly::FFInt den = 1;
+        //firefly::FFInt num = z1*t_yis[1].pow(2) + z1*t_yis[0]*t_yis[1];
         firefly::FFInt den = z1 + t_yis[3].pow(10)*t_yis[1].pow(3) + t_yis[3].pow(20);
         firefly::FFInt num = z1.pow(20) + t_yis[0].pow(9)*t_yis[1].pow(10) + (t_yis[0] + t_yis[0].pow(2) + t_yis[0].pow(3) + t_yis[0].pow(4)) + t_yis[1].pow(20);
         //firefly::FFInt den = z1 * t_yis[0].pow(a5) + t_yis[0].pow(a4);
