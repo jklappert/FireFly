@@ -346,7 +346,7 @@ namespace firefly {
               const uint deg = non_solved_coef_num[i];
 
               if (first_run) {
-                PolyReconst rec(n - 1, anchor_points);
+                PolyReconst rec(n - 1, anchor_points, deg);
                 coef_n.emplace(std::make_pair(deg, std::move(rec)));
                 deg_num.emplace_back(deg);
 
@@ -374,7 +374,7 @@ namespace firefly {
               const uint deg = non_solved_coef_den[i];
 
               if (first_run) {
-                PolyReconst rec(n - 1, anchor_points);
+                PolyReconst rec(n - 1, anchor_points, deg);
                 coef_d.emplace(std::make_pair(deg, std::move(rec)));
                 deg_den.emplace_back(deg);
 

@@ -17,7 +17,7 @@ namespace firefly {
      *    A constructor
      *    @param n_ The number of parameters as an integer
      */
-    PolyReconst(uint n_, const std::vector<FFInt> &anchor_points = std::vector<FFInt> ());
+    PolyReconst(uint n_, const std::vector<FFInt> &anchor_points = std::vector<FFInt> (), const int deg_inp = -1);
     /**
      *    Default constructor. Should not be used explicitly.
      */
@@ -92,10 +92,11 @@ namespace firefly {
     bool use_chinese_remainder = false;
     bool check = false;
     bool new_yi = false;
+    int deg = -1;
     Polynomial result;
     std::vector<std::vector<FFInt>> coef_mat {};
     std::vector<std::vector<uint>> rec_degs {};
-    std::vector<std::vector<uint>> solved_degs {};
+    ff_map solved_degs {};
     mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */

@@ -6,9 +6,11 @@
 
 namespace firefly {
 
-  PolyReconst::PolyReconst(uint n_, const std::vector<FFInt>& anchor_points) : n(n_) {
+  PolyReconst::PolyReconst(uint n_, const std::vector<FFInt>& anchor_points, const int deg_inp) : n(n_) {
     combined_prime = FFInt::p;
     curr_zi_order = std::vector<uint>(n, 1);
+
+    deg = deg_inp;
 
     for (uint i = 1; i <= n; i++) {
       std::vector<FFInt> yi;
@@ -111,7 +113,20 @@ namespace firefly {
           eq.emplace_back(coef_num);
         }
 
-        eq.emplace_back(num);
+        FFInt res = num;
+
+        for(auto& el : solved_degs){
+          std::vector<uint> deg = el.first;
+          FFInt coef_num = el.second;
+
+          for (uint j = 1; j <= n; j++) {
+            // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+            coef_num *= yis[j][curr_zi_order[j - 1] - 1].pow(deg[j - 1]);
+          }
+          res -= coef_num;
+        }
+
+        eq.emplace_back(res);
 
         coef_mat.emplace_back(std::move(eq));
 
@@ -145,14 +160,30 @@ namespace firefly {
           // combine the current stage with the multivariate polynomial of the
           // previous stages and extract the reconstructed degrees to prepare
           // the gauss system
+          // Remove all terms which are of total degree of the polynomial
+          // to remove them from the next Vandermonde systems
           rec_degs.clear();
           PolynomialFF pol_ff = construct_canonical(next_zi, ais[next_zi]);
-
-          for (auto & el : pol_ff.coef) {
-            rec_degs.emplace_back(el.first);
+          PolynomialFF tmp_pol_ff = pol_ff;
+          for (auto & el : tmp_pol_ff.coef) {
+            uint total_deg = 0;
+            for(auto& e : el.first) total_deg += e;
+            if(total_deg == deg){
+              solved_degs.emplace(std::make_pair(el.first, el.second));
+              pol_ff.coef.erase(el.first);
+            }
+            else
+              rec_degs.emplace_back(el.first);
           }
 
           coef_mat.reserve(rec_degs.size());
+
+          if(rec_degs.size() == 0 && next_zi != n) {
+            for(uint zi = next_zi + 1; zi <= n; zi++){
+              ais[zi].emplace_back(pol_ff);
+            }
+            next_zi = n;
+          }
 
           if (next_zi != n) {
             next_zi ++;
@@ -209,6 +240,7 @@ namespace firefly {
         gi.clear();
       } else {
         PolynomialFF poly = construct_canonical(n, ais[n]);
+        poly.coef.insert(solved_degs.begin(), solved_degs.end());
         rn_map res;
 
         for (auto & el : poly.coef) {
