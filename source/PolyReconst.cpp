@@ -151,9 +151,11 @@ namespace firefly {
 
       // if the lowest stage ai is zero, combine them into an ai for a higher stage
       // and check if we are done
-      if (ais[next_zi].back().zero()) {
-        ais[next_zi].pop_back();
-        yis[next_zi].pop_back();
+      if (ais[next_zi].back().zero() || (deg != -1 && i == deg)) {
+        if(deg == -1){
+          ais[next_zi].pop_back();
+          yis[next_zi].pop_back();
+        }
 
         if (n > 1) {
           // todo combine ai's to get the new polynomial, check degrees etc.
