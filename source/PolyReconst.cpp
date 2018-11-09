@@ -333,7 +333,7 @@ namespace firefly {
     ff_map poly;
 
     for (uint i = 0; i < num_eqn; i ++) {
-      std::vector<uint> power = {rec_degs[i]};
+      std::vector<uint> power = rec_degs[i];
       poly.emplace(std::make_pair(std::move(power), results[i]));
     }
 
