@@ -6,7 +6,7 @@
 #include <algorithm>
 
 int main() {
-  uint n = 2;
+  uint n = 5;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec_1(n);
@@ -40,11 +40,7 @@ int main() {
         }
 
         if (primes_used != rec.prime_number) {
-          rec.rand_zi.clear();
-
-          for (uint i = 2; i <= n; i++) {
-            rec.rand_zi.emplace(std::make_pair(std::make_pair(i, 1), rec.get_rand()));
-          }
+          rec.generate_anchor_points();
 
           std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
           primes_used = std::max(primes_used, rec.prime_number);
@@ -94,12 +90,12 @@ int main() {
         firefly::FFInt a5(2);
         firefly::FFInt a6(3);
         // example for n = 5
-        //firefly::FFInt den = a1;
-        //firefly::FFInt num = z1.pow(20) + (t_yis[0] + t_yis[0].pow(2) + t_yis[0].pow(3) + t_yis[0].pow(4)) + t_yis[1].pow(20);
-        //firefly::FFInt den = a1 + z1 * t_yis[0].pow(a5) + t_yis[2].pow(a4);
-        //firefly::FFInt num = a1 + t_yis[2] * z1 + t_yis[2].pow(a3);
-         firefly::FFInt den = a1;//z1*z1.pow(a5) + z1.pow(a4);
-         firefly::FFInt num = a1 + z1*z1 + t_yis[0].pow(25);
+        firefly::FFInt den = z1 + t_yis[3].pow(10)*t_yis[1].pow(3) + t_yis[3].pow(20);
+        firefly::FFInt num = z1.pow(20) + t_yis[0].pow(9)*t_yis[1].pow(10) + (t_yis[0] + t_yis[0].pow(2) + t_yis[0].pow(3) + t_yis[0].pow(4)) + t_yis[1].pow(20);
+        //firefly::FFInt den = z1 * t_yis[0].pow(a5) + t_yis[0].pow(a4);
+        //firefly::FFInt num = a1 + t_yis[0] * z1 + t_yis[0].pow(a3);
+        // firefly::FFInt den = a1;//z1*z1.pow(a5) + z1.pow(a4);
+        // firefly::FFInt num = a1 + z1*z1 + t_yis[0].pow(25) + t_yis[1].pow(3);
         /*firefly::FFInt num = ((z1*z1 -firefly::FFInt(5)*z1+firefly::FFInt(6))*t_yis[0]
           +firefly::FFInt(2)*z1*z1-firefly::FFInt(10)*z1+firefly::FFInt(12));
         firefly::FFInt den = (((firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1])*t_yis[0]*t_yis[0]
@@ -110,18 +106,18 @@ int main() {
 //        firefly::FFInt den = (firefly::FFInt(3)*z1-firefly::FFInt(8))*t_yis[1];
 
         // example for n = 1
-        /*        firefly::FFInt num = (firefly::FFInt(576)*z1.pow(firefly::FFInt(12)) - firefly::FFInt(35145)*z1.pow(firefly::FFInt(11))
-                +firefly::FFInt(946716)*z1.pow(firefly::FFInt(10))-firefly::FFInt(14842335)*z1.pow(firefly::FFInt(9))
-                +firefly::FFInt(150236238)*z1.pow(firefly::FFInt(8))-firefly::FFInt(1028892363)*z1.pow(firefly::FFInt(7))
-                +firefly::FFInt(4853217576)*z1.pow(firefly::FFInt(6))-firefly::FFInt(15724949577)*z1.pow(firefly::FFInt(5))
-                +firefly::FFInt(34208917206)*z1.pow(firefly::FFInt(4))-firefly::FFInt(47506433412)*z1.pow(firefly::FFInt(3))
-                +firefly::FFInt(37933483608)*z1.pow(firefly::FFInt(2))-firefly::FFInt(13296184128)*z1+firefly::FFInt(71850240));
-              firefly::FFInt den = (firefly::FFInt(16)*z1.pow(firefly::FFInt(12))-firefly::FFInt(960)*z1.pow(firefly::FFInt(11))
-                +firefly::FFInt(25456)*z1.pow(firefly::FFInt(10))-firefly::FFInt(393440)*z1.pow(firefly::FFInt(9))
-                +firefly::FFInt(3934768)*z1.pow(firefly::FFInt(8))-firefly::FFInt(26714240)*z1.pow(firefly::FFInt(7))
-                +firefly::FFInt(125545488)*z1.pow(firefly::FFInt(6))-firefly::FFInt(408157280)*z1.pow(firefly::FFInt(5))
-                +firefly::FFInt(899198016)*z1.pow(firefly::FFInt(4))-firefly::FFInt(1278172800)*z1.pow(firefly::FFInt(3))
-                +firefly::FFInt(1055033856)*z1.pow(firefly::FFInt(2))-firefly::FFInt(383201280)*z1);*/
+        /*firefly::FFInt num = (firefly::FFInt(576) * z1.pow(firefly::FFInt(12)) - firefly::FFInt(35145) * z1.pow(firefly::FFInt(11))
+                              + firefly::FFInt(946716) * z1.pow(firefly::FFInt(10)) - firefly::FFInt(14842335) * z1.pow(firefly::FFInt(9))
+                              + firefly::FFInt(150236238) * z1.pow(firefly::FFInt(8)) - firefly::FFInt(1028892363) * z1.pow(firefly::FFInt(7))
+                              + firefly::FFInt(4853217576) * z1.pow(firefly::FFInt(6)) - firefly::FFInt(15724949577) * z1.pow(firefly::FFInt(5))
+                              + firefly::FFInt(34208917206) * z1.pow(firefly::FFInt(4)) - firefly::FFInt(47506433412) * z1.pow(firefly::FFInt(3))
+                              + firefly::FFInt(37933483608) * z1.pow(firefly::FFInt(2)) - firefly::FFInt(13296184128) * z1 + firefly::FFInt(71850240));
+        firefly::FFInt den = (firefly::FFInt(16) * z1.pow(firefly::FFInt(12)) - firefly::FFInt(960) * z1.pow(firefly::FFInt(11))
+                              + firefly::FFInt(25456) * z1.pow(firefly::FFInt(10)) - firefly::FFInt(393440) * z1.pow(firefly::FFInt(9))
+                              + firefly::FFInt(3934768) * z1.pow(firefly::FFInt(8)) - firefly::FFInt(26714240) * z1.pow(firefly::FFInt(7))
+                              + firefly::FFInt(125545488) * z1.pow(firefly::FFInt(6)) - firefly::FFInt(408157280) * z1.pow(firefly::FFInt(5))
+                              + firefly::FFInt(899198016) * z1.pow(firefly::FFInt(4)) - firefly::FFInt(1278172800) * z1.pow(firefly::FFInt(3))
+                              + firefly::FFInt(1055033856) * z1.pow(firefly::FFInt(2)) - firefly::FFInt(383201280) * z1);*/
         kk++;
         count++;
         std::vector<uint> tmp_vec;

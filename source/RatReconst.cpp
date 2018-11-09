@@ -9,6 +9,7 @@ namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
   bool RatReconst::shifted = false;
   ff_pair_map RatReconst::rand_zi;
+  std::vector<FFInt> RatReconst::anchor_points {};
 
   RatReconst::RatReconst(uint n_) : n(n_) {
     ti.reserve(300);
@@ -36,7 +37,9 @@ namespace firefly {
       // fill in the rand_vars for zi_order = 1
       if (rand_zi.empty()) {
         for (uint i = 2; i <= n; i++) {
-          rand_zi.emplace(std::make_pair(std::make_pair(i, 1), get_rand()));
+          const FFInt rand = get_rand();
+          rand_zi.emplace(std::make_pair(std::make_pair(i, 1), rand));
+          anchor_points.emplace_back(rand);
         }
       }
     }
@@ -343,7 +346,7 @@ namespace firefly {
               const uint deg = non_solved_coef_num[i];
 
               if (first_run) {
-                PolyReconst rec(n - 1);
+                PolyReconst rec(n - 1, anchor_points);
                 coef_n.emplace(std::make_pair(deg, std::move(rec)));
                 deg_num.emplace_back(deg);
 
@@ -371,7 +374,7 @@ namespace firefly {
               const uint deg = non_solved_coef_den[i];
 
               if (first_run) {
-                PolyReconst rec(n - 1);
+                PolyReconst rec(n - 1, anchor_points);
                 coef_d.emplace(std::make_pair(deg, std::move(rec)));
                 deg_den.emplace_back(deg);
 
@@ -607,16 +610,12 @@ namespace firefly {
             rec.feed(yis, food - num_subtraction);
           }
 
-          if (rec.next_zi + 1 != tmp_zi || n == 2) {
-            tmp_zi = rec.next_zi + 1;
-            tmp_zi_ord[tmp_zi - 2] ++;
-            std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end() - (n + 1 - tmp_zi) - 1, 1);
-          } else
-            tmp_zi_ord[tmp_zi - 2] ++;
+          tmp_zi = rec.next_zi + 1;
+          tmp_zi_ord = rec.curr_zi_order;
+          tmp_zi_ord.emplace_back(prime_number);
 
         }
       } catch (std::out_of_range& e) {
-        rec.curr_zi_order = std::vector<uint>(tmp_zi_ord.begin(), tmp_zi_ord.end() - 1);
         coef[curr_deg] = rec;
         return std::make_tuple(curr_deg, tmp_zi, tmp_zi_ord);
       }
@@ -1069,6 +1068,17 @@ namespace firefly {
 
   uint RatReconst::get_num_eqn() const {
     return num_eqn;
+  }
+
+  void RatReconst::generate_anchor_points() {
+    rand_zi.clear();
+    anchor_points.clear();
+
+    for (uint i = 2; i <= n; i++) {
+      const FFInt rand = get_rand();
+      rand_zi.emplace(std::make_pair(std::make_pair(i, 1), rand));
+      anchor_points.emplace_back(rand);
+    }
   }
 
 }

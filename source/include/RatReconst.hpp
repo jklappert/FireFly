@@ -27,6 +27,7 @@ namespace firefly {
     RationalFunction get_result();
     static std::vector<FFInt> shift;
     static ff_pair_map rand_zi;
+    static std::vector<FFInt> anchor_points;
     bool done = false;
     uint zi = 1;
     uint prime_number = 0;
@@ -36,6 +37,7 @@ namespace firefly {
      */
     FFInt get_rand();
     uint get_num_eqn() const;
+    void generate_anchor_points();
   private:
     FFInt comp_ai(int i, int ip, const FFInt& num);
     /**

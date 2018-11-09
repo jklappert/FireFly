@@ -10,6 +10,14 @@ namespace firefly {
     combined_prime = FFInt::p;
     curr_zi_order = std::vector<uint>(n, 1);
 
+    for (uint i = 1; i <= n; i++) {
+      std::vector<FFInt> yi;
+      std::vector<PolynomialFF> ai;
+      ai.reserve(300);
+      ais.emplace(std::make_pair(i, std::move(ai)));
+      max_deg.insert(std::make_pair(i, -1));
+    }
+
     if (n > 1) {
       for (uint i = 1; i <= n; i ++) {
         yis[i].emplace_back(anchor_points[i - 1]);
@@ -21,22 +29,6 @@ namespace firefly {
 
   void PolyReconst::feed(const std::vector<FFInt>& new_yis, const FFInt& num) {
     if (!done) {
-      // if no yi's/ai's are currently stored, initialize everything
-      if (ais.empty() && !use_chinese_remainder) {
-        for (uint i = 1; i <= n; i++) {
-          std::vector<FFInt> yi;
-          std::vector<PolynomialFF> ai;
-          yi.reserve(300);
-          ai.reserve(300);
-          yi.emplace_back(new_yis[i - 1]);
-          yis.emplace(std::make_pair(i, std::move(yi)));
-          ais.emplace(std::make_pair(i, std::move(ai)));
-          max_deg.insert(std::make_pair(i, -1));
-        }
-
-        yis[next_zi].pop_back();
-      }
-
       if (new_prime) {
         bool runtest = true;
 
@@ -81,8 +73,10 @@ namespace firefly {
         yis[next_zi].pop_back();
       }
 
-      if (n == 1 || yis[next_zi].size() > 1)
+      if (n == 1 || new_yi) {
         yis[next_zi].emplace_back(new_yis[next_zi - 1]);
+        new_yi = false;
+      }
 
       uint i = yis[next_zi].size() - 1;
 
@@ -101,15 +95,17 @@ namespace firefly {
         }
 
         curr_zi_order[next_zi - 1] ++;
+        new_yi = true;
       } else {
         // Build Vandermonde system
         std::vector<FFInt> eq;
 
         for (const auto & deg : rec_degs) {
-          FFInt coef_num = 0;
+          FFInt coef_num = 1;
 
-          for (uint j = 1; j < n; j++) {
-            coef_num *= yis[j][curr_zi_order[j - 1]].pow(deg[j - 1]);
+          for (uint j = 1; j <= n; j++) {
+            // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+            coef_num *= yis[j][curr_zi_order[j - 1] - 1].pow(deg[j - 1]);
           }
 
           eq.emplace_back(coef_num);
@@ -117,19 +113,30 @@ namespace firefly {
 
         eq.emplace_back(num);
 
+        coef_mat.emplace_back(std::move(eq));
+
         // TODO optimize and remove rec_degs which cannot be reconstructed due
         // to total degree (save them in solved degs including their coefficient
         // to subtract them)
         // Solve Vandermonde system and calculate the next a_i
-        if (coef_mat.size() != rec_degs.size()) {
+        if (coef_mat.size() == rec_degs.size()) {
+          const uint order_save = curr_zi_order[next_zi - 1];
+          curr_zi_order = std::vector<uint> (n, 1);
+          curr_zi_order[next_zi - 1] = order_save + 1;
+          new_yi = true;
           ais[next_zi].emplace_back(comp_ai(next_zi, i, i, solve_gauss(), ais[next_zi]));
+        } else {
+          // increase all zi order of the lower stages by one
+          for (uint zi = 1; zi < next_zi; zi++) {
+            curr_zi_order[zi - 1] ++;
+          }
         }
       }
 
 
       // if the lowest stage ai is zero, combine them into an ai for a higher stage
       // and check if we are done
-      if (ais[next_zi][i].zero()) {
+      if (ais[next_zi].back().zero()) {
         ais[next_zi].pop_back();
         yis[next_zi].pop_back();
 
@@ -139,7 +146,7 @@ namespace firefly {
           // previous stages and extract the reconstructed degrees to prepare
           // the gauss system
           rec_degs.clear();
-          PolynomialFF pol_ff = construct_canonical(next_zi - 1, ais[next_zi - 1]);
+          PolynomialFF pol_ff = construct_canonical(next_zi, ais[next_zi]);
 
           for (auto & el : pol_ff.coef) {
             rec_degs.emplace_back(el.first);
@@ -147,9 +154,15 @@ namespace firefly {
 
           coef_mat.reserve(rec_degs.size());
 
-          if (next_zi != n)
+          if (next_zi != n) {
             next_zi ++;
-          else
+            // save last interpolation of the lower stage as first a_0 of the
+            // current stage
+            ais[next_zi].emplace_back(comp_ai(next_zi, 0, 0, pol_ff, ais[next_zi]));
+            // reset zi order
+            curr_zi_order = std::vector<uint> (n, 1);
+            curr_zi_order[next_zi - 1] = 2;
+          } else
             check = true;
         } else if (next_zi == 1 && n == 1)
           check = true;
@@ -277,7 +290,6 @@ namespace firefly {
     return gi_ffi;
   }
 
-  //TODO put in utils to save some lines of code
   PolynomialFF PolyReconst::solve_gauss() {
     const uint num_eqn = rec_degs.size();
     std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
@@ -286,7 +298,6 @@ namespace firefly {
     // Bring result in canonical form
     ff_map poly;
 
-
     for (uint i = 0; i < num_eqn; i ++) {
       std::vector<uint> power = {rec_degs[i]};
       poly.emplace(std::make_pair(std::move(power), results[i]));
@@ -294,5 +305,4 @@ namespace firefly {
 
     return PolynomialFF(1, poly);
   }
-
 }
