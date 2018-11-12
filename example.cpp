@@ -48,7 +48,6 @@ int main() {
           firefly::FFInt::p = prime;
 
           kk = 0;
-          if(primes_used > 4) exit(-1);
 
           for (uint j = 2; j <= n; j++) {
             yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.curr_zi_order[j - 2])];
