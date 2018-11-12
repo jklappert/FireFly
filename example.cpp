@@ -99,18 +99,18 @@ int main() {
           *t_yis[1])*t_yis[0]);
 
         // example for n = 1
-        /*firefly::FFInt num = (firefly::FFInt(576) * z1.pow(firefly::FFInt(12)) - firefly::FFInt(35145) * z1.pow(firefly::FFInt(11))
-                              + firefly::FFInt(946716) * z1.pow(firefly::FFInt(10)) - firefly::FFInt(14842335) * z1.pow(firefly::FFInt(9))
-                              + firefly::FFInt(150236238) * z1.pow(firefly::FFInt(8)) - firefly::FFInt(1028892363) * z1.pow(firefly::FFInt(7))
-                              + firefly::FFInt(4853217576) * z1.pow(firefly::FFInt(6)) - firefly::FFInt(15724949577) * z1.pow(firefly::FFInt(5))
-                              + firefly::FFInt(34208917206) * z1.pow(firefly::FFInt(4)) - firefly::FFInt(47506433412) * z1.pow(firefly::FFInt(3))
-                              + firefly::FFInt(37933483608) * z1.pow(firefly::FFInt(2)) - firefly::FFInt(13296184128) * z1 + firefly::FFInt(71850240));
-        firefly::FFInt den = (firefly::FFInt(16) * z1.pow(firefly::FFInt(12)) - firefly::FFInt(960) * z1.pow(firefly::FFInt(11))
-                              + firefly::FFInt(25456) * z1.pow(firefly::FFInt(10)) - firefly::FFInt(393440) * z1.pow(firefly::FFInt(9))
-                              + firefly::FFInt(3934768) * z1.pow(firefly::FFInt(8)) - firefly::FFInt(26714240) * z1.pow(firefly::FFInt(7))
-                              + firefly::FFInt(125545488) * z1.pow(firefly::FFInt(6)) - firefly::FFInt(408157280) * z1.pow(firefly::FFInt(5))
-                              + firefly::FFInt(899198016) * z1.pow(firefly::FFInt(4)) - firefly::FFInt(1278172800) * z1.pow(firefly::FFInt(3))
-                              + firefly::FFInt(1055033856) * z1.pow(firefly::FFInt(2)) - firefly::FFInt(383201280) * z1);*/
+        /*firefly::FFInt num = (576 * z1.pow(12) - 35145 * z1.pow(11)
+                              + 946716 * z1.pow(10) - 14842335 * z1.pow(9)
+                              + 150236238 * z1.pow(8) - 1028892363 * z1.pow(7)
+                              + 4853217576 * z1.pow(6) - 15724949577 * z1.pow(5)
+                              + 34208917206 * z1.pow(4) - 47506433412 * z1.pow(3)
+                              + 37933483608 * z1.pow(2) - 13296184128 * z1 + 71850240);
+        firefly::FFInt den = (16 * z1.pow(12) - 960 * z1.pow(11)
+                              + 25456 * z1.pow(10) - 393440 * z1.pow(9)
+                              + 3934768 * z1.pow(8) - 26714240 * z1.pow(7)
+                              + 125545488 * z1.pow(6) - 408157280 * z1.pow(5)
+                              + 899198016 * z1.pow(4) - 1278172800 * z1.pow(3)
+                              + 1055033856 * z1.pow(2) - 383201280 * z1);*/
         kk++;
         count++;
         std::vector<uint> tmp_vec;
