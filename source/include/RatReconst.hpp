@@ -129,6 +129,8 @@ namespace firefly {
     uint curr_zi = 2;
     ff_vec_map saved_ti {};
     std::vector<FFInt> ai {};
+    std::unordered_map<uint, std::vector<std::vector<uint>>> degs_n {};
+    std::unordered_map<uint, std::vector<std::vector<uint>>> degs_d {};
     std::unordered_map<uint, PolyReconst> coef_n {};
     std::unordered_map<uint, PolyReconst> coef_d {};
     std::vector<int> deg_num {};

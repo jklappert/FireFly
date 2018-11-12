@@ -77,6 +77,8 @@ namespace firefly {
               coef_d.clear();
               combined_di.clear();
               combined_ni.clear();
+              degs_n.clear();
+              degs_d.clear();
               combined_prime = 0;
               new_prime = false;
               deg_num.clear();
@@ -506,11 +508,23 @@ namespace firefly {
               PolynomialFF denominator;
 
               for (auto & el : coef_n) {
-                numerator = numerator + el.second.get_result().homogenize(el.first).convert_to_PolynomialFF();
+                std::vector<std::vector<uint>> degs;
+                Polynomial result = el.second.get_result();
+                for(const auto & mon : result.coefs){
+                  degs.emplace_back(mon.powers);
+                }
+                degs_n[el.first] = degs;
+                numerator = numerator + result.homogenize(el.first).convert_to_PolynomialFF();
               }
 
               for (auto & el : coef_d) {
-                denominator = denominator + el.second.get_result().homogenize(el.first).convert_to_PolynomialFF();
+                std::vector<std::vector<uint>> degs;
+                Polynomial result = el.second.get_result();
+                for(const auto & mon : result.coefs){
+                  degs.emplace_back(mon.powers);
+                }
+                degs_d[el.first] = degs;
+                denominator = denominator + result.homogenize(el.first).convert_to_PolynomialFF();
               }
 
               coef_n.clear();
@@ -537,8 +551,10 @@ namespace firefly {
               new_prime = true;
             } else if (zi > 0) {
               // set new random
-              auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
-              set_new_rand(key);
+              for(uint zi = 2; zi <= n; zi ++){
+                auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
+                set_new_rand(key);
+              }
             }
 
             /*
@@ -602,13 +618,24 @@ namespace firefly {
             }
           }
         } else {
-          if (curr_deg == (int) max_deg)
-            rec.feed(yis, food);
+          if (curr_deg == (int) max_deg){
+            if(prime_number == 0)
+              rec.feed(yis, food);
+            else if(is_num)
+              rec.feed(degs_n[curr_deg], yis, food);
+            else
+              rec.feed(degs_d[curr_deg], yis, food);
+          }
           else {
             yis.emplace(yis.begin(), FFInt(1));
             FFInt num_subtraction = sub_save[curr_deg].convert_to_PolynomialFF().calc(yis);
             yis.erase(yis.begin());
-            rec.feed(yis, food - num_subtraction);
+            if(prime_number == 0)
+              rec.feed(yis, food - num_subtraction);
+            else if(is_num)
+              rec.feed(degs_n[curr_deg], yis, food - num_subtraction);
+            else
+              rec.feed(degs_d[curr_deg], yis, food - num_subtraction);
           }
 
           tmp_zi = rec.next_zi + 1;

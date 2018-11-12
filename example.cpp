@@ -48,6 +48,7 @@ int main() {
           firefly::FFInt::p = prime;
 
           kk = 0;
+          if(primes_used > 4) exit(-1);
 
           for (uint j = 2; j <= n; j++) {
             yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.curr_zi_order[j - 2])];
@@ -81,17 +82,17 @@ int main() {
         cr_1_mpz = "123456789109898799879870980";
         mpz_class cr_2_mpz;
         cr_2_mpz = "123456789109898799879";
-        firefly::FFInt cr_1(cr_2_mpz);
+        firefly::FFInt cr_1(cr_1_mpz);
         firefly::FFInt cr_2(cr_2_mpz);
         // example for n = 4
-        firefly::FFInt den = (((z1.pow(3)-12*z1.pow(2)+48*z1-64)*t_yis[1].pow(2))
+        firefly::FFInt den = cr_1*(((z1.pow(3)-12*z1.pow(2)+48*z1-64)*t_yis[1].pow(2))
           *t_yis[0].pow(5)+((-3*z1.pow(3)+36*z1.pow(2)
           -144*z1+192)*t_yis[1].pow(2))*t_yis[0].pow(4)+((2*z1.pow(3)-24*z1.pow(2)
           +96*z1-128)*t_yis[1].pow(2))*t_yis[0].pow(3)+((2*z1.pow(3)-24*z1.pow(2)
           +96*z1-128)*t_yis[1].pow(2))*t_yis[0].pow(2)+((-3*z1.pow(3)+36*z1.pow(2)
           -144*z1+192)*t_yis[1].pow(2))*t_yis[0]+(z1.pow(3)-12*z1.pow(2)+48*z1-64)
           *t_yis[1].pow(2));
-        firefly::FFInt num = ((-6*z1.pow(3)+54*z1.pow(2)-156*z1+144)
+        firefly::FFInt num = cr_2*((-6*z1.pow(3)+54*z1.pow(2)-156*z1+144)
           *t_yis[0].pow(4)+((-4*z1.pow(3)+36*z1.pow(2)-104*z1+96)*t_yis[1]
           +9*z1.pow(3)-84*z1.pow(2)+252*z1-240)*t_yis[0].pow(3)+((46*z1.pow(3)
           -389*z1.pow(2)+1074*z1-960)*t_yis[1]-3*z1.pow(3)+30*z1.pow(2)-96*z1+96)

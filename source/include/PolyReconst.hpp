@@ -29,6 +29,10 @@ namespace firefly {
      *    rational coefficients
      */
     void feed(const std::vector<FFInt>& yis, const FFInt& num);
+    /**
+     * 
+     */
+    void feed(const std::vector<std::vector<uint>>& degs, const std::vector<FFInt>& new_yis, const FFInt& num);
     bool done = false;
     bool new_prime = false;
     uint next_zi = 1;
@@ -88,10 +92,10 @@ namespace firefly {
      * 
      */
     PolynomialFF solve_gauss();
+    int deg = -1;
     uint n; /**< The number of parameters */
     bool use_chinese_remainder = false;
     bool check = false;
-    int deg = -1;
     Polynomial result;
     std::vector<std::vector<FFInt>> coef_mat {};
     std::vector<std::vector<uint>> rec_degs {};

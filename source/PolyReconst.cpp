@@ -75,8 +75,8 @@ namespace firefly {
         yis[next_zi].pop_back();
       }
 
-      for(uint j = 0; j < n; j++){
-        if(curr_zi_order[j] > yis[j + 1].size())
+      for (uint j = 0; j < n; j++) {
+        if (curr_zi_order[j] > yis[j + 1].size())
           yis[j + 1].emplace_back(new_yis[j]);
       }
 
@@ -101,31 +101,28 @@ namespace firefly {
         // Build Vandermonde system
         std::vector<FFInt> eq;
 
-        for (const auto& deg : rec_degs) {
+        for (const auto & deg_vec : rec_degs) {
           FFInt coef_num = 1;
 
           for (uint zi = 1; zi <= n; zi++) {
             // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-            coef_num *= yis[zi][curr_zi_order[zi - 1] - 1].pow(deg[zi - 1]);
+            coef_num *= yis[zi][curr_zi_order[zi - 1] - 1].pow(deg_vec[zi - 1]);
           }
 
           eq.emplace_back(coef_num);
         }
 
         FFInt res = num;
-        FFInt test = 0;
-        for(auto & el : eq){
-          test += el;
-        }
 
-        for(const auto& el : solved_degs){
-          std::vector<uint> deg = el.first;
+        for (const auto & el : solved_degs) {
+          std::vector<uint> deg_vec = el.first;
           FFInt coef_num = el.second;
 
           for (uint zi = 1; zi <= n; zi++) {
             // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-            coef_num *= yis[zi][curr_zi_order[zi - 1] - 1].pow(deg[zi - 1]);
+            coef_num *= yis[zi][curr_zi_order[zi - 1] - 1].pow(deg_vec[zi - 1]);
           }
+
           res -= coef_num;
         }
 
@@ -152,7 +149,7 @@ namespace firefly {
       // if the lowest stage ai is zero, combine them into an ai for a higher stage
       // and check if we are done
       if (ais[next_zi].back().zero() || (deg != -1 && ais[next_zi].size() - 1 == (uint) deg)) {
-        if(deg == -1 || ais[next_zi].back().zero())
+        if (deg == -1 || ais[next_zi].back().zero())
           ais[next_zi].pop_back();
 
         if (n > 1) {
@@ -165,23 +162,26 @@ namespace firefly {
           rec_degs.clear();
           PolynomialFF pol_ff = construct_canonical(next_zi, ais[next_zi]);
           PolynomialFF tmp_pol_ff = pol_ff;
+
           for (auto & el : tmp_pol_ff.coef) {
             int total_deg = 0;
-            for(auto& e : el.first) total_deg += e;
-            if(total_deg == deg){
+
+            for (auto & e : el.first) total_deg += e;
+
+            if (total_deg == deg) {
               solved_degs.emplace(std::make_pair(el.first, el.second));
               pol_ff.coef.erase(el.first);
-            }
-            else
+            } else
               rec_degs.emplace_back(el.first);
           }
 
           coef_mat.reserve(rec_degs.size());
 
-          if(rec_degs.size() == 0 && next_zi != n) {
-            for(uint zi = next_zi + 1; zi <= n; zi++){
+          if (rec_degs.size() == 0 && next_zi != n) {
+            for (uint zi = next_zi + 1; zi <= n; zi++) {
               ais[zi].emplace_back(pol_ff);
             }
+
             next_zi = n;
           }
 
@@ -228,6 +228,41 @@ namespace firefly {
         }
 
         return;
+      }
+    }
+  }
+
+  void PolyReconst::feed(const std::vector<std::vector<uint>>& degs, const std::vector<FFInt>& new_yis, const FFInt& num) {
+    rec_degs = degs;
+    // Build Vandermonde system
+    std::vector<FFInt> eq;
+
+    for (const auto & deg_vec : rec_degs) {
+      FFInt coef_num = 1;
+
+      for (uint zi = 1; zi <= n; zi++) {
+        // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+        coef_num *= new_yis[zi - 1].pow(deg_vec[zi - 1]);
+      }
+
+      eq.emplace_back(coef_num);
+    }
+
+    FFInt res = num;
+
+    eq.emplace_back(res);
+
+    coef_mat.emplace_back(std::move(eq));
+
+    // Solve Vandermonde system and calculate the next a_i
+    if (coef_mat.size() == rec_degs.size()) {
+      ais[n].emplace_back(solve_gauss());
+      new_prime = true;
+      return;
+    } else {
+      // increase all zi order of the lower stages by one
+      for (uint zi = 1; zi <= n; zi++) {
+        curr_zi_order[zi - 1] ++;
       }
     }
   }
