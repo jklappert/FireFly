@@ -91,7 +91,6 @@ namespace firefly {
     uint n; /**< The number of parameters */
     bool use_chinese_remainder = false;
     bool check = false;
-    bool new_yi = false;
     int deg = -1;
     Polynomial result;
     std::vector<std::vector<FFInt>> coef_mat {};

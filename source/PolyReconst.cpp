@@ -75,12 +75,13 @@ namespace firefly {
         yis[next_zi].pop_back();
       }
 
-      if (n == 1 || new_yi) {
-        yis[next_zi].emplace_back(new_yis[next_zi - 1]);
-        new_yi = false;
+      for(uint j = 0; j < n; j++){
+        if(curr_zi_order[j] > yis[j + 1].size())
+          yis[j + 1].emplace_back(new_yis[j]);
       }
 
       uint i = yis[next_zi].size() - 1;
+
       // Univariate Newton interpolation for the lowest stage.
       if (next_zi == 1) {
         if (i == 0) {
@@ -96,31 +97,34 @@ namespace firefly {
         }
 
         curr_zi_order[next_zi - 1] ++;
-        new_yi = true;
       } else {
         // Build Vandermonde system
         std::vector<FFInt> eq;
 
-        for (const auto & deg : rec_degs) {
+        for (const auto& deg : rec_degs) {
           FFInt coef_num = 1;
 
-          for (uint j = 1; j <= n; j++) {
+          for (uint zi = 1; zi <= n; zi++) {
             // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-            coef_num *= yis[j][curr_zi_order[j - 1] - 1].pow(deg[j - 1]);
+            coef_num *= yis[zi][curr_zi_order[zi - 1] - 1].pow(deg[zi - 1]);
           }
 
           eq.emplace_back(coef_num);
         }
 
         FFInt res = num;
+        FFInt test = 0;
+        for(auto & el : eq){
+          test += el;
+        }
 
-        for(auto& el : solved_degs){
+        for(const auto& el : solved_degs){
           std::vector<uint> deg = el.first;
           FFInt coef_num = el.second;
 
-          for (uint j = 1; j <= n; j++) {
+          for (uint zi = 1; zi <= n; zi++) {
             // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-            coef_num *= yis[j][curr_zi_order[j - 1] - 1].pow(deg[j - 1]);
+            coef_num *= yis[zi][curr_zi_order[zi - 1] - 1].pow(deg[zi - 1]);
           }
           res -= coef_num;
         }
@@ -136,7 +140,6 @@ namespace firefly {
           const uint order_save = curr_zi_order[next_zi - 1];
           curr_zi_order = std::vector<uint> (n, 1);
           curr_zi_order[next_zi - 1] = order_save + 1;
-          new_yi = true;
           ais[next_zi].emplace_back(comp_ai(next_zi, i, i, solve_gauss(), ais[next_zi]));
         } else {
           // increase all zi order of the lower stages by one
@@ -146,14 +149,11 @@ namespace firefly {
         }
       }
 
-
       // if the lowest stage ai is zero, combine them into an ai for a higher stage
       // and check if we are done
       if (ais[next_zi].back().zero() || (deg != -1 && ais[next_zi].size() - 1 == (uint) deg)) {
-        if(deg == -1 || ais[next_zi].back().zero()){
+        if(deg == -1 || ais[next_zi].back().zero())
           ais[next_zi].pop_back();
-          yis[next_zi].pop_back();
-        }
 
         if (n > 1) {
           // todo combine ai's to get the new polynomial, check degrees etc.
@@ -193,7 +193,6 @@ namespace firefly {
             // reset zi order
             curr_zi_order = std::vector<uint> (n, 1);
             curr_zi_order[next_zi - 1] = 2;
-            new_yi = true;
           } else
             check = true;
         } else if (next_zi == 1 && n == 1)
@@ -331,8 +330,7 @@ namespace firefly {
     ff_map poly;
 
     for (uint i = 0; i < num_eqn; i ++) {
-      std::vector<uint> power = rec_degs[i];
-      poly.emplace(std::make_pair(std::move(power), results[i]));
+      poly.emplace(std::make_pair(rec_degs[i], results[i]));
     }
 
     return PolynomialFF(n, poly);

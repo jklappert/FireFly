@@ -15,6 +15,7 @@ namespace firefly {
     ti.reserve(300);
     ai.reserve(300);
     combined_prime = FFInt::p;
+//     std::srand(std::time(0));
 
     if (!shifted) {
       shift = std::vector<FFInt> (n);

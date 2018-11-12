@@ -6,7 +6,7 @@
 #include <algorithm>
 
 int main() {
-  uint n = 5;
+  uint n = 4;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec_1(n);
@@ -77,35 +77,26 @@ int main() {
 
         firefly::FFInt z1 = t + firefly::RatReconst::shift[0];
 
-        mpz_class test;
-        test = "123456789109898799879870980";
-        mpz_class test2;
-        test2 = "123456789109898799879";
-        firefly::FFInt a7(test);
-        firefly::FFInt a8(test2);
-        firefly::FFInt a1(1);
-        firefly::FFInt a2(17);
-        firefly::FFInt a3(25);
-        firefly::FFInt a4(10);
-        firefly::FFInt a5(2);
-        firefly::FFInt a6(3);
-        // example for n = 5
-        //firefly::FFInt den = 1;
-        //firefly::FFInt num = z1*t_yis[1].pow(2) + z1*t_yis[0]*t_yis[1];
-        firefly::FFInt den = z1 + t_yis[3].pow(10)*t_yis[1].pow(3) + t_yis[3].pow(20);
-        firefly::FFInt num = z1.pow(20) + t_yis[0].pow(9)*t_yis[1].pow(10) + (t_yis[0] + t_yis[0].pow(2) + t_yis[0].pow(3) + t_yis[0].pow(4)) + t_yis[1].pow(20);
-        //firefly::FFInt den = z1 * t_yis[0].pow(a5) + t_yis[0].pow(a4);
-        //firefly::FFInt num = a1 + t_yis[0] * z1 + t_yis[0].pow(a3);
-        // firefly::FFInt den = a1;//z1*z1.pow(a5) + z1.pow(a4);
-        // firefly::FFInt num = a1 + z1*z1 + t_yis[0].pow(25) + t_yis[1].pow(3);
-        /*firefly::FFInt num = ((z1*z1 -firefly::FFInt(5)*z1+firefly::FFInt(6))*t_yis[0]
-          +firefly::FFInt(2)*z1*z1-firefly::FFInt(10)*z1+firefly::FFInt(12));
-        firefly::FFInt den = (((firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1])*t_yis[0]*t_yis[0]
-          +((-firefly::FFInt(4)*z1+firefly::FFInt(16))*t_yis[1])*t_yis[0]+(firefly::FFInt(2)*z1-firefly::FFInt(8))*t_yis[1]);*/
-//        firefly::FFInt num = t_yis[1]-t_yis[0];
-//        firefly::FFInt num = (z1-firefly::FFInt(2))*t_yis[1]+(-z1+firefly::FFInt(4))*t_yis[0]+firefly::FFInt(2)*z1-firefly::FFInt(6);
-//        firefly::FFInt den = firefly::FFInt(1);
-//        firefly::FFInt den = (firefly::FFInt(3)*z1-firefly::FFInt(8))*t_yis[1];
+        mpz_class cr_1_mpz;
+        cr_1_mpz = "123456789109898799879870980";
+        mpz_class cr_2_mpz;
+        cr_2_mpz = "123456789109898799879";
+        firefly::FFInt cr_1(cr_2_mpz);
+        firefly::FFInt cr_2(cr_2_mpz);
+        // example for n = 4
+        firefly::FFInt den = (((z1.pow(3)-12*z1.pow(2)+48*z1-64)*t_yis[1].pow(2))
+          *t_yis[0].pow(5)+((-3*z1.pow(3)+36*z1.pow(2)
+          -144*z1+192)*t_yis[1].pow(2))*t_yis[0].pow(4)+((2*z1.pow(3)-24*z1.pow(2)
+          +96*z1-128)*t_yis[1].pow(2))*t_yis[0].pow(3)+((2*z1.pow(3)-24*z1.pow(2)
+          +96*z1-128)*t_yis[1].pow(2))*t_yis[0].pow(2)+((-3*z1.pow(3)+36*z1.pow(2)
+          -144*z1+192)*t_yis[1].pow(2))*t_yis[0]+(z1.pow(3)-12*z1.pow(2)+48*z1-64)
+          *t_yis[1].pow(2));
+        firefly::FFInt num = ((-6*z1.pow(3)+54*z1.pow(2)-156*z1+144)
+          *t_yis[0].pow(4)+((-4*z1.pow(3)+36*z1.pow(2)-104*z1+96)*t_yis[1]
+          +9*z1.pow(3)-84*z1.pow(2)+252*z1-240)*t_yis[0].pow(3)+((46*z1.pow(3)
+          -389*z1.pow(2)+1074*z1-960)*t_yis[1]-3*z1.pow(3)+30*z1.pow(2)-96*z1+96)
+          *t_yis[0].pow(2)+((-10*z1.pow(3)+93*z1.pow(2)-278*z1+264)
+          *t_yis[1])*t_yis[0]);
 
         // example for n = 1
         /*firefly::FFInt num = (firefly::FFInt(576) * z1.pow(firefly::FFInt(12)) - firefly::FFInt(35145) * z1.pow(firefly::FFInt(11))
