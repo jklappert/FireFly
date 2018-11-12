@@ -77,12 +77,15 @@ int main() {
 
         firefly::FFInt z1 = t + firefly::RatReconst::shift[0];
 
+        // Some examples for number for which one needs to use the Chinese
+        // Remainder theorem
         mpz_class cr_1_mpz;
         cr_1_mpz = "123456789109898799879870980";
         mpz_class cr_2_mpz;
         cr_2_mpz = "123456789109898799879";
         firefly::FFInt cr_1(cr_1_mpz);
         firefly::FFInt cr_2(cr_2_mpz);
+
         // example for n = 4
         firefly::FFInt den = cr_1*(((z1.pow(3)-12*z1.pow(2)+48*z1-64)*t_yis[1].pow(2))
           *t_yis[0].pow(5)+((-3*z1.pow(3)+36*z1.pow(2)
