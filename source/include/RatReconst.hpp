@@ -156,7 +156,7 @@ namespace firefly {
     uint tmp_solved_coefs_den = 0;
     void remove_ni(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
     void remove_di(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
-    uint num_eqn;
+    uint num_eqn = 0;
     RationalFunction result;
     mpz_class combined_prime {};  /**< The combination of the used prime numbers with the chinese remained theorem */
     std::vector<FFInt> ti {}; /**< A vector which holds all arguments t_i */
