@@ -22,7 +22,7 @@ int main() {
     // t is the scaling variable
     firefly::FFInt t;
     // Get and set a prime number
-    prime = firefly::primes()[rec.prime_number];
+    prime = firefly::primes()[rec.get_prime()];
     firefly::FFInt::p = prime;
     // Initialize some counters
     int count = 0;
@@ -30,7 +30,7 @@ int main() {
     uint primes_used = 0;
 
     // Feed loop
-    while (!rec.done) {
+    while (!rec.is_done()) {
       if (yis.size() > 0) {
         for (uint j = 2; j <= n; j++) {
           t_yis[j - 2] = yis[j - 2];
@@ -39,18 +39,18 @@ int main() {
 
       // If a new prime is needed, set it, generate new random variables
       // and reset counters
-      if (primes_used != rec.prime_number) {
+      if (primes_used != rec.get_prime()) {
         rec.generate_anchor_points();
 
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
-        primes_used = std::max(primes_used, rec.prime_number);
-        prime = firefly::primes()[rec.prime_number];
+        primes_used = std::max(primes_used, rec.get_prime());
+        prime = firefly::primes()[rec.get_prime()];
         firefly::FFInt::p = prime;
 
         kk = 0;
 
         for (uint j = 2; j <= n; j++) {
-          yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.curr_zi_order[j - 2])];
+          yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])];
           t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
         }
       }
@@ -61,16 +61,16 @@ int main() {
       // Fill the t_yis vector if it is empty
       if (t_yis.size() == 0) {
         for (uint j = 2; j <= n; j++) {
-          yis.emplace_back(rec.rand_zi[std::make_pair(j, rec.curr_zi_order[j - 2])]);
+          yis.emplace_back(rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])]);
           t_yis.emplace_back(t * yis[j - 2] + firefly::RatReconst::shift[j - 1]);
         }
       }
 
       // Check whether we are currently reconstructing multivariate polynomials,
       // change the yis and t_yis accordingly and add the static shift
-      if (rec.zi >= 2) {
+      if (rec.get_zi() >= 2) {
         for (uint j = 2; j <= n; j++) {
-          yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.curr_zi_order[j - 2])];
+          yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])];
           t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
         }
       } else {
@@ -124,10 +124,10 @@ int main() {
       std::vector<uint> tmp_vec;
 
       if (n > 1)
-        tmp_vec = std::vector<uint>(rec.curr_zi_order.begin(), rec.curr_zi_order.end() - 1);
+        tmp_vec = rec.get_zi_order();
 
       // Feed the algorithm with the current zi_order
-      rec.feed(t, num / den, tmp_vec);
+      rec.feed(t, num / den, tmp_vec, primes_used);
     }
 
     std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";

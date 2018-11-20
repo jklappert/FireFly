@@ -2,6 +2,7 @@
 
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
+#include <mutex>
 
 namespace firefly {
   typedef std::unordered_map<std::vector<uint>, mpz_class, UintHasher> mpz_map;
@@ -17,10 +18,14 @@ namespace firefly {
      *    @param n_ the number of parameters
      */
     RatReconst(uint n_);
+    RatReconst(const RatReconst& other);
+    RatReconst(RatReconst&& other);
+    RatReconst& operator=(const RatReconst& other);
+    RatReconst& operator=(RatReconst&& other);
     /**
      *
      */
-    void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord);
+    void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime);
     /**
      *
      */
@@ -28,16 +33,16 @@ namespace firefly {
     static std::vector<FFInt> shift;
     static ff_pair_map rand_zi;
     static std::vector<FFInt> anchor_points;
-    bool done = false;
-    uint zi = 1;
-    uint prime_number = 0;
-    std::vector<uint> curr_zi_order {};
     /*
      *
      */
     FFInt get_rand();
-    uint get_num_eqn() const;
+    uint get_num_eqn();
     void generate_anchor_points();
+    bool is_done();
+    uint get_prime();
+    std::vector<uint> get_zi_order();
+    uint get_zi();
   private:
     FFInt comp_ai(int i, int ip, const FFInt& num);
     /**
@@ -119,7 +124,13 @@ namespace firefly {
      *
      */
     void set_new_rand(std::pair<uint, uint>& key);
+    void remove_ni(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
+    void remove_di(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
     uint n; /**< The number of parameters */
+    bool done = false;
+    uint zi = 1;
+    uint prime_number = 0;
+    std::vector<uint> curr_zi_order {};
     bool check = false;
     bool use_chinese_remainder = false;
     bool new_prime = false;
@@ -154,8 +165,6 @@ namespace firefly {
     int solved_coefs = 0;
     uint tmp_solved_coefs_num = 0;
     uint tmp_solved_coefs_den = 0;
-    void remove_ni(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
-    void remove_di(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
     uint num_eqn = 0;
     RationalFunction result;
     mpz_class combined_prime {};  /**< The combination of the used prime numbers with the chinese remained theorem */
@@ -164,5 +173,8 @@ namespace firefly {
     rn_map g_di {}; /**< rational coefficient guesses for the denominator*/
     mpz_map combined_ni {};  /**< The combination of the coefficients of the numerator over finite field with the chinese remained theorem */
     mpz_map combined_di {};  /**< The combination of the coefficients of the denominator over finite field with the chinese remained theorem */
+
+    mutable std::mutex mutex_status;
+    mutable std::mutex mutex_feed;
   };
 }

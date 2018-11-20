@@ -12,6 +12,10 @@ namespace firefly {
   std::vector<FFInt> RatReconst::anchor_points {};
 
   RatReconst::RatReconst(uint n_) : n(n_) {
+    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
+    std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
+    std::lock(lock_status, lock_feed);
+
     ti.reserve(300);
     ai.reserve(300);
     combined_prime = FFInt::p;
@@ -32,8 +36,11 @@ namespace firefly {
     if (n > 1) {
       deg_num.emplace_back(-1);
       deg_den.emplace_back(-1);
-      curr_zi_order = std::vector<uint> (n, 1);
-      curr_zi_order[n - 1] = 0;
+      {
+        std::unique_lock<std::mutex> lock(mutex_status);
+        curr_zi_order = std::vector<uint> (n, 1);
+        curr_zi_order[n - 1] = 0;
+      }
 
       // fill in the rand_vars for zi_order = 1
       if (rand_zi.empty()) {
@@ -46,8 +53,10 @@ namespace firefly {
     }
   }
 
-  void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord) {
-    if (!done) {
+  void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime) {
+    std::unique_lock<std::mutex> lock(mutex_feed);
+
+    if (!done && fed_prime == prime_number) {
       std::vector<uint> tmp_vec;
       std::vector<uint> tmp_vec_rev;
       std::vector<uint> feed_zi_ord_rev;
@@ -70,9 +79,13 @@ namespace firefly {
           sub_den.clear();
 
           if (rec_rat_coef()) {
-            done = test_guess(num);
+            {
+              std::unique_lock<std::mutex> lock(mutex_status);
+              done = test_guess(num);
+            }
 
             if (done) {
+              std::unique_lock<std::mutex> lock(mutex_status);
               coef_n.clear();
               coef_d.clear();
               combined_di.clear();
@@ -104,7 +117,11 @@ namespace firefly {
         // basic reconstruction algorithm, check if reconstructed function is equal
         // to numeric input and calculate coefficients a_i, check chinese chinese remainder
         // theorem
-        zi = 1;
+
+        {
+          std::unique_lock<std::mutex> lock(mutex_status);
+          zi = 1;
+        }
 
         if (max_deg_num == -1) {
           ti.emplace_back(new_ti);
@@ -254,7 +271,10 @@ namespace firefly {
                 shift[j] = FFInt(std::rand() % 1000000) + FFInt(1);
               }
 
-              done = false;
+              {
+                std::unique_lock<std::mutex> lock(mutex_status);
+                done = false;
+              }
               ai.clear();
               ti.clear();
               return;
@@ -334,12 +354,18 @@ namespace firefly {
           if (n == 1) {
             std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(canonical);
             combine_primes(tmp);
-            prime_number ++;
+            {
+              std::unique_lock<std::mutex> lock(mutex_status);
+              prime_number++;
+            }
             saved_ti.clear();
             new_prime = true;
             return;
           } else {
-            zi = curr_zi;
+            {
+              std::unique_lock<std::mutex> lock(mutex_status);
+              zi = curr_zi;
+            }
 
             ff_map num_coef = canonical.first.coef;
             ff_map den_coef = canonical.second.coef;
@@ -436,6 +462,7 @@ namespace firefly {
               // if the numerator is done, get the current zi order of the
               // denominator
               if (curr_deg_num == -1) {
+                std::unique_lock<std::mutex> lock(mutex_status);
                 curr_zi_order = rec.curr_zi_order;
                 curr_zi_order.emplace_back(prime_number);
                 curr_zi = rec.next_zi + 1;
@@ -452,10 +479,13 @@ namespace firefly {
                 // if the denominator is done, check if the numerator is still undone
                 if (curr_deg_den == -1 && curr_deg_num >= 0) {
                   PolyReconst rec_new = coef_n[curr_deg_num];
-                  curr_zi_order = rec_new.curr_zi_order;
-                  curr_zi_order.emplace_back(prime_number);
-                  curr_zi = rec_new.next_zi + 1;
-                  zi = curr_zi;
+                  {
+                    std::unique_lock<std::mutex> lock(mutex_status);
+                    curr_zi_order = rec_new.curr_zi_order;
+                    curr_zi_order.emplace_back(prime_number);
+                    curr_zi = rec_new.next_zi + 1;
+                    zi = curr_zi;
+                  }
 
                   if (rec_new.curr_zi_order == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1)) {
                     auto res_new = feed_poly(curr_deg_num, max_deg_num, coef_n, rec_new,
@@ -478,19 +508,23 @@ namespace firefly {
               std::reverse(zi_order_den_rev.begin(), zi_order_den_rev.end());
 
               if (zi_order_num_rev > zi_order_den_rev) {
+                std::unique_lock<std::mutex> lock(mutex_status);
                 curr_zi_order = curr_zi_order_num;
                 curr_zi = zi_num;
                 zi = zi_num;
               } else {
+                std::unique_lock<std::mutex> lock(mutex_status);
                 curr_zi_order = curr_zi_order_den;
                 curr_zi = zi_den;
                 zi = zi_den;
               }
             } else if (curr_deg_num >= 0) {
+              std::unique_lock<std::mutex> lock(mutex_status);
               curr_zi_order = curr_zi_order_num;
               curr_zi = zi_num;
               zi = zi_num;
             } else if (curr_deg_den >= 0) {
+              std::unique_lock<std::mutex> lock(mutex_status);
               curr_zi_order = curr_zi_order_den;
               curr_zi = zi_den;
               zi = zi_den;
@@ -542,8 +576,12 @@ namespace firefly {
 
               combine_primes(tmp);
 
-              prime_number ++;
+              {
+                std::unique_lock<std::mutex> lock(mutex_status);
+                prime_number++;
+              }
               saved_ti.clear();
+              std::unique_lock<std::mutex> lock(mutex_status);
               std::fill(curr_zi_order.begin(), curr_zi_order.end() - 1, 1);
               curr_zi_order[n - 1] = prime_number;
               curr_zi = 2;
@@ -564,7 +602,7 @@ namespace firefly {
               std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1);
               std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
               saved_ti.at(tmp_vec).pop_back();
-              feed(key_val.first, key_val.second, tmp_vec);
+              feed(key_val.first, key_val.second, tmp_vec, prime_number);
             } catch (std::out_of_range& e) {
               // do nothing
             }
@@ -840,25 +878,33 @@ namespace firefly {
   }
 
   RationalFunction RatReconst::get_result() {
-    if (result.numerator.coefs.empty()) {
-      Polynomial numerator;
-      Polynomial denominator;
+    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
+    std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
+    std::lock(lock_status, lock_feed);
 
-      numerator = Polynomial(g_ni);
-      denominator = Polynomial(g_di);
-      g_ni.clear();
-      g_di.clear();
+    if (done) {
+      if (result.numerator.coefs.empty()) {
+        Polynomial numerator;
+        Polynomial denominator;
 
-      numerator.sort();
-      denominator.sort();
-      result = RationalFunction(numerator, denominator);
+        numerator = Polynomial(g_ni);
+        denominator = Polynomial(g_di);
+        g_ni.clear();
+        g_di.clear();
 
-      RationalNumber first_coef = result.denominator.coefs[0].coef;
+        numerator.sort();
+        denominator.sort();
+        result = RationalFunction(numerator, denominator);
 
-      if (first_coef.numerator != 1 || first_coef.denominator != 1) result = normalize(result);
+        RationalNumber first_coef = result.denominator.coefs[0].coef;
+
+        if (first_coef.numerator != 1 || first_coef.denominator != 1) result = normalize(result);
+      }
+
+      return result;
+    } else {
+      throw std::runtime_error("Access to unfinished result");
     }
-
-    return result;
   }
 
   bool RatReconst::rec_rat_coef() {
@@ -1094,11 +1140,16 @@ namespace firefly {
     }
   }
 
-  uint RatReconst::get_num_eqn() const {
+  uint RatReconst::get_num_eqn() {
+    std::unique_lock<std::mutex> lock(mutex_status);
     return num_eqn;
   }
 
   void RatReconst::generate_anchor_points() {
+    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
+    std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
+    std::lock(lock_status, lock_feed);
+
     rand_zi.clear();
     anchor_points.clear();
 
@@ -1109,4 +1160,253 @@ namespace firefly {
     }
   }
 
+  bool RatReconst::is_done() {
+    std::unique_lock<std::mutex> lock(mutex_status);
+    return done;
+  }
+
+  uint RatReconst::get_prime() {
+    std::unique_lock<std::mutex> lock(mutex_status);
+    return prime_number;
+  }
+
+  std::vector<uint> RatReconst::get_zi_order() {
+    std::unique_lock<std::mutex> lock(mutex_status);
+    if (n == 1) {
+      return std::vector<uint> {};
+    } else {
+      return std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1);
+    }
+  }
+
+  uint RatReconst::get_zi() {
+    std::unique_lock<std::mutex> lock(mutex_status);
+    return zi;
+  }
+
+  RatReconst::RatReconst(const RatReconst& other) {
+    std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
+    std::unique_lock<std::mutex> lock_my_feed(mutex_feed, std::defer_lock);
+    std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
+    std::unique_lock<std::mutex> lock_other_feed(other.mutex_feed, std::defer_lock);
+    std::lock(lock_my_status, lock_my_feed, lock_other_status, lock_other_feed);
+
+    n = other.n;
+    done = other.done;
+    zi = other.zi;
+    prime_number = other.prime_number;
+    curr_zi_order = other.curr_zi_order;
+    check = other.check;
+    use_chinese_remainder = other.use_chinese_remainder;
+    new_prime = other.new_prime;
+    first_run = other.first_run;
+    coef_mat = other.coef_mat;
+    curr_zi = other.curr_zi;
+    saved_ti = other.saved_ti;
+    ai = other.ai;
+    degs_n = other.degs_n;
+    degs_d = other.degs_d;
+    coef_n = other.coef_n;
+    coef_d = other.coef_d;
+    deg_num = other.deg_num;
+    deg_den = other.deg_den;
+    non_solved_coef_num = other.non_solved_coef_num;
+    non_solved_coef_den = other.non_solved_coef_den;
+    sub_num = other.sub_num;
+    sub_den = other.sub_den;
+    solved_coefs_num = other.solved_coefs_num;
+    solved_coefs_den = other.solved_coefs_den;
+    saved_num_num = other.saved_num_num;
+    saved_num_den = other.saved_num_den;
+    max_deg_num = other.max_deg_num;
+    max_deg_den = other.max_deg_den;
+    min_deg_den = other.min_deg_den;
+    min_deg_num = other.min_deg_num;
+    curr_deg_num = other.curr_deg_num;
+    curr_deg_den = other.curr_deg_den;
+    curr_zi_order_num = other.curr_zi_order_num;
+    curr_zi_order_den = other.curr_zi_order_den;
+    solved_coefs = other.solved_coefs;
+    tmp_solved_coefs_num = other.tmp_solved_coefs_num;
+    tmp_solved_coefs_den = other.tmp_solved_coefs_den;
+    num_eqn = other.num_eqn;
+    result = other.result;
+    combined_prime = other.combined_prime;
+    ti = other.ti;
+    g_ni = other.g_ni;
+    g_di = other.g_di;
+    combined_ni = other.combined_ni;
+    combined_di = other.combined_di;
+  }
+
+  RatReconst::RatReconst(RatReconst&& other) {
+    std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
+    std::unique_lock<std::mutex> lock_my_feed(mutex_feed, std::defer_lock);
+    std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
+    std::unique_lock<std::mutex> lock_other_feed(other.mutex_feed, std::defer_lock);
+    std::lock(lock_my_status, lock_my_feed, lock_other_status, lock_other_feed);
+
+    n = std::move(other.n);
+    done = std::move(other.done);
+    zi = std::move(other.zi);
+    prime_number = std::move(other.prime_number);
+    curr_zi_order = std::move(other.curr_zi_order);
+    check = std::move(other.check);
+    use_chinese_remainder = std::move(other.use_chinese_remainder);
+    new_prime = std::move(other.new_prime);
+    first_run = std::move(other.first_run);
+    coef_mat = std::move(other.coef_mat);
+    curr_zi = std::move(other.curr_zi);
+    saved_ti = std::move(other.saved_ti);
+    ai = std::move(other.ai);
+    degs_n = std::move(other.degs_n);
+    degs_d = std::move(other.degs_d);
+    coef_n = std::move(other.coef_n);
+    coef_d = std::move(other.coef_d);
+    deg_num = std::move(other.deg_num);
+    deg_den = std::move(other.deg_den);
+    non_solved_coef_num = std::move(other.non_solved_coef_num);
+    non_solved_coef_den = std::move(other.non_solved_coef_den);
+    sub_num = std::move(other.sub_num);
+    sub_den = std::move(other.sub_den);
+    solved_coefs_num = std::move(other.solved_coefs_num);
+    solved_coefs_den = std::move(other.solved_coefs_den);
+    saved_num_num = std::move(other.saved_num_num);
+    saved_num_den = std::move(other.saved_num_den);
+    max_deg_num = std::move(other.max_deg_num);
+    max_deg_den = std::move(other.max_deg_den);
+    min_deg_den = std::move(other.min_deg_den);
+    min_deg_num = std::move(other.min_deg_num);
+    curr_deg_num = std::move(other.curr_deg_num);
+    curr_deg_den = std::move(other.curr_deg_den);
+    curr_zi_order_num = std::move(other.curr_zi_order_num);
+    curr_zi_order_den = std::move(other.curr_zi_order_den);
+    solved_coefs = std::move(other.solved_coefs);
+    tmp_solved_coefs_num = std::move(other.tmp_solved_coefs_num);
+    tmp_solved_coefs_den = std::move(other.tmp_solved_coefs_den);
+    num_eqn = std::move(other.num_eqn);
+    result = std::move(other.result);
+    combined_prime = std::move(other.combined_prime);
+    ti = std::move(other.ti);
+    g_ni = std::move(other.g_ni);
+    g_di = std::move(other.g_di);
+    combined_ni = std::move(other.combined_ni);
+    combined_di = std::move(other.combined_di);
+  }
+
+  RatReconst& RatReconst::operator=(const RatReconst& other) {
+    if (this != &other) {
+      std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
+      std::unique_lock<std::mutex> lock_my_feed(mutex_feed, std::defer_lock);
+      std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
+      std::unique_lock<std::mutex> lock_other_feed(other.mutex_feed, std::defer_lock);
+      std::lock(lock_my_status, lock_my_feed, lock_other_status, lock_other_feed);
+
+      n = other.n;
+      done = other.done;
+      zi = other.zi;
+      prime_number = other.prime_number;
+      curr_zi_order = other.curr_zi_order;
+      check = other.check;
+      use_chinese_remainder = other.use_chinese_remainder;
+      new_prime = other.new_prime;
+      first_run = other.first_run;
+      coef_mat = other.coef_mat;
+      curr_zi = other.curr_zi;
+      saved_ti = other.saved_ti;
+      ai = other.ai;
+      degs_n = other.degs_n;
+      degs_d = other.degs_d;
+      coef_n = other.coef_n;
+      coef_d = other.coef_d;
+      deg_num = other.deg_num;
+      deg_den = other.deg_den;
+      non_solved_coef_num = other.non_solved_coef_num;
+      non_solved_coef_den = other.non_solved_coef_den;
+      sub_num = other.sub_num;
+      sub_den = other.sub_den;
+      solved_coefs_num = other.solved_coefs_num;
+      solved_coefs_den = other.solved_coefs_den;
+      saved_num_num = other.saved_num_num;
+      saved_num_den = other.saved_num_den;
+      max_deg_num = other.max_deg_num;
+      max_deg_den = other.max_deg_den;
+      min_deg_den = other.min_deg_den;
+      min_deg_num = other.min_deg_num;
+      curr_deg_num = other.curr_deg_num;
+      curr_deg_den = other.curr_deg_den;
+      curr_zi_order_num = other.curr_zi_order_num;
+      curr_zi_order_den = other.curr_zi_order_den;
+      solved_coefs = other.solved_coefs;
+      tmp_solved_coefs_num = other.tmp_solved_coefs_num;
+      tmp_solved_coefs_den = other.tmp_solved_coefs_den;
+      num_eqn = other.num_eqn;
+      result = other.result;
+      combined_prime = other.combined_prime;
+      ti = other.ti;
+      g_ni = other.g_ni;
+      g_di = other.g_di;
+      combined_ni = other.combined_ni;
+      combined_di = other.combined_di;
+    }
+    return *this;
+  }
+
+  RatReconst& RatReconst::operator=(RatReconst&& other) {
+    if (this != &other) {
+      std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
+      std::unique_lock<std::mutex> lock_my_feed(mutex_feed, std::defer_lock);
+      std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
+      std::unique_lock<std::mutex> lock_other_feed(other.mutex_feed, std::defer_lock);
+      std::lock(lock_my_status, lock_my_feed, lock_other_status, lock_other_feed);
+
+      n = std::move(other.n);
+      done = std::move(other.done);
+      zi = std::move(other.zi);
+      prime_number = std::move(other.prime_number);
+      curr_zi_order = std::move(other.curr_zi_order);
+      check = std::move(other.check);
+      use_chinese_remainder = std::move(other.use_chinese_remainder);
+      new_prime = std::move(other.new_prime);
+      first_run = std::move(other.first_run);
+      coef_mat = std::move(other.coef_mat);
+      curr_zi = std::move(other.curr_zi);
+      saved_ti = std::move(other.saved_ti);
+      ai = std::move(other.ai);
+      degs_n = std::move(other.degs_n);
+      degs_d = std::move(other.degs_d);
+      coef_n = std::move(other.coef_n);
+      coef_d = std::move(other.coef_d);
+      deg_num = std::move(other.deg_num);
+      deg_den = std::move(other.deg_den);
+      non_solved_coef_num = std::move(other.non_solved_coef_num);
+      non_solved_coef_den = std::move(other.non_solved_coef_den);
+      sub_num = std::move(other.sub_num);
+      sub_den = std::move(other.sub_den);
+      solved_coefs_num = std::move(other.solved_coefs_num);
+      solved_coefs_den = std::move(other.solved_coefs_den);
+      saved_num_num = std::move(other.saved_num_num);
+      saved_num_den = std::move(other.saved_num_den);
+      max_deg_num = std::move(other.max_deg_num);
+      max_deg_den = std::move(other.max_deg_den);
+      min_deg_den = std::move(other.min_deg_den);
+      min_deg_num = std::move(other.min_deg_num);
+      curr_deg_num = std::move(other.curr_deg_num);
+      curr_deg_den = std::move(other.curr_deg_den);
+      curr_zi_order_num = std::move(other.curr_zi_order_num);
+      curr_zi_order_den = std::move(other.curr_zi_order_den);
+      solved_coefs = std::move(other.solved_coefs);
+      tmp_solved_coefs_num = std::move(other.tmp_solved_coefs_num);
+      tmp_solved_coefs_den = std::move(other.tmp_solved_coefs_den);
+      num_eqn = std::move(other.num_eqn);
+      result = std::move(other.result);
+      combined_prime = std::move(other.combined_prime);
+      ti = std::move(other.ti);
+      g_ni = std::move(other.g_ni);
+      g_di = std::move(other.g_di);
+      combined_ni = std::move(other.combined_ni);
+      combined_di = std::move(other.combined_di);
+    }
+    return *this;
+  }
 }
