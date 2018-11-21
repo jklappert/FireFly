@@ -36,11 +36,8 @@ namespace firefly {
     if (n > 1) {
       deg_num.emplace_back(-1);
       deg_den.emplace_back(-1);
-      {
-        std::unique_lock<std::mutex> lock(mutex_status);
-        curr_zi_order = std::vector<uint> (n, 1);
-        curr_zi_order[n - 1] = 0;
-      }
+      curr_zi_order = std::vector<uint> (n, 1);
+      curr_zi_order[n - 1] = 0;
 
       // fill in the rand_vars for zi_order = 1
       if (rand_zi.empty()) {
