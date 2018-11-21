@@ -52,7 +52,10 @@ namespace firefly {
 
   void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_feed);
+    feed(new_ti, num, feed_zi_ord, fed_prime, lock);
+  }
 
+  void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime, std::unique_lock<std::mutex>& lock) {
     if (!done && fed_prime == prime_number) {
       std::vector<uint> tmp_vec;
       std::vector<uint> tmp_vec_rev;
@@ -599,7 +602,7 @@ namespace firefly {
               std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end() - 1);
               std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
               saved_ti.at(tmp_vec).pop_back();
-              feed(key_val.first, key_val.second, tmp_vec, prime_number);
+              feed(key_val.first, key_val.second, tmp_vec, prime_number, lock);
             } catch (std::out_of_range& e) {
               // do nothing
             }

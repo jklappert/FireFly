@@ -44,6 +44,7 @@ namespace firefly {
     std::vector<uint> get_zi_order();
     uint get_zi();
   private:
+    void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime, std::unique_lock<std::mutex>& lock);
     FFInt comp_ai(int i, int ip, const FFInt& num);
     /**
      *    Normalize the rational function such that the first non-zero coefficient
