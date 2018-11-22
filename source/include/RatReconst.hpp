@@ -10,6 +10,7 @@ namespace firefly {
   typedef std::unordered_map<std::vector<uint>, std::unordered_map<std::vector<uint>, FFInt, UintHasher>, UintHasher> ff_map_map;
   typedef std::unordered_map<std::vector<uint>, std::vector<std::pair<FFInt, FFInt>>, UintHasher> ff_vec_map;
   typedef std::unordered_map<std::pair<uint, uint>, FFInt, UintPairHasher> ff_pair_map;
+  typedef std::unordered_map<std::vector<uint>, uint, UintHasher> uint_map;
 
   class RatReconst {
   public:
@@ -43,6 +44,7 @@ namespace firefly {
     uint get_prime();
     std::vector<uint> get_zi_order();
     uint get_zi();
+    void disable_shift();
   private:
     void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime, std::unique_lock<std::mutex>& lock);
     FFInt comp_ai(int i, int ip, const FFInt& num);
@@ -111,6 +113,10 @@ namespace firefly {
      */
     std::pair<PolynomialFF, PolynomialFF> solve_gauss();
     /**
+     * 
+     */
+    std::pair<PolynomialFF, PolynomialFF> solve_multi_gauss();
+    /**
      *
      */
     std::tuple<int, uint, std::vector<uint>> feed_poly(int curr_deg,
@@ -125,8 +131,14 @@ namespace firefly {
      *
      */
     void set_new_rand(std::pair<uint, uint>& key);
-    void remove_ni(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
-    void remove_di(uint deg, const std::vector<uint>& deg_vec, RationalNumber& rn);
+    /**
+     * 
+     */
+    void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
+    /**
+     * 
+     */
+    void build_multi_gauss(const FFInt& tmp_num, const std::vector<FFInt>& yis);
     uint n; /**< The number of parameters */
     bool done = false;
     uint zi = 1;
@@ -141,31 +153,25 @@ namespace firefly {
     uint curr_zi = 2;
     ff_vec_map saved_ti {};
     std::vector<FFInt> ai {};
-    std::unordered_map<uint, std::vector<std::vector<uint>>> degs_n {};
-    std::unordered_map<uint, std::vector<std::vector<uint>>> degs_d {};
     std::unordered_map<uint, PolyReconst> coef_n {};
     std::unordered_map<uint, PolyReconst> coef_d {};
-    std::vector<int> deg_num {};
-    std::vector<int> deg_den {};
-    std::vector<uint> non_solved_coef_num {};
-    std::vector<uint> non_solved_coef_den {};
     std::unordered_map<uint, Polynomial> sub_num {};
     std::unordered_map<uint, Polynomial> sub_den {};
-    std::vector<Polynomial> solved_coefs_num {};
-    std::vector<Polynomial> solved_coefs_den {};
+    std::vector<std::vector<uint>> non_solved_degs_num {};
+    std::vector<std::vector<uint>> non_solved_degs_den {};
     ff_map_map saved_num_num {};
     ff_map_map saved_num_den {};
     int max_deg_num = -1;
     int max_deg_den = -1;
-    int min_deg_den = -1;
-    int min_deg_num = -1;
     int curr_deg_num = -1;
     int curr_deg_den = -1;
+    std::vector<uint> min_deg_den_vec = {};
     std::vector<uint> curr_zi_order_num {};
     std::vector<uint> curr_zi_order_den {};
-    int solved_coefs = 0;
     uint tmp_solved_coefs_num = 0;
     uint tmp_solved_coefs_den = 0;
+    void remove_ni(const std::vector<uint>& deg_vec, RationalNumber& rn);
+    void remove_di(const std::vector<uint>& deg_vec, RationalNumber& rn);
     uint num_eqn = 0;
     RationalFunction result;
     mpz_class combined_prime {};  /**< The combination of the used prime numbers with the chinese remained theorem */

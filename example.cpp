@@ -3,13 +3,59 @@
 #include "RatReconst.hpp"
 #include "ReconstHelper.hpp"
 #include "Logger.hpp"
+//#include "utils.hpp"
 #include <algorithm>
+//#include <ctime>
+//#include <Eigen/Sparse>
 
 int main() {
-  uint n = 4;
+  const uint n = 4;
+  //  typedef Eigen::Matrix<firefly::FFInt, n, 1> vec;
+  //  std::vector<std::vector<firefly::FFInt>> coef_mat;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec(n);
+
+  // construct data
+  /*  Eigen::SparseMatrix<firefly::FFInt> mat (n,n);
+  vec b, x;
+
+  std::clock_t begin = clock();
+  std::cout << "Writing equations...\n";
+  for(int i = 0; i < n; i++){
+    std::vector<firefly::FFInt> eq (n + 1, 0);
+    for (int j = i; j < n; j++){
+      firefly::FFInt rand1 = firefly::FFInt(std::rand());
+      //      mat.insert(i,j) = rand1.n;
+      eq[j] = rand1;
+    }
+    firefly::FFInt rand2 = firefly::FFInt(std::rand());
+    //    b[i] = rand2.n;
+    eq[n] = rand2;
+    coef_mat.emplace_back(eq);
+  }
+
+  std::cout << "Finished writing equations in " << float(clock() - begin) / CLOCKS_PER_SEC << " s.\n";
+
+  begin = clock();
+  std::cout << "Solving Gauss system...\n";
+  std::vector<firefly::FFInt> res = firefly::solve_gauss_system(coef_mat.size(), coef_mat);
+  std::cout << "Solved Gauss system in " << float(clock() - begin) / CLOCKS_PER_SEC << " s.\nResults:\n";
+  /*for(const auto & el : res){
+    std::cout << el << "\n";
+  }*/
+  /*std::cout << "End of results.\n";
+  Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
+  solver.analyzePattern(mat);
+  //  Eigen::ConjugateGradient<Eigen::SparseMatrix<firefly::FFInt>, Eigen::Lower|Eigen::Upper> cg;
+  begin = clock();
+  std::cout << "Solving sparse system with Eigen...\n";
+  //  x = cg.compute(mat).solve(b);
+  std::cout << "Solved sparse system with Eigen in " << float(clock() - begin) / CLOCKS_PER_SEC << " s.\nResults:\n";
+  /*for(int i = 0; i < n; i++){
+    std::cout << x[i] << "\n";
+  }*/
+  //  std::cout << "End of results.\n";
 
   // Example for the reconstruction of a rational function
   try {
@@ -40,10 +86,12 @@ int main() {
       // If a new prime is needed, set it, generate new random variables
       // and reset counters
       if (primes_used != rec.get_prime()) {
+        rec.disable_shift();
         rec.generate_anchor_points();
 
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
         primes_used = std::max(primes_used, rec.get_prime());
+
         prime = firefly::primes()[rec.get_prime()];
         firefly::FFInt::p = prime;
 
@@ -51,7 +99,7 @@ int main() {
 
         for (uint j = 2; j <= n; j++) {
           yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])];
-          t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
+          t_yis[j - 2] = yis[j - 2];
         }
       }
 
@@ -62,7 +110,11 @@ int main() {
       if (t_yis.size() == 0) {
         for (uint j = 2; j <= n; j++) {
           yis.emplace_back(rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])]);
-          t_yis.emplace_back(t * yis[j - 2] + firefly::RatReconst::shift[j - 1]);
+
+          if (primes_used == 0)
+            t_yis.emplace_back(t * yis[j - 2] + firefly::RatReconst::shift[j - 1]);
+          else
+            t_yis.emplace_back(yis[j - 2]);
         }
       }
 
@@ -71,11 +123,18 @@ int main() {
       if (rec.get_zi() >= 2) {
         for (uint j = 2; j <= n; j++) {
           yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])];
-          t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
+
+          if (primes_used == 0)
+            t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
+          else
+            t_yis[j - 2] = yis[j - 2];
         }
       } else {
         for (uint j = 2; j <= n; j++) {
-          t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
+          if (primes_used == 0)
+            t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
+          else
+            t_yis[j - 2] = yis[j - 2];
         }
       }
 
@@ -91,7 +150,7 @@ int main() {
       firefly::FFInt cr_1(cr_1_mpz);
       firefly::FFInt cr_2(cr_2_mpz);
 
-      // example for n = 4
+      // example for n = 4 using the Chinese Remainder theorem
       firefly::FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
                                    * t_yis[0].pow(5) + ((-3 * z1.pow(3) + 36 * z1.pow(2)
                                                          - 144 * z1 + 192) * t_yis[1].pow(2)) * t_yis[0].pow(4) + ((2 * z1.pow(3) - 24 * z1.pow(2)
@@ -105,6 +164,8 @@ int main() {
                                                             - 389 * z1.pow(2) + 1074 * z1 - 960) * t_yis[1] - 3 * z1.pow(3) + 30 * z1.pow(2) - 96 * z1 + 96)
                                    * t_yis[0].pow(2) + ((-10 * z1.pow(3) + 93 * z1.pow(2) - 278 * z1 + 264)
                                                         * t_yis[1]) * t_yis[0]);
+      //firefly::FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + t_yis[1].pow(2);
+      //firefly::FFInt den = 2*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];
 
       // example for n = 1
       /*firefly::FFInt num = (576 * z1.pow(12) - 35145 * z1.pow(11)
@@ -121,6 +182,7 @@ int main() {
                             + 1055033856 * z1.pow(2) - 383201280 * z1);*/
       kk++;
       count++;
+
       std::vector<uint> tmp_vec;
 
       if (n > 1)
@@ -138,3 +200,4 @@ int main() {
 
   return 0;
 }
+

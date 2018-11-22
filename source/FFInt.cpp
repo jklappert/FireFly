@@ -23,6 +23,7 @@ namespace firefly {
         } else {
           n = var.second;
         }
+
         return;
       }
     }
@@ -162,12 +163,17 @@ namespace firefly {
   uint64_t FFInt::mod_mul(uint64_t a, uint64_t b) const {
     uint64_t d = 0;
     uint64_t mp2 = p >> 1;
+
     for (int i = 0; i != 64; ++i) {
       d = (d > mp2) ? (d << 1) - p : d << 1;
+
       if (a & 0x8000000000000000ULL) d += b;
+
       if (d > p) d -= p;
+
       a <<= 1;
     }
+
     return d;
   }
 #endif
