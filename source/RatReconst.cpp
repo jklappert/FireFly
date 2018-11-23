@@ -38,11 +38,7 @@ namespace firefly {
 
       // fill in the rand_vars for zi_order = 1
       if (rand_zi.empty()) {
-        for (uint i = 2; i <= n; i++) {
-          const FFInt rand = get_rand();
-          rand_zi.emplace(std::make_pair(std::make_pair(i, 1), rand));
-          anchor_points.emplace_back(rand);
-        }
+        generate_anchor_points();
       }
     }
   }
@@ -1006,7 +1002,7 @@ namespace firefly {
     try {
       rand_zi.at(key);
     } catch (std::out_of_range& e) {
-      rand_zi.emplace(std::make_pair(key, get_rand()));
+      rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(key.first, 1)].pow(key.second)));
     }
   }
 
@@ -1024,8 +1020,10 @@ namespace firefly {
     anchor_points.clear();
 
     for (uint i = 2; i <= n; i++) {
-      const FFInt rand = get_rand();
+      const FFInt rand = find_nth_prime(i - 1);//get_rand();
       rand_zi.emplace(std::make_pair(std::make_pair(i, 1), rand));
+      rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
+
       anchor_points.emplace_back(rand);
     }
   }
@@ -1380,5 +1378,74 @@ namespace firefly {
     }
 
     coef_mat.emplace_back(std::move(eq));
+  }
+
+  uint64_t RatReconst::find_sieve_size(uint n) {
+    // For small n, the formula returns a value too low, so we can just
+    // hardcode the sieve size to 5 (5th prime is 11).
+    if (n < 6)
+      return 13;
+
+    // We can't find a prime that will exceed ~0UL.
+    if (n >= (~0UL / log(~0UL)))
+      return 0;
+
+    // Binary search for the right value.
+    unsigned long low  = n;
+    unsigned long high = ~0UL - 1;
+
+    do {
+      unsigned long mid   = low + (high - low) / 2;
+      double        guess = mid / log(mid);
+
+      if (guess > n)
+        high = (unsigned long) mid - 1;
+      else
+        low = (unsigned long) mid + 1;
+    } while (low < high);
+
+    return high + 1;
+  }
+
+  uint64_t RatReconst::find_nth_prime(uint n) {
+    if (!n) return 1;           // "0th prime"
+
+    if (!--n) return 2;         // first prime
+
+    unsigned long sieve_size = find_sieve_size(n);
+    unsigned long count     = 0;
+    unsigned long max_i     = sqrt(sieve_size - 1) + 1;
+
+    if (sieve_size == 0)
+      return 0;
+
+    std::vector<bool> sieve(sieve_size);
+
+    for (unsigned long i = 3;  true;  i += 2) {
+      if (!sieve[i]) {
+        if (++count == n)
+          return i;
+
+        if (i >= max_i)
+          continue;
+
+        unsigned long j    = i * i;
+        unsigned long inc  = i + i;
+        unsigned long maxj = sieve_size - inc;
+
+        // This loop checks j before adding inc so that we can stop
+        // before j overflows.
+        do {
+          sieve[j] = true;
+
+          if (j >= maxj)
+            break;
+
+          j += inc;
+        } while (1);
+      }
+    }
+
+    return 0;
   }
 }

@@ -181,6 +181,14 @@ namespace firefly {
     mpz_map combined_ni {};  /**< The combination of the coefficients of the numerator over finite field with the chinese remained theorem */
     mpz_map combined_di {};  /**< The combination of the coefficients of the denominator over finite field with the chinese remained theorem */
 
+    /**
+     * 
+     */
+    uint64_t find_nth_prime(uint n);
+    /**
+     * 
+     */
+    uint64_t find_sieve_size(uint n);
     mutable std::mutex mutex_status;
     mutable std::mutex mutex_feed;
   };

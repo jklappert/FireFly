@@ -22,6 +22,7 @@ namespace firefly {
 
     if (n > 1) {
       for (uint i = 1; i <= n; i ++) {
+        yis[i].emplace_back(1);
         yis[i].emplace_back(anchor_points[i - 1]);
       }
     }
@@ -76,11 +77,11 @@ namespace firefly {
       }
 
       for (uint j = 0; j < n; j++) {
-        if (curr_zi_order[j] > yis[j + 1].size())
+        if (curr_zi_order[j] > yis[j + 1].size() - 1)
           yis[j + 1].emplace_back(new_yis[j]);
       }
 
-      uint i = yis[next_zi].size() - 1;
+      uint i = yis[next_zi].size() - 2;
 
       // Univariate Newton interpolation for the lowest stage.
       if (next_zi == 1) {
@@ -106,7 +107,7 @@ namespace firefly {
 
           for (uint zi = 1; zi < next_zi; zi++) {
             // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-            coef_num *= yis[zi][curr_zi_order[zi - 1] - 1].pow(deg_vec[zi - 1]);
+            coef_num *= yis[zi][curr_zi_order[zi - 1]].pow(deg_vec[zi - 1]);
           }
 
           eq.emplace_back(coef_num);
@@ -120,7 +121,7 @@ namespace firefly {
 
           for (uint zi = 1; zi < next_zi; zi++) {
             // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-            coef_num *= yis[zi][curr_zi_order[zi - 1] - 1].pow(deg_vec[zi - 1]);
+            coef_num *= yis[zi][curr_zi_order[zi - 1]].pow(deg_vec[zi - 1]);
           }
 
           res -= coef_num;
@@ -136,6 +137,7 @@ namespace firefly {
         if (coef_mat.size() == rec_degs.size()) {
           const uint order_save = curr_zi_order[next_zi - 1];
           curr_zi_order = std::vector<uint> (n, 1);
+          for(uint i = 1; i < next_zi; i++) curr_zi_order[i - 1] = 0;
           curr_zi_order[next_zi - 1] = order_save + 1;
           ais[next_zi].emplace_back(comp_ai(next_zi, i, i, solve_gauss(), ais[next_zi]));
         } else {
@@ -192,6 +194,7 @@ namespace firefly {
             ais[next_zi].emplace_back(comp_ai(next_zi, 0, 0, pol_ff, ais[next_zi]));
             // reset zi order
             curr_zi_order = std::vector<uint> (n, 1);
+            for(uint i = 1; i < next_zi; i++) curr_zi_order[i - 1] = 0;
             curr_zi_order[next_zi - 1] = 2;
           } else
             check = true;
@@ -295,7 +298,7 @@ namespace firefly {
 
     if (ip == 0) return num;
 
-    return (comp_ai(zi, i, ip - 1, num, ai) - ai[ip - 1]) / (yi[i] - yi[ip - 1]);
+    return (comp_ai(zi, i, ip - 1, num, ai) - ai[ip - 1]) / (yi[i + 1] - yi[ip - 1 + 1]);
   }
 
   PolynomialFF PolyReconst::construct_canonical(const uint zi, std::vector<PolynomialFF>& ai) {
@@ -309,10 +312,10 @@ namespace firefly {
 
     if (i < ai.size() - 1) {
       PolynomialFF poly = ai[i] + iterate_canonical(zi, i + 1, ai);
-      return poly.mul(zi) + poly * (-yi[i - 1]);
+      return poly.mul(zi) + poly * (-yi[i + 1 - 1]);
     }
 
-    return ai[i] * (-yi[i - 1]) + ai[i].mul(zi);
+    return ai[i] * (-yi[i + 1 - 1]) + ai[i].mul(zi);
   }
 
   bool PolyReconst::test_guess(const FFInt& num) {
