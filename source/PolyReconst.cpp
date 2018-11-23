@@ -104,7 +104,7 @@ namespace firefly {
         for (const auto & deg_vec : rec_degs) {
           FFInt coef_num = 1;
 
-          for (uint zi = 1; zi <= n; zi++) {
+          for (uint zi = 1; zi < next_zi; zi++) {
             // curr_zi_ord starts at 1, thus we need to subtract 1 entry
             coef_num *= yis[zi][curr_zi_order[zi - 1] - 1].pow(deg_vec[zi - 1]);
           }
@@ -118,7 +118,7 @@ namespace firefly {
           std::vector<uint> deg_vec = el.first;
           FFInt coef_num = el.second;
 
-          for (uint zi = 1; zi <= n; zi++) {
+          for (uint zi = 1; zi < next_zi; zi++) {
             // curr_zi_ord starts at 1, thus we need to subtract 1 entry
             coef_num *= yis[zi][curr_zi_order[zi - 1] - 1].pow(deg_vec[zi - 1]);
           }
