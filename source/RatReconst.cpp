@@ -826,6 +826,7 @@ namespace firefly {
   }
 
   std::pair<PolynomialFF, PolynomialFF> RatReconst::solve_gauss() {
+    //std::clock_t begin = clock();
     std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
     coef_mat.clear();
 
@@ -851,6 +852,7 @@ namespace firefly {
       std::vector<uint> power = {i};
       denominator.emplace(std::make_pair(std::move(power), results[i + terms_num]));
     }
+    //std::cout << " univ gauss (n = " << num_eqn << ") time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
 
     return std::make_pair(PolynomialFF(1, numerator), PolynomialFF(1, denominator));
   }

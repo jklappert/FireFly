@@ -3,6 +3,7 @@
 #include "ReconstHelper.hpp"
 #include "Logger.hpp"
 #include "utils.hpp"
+#include <chrono>
 
 namespace firefly {
 
@@ -100,7 +101,7 @@ namespace firefly {
         curr_zi_order[next_zi - 1] ++;
       } else {
         // Build Vandermonde system
-        std::vector<FFInt> eq;
+        /*std::vector<FFInt> eq;
 
         for (const auto & deg_vec : rec_degs) {
           FFInt coef_num = 1;
@@ -111,7 +112,7 @@ namespace firefly {
           }
 
           eq.emplace_back(coef_num);
-        }
+        }*/
 
         FFInt res = num;
 
@@ -127,19 +128,23 @@ namespace firefly {
           res -= coef_num;
         }
 
-        eq.emplace_back(res);
+        nums.emplace_back(res);
 
-        coef_mat.emplace_back(std::move(eq));
+        /*eq.emplace_back(res);
+
+        coef_mat.emplace_back(std::move(eq));*/
 
         // to total degree (save them in solved degs including their coefficient
         // to subtract them)
         // Solve Vandermonde system and calculate the next a_i
-        if (coef_mat.size() == rec_degs.size()) {
+        if (nums.size() == rec_degs.size()) {
           const uint order_save = curr_zi_order[next_zi - 1];
           curr_zi_order = std::vector<uint> (n, 1);
-          for(uint i = 1; i < next_zi; i++) curr_zi_order[i - 1] = 0;
+
+          for (uint i = 1; i < next_zi; i++) curr_zi_order[i - 1] = 0;
+
           curr_zi_order[next_zi - 1] = order_save + 1;
-          ais[next_zi].emplace_back(comp_ai(next_zi, i, i, solve_gauss(), ais[next_zi]));
+          ais[next_zi].emplace_back(comp_ai(next_zi, i, i, solve_transposed_vandermonde(), ais[next_zi]));
         } else {
           // increase all zi order of the lower stages by one
           for (uint zi = 1; zi < next_zi; zi++) {
@@ -177,7 +182,13 @@ namespace firefly {
               rec_degs.emplace_back(el.first);
           }
 
-          coef_mat.reserve(rec_degs.size());
+          // The monomials which have to be reconstructed have to
+          // ordered in a monotonical way to utilize the Vandermonde
+          // system solver
+          std::sort(rec_degs.begin(), rec_degs.end());
+
+          nums.reserve(rec_degs.size());
+          //coef_mat.reserve(rec_degs.size());
 
           if (rec_degs.size() == 0 && next_zi != n) {
             for (uint zi = next_zi + 1; zi <= n; zi++) {
@@ -194,7 +205,9 @@ namespace firefly {
             ais[next_zi].emplace_back(comp_ai(next_zi, 0, 0, pol_ff, ais[next_zi]));
             // reset zi order
             curr_zi_order = std::vector<uint> (n, 1);
-            for(uint i = 1; i < next_zi; i++) curr_zi_order[i - 1] = 0;
+
+            for (uint i = 1; i < next_zi; i++) curr_zi_order[i - 1] = 0;
+
             curr_zi_order[next_zi - 1] = 2;
           } else
             check = true;
@@ -231,41 +244,6 @@ namespace firefly {
         }
 
         return;
-      }
-    }
-  }
-
-  void PolyReconst::feed(const std::vector<std::vector<uint>>& degs, const std::vector<FFInt>& new_yis, const FFInt& num) {
-    rec_degs = degs;
-    // Build Vandermonde system
-    std::vector<FFInt> eq;
-
-    for (const auto & deg_vec : rec_degs) {
-      FFInt coef_num = 1;
-
-      for (uint zi = 1; zi <= n; zi++) {
-        // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-        coef_num *= new_yis[zi - 1].pow(deg_vec[zi - 1]);
-      }
-
-      eq.emplace_back(coef_num);
-    }
-
-    FFInt res = num;
-
-    eq.emplace_back(res);
-
-    coef_mat.emplace_back(std::move(eq));
-
-    // Solve Vandermonde system and calculate the next a_i
-    if (coef_mat.size() == rec_degs.size()) {
-      ais[n].emplace_back(solve_gauss());
-      new_prime = true;
-      return;
-    } else {
-      // increase all zi order of the lower stages by one
-      for (uint zi = 1; zi <= n; zi++) {
-        curr_zi_order[zi - 1] ++;
       }
     }
   }
@@ -361,16 +339,107 @@ namespace firefly {
   }
 
   PolynomialFF PolyReconst::solve_gauss() {
-    const uint num_eqn = rec_degs.size();
-    std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
-    coef_mat.clear();
+    //std::clock_t begin = clock();
+    //const uint num_eqn = rec_degs.size();
+    //std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
+    //coef_mat.clear();
+    // Bring result in canonical form
+    ff_map poly;
+
+    /*for (uint i = 0; i < num_eqn; i ++) {
+      poly.emplace(std::make_pair(rec_degs[i], results[i]));
+    }*/
+
+    /*if(num_eqn >= 10){
+    std::cout << "gauss; items : " << num_eqn;
+
+    for (const auto & el : results) {
+      std::cout << el << " ";
+    }
+    std::cout << " time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+    }*/
+    return PolynomialFF(n, poly);
+  }
+
+  // Solves the Vandermonde linear system V*x=a
+  // V is build from vis, x contain our coefficients, and a is the numerical
+  // value of the function which should be interpolated for a given numerical
+  // input
+  PolynomialFF PolyReconst::solve_transposed_vandermonde() {
+    //std::clock_t begin = clock();
+    uint num_eqn = rec_degs.size();
+    std::vector<FFInt> result(num_eqn);
+
+    if (num_eqn == 1)
+      result[0] = nums[0];
+    else {
+      // calculate base entries of Vandermonde matrix
+      std::vector<FFInt> vis;
+      vis.reserve(num_eqn);
+
+      for (const auto & el : rec_degs) {
+        FFInt vi = 1;
+
+        for (uint zi = 1; zi < next_zi; zi++) {
+          // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+          vi *= yis[zi][1].pow(el[zi - 1]);
+        }
+
+        vis.emplace_back(vi);
+      }
+
+      // Initialize the coefficient vector of the master polynomial
+      std::vector<FFInt> cis(num_eqn);
+
+      // The coefficients of the master polynomial are found by recursion
+      // where we have
+      // P(Z) = (Z - v_0)*(Z - v_1)*...*(Z - v_{n-1})
+      //      =  c_0 + c_1*Z + ... + Z^n
+      cis[num_eqn - 1] = -vis[0];
+
+      for (int i = 1; i < num_eqn; i++) {
+        for (int j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
+          cis[j] -= vis[i] * cis[j + 1];
+        }
+
+        cis[num_eqn - 1] -= vis[i];
+      }
+
+      // Each subfactor in turn is synthetically divided,
+      // matrix-multiplied by the right hand-side,
+      // and supplied with a denominator (since all vi should be different,
+      // there is no additional check if a coefficient in synthetical division
+      // leads to a vanishing denominator)
+      for (int i = 0; i < num_eqn; i++) {
+        FFInt t = 1;
+        FFInt b = 1;
+        FFInt s = nums[num_eqn - 1];
+
+        for (int j = num_eqn - 1; j > 0; j--) {
+          b = cis[j] + vis[i] * b;
+          s += nums[j - 1] * b;
+          t = vis[i] * t + b;
+        }
+
+        result[i] = s / t;
+      }
+    }
+    /*if(num_eqn >= 10){
+
+    std::cout << "vandermonde; items : " << num_eqn;
+    for(const auto& el : result){
+      std::cout << el << " ";
+    }
+    std::cout << " time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+    }*/
     // Bring result in canonical form
     ff_map poly;
 
     for (uint i = 0; i < num_eqn; i ++) {
-      poly.emplace(std::make_pair(rec_degs[i], results[i]));
+      poly.emplace(std::make_pair(rec_degs[i], result[i]));
     }
-
+    nums.clear();
     return PolynomialFF(n, poly);
   }
+
 }

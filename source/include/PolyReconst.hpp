@@ -29,10 +29,6 @@ namespace firefly {
      *    rational coefficients
      */
     void feed(const std::vector<FFInt>& yis, const FFInt& num);
-    /**
-     * 
-     */
-    void feed(const std::vector<std::vector<uint>>& degs, const std::vector<FFInt>& new_yis, const FFInt& num);
     bool done = false;
     bool new_prime = false;
     uint next_zi = 1;
@@ -92,14 +88,19 @@ namespace firefly {
      * 
      */
     PolynomialFF solve_gauss();
+    /**
+     * 
+     */
+    PolynomialFF solve_transposed_vandermonde();
     int deg = -1;
     uint n; /**< The number of parameters */
     bool use_chinese_remainder = false;
     bool check = false;
     Polynomial result;
-    std::vector<std::vector<FFInt>> coef_mat {};
+    //std::vector<std::vector<FFInt>> coef_mat {};
     std::vector<std::vector<uint>> rec_degs {};
     ff_map solved_degs {};
+    std::vector<FFInt> nums {};
     mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */

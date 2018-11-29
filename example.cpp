@@ -9,7 +9,7 @@
 //#include <Eigen/Sparse>
 
 int main() {
-  const uint n = 4;
+  const uint n = 3;
   //  typedef Eigen::Matrix<firefly::FFInt, n, 1> vec;
   //  std::vector<std::vector<firefly::FFInt>> coef_mat;
   uint64_t prime = firefly::primes()[0];
@@ -151,20 +151,31 @@ int main() {
       firefly::FFInt cr_2(cr_2_mpz);
 
       // example for n = 4 using the Chinese Remainder theorem
-      /*firefly::FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
+      firefly::FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
                                    * t_yis[0].pow(5) + ((-3 * z1.pow(3) + 36 * z1.pow(2)
                                                          - 144 * z1 + 192) * t_yis[1].pow(2)) * t_yis[0].pow(4) + ((2 * z1.pow(3) - 24 * z1.pow(2)
                                                              + 96 * z1 - 128) * t_yis[1].pow(2)) * t_yis[0].pow(3) + ((2 * z1.pow(3) - 24 * z1.pow(2)
                                                                  + 96 * z1 - 128) * t_yis[1].pow(2)) * t_yis[0].pow(2) + ((-3 * z1.pow(3) + 36 * z1.pow(2)
                                                                      - 144 * z1 + 192) * t_yis[1].pow(2)) * t_yis[0] + (z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64)
-                                   * t_yis[1].pow(2));*/
-      firefly::FFInt den = 1;
+                                   * t_yis[1].pow(2));
+      //firefly::FFInt den = 1;
       firefly::FFInt num = cr_2 * ((-6 * z1.pow(3) + 54 * z1.pow(2) - 156 * z1 + 144)
                                    * t_yis[0].pow(4) + ((-4 * z1.pow(3) + 36 * z1.pow(2) - 104 * z1 + 96) * t_yis[1]
                                                         + 9 * z1.pow(3) - 84 * z1.pow(2) + 252 * z1 - 240) * t_yis[0].pow(3) + ((46 * z1.pow(3)
                                                             - 389 * z1.pow(2) + 1074 * z1 - 960) * t_yis[1] - 3 * z1.pow(3) + 30 * z1.pow(2) - 96 * z1 + 96)
                                    * t_yis[0].pow(2) + ((-10 * z1.pow(3) + 93 * z1.pow(2) - 278 * z1 + 264)
                                                         * t_yis[1]) * t_yis[0]);
+      /*firefly::FFInt num = t_yis[0].pow(100) + t_yis[1].pow(100);
+      for(int i = 1; i < 100; i++){
+        num += t_yis[0].pow(i)*t_yis[1].pow(100-i);
+      }*/
+      /*std::clock_t begin = clock();
+      for(int k = 1; k < 50; k++){
+        for(kk = k; kk > 0; kk --){
+          num += t_yis[0].pow(k)*t_yis[1].pow(kk);
+        }
+      }*/
+
       //firefly::FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + t_yis[1].pow(2);
       //firefly::FFInt den = 2*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];
 
