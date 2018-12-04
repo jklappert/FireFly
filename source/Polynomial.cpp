@@ -3,40 +3,56 @@
 namespace firefly {
 
   Polynomial::Polynomial(const rn_map& coef) {
-    for (const auto & el : coef) {
+    coefs = coef;
+    n = coefs.begin()->first.size();
+    /*for (const auto & el : coef) {
       coefs.emplace_back(Monomial(el.first, el.second));
-    }
+    }*/
   }
 
   Polynomial::Polynomial(const Monomial& coef) {
-    coefs.emplace_back(coef);
+    coefs[coef.powers] = coef.coef;
+    n = coef.powers.size();
+    //coefs.emplace_back(coef);
   }
 
   Polynomial::Polynomial() {}
 
   Polynomial Polynomial::operator*(const RationalNumber& rn) {
     for (auto & mon : coefs) {
-      mon.coef = mon.coef * rn;
+      mon.second = mon.second * rn;
     }
 
     return *this;
   }
 
   Polynomial Polynomial::homogenize(uint degree) {
-    for (auto & mon : coefs) {
+    rn_map tmp_coef = coefs;
+    coefs.clear();
+    for (auto & mon : tmp_coef) {
       uint old_degree = 0;
 
-      for (auto & power : mon.powers) old_degree += power;
+      std::vector<uint> old_powers = mon.first;
+      std::vector<uint> new_powers = old_powers;
+      for (auto & power : old_powers) old_degree += power;
 
-      mon.powers.insert(mon.powers.begin(), degree - old_degree);
+      new_powers.insert(new_powers.begin(), degree - old_degree);
+      coefs[new_powers] = tmp_coef[old_powers];
     }
 
+    tmp_coef.clear();
     return *this;
   }
 
   Polynomial& Polynomial::operator-=(const Polynomial& b) {
     for (auto & coef_b : b.coefs) {
-      int pos = -1;
+      try{
+        coefs.at(coef_b.first) -= coef_b.second;
+      } catch(std::out_of_range& e){
+        coefs[coef_b.first] = RationalNumber(0, 1);
+        coefs[coef_b.first] -= coef_b.second;
+      }
+      /*int pos = -1;
 
       for (uint i = 0; i < (uint) coefs.size(); i++) {
         if (coef_b.powers == coefs[i].powers) pos = i;
@@ -48,7 +64,7 @@ namespace firefly {
         coefs[pos].coef -= coef_b.coef;
 
         if (coefs[pos].coef.numerator == 0) coefs.erase(coefs.begin() + pos);
-      }
+      }*/
     }
 
     return *this;
@@ -57,7 +73,13 @@ namespace firefly {
   //todo can be optimized using an unordered_map
   Polynomial& Polynomial::operator+=(const Polynomial& b) {
     for (auto & coef_b : b.coefs) {
-      int pos = -1;
+      try{
+        coefs.at(coef_b.first) += coef_b.second;
+      } catch(std::out_of_range& e){
+        coefs[coef_b.first] = RationalNumber(0, 1);
+        coefs[coef_b.first] += coef_b.second;
+      }
+      /*int pos = -1;
 
       for (uint i = 0; i < (uint) coefs.size(); i++) {
         if (coef_b.powers == coefs[i].powers) pos = i;
@@ -69,14 +91,20 @@ namespace firefly {
         coefs[pos].coef += coef_b.coef;
 
         if (coefs[pos].coef.numerator == 0) coefs.erase(coefs.begin() + pos);
-      }
+      }*/
     }
 
     return *this;
   }
 
   Polynomial& Polynomial::operator+=(const Monomial& b) {
-    int pos = -1;
+      try{
+        coefs.at(b.powers) += b.coef;
+      } catch(std::out_of_range& e){
+        coefs[b.powers] = RationalNumber(0, 1);
+        coefs[b.powers] += b.coef;
+      }
+    /*int pos = -1;
 
     for (uint i = 0; i < (uint) coefs.size(); i++) {
       if (b.powers == coefs[i].powers) pos = i;
@@ -88,7 +116,7 @@ namespace firefly {
       coefs[pos].coef += b.coef;
 
       if (coefs[pos].coef.numerator == 0) coefs.erase(coefs.begin() + pos);
-    }
+    }*/
 
     return *this;
   }
@@ -99,7 +127,7 @@ namespace firefly {
 
     for (auto & coef_a : coefs) {
       for (auto & coef_b : b.coefs) {
-        Monomial new_coef = coef_a * coef_b;
+        Monomial new_coef = Monomial(coef_a.first, coef_a.second) * Monomial(coef_b.first, coef_b.second);
 
         if (new_coef.coef.numerator != 0) {
           if (new_monomials.find(new_coef.powers) == new_monomials.end()) {
@@ -116,16 +144,20 @@ namespace firefly {
 
   Polynomial Polynomial::operator*(const Monomial& b) {
     Polynomial a = *this;
+    Polynomial c;
 
     for (auto & coef_a : a.coefs) {
-      coef_a = coef_a * b;
+      Monomial a_mon (coef_a.first, coef_a.second);
+      a_mon = a_mon * b;
+      c.coefs[a_mon.powers] = a_mon.coef;
     }
 
-    return a;
+    a.clear();
+    return c;
   }
 
   void Polynomial::sort() {
-    std::sort(coefs.begin(), coefs.end());
+    //std::sort(coefs.begin(), coefs.end());
   }
 
   void Polynomial::clear() {
@@ -136,12 +168,12 @@ namespace firefly {
     std::string str;
 
     for (const auto & mono : coefs) {
-      str += mono.coef.string() + "*";
+      str += mono.second.string() + "*";
 
-      for (uint i = 0; i < mono.powers.size(); i++) {
-        if (mono.powers[i] > 1) {
-          str += symbols[i] + "^" + std::to_string(mono.powers[i]) + "*";
-        } else if (mono.powers[i] == 1) {
+      for (uint i = 0; i < mono.first.size(); i++) {
+        if (mono.first[i] > 1) {
+          str += symbols[i] + "^" + std::to_string(mono.first[i]) + "*";
+        } else if (mono.first[i] == 1) {
           str += symbols[i] + "*";
         }
       }
@@ -159,18 +191,18 @@ namespace firefly {
 
     for (const auto & mono : pol.coefs) {
       if (first) {
-        out <<  mono.coef << "*x^(";
+        out <<  mono.second << "*x^(";
 
-        for (const auto i : mono.powers) {
+        for (const auto i : mono.first) {
           out << i << ",";
         }
 
         out << "\b)";
         first = false;
       } else {
-        out << " + " << mono.coef << "*x^(";
+        out << " + " << mono.second << "*x^(";
 
-        for (const auto i : mono.powers) {
+        for (const auto i : mono.first) {
           out << i << ",";
         }
 
@@ -185,24 +217,24 @@ namespace firefly {
 
   PolynomialFF Polynomial::convert_to_PolynomialFF() {
     ff_map coefs_ff;
-    uint n = coefs[0].powers.size();
+    uint n = coefs.begin()->first.size();
 
     for (auto & coef : coefs) {
-      mpz_class numerator = coef.coef.numerator % FFInt::p;
+      mpz_class numerator = coef.second.numerator % FFInt::p;
 
       if (numerator < 0) numerator += FFInt::p;
 
-      mpz_class denominator = coef.coef.denominator % FFInt::p;
+      mpz_class denominator = coef.second.denominator % FFInt::p;
       FFInt coef_ff = FFInt(std::stoull(numerator.get_str())) / FFInt(std::stoull(denominator.get_str()));
       if(coef_ff.n > 0)
-        coefs_ff.emplace(std::make_pair(coef.powers, coef_ff));
+        coefs_ff.emplace(std::make_pair(coef.first, coef_ff));
     }
 
     return PolynomialFF(n, coefs_ff);
   }
 
   Polynomial Polynomial::add_shift(std::vector<FFInt>& shift) {
-    if (shift.size() != coefs[0].powers.size())
+    if (shift.size() != coefs.begin()->first.size())
       throw std::runtime_error("Mismatch in sizes of the shift and variables!");
 
     uint n = shift.size();
@@ -217,7 +249,7 @@ namespace firefly {
 
     for (auto & mon : coefs) {
       Polynomial pow_poly;
-      std::vector<uint> powers = mon.powers;
+      std::vector<uint> powers = mon.first;
       std::vector<uint> decr_power = powers;
 
       for (uint j = 0; j < n; j++) {
@@ -243,7 +275,7 @@ namespace firefly {
         }
       }
       // since always all variables are shifted decr_power := zero_deg
-      if (!pow_poly.coefs.empty()) res += pow_poly * Monomial(decr_power, mon.coef);
+      if (!pow_poly.coefs.empty()) res += pow_poly * Monomial(decr_power, mon.second);
     }
 
     return res;

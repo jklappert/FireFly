@@ -33,7 +33,10 @@ namespace firefly {
     void clear();
     std::string string(const std::vector<std::string>& symbols) const;
 
-    std::vector<Monomial> coefs;  /**< The vector which holds all coefficients*/
+    rn_map coefs;
+  private:
+    uint n;
+    //std::vector<Monomial> coefs;  /**< The vector which holds all coefficients*/
   };
 
   std::ostream& operator<< (std::ostream& out, const Polynomial& pol);

@@ -573,18 +573,22 @@ namespace firefly {
         coef[curr_deg] = rec;
 
         if (curr_deg > 0) {
+          std::cout << "adding shift\n";
+          std::clock_t begin = std::clock();
           Polynomial sub_pol = rec.get_result().homogenize(curr_deg).add_shift(shift);
           sub_pol -= rec.get_result().homogenize(curr_deg);
 
           for (auto & el : sub_pol.coefs) {
             uint tmp_deg = 0;
 
-            for (auto & n : el.powers) {
+            for (auto & n : el.first) {
               tmp_deg += n;
             }
 
-            sub_save[tmp_deg] += el;
+            sub_save[tmp_deg] += Monomial(el.first, el.second);
           }
+
+          std::cout << "time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
         }
 
         /*
@@ -759,9 +763,9 @@ namespace firefly {
         denominator.sort();
         result = RationalFunction(numerator, denominator);
 
-        RationalNumber first_coef = result.denominator.coefs[0].coef;
+        //RationalNumber first_coef = result.denominator.coefs[0].coef;
 
-        if (first_coef.numerator != 1 || first_coef.denominator != 1) result = normalize(result);
+        //if (first_coef.numerator != 1 || first_coef.denominator != 1) result = normalize(result);
       }
 
       return result;
@@ -922,11 +926,11 @@ namespace firefly {
   }
 
   RationalFunction RatReconst::normalize(RationalFunction& rf) {
-    RationalNumber equializer = rf.denominator.coefs[0].coef;
+    /*RationalNumber equializer = rf.denominator.coefs[0].coef;
     RationalNumber terminator(equializer.denominator, equializer.numerator);
 
     rf.numerator = rf.numerator * terminator;
-    rf.denominator = rf.denominator * terminator;
+    rf.denominator = rf.denominator * terminator;*/
     return rf;
   }
 
