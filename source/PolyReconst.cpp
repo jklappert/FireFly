@@ -170,14 +170,14 @@ namespace firefly {
           PolynomialFF pol_ff = construct_canonical(next_zi, ais[next_zi]);
           PolynomialFF tmp_pol_ff = pol_ff;
 
-          for (auto & el : tmp_pol_ff.coef) {
+          for (auto & el : tmp_pol_ff.coefs) {
             int total_deg = 0;
 
             for (auto & e : el.first) total_deg += e;
 
             if (total_deg == deg) {
               solved_degs.emplace(std::make_pair(el.first, el.second));
-              pol_ff.coef.erase(el.first);
+              pol_ff.coefs.erase(el.first);
             } else
               rec_degs.emplace_back(el.first);
           }
@@ -256,10 +256,10 @@ namespace firefly {
         gi.clear();
       } else {
         PolynomialFF poly = construct_canonical(n, ais[n]);
-        poly.coef.insert(solved_degs.begin(), solved_degs.end());
+        poly.coefs.insert(solved_degs.begin(), solved_degs.end());
         rn_map res;
 
-        for (auto & el : poly.coef) {
+        for (auto & el : poly.coefs) {
           res.emplace(std::make_pair(el.first, RationalNumber(el.second.n, 1)));
         }
 
@@ -268,6 +268,12 @@ namespace firefly {
     }
 
     return result;
+  }
+
+  PolynomialFF PolyReconst::get_result_ff() {
+    PolynomialFF poly = construct_canonical(n, ais[n]);
+    poly.coefs.insert(solved_degs.begin(), solved_degs.end());
+    return poly;
   }
 
   PolynomialFF PolyReconst::comp_ai(const uint zi, int i, int ip,
@@ -311,7 +317,7 @@ namespace firefly {
   mpz_map PolyReconst::convert_to_mpz(const PolynomialFF& poly) const {
     mpz_map ci_mpz;
 
-    for (const auto & coef : poly.coef) {
+    for (const auto & coef : poly.coefs) {
       ci_mpz.insert(std::make_pair(coef.first, mpz_class(coef.second.n)));
     }
 
@@ -424,6 +430,7 @@ namespace firefly {
         result[i] = s / t;
       }
     }
+
     /*if(num_eqn >= 10){
 
     std::cout << "vandermonde; items : " << num_eqn;
@@ -438,6 +445,7 @@ namespace firefly {
     for (uint i = 0; i < num_eqn; i ++) {
       poly.emplace(std::make_pair(rec_degs[i], result[i]));
     }
+
     nums.clear();
     return PolynomialFF(n, poly);
   }

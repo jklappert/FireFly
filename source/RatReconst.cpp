@@ -19,7 +19,6 @@ namespace firefly {
     ti.reserve(300);
     ai.reserve(300);
     combined_prime = FFInt::p;
-//     std::srand(std::time(0));
 
     if (!shifted) {
       shift = std::vector<FFInt> (n);
@@ -219,7 +218,7 @@ namespace firefly {
             if (max_deg_den > 0)
               curr_deg_den = max_deg_den;
 
-            FFInt equializer = FFInt(1) / denominator.coef[denominator.min_deg()];
+            FFInt equializer = FFInt(1) / denominator.coefs[denominator.min_deg()];
 
             canonical.first = canonical.first * equializer;
             canonical.second = denominator * equializer;
@@ -251,8 +250,8 @@ namespace firefly {
               zi = curr_zi;
             }
 
-            ff_map num_coef = canonical.first.coef;
-            ff_map den_coef = canonical.second.coef;
+            ff_map num_coef = canonical.first.coefs;
+            ff_map den_coef = canonical.second.coefs;
 
             // save the current results to the map to access them later
             for (int i = 0; i <= (int)(max_deg_num - tmp_solved_coefs_num); i++) {
@@ -262,8 +261,8 @@ namespace firefly {
 
                 if (i < max_deg_num) {
                   std::vector<uint> zero_deg(n);
-                  Monomial zero_mon(zero_deg, RationalNumber(0, 1));
-                  sub_num.emplace(std::make_pair(i, Polynomial(zero_mon)));
+                  ff_map zero_mon = {{zero_deg, 0}};
+                  sub_num.emplace(std::make_pair(i, PolynomialFF(n, zero_mon)));
                 }
               }
 
@@ -287,8 +286,8 @@ namespace firefly {
 
                 if (i < max_deg_den) {
                   std::vector<uint> zero_deg(n);
-                  Monomial zero_mon(zero_deg, RationalNumber(0, 1));
-                  sub_den.emplace(std::make_pair(i, Polynomial(zero_mon)));
+                  ff_map zero_mon = {{zero_deg, 0}};
+                  sub_den.emplace(std::make_pair(i, PolynomialFF(n, zero_mon)));
                 }
               }
 
@@ -407,14 +406,18 @@ namespace firefly {
               PolynomialFF denominator;
 
               for (auto & el : coef_n) {
-                numerator = numerator + el.second.get_result().homogenize(el.first).convert_to_PolynomialFF();
+                PolynomialFF res = el.second.get_result_ff().homogenize(el.first);
+                if(res.coefs.size() == 1 && res.coefs.begin()->second != 0)
+                  numerator += res;
               }
 
               for (auto & el : coef_d) {
-                denominator = denominator + el.second.get_result().homogenize(el.first).convert_to_PolynomialFF();
+                PolynomialFF res = el.second.get_result_ff().homogenize(el.first);
+                if(res.coefs.size() == 1 && res.coefs.begin()->second != 0)
+                  denominator += res;
               }
 
-              for (const auto & el : denominator.coef) {
+              for (const auto & el : denominator.coefs) {
                 std::vector<uint> degs_reverse = el.first;
                 std::reverse(degs_reverse.begin(), degs_reverse.end());
 
@@ -448,7 +451,7 @@ namespace firefly {
               curr_zi_order_num.clear();
               curr_zi_order_den.clear();
 
-              FFInt first_coef = denominator.coef[denominator.min_deg()];
+              FFInt first_coef = denominator.coefs[denominator.min_deg()];
 
               // normalize
               FFInt equializer = FFInt(1) / first_coef;
@@ -516,7 +519,7 @@ namespace firefly {
   std::tuple<int, uint, std::vector<uint>> RatReconst::feed_poly(int curr_deg,
                                                                  uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
                                                                  PolyReconst& rec, ff_map_map& saved_num,
-  std::unordered_map<uint, Polynomial>& sub_save, bool is_num) {
+  std::unordered_map<uint, PolynomialFF>& sub_save, bool is_num) {
     uint tmp_zi = rec.next_zi + 1;
     std::vector<uint> tmp_zi_ord = curr_zi_order;
 
@@ -542,7 +545,7 @@ namespace firefly {
               rec.feed(yis, food);
             else {
               yis.emplace(yis.begin(), FFInt(1));
-              FFInt num_subtraction = sub_save[curr_deg].convert_to_PolynomialFF().calc(yis);
+              FFInt num_subtraction = sub_save[curr_deg].calc(yis);
               yis.erase(yis.begin());
               rec.feed(yis, food - num_subtraction);
             }
@@ -552,7 +555,7 @@ namespace firefly {
             rec.feed(yis, food);
           else {
             yis.emplace(yis.begin(), FFInt(1));
-            FFInt num_subtraction = sub_save[curr_deg].convert_to_PolynomialFF().calc(yis);
+            FFInt num_subtraction = sub_save[curr_deg].calc(yis);
             yis.erase(yis.begin());
 
             rec.feed(yis, food - num_subtraction);
@@ -573,22 +576,29 @@ namespace firefly {
         coef[curr_deg] = rec;
 
         if (curr_deg > 0) {
-          std::cout << "adding shift\n";
-          std::clock_t begin = std::clock();
-          Polynomial sub_pol = rec.get_result().homogenize(curr_deg).add_shift(shift);
-          sub_pol -= rec.get_result().homogenize(curr_deg);
+          PolynomialFF res = rec.get_result_ff();
 
-          for (auto & el : sub_pol.coefs) {
-            uint tmp_deg = 0;
+          // check if the polynomial is zero which we then can omit for further
+          // calculations
+          if (!(res.coefs.size() == 1 && res.coefs.begin()->second == 0)) {
+            std::cout << " adding shift\n";
+            std::clock_t begin = std::clock();
+            PolynomialFF sub_pol = rec.get_result_ff().homogenize(curr_deg).add_shift(shift);
+            sub_pol -= rec.get_result_ff().homogenize(curr_deg);
+            std::cout << "time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
 
-            for (auto & n : el.first) {
-              tmp_deg += n;
+            for (auto & el : sub_pol.coefs) {
+              uint tmp_deg = 0;
+
+              for (auto & n : el.first) {
+                tmp_deg += n;
+              }
+
+              ff_map monomial = {{el.first, el.second}};
+              sub_save[tmp_deg] += PolynomialFF(n, monomial);
             }
-
-            sub_save[tmp_deg] += Monomial(el.first, el.second);
           }
 
-          std::cout << "time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
         }
 
         /*
@@ -856,6 +866,7 @@ namespace firefly {
       std::vector<uint> power = {i};
       denominator.emplace(std::make_pair(std::move(power), results[i + terms_num]));
     }
+
     //std::cout << " univ gauss (n = " << num_eqn << ") time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
 
     return std::make_pair(PolynomialFF(1, numerator), PolynomialFF(1, denominator));
@@ -938,11 +949,11 @@ namespace firefly {
     mpz_map ci_mpz_1;
     mpz_map ci_mpz_2;
 
-    for (const auto coef : rf.first.coef) {
+    for (const auto coef : rf.first.coefs) {
       ci_mpz_1.emplace(coef.first, mpz_class(coef.second.n));
     }
 
-    for (const auto coef : rf.second.coef) {
+    for (const auto coef : rf.second.coefs) {
       ci_mpz_2.emplace(coef.first, mpz_class(coef.second.n));
     }
 
@@ -1270,9 +1281,9 @@ namespace firefly {
         FFInt sub;
 
         if (r < max_deg_num)
-          sub = (coef_n[r].get_result().convert_to_PolynomialFF().calc(yis_wo_t) + sub_num[r].convert_to_PolynomialFF().calc(yis)) * tmp_ti.pow(FFInt(r));
+          sub = (coef_n[r].get_result_ff().calc(yis_wo_t) + sub_num[r].calc(yis)) * tmp_ti.pow(r);
         else
-          sub = (coef_n[r].get_result().convert_to_PolynomialFF().calc(yis_wo_t)) * tmp_ti.pow(FFInt(r));
+          sub = (coef_n[r].get_result_ff().calc(yis_wo_t)) * tmp_ti.pow(r);
 
         solved_coef_sub_num.emplace_back(sub);
       } else
@@ -1286,13 +1297,13 @@ namespace firefly {
         FFInt sub;
 
         if (rp < max_deg_den)
-          sub = (coef_d[rp].get_result().convert_to_PolynomialFF().calc(yis_wo_t) + sub_den[rp].convert_to_PolynomialFF().calc(yis)) * tmp_ti.pow(FFInt(rp));
+          sub = (coef_d[rp].get_result_ff().calc(yis_wo_t) + sub_den[rp].calc(yis)) * tmp_ti.pow(rp);
         else
-          sub = (coef_d[rp].get_result().convert_to_PolynomialFF().calc(yis_wo_t)) * tmp_ti.pow(FFInt(rp));
+          sub = (coef_d[rp].get_result_ff().calc(yis_wo_t)) * tmp_ti.pow(rp);
 
         solved_coef_sub_den.emplace_back(sub);
       } else
-        eq.emplace_back(-tmp_ti.pow(FFInt(rp)) * tmp_num);
+        eq.emplace_back(-tmp_ti.pow(rp) * tmp_num);
     }
 
     // The lowest degree in univariate Gauss for multivariate polynomial

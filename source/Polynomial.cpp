@@ -1,19 +1,16 @@
 #include "Polynomial.hpp"
+#include <chrono>
 
 namespace firefly {
 
   Polynomial::Polynomial(const rn_map& coef) {
     coefs = coef;
     n = coefs.begin()->first.size();
-    /*for (const auto & el : coef) {
-      coefs.emplace_back(Monomial(el.first, el.second));
-    }*/
   }
 
   Polynomial::Polynomial(const Monomial& coef) {
     coefs[coef.powers] = coef.coef;
     n = coef.powers.size();
-    //coefs.emplace_back(coef);
   }
 
   Polynomial::Polynomial() {}
@@ -29,11 +26,13 @@ namespace firefly {
   Polynomial Polynomial::homogenize(uint degree) {
     rn_map tmp_coef = coefs;
     coefs.clear();
+
     for (auto & mon : tmp_coef) {
       uint old_degree = 0;
 
       std::vector<uint> old_powers = mon.first;
       std::vector<uint> new_powers = old_powers;
+
       for (auto & power : old_powers) old_degree += power;
 
       new_powers.insert(new_powers.begin(), degree - old_degree);
@@ -46,25 +45,12 @@ namespace firefly {
 
   Polynomial& Polynomial::operator-=(const Polynomial& b) {
     for (auto & coef_b : b.coefs) {
-      try{
+      try {
         coefs.at(coef_b.first) -= coef_b.second;
-      } catch(std::out_of_range& e){
+      } catch (std::out_of_range& e) {
         coefs[coef_b.first] = RationalNumber(0, 1);
         coefs[coef_b.first] -= coef_b.second;
       }
-      /*int pos = -1;
-
-      for (uint i = 0; i < (uint) coefs.size(); i++) {
-        if (coef_b.powers == coefs[i].powers) pos = i;
-      }
-
-      if (pos == -1 && coef_b.coef.numerator != 0) {
-        coefs.emplace_back(-coef_b);
-      } else if (pos != -1) {
-        coefs[pos].coef -= coef_b.coef;
-
-        if (coefs[pos].coef.numerator == 0) coefs.erase(coefs.begin() + pos);
-      }*/
     }
 
     return *this;
@@ -73,50 +59,24 @@ namespace firefly {
   //todo can be optimized using an unordered_map
   Polynomial& Polynomial::operator+=(const Polynomial& b) {
     for (auto & coef_b : b.coefs) {
-      try{
+      try {
         coefs.at(coef_b.first) += coef_b.second;
-      } catch(std::out_of_range& e){
+      } catch (std::out_of_range& e) {
         coefs[coef_b.first] = RationalNumber(0, 1);
         coefs[coef_b.first] += coef_b.second;
       }
-      /*int pos = -1;
-
-      for (uint i = 0; i < (uint) coefs.size(); i++) {
-        if (coef_b.powers == coefs[i].powers) pos = i;
-      }
-
-      if (pos == -1 && coef_b.coef.numerator != 0) {
-        coefs.emplace_back(coef_b);
-      } else if (pos != -1) {
-        coefs[pos].coef += coef_b.coef;
-
-        if (coefs[pos].coef.numerator == 0) coefs.erase(coefs.begin() + pos);
-      }*/
     }
 
     return *this;
   }
 
   Polynomial& Polynomial::operator+=(const Monomial& b) {
-      try{
-        coefs.at(b.powers) += b.coef;
-      } catch(std::out_of_range& e){
-        coefs[b.powers] = RationalNumber(0, 1);
-        coefs[b.powers] += b.coef;
-      }
-    /*int pos = -1;
-
-    for (uint i = 0; i < (uint) coefs.size(); i++) {
-      if (b.powers == coefs[i].powers) pos = i;
+    try {
+      coefs.at(b.powers) += b.coef;
+    } catch (std::out_of_range& e) {
+      coefs[b.powers] = RationalNumber(0, 1);
+      coefs[b.powers] += b.coef;
     }
-
-    if (pos == -1 && b.coef.numerator != 0) {
-      coefs.emplace_back(b);
-    } else if (pos != -1) {
-      coefs[pos].coef += b.coef;
-
-      if (coefs[pos].coef.numerator == 0) coefs.erase(coefs.begin() + pos);
-    }*/
 
     return *this;
   }
@@ -147,7 +107,7 @@ namespace firefly {
     Polynomial c;
 
     for (auto & coef_a : a.coefs) {
-      Monomial a_mon (coef_a.first, coef_a.second);
+      Monomial a_mon(coef_a.first, coef_a.second);
       a_mon = a_mon * b;
       c.coefs[a_mon.powers] = a_mon.coef;
     }
@@ -226,7 +186,8 @@ namespace firefly {
 
       mpz_class denominator = coef.second.denominator % FFInt::p;
       FFInt coef_ff = FFInt(std::stoull(numerator.get_str())) / FFInt(std::stoull(denominator.get_str()));
-      if(coef_ff.n > 0)
+
+      if (coef_ff.n > 0)
         coefs_ff.emplace(std::make_pair(coef.first, coef_ff));
     }
 
@@ -252,6 +213,8 @@ namespace firefly {
       std::vector<uint> powers = mon.first;
       std::vector<uint> decr_power = powers;
 
+      std::clock_t begin = clock();
+
       for (uint j = 0; j < n; j++) {
         uint deg = powers[j];
 
@@ -274,9 +237,25 @@ namespace firefly {
           else pow_poly = pow_poly * tmp_pow_poly;
         }
       }
+      
+      std::cout << "pow Poly!\n" << pow_poly;
+
+      std::cout << " calculating terms took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+
+      begin = clock();
+
       // since always all variables are shifted decr_power := zero_deg
-      if (!pow_poly.coefs.empty()) res += pow_poly * Monomial(decr_power, mon.second);
+
+      if (!pow_poly.coefs.empty()) {
+        pow_poly = pow_poly * Monomial(decr_power, mon.second);
+        std::cout << " polynomial * monomial took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+        begin = clock();
+        res += pow_poly;//* Monomial(decr_power, mon.second);
+        std::cout << " Poly + Poly took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+      }
     }
+
+    std::cout << "size of poly " << res.coefs.size() << "\n";
 
     return res;
   }

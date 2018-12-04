@@ -122,7 +122,7 @@ namespace firefly {
     std::tuple<int, uint, std::vector<uint>> feed_poly(int curr_deg,
                              uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
                              PolyReconst& rec, ff_map_map& saved_num,
-                             std::unordered_map<uint, Polynomial>& sub_save, bool is_num);
+                             std::unordered_map<uint, PolynomialFF>& sub_save, bool is_num);
     /**
      *
      */
@@ -155,8 +155,8 @@ namespace firefly {
     std::vector<FFInt> ai {};
     std::unordered_map<uint, PolyReconst> coef_n {};
     std::unordered_map<uint, PolyReconst> coef_d {};
-    std::unordered_map<uint, Polynomial> sub_num {};
-    std::unordered_map<uint, Polynomial> sub_den {};
+    std::unordered_map<uint, PolynomialFF> sub_num {};
+    std::unordered_map<uint, PolynomialFF> sub_den {};
     std::vector<std::vector<uint>> non_solved_degs_num {};
     std::vector<std::vector<uint>> non_solved_degs_den {};
     ff_map_map saved_num_num {};

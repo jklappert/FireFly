@@ -34,6 +34,7 @@ namespace firefly {
     uint next_zi = 1;
     uint prime_number = 0;
     Polynomial get_result();
+    PolynomialFF get_result_ff();
     std::vector<uint> curr_zi_order{};
   private:
     /**
