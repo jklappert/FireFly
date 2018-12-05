@@ -407,13 +407,13 @@ namespace firefly {
 
               for (auto & el : coef_n) {
                 PolynomialFF res = el.second.get_result_ff().homogenize(el.first);
-                if(res.coefs.size() == 1 && res.coefs.begin()->second != 0)
+                if(!(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
                   numerator += res;
               }
 
               for (auto & el : coef_d) {
                 PolynomialFF res = el.second.get_result_ff().homogenize(el.first);
-                if(res.coefs.size() == 1 && res.coefs.begin()->second != 0)
+                if(!(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
                   denominator += res;
               }
 
@@ -524,6 +524,7 @@ namespace firefly {
     std::vector<uint> tmp_zi_ord = curr_zi_order;
 
     while (!rec.new_prime) {
+    if(clock_test == 0) clock_test = clock();
       try {
         std::vector<uint> key = {(uint) curr_deg, tmp_zi};
         FFInt food = saved_num.at(tmp_zi_ord).at(key);
@@ -600,12 +601,14 @@ namespace firefly {
           }
 
         }
+      std::cout << "deg " << curr_deg << " in num " << is_num << " took : " << float(clock() - clock_test) / CLOCKS_PER_SEC << "\n";
 
         /*
          * Remove already solved coefficients from Gauss eliminiation
          */
         curr_deg--;
 
+      clock_test = 0;
         if (is_num)
           tmp_solved_coefs_num ++;
         else {
@@ -773,9 +776,9 @@ namespace firefly {
         denominator.sort();
         result = RationalFunction(numerator, denominator);
 
-        //RationalNumber first_coef = result.denominator.coefs[0].coef;
+        RationalNumber first_coef = result.denominator.coefs[0].coef;
 
-        //if (first_coef.numerator != 1 || first_coef.denominator != 1) result = normalize(result);
+        if (first_coef.numerator != 1 || first_coef.denominator != 1) result = normalize(result);
       }
 
       return result;
@@ -937,11 +940,11 @@ namespace firefly {
   }
 
   RationalFunction RatReconst::normalize(RationalFunction& rf) {
-    /*RationalNumber equializer = rf.denominator.coefs[0].coef;
+    RationalNumber equializer = rf.denominator.coefs[0].coef;
     RationalNumber terminator(equializer.denominator, equializer.numerator);
 
     rf.numerator = rf.numerator * terminator;
-    rf.denominator = rf.denominator * terminator;*/
+    rf.denominator = rf.denominator * terminator;
     return rf;
   }
 
@@ -1274,6 +1277,7 @@ namespace firefly {
     std::vector<FFInt> yis_wo_t = yis;
     yis_wo_t.erase(yis_wo_t.begin());
 
+       // if(clock_test_2 == 0) clock_test_2 = clock();
     for (int r = 0; r <= max_deg_num; r++) {
       // If the current degree is smaller than the total degree of the polynomial
       // subtract the higher terms to save numerical runs
@@ -1318,7 +1322,9 @@ namespace firefly {
     for (auto & solved_coef_den : solved_coef_sub_den) {
       eq.back() += solved_coef_den * tmp_num;
     }
+            //std::cout << "time uni gauss : " << float(clock() - clock_test_2) / CLOCKS_PER_SEC << "\n";
 
+    //clock_test_2 = 0;
     coef_mat.emplace_back(std::move(eq));
   }
 
