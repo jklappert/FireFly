@@ -128,12 +128,10 @@ namespace firefly {
 
           // Prepare food for Gauss system
           if (n > 1) {
-            try {
-              std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
+            std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
+            if(saved_ti.find(tmp_vec) != saved_ti.end()){
               t_food.insert(t_food.end(), saved_ti.at(tmp_vec).begin(), saved_ti.at(tmp_vec).end());
               saved_ti.erase(tmp_vec);
-            } catch (std::out_of_range& e) {
-              // do nothing
             }
           }
 
@@ -407,13 +405,15 @@ namespace firefly {
 
               for (auto & el : coef_n) {
                 PolynomialFF res = el.second.get_result_ff().homogenize(el.first);
-                if(!(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
+
+                if (!(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
                   numerator += res;
               }
 
               for (auto & el : coef_d) {
                 PolynomialFF res = el.second.get_result_ff().homogenize(el.first);
-                if(!(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
+
+                if (!(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
                   denominator += res;
               }
 
@@ -485,13 +485,12 @@ namespace firefly {
             /*
              * If not finished, check if we can use some saved runs
              */
-            try {
-              std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
+            std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
+
+            if (saved_ti.find(tmp_vec) != saved_ti.end()) {
               std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
               saved_ti.at(tmp_vec).pop_back();
               feed(key_val.first, key_val.second, tmp_vec, prime_number, lock);
-            } catch (std::out_of_range& e) {
-              // do nothing
             }
 
             return;
@@ -506,11 +505,11 @@ namespace firefly {
           }
         }
       } else if (n > 1 && prime_number == 0 && feed_zi_ord != tmp_vec) {
-        try {
-          saved_ti.at(feed_zi_ord).emplace_back(std::make_pair(new_ti, num));
-        } catch (std::out_of_range& e) {
+        if (saved_ti.find(feed_zi_ord) == saved_ti.end()) {
           std::vector<std::pair<FFInt, FFInt>> tmp_ti = {std::make_pair(new_ti, num)};
           saved_ti[feed_zi_ord] = tmp_ti;
+        } else {
+          saved_ti.at(feed_zi_ord).emplace_back(std::make_pair(new_ti, num));
         }
       }
     }
@@ -524,7 +523,8 @@ namespace firefly {
     std::vector<uint> tmp_zi_ord = curr_zi_order;
 
     while (!rec.new_prime) {
-    if(clock_test == 0) clock_test = clock();
+      if (clock_test == 0) clock_test = clock();
+
       try {
         std::vector<uint> key = {(uint) curr_deg, tmp_zi};
         FFInt food = saved_num.at(tmp_zi_ord).at(key);
@@ -598,17 +598,20 @@ namespace firefly {
               ff_map monomial = {{el.first, el.second}};
               sub_save[tmp_deg] += PolynomialFF(n, monomial);
             }
+
           }
 
         }
-      std::cout << "deg " << curr_deg << " in num " << is_num << " took : " << float(clock() - clock_test) / CLOCKS_PER_SEC << "\n";
+
+        std::cout << "deg " << curr_deg << " in num " << is_num << " took : " << float(clock() - clock_test) / CLOCKS_PER_SEC << "\n";
 
         /*
          * Remove already solved coefficients from Gauss eliminiation
          */
         curr_deg--;
 
-      clock_test = 0;
+        clock_test = 0;
+
         if (is_num)
           tmp_solved_coefs_num ++;
         else {
@@ -1019,11 +1022,8 @@ namespace firefly {
   }
 
   void RatReconst::set_new_rand(std::pair<uint, uint>& key) {
-    try {
-      rand_zi.at(key);
-    } catch (std::out_of_range& e) {
+    if(rand_zi.find(key) == rand_zi.end())
       rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(key.first, 1)].pow(key.second)));
-    }
   }
 
   uint RatReconst::get_num_eqn() {
@@ -1277,7 +1277,7 @@ namespace firefly {
     std::vector<FFInt> yis_wo_t = yis;
     yis_wo_t.erase(yis_wo_t.begin());
 
-       // if(clock_test_2 == 0) clock_test_2 = clock();
+    // if(clock_test_2 == 0) clock_test_2 = clock();
     for (int r = 0; r <= max_deg_num; r++) {
       // If the current degree is smaller than the total degree of the polynomial
       // subtract the higher terms to save numerical runs
@@ -1322,7 +1322,8 @@ namespace firefly {
     for (auto & solved_coef_den : solved_coef_sub_den) {
       eq.back() += solved_coef_den * tmp_num;
     }
-            //std::cout << "time uni gauss : " << float(clock() - clock_test_2) / CLOCKS_PER_SEC << "\n";
+
+    //std::cout << "time uni gauss : " << float(clock() - clock_test_2) / CLOCKS_PER_SEC << "\n";
 
     //clock_test_2 = 0;
     coef_mat.emplace_back(std::move(eq));

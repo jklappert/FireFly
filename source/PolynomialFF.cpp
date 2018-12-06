@@ -14,7 +14,7 @@ namespace firefly {
       FFInt product(1);
 
       for (uint i = 0; i < x.size(); i++) {
-        product *= x[i].pow(FFInt(term.first[i]));
+        product *= x[i].pow(term.first[i]);
       }
 
       res += term.second * product;
@@ -203,11 +203,10 @@ namespace firefly {
 
   PolynomialFF& PolynomialFF::operator-=(const PolynomialFF& b) {
     for (auto & coef_b : b.coefs) {
-      try {
-        coefs.at(coef_b.first) -= coef_b.second;
-      } catch (std::out_of_range& e) {
+      if (coefs.find(coef_b.first) == coefs.end())
         coefs[coef_b.first] = FFInt(0) - coef_b.second;
-      }
+      else
+        coefs.at(coef_b.first) -= coef_b.second;
     }
 
     return *this;
@@ -216,11 +215,10 @@ namespace firefly {
   //todo can be optimized using an unordered_map
   PolynomialFF& PolynomialFF::operator+=(const PolynomialFF& b) {
     for (auto & coef_b : b.coefs) {
-      try {
-        coefs.at(coef_b.first) += coef_b.second;
-      } catch (std::out_of_range& e) {
+      if (coefs.find(coef_b.first) == coefs.end())
         coefs[coef_b.first] = coef_b.second;
-      }
+      else
+        coefs.at(coef_b.first) += coef_b.second;
     }
 
     return *this;
@@ -234,12 +232,13 @@ namespace firefly {
       for (auto & coef_b : b.coefs) {
 
         FFInt new_coef = coef_a.second * coef_b.second;
-        std::vector<uint> new_deg (n);
-        std::transform (coef_a.first.begin(), coef_a.first.end(),
-                                            coef_b.first.begin(), new_deg.begin(),
-                                            std::plus<int>());
 
         if (new_coef != 0) {
+          std::vector<uint> new_deg(n);
+          std::transform(coef_a.first.begin(), coef_a.first.end(),
+                         coef_b.first.begin(), new_deg.begin(),
+                         std::plus<int>());
+
           if (new_monomials.find(new_deg) == new_monomials.end()) {
             new_monomials.emplace(std::make_pair(new_deg, new_coef));
           } else {
@@ -271,27 +270,30 @@ namespace firefly {
       for (uint j = 0; j < n; j++) {
         uint deg = powers[j];
 
+        // Calculate all terms originating from (x - a)^deg
+        // by determining the binomial coefficients and adding
+        // proper powers
         if (deg > 0) {
-          std::vector<uint> i_power(n);
-          i_power[j] = 1;
+          ff_map tmp_pow_poly;
           decr_power[j] = 0;
-          ff_map add_shift;
-          add_shift.emplace(std::make_pair(i_power, 1));
-          add_shift.emplace(std::make_pair(zero_deg, shift[j]));
-          PolynomialFF tmp_pow_poly(n, add_shift);
-          PolynomialFF mult_tmp_pow_poly = tmp_pow_poly;
+          std::vector<std::vector<uint>> powers(deg + 1, std::vector<uint> (n));
 
-          // TODO calc binomial coefficients to save some time
-          for (uint k = 1; k < deg; k++) {
-            tmp_pow_poly = tmp_pow_poly * mult_tmp_pow_poly;
+          for (int jj = 0; jj <= deg; jj++) {
+            powers[jj][j] = deg - jj;
+
+            if (jj == 0) {
+              tmp_pow_poly.emplace(std::make_pair(powers[jj], 1));
+            } else if (jj == deg) {
+              tmp_pow_poly.emplace(std::make_pair(powers[jj], shift[j].pow(deg)));
+            } else {
+              tmp_pow_poly.emplace(std::make_pair(powers[jj], bin_coef(deg, jj)*shift[j].pow(jj)));
+            }
           }
 
-          if (pow_poly.coefs.empty()) pow_poly = tmp_pow_poly;
-          else pow_poly = pow_poly * tmp_pow_poly;
+          if (pow_poly.coefs.empty()) pow_poly = PolynomialFF(n, tmp_pow_poly);
+          else pow_poly = pow_poly * PolynomialFF(n, tmp_pow_poly);
         }
       }
-
-//      std::cout << "pow Poly!\n" << pow_poly;
 
       std::cout << " calculating terms took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
 
@@ -313,4 +315,22 @@ namespace firefly {
     return res;
   }
 
+  FFInt PolynomialFF::bin_coef(uint n, uint k) {
+    FFInt res = 1;
+
+    // Since C(n, k) = C(n, n-k)
+    if (k > n - k)
+      k = n - k;
+
+    // Calculate value of [n * (n-1) *---* (n-k+1)] / [k * (k-1) *----* 1]
+    for (uint i = 0; i < k; ++i) {
+      res *= (FFInt(n) - FFInt(i));
+      res /= (FFInt(i) + FFInt(1));
+    }
+
+    return res;
+  }
+
 }
+
+

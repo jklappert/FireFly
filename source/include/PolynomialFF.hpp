@@ -35,6 +35,7 @@ namespace firefly {
   private:
     std::vector<uint> min_degree {};
     std::vector<uint> max_degree {};
+    FFInt bin_coef(uint n, uint k);
   };
 
   std::ostream& operator<<(std::ostream& out, const PolynomialFF& a);

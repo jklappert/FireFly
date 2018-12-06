@@ -165,8 +165,8 @@ namespace firefly {
     int max_deg_den = -1;
     int curr_deg_num = -1;
     int curr_deg_den = -1;
-    std::clock_t clock_test;
-    std::clock_t clock_test_2;
+    std::clock_t clock_test = 0;
+    std::clock_t clock_test_2 = 0;
     std::vector<uint> min_deg_den_vec = {};
     std::vector<uint> curr_zi_order_num {};
     std::vector<uint> curr_zi_order_den {};
