@@ -101,19 +101,6 @@ namespace firefly {
         curr_zi_order[next_zi - 1] ++;
       } else {
         // Build Vandermonde system
-        /*std::vector<FFInt> eq;
-
-        for (const auto & deg_vec : rec_degs) {
-          FFInt coef_num = 1;
-
-          for (uint zi = 1; zi < next_zi; zi++) {
-            // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-            coef_num *= yis[zi][curr_zi_order[zi - 1]].pow(deg_vec[zi - 1]);
-          }
-
-          eq.emplace_back(coef_num);
-        }*/
-
         FFInt res = num;
 
         for (const auto & el : solved_degs) {
@@ -129,10 +116,6 @@ namespace firefly {
         }
 
         nums.emplace_back(res);
-
-        /*eq.emplace_back(res);
-
-        coef_mat.emplace_back(std::move(eq));*/
 
         // to total degree (save them in solved degs including their coefficient
         // to subtract them)
@@ -344,35 +327,11 @@ namespace firefly {
     return gi_ffi;
   }
 
-  PolynomialFF PolyReconst::solve_gauss() {
-    //std::clock_t begin = clock();
-    //const uint num_eqn = rec_degs.size();
-    //std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
-    //coef_mat.clear();
-    // Bring result in canonical form
-    ff_map poly;
-
-    /*for (uint i = 0; i < num_eqn; i ++) {
-      poly.emplace(std::make_pair(rec_degs[i], results[i]));
-    }*/
-
-    /*if(num_eqn >= 10){
-    std::cout << "gauss; items : " << num_eqn;
-
-    for (const auto & el : results) {
-      std::cout << el << " ";
-    }
-    std::cout << " time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
-    }*/
-    return PolynomialFF(n, poly);
-  }
-
   // Solves the Vandermonde linear system V*x=a
   // V is build from vis, x contain our coefficients, and a is the numerical
   // value of the function which should be interpolated for a given numerical
   // input
   PolynomialFF PolyReconst::solve_transposed_vandermonde() {
-    //std::clock_t begin = clock();
     uint num_eqn = rec_degs.size();
     std::vector<FFInt> result(num_eqn);
 
@@ -431,14 +390,6 @@ namespace firefly {
       }
     }
 
-    /*if(num_eqn >= 10){
-
-    std::cout << "vandermonde; items : " << num_eqn;
-    for(const auto& el : result){
-      std::cout << el << " ";
-    }
-    std::cout << " time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
-    }*/
     // Bring result in canonical form
     ff_map poly;
 

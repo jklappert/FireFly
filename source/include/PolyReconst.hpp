@@ -88,10 +88,6 @@ namespace firefly {
     /**
      * 
      */
-    PolynomialFF solve_gauss();
-    /**
-     * 
-     */
     PolynomialFF solve_transposed_vandermonde();
     int deg = -1;
     uint n; /**< The number of parameters */
