@@ -164,7 +164,7 @@ int main() {
                                                         + 9 * z1.pow(3) - 84 * z1.pow(2) + 252 * z1 - 240) * t_yis[0].pow(3) + ((46 * z1.pow(3)
                                                             - 389 * z1.pow(2) + 1074 * z1 - 960) * t_yis[1] - 3 * z1.pow(3) + 30 * z1.pow(2) - 96 * z1 + 96)
                                    * t_yis[0].pow(2) + ((-10 * z1.pow(3) + 93 * z1.pow(2) - 278 * z1 + 264)
-                                                        * t_yis[1]) * t_yis[0]) + z1.pow(10)*t_yis[0].pow(10)*t_yis[1].pow(10)*t_yis[2].pow(10);
+                                                        * t_yis[1]) * t_yis[0]) + 0*z1.pow(10)*t_yis[0].pow(10)*t_yis[1].pow(10)*t_yis[2].pow(10);
       /*firefly::FFInt num = t_yis[0].pow(100) + t_yis[1].pow(100);
       for(int i = 1; i < 100; i++){
         num += t_yis[0].pow(i)*t_yis[1].pow(100-i);

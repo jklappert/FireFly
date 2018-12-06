@@ -582,11 +582,11 @@ namespace firefly {
           // check if the polynomial is zero which we then can omit for further
           // calculations
           if (!(res.coefs.size() == 1 && res.coefs.begin()->second == 0)) {
-            std::cout << " adding shift\n";
-            std::clock_t begin = std::clock();
+            //std::cout << " adding shift\n";
+            //std::clock_t begin = std::clock();
             PolynomialFF sub_pol = rec.get_result_ff().homogenize(curr_deg).add_shift(shift);
             sub_pol -= rec.get_result_ff().homogenize(curr_deg);
-            std::cout << "time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+            //std::cout << "time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
 
             for (auto & el : sub_pol.coefs) {
               uint tmp_deg = 0;
@@ -603,7 +603,7 @@ namespace firefly {
 
         }
 
-        std::cout << "deg " << curr_deg << " in num " << is_num << " took : " << float(clock() - clock_test) / CLOCKS_PER_SEC << "\n";
+        //std::cout << "deg " << curr_deg << " in num " << is_num << " took : " << float(clock() - clock_test) / CLOCKS_PER_SEC << "\n";
 
         /*
          * Remove already solved coefficients from Gauss eliminiation

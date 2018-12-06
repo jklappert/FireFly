@@ -10,10 +10,10 @@ namespace firefly {
   FFInt PolynomialFF::calc(std::vector<FFInt> x) {
     FFInt res(0);
 
-    for (auto & term : coefs) {
+    for (const auto & term : coefs) {
       FFInt product(1);
 
-      for (uint i = 0; i < x.size(); i++) {
+      for (uint i = 0; i < n; i++) {
         product *= x[i].pow(term.first[i]);
       }
 
@@ -295,22 +295,22 @@ namespace firefly {
         }
       }
 
-      std::cout << " calculating terms took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+      //std::cout << " calculating terms took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
 
-      begin = clock();
+      //begin = clock();
 
       // since always all variables are shifted decr_power := zero_deg
       if (!pow_poly.coefs.empty()) {
         ff_map monomial = {{decr_power, mon.second}};
-        pow_poly = pow_poly * PolynomialFF(n, monomial);
-        std::cout << " polynomial * monomial took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
-        begin = clock();
-        res += pow_poly;//* Monomial(decr_power, mon.second);
-        std::cout << " Poly + Poly took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+        //pow_poly = pow_poly * PolynomialFF(n, monomial);
+        //std::cout << " polynomial * monomial took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+        //begin = clock();
+        res += pow_poly * PolynomialFF(n, monomial);//* Monomial(decr_power, mon.second);
+        //std::cout << " Poly + Poly took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
       }
     }
 
-    std::cout << "size of poly " << res.coefs.size() << "\n";
+    //std::cout << "size of poly " << res.coefs.size() << "\n";
 
     return res;
   }
@@ -332,5 +332,6 @@ namespace firefly {
   }
 
 }
+
 
 
