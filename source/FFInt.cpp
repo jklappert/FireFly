@@ -131,7 +131,9 @@ namespace firefly {
   }*/
 
   FFInt FFInt::operator/(const FFInt& ffint) {
-    return FFInt(mod_mul(n, mod_inv(ffint.n)));
+    // test if the upper one is faster (Fermat's little theorem)
+    //return mod_mul(n, ffint.pow(p-1).n);
+    return mod_mul(n, mod_inv(ffint.n));
   }
 
   bool FFInt::operator==(const FFInt& ffint) const {

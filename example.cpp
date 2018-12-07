@@ -3,59 +3,13 @@
 #include "RatReconst.hpp"
 #include "ReconstHelper.hpp"
 #include "Logger.hpp"
-//#include "utils.hpp"
 #include <algorithm>
-//#include <ctime>
-//#include <Eigen/Sparse>
 
 int main() {
-  const uint n = 4;
-  //  typedef Eigen::Matrix<firefly::FFInt, n, 1> vec;
-  //  std::vector<std::vector<firefly::FFInt>> coef_mat;
+  const uint n = 3;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec(n);
-
-  // construct data
-  /*  Eigen::SparseMatrix<firefly::FFInt> mat (n,n);
-  vec b, x;
-
-  std::clock_t begin = clock();
-  std::cout << "Writing equations...\n";
-  for(int i = 0; i < n; i++){
-    std::vector<firefly::FFInt> eq (n + 1, 0);
-    for (int j = i; j < n; j++){
-      firefly::FFInt rand1 = firefly::FFInt(std::rand());
-      //      mat.insert(i,j) = rand1.n;
-      eq[j] = rand1;
-    }
-    firefly::FFInt rand2 = firefly::FFInt(std::rand());
-    //    b[i] = rand2.n;
-    eq[n] = rand2;
-    coef_mat.emplace_back(eq);
-  }
-
-  std::cout << "Finished writing equations in " << float(clock() - begin) / CLOCKS_PER_SEC << " s.\n";
-
-  begin = clock();
-  std::cout << "Solving Gauss system...\n";
-  std::vector<firefly::FFInt> res = firefly::solve_gauss_system(coef_mat.size(), coef_mat);
-  std::cout << "Solved Gauss system in " << float(clock() - begin) / CLOCKS_PER_SEC << " s.\nResults:\n";
-  /*for(const auto & el : res){
-    std::cout << el << "\n";
-  }*/
-  /*std::cout << "End of results.\n";
-  Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::ColMajor>> solver;
-  solver.analyzePattern(mat);
-  //  Eigen::ConjugateGradient<Eigen::SparseMatrix<firefly::FFInt>, Eigen::Lower|Eigen::Upper> cg;
-  begin = clock();
-  std::cout << "Solving sparse system with Eigen...\n";
-  //  x = cg.compute(mat).solve(b);
-  std::cout << "Solved sparse system with Eigen in " << float(clock() - begin) / CLOCKS_PER_SEC << " s.\nResults:\n";
-  /*for(int i = 0; i < n; i++){
-    std::cout << x[i] << "\n";
-  }*/
-  //  std::cout << "End of results.\n";
 
   // Example for the reconstruction of a rational function
   try {
@@ -67,9 +21,7 @@ int main() {
     t_yis.reserve(n - 1);
     // t is the scaling variable
     firefly::FFInt t;
-    // Get and set a prime number
-    prime = firefly::primes()[rec.get_prime()];
-    firefly::FFInt::p = prime;
+
     // Initialize some counters
     int count = 0;
     int kk = 0;
@@ -158,23 +110,13 @@ int main() {
                                                                  + 96 * z1 - 128) * t_yis[1].pow(2)) * t_yis[0].pow(2) + ((-3 * z1.pow(3) + 36 * z1.pow(2)
                                                                      - 144 * z1 + 192) * t_yis[1].pow(2)) * t_yis[0] + (z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64)
                                    * t_yis[1].pow(2));
-//       firefly::FFInt den = 1;
+      //firefly::FFInt den = cr_1;
       firefly::FFInt num = cr_2 * ((-6 * z1.pow(3) + 54 * z1.pow(2) - 156 * z1 + 144)
                                    * t_yis[0].pow(4) + ((-4 * z1.pow(3) + 36 * z1.pow(2) - 104 * z1 + 96) * t_yis[1]
                                                         + 9 * z1.pow(3) - 84 * z1.pow(2) + 252 * z1 - 240) * t_yis[0].pow(3) + ((46 * z1.pow(3)
                                                             - 389 * z1.pow(2) + 1074 * z1 - 960) * t_yis[1] - 3 * z1.pow(3) + 30 * z1.pow(2) - 96 * z1 + 96)
                                    * t_yis[0].pow(2) + ((-10 * z1.pow(3) + 93 * z1.pow(2) - 278 * z1 + 264)
-                                                        * t_yis[1]) * t_yis[0]) + 0*z1.pow(10)*t_yis[0].pow(10)*t_yis[1].pow(10)*t_yis[2].pow(10);
-      /*firefly::FFInt num = t_yis[0].pow(100) + t_yis[1].pow(100);
-      for(int i = 1; i < 100; i++){
-        num += t_yis[0].pow(i)*t_yis[1].pow(100-i);
-      }*/
-      /*std::clock_t begin = clock();
-      for(int k = 1; k < 50; k++){
-        for(kk = k; kk > 0; kk --){
-          num += t_yis[0].pow(k)*t_yis[1].pow(kk);
-        }
-      }*/
+                                                        * t_yis[1]) * t_yis[0]);// + z1.pow(15)*t_yis[0].pow(15)*t_yis[1].pow(15)*t_yis[2].pow(15);*/
 
       //firefly::FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + t_yis[1].pow(2);
       //firefly::FFInt den = 2*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];

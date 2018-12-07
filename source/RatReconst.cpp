@@ -129,7 +129,8 @@ namespace firefly {
           // Prepare food for Gauss system
           if (n > 1) {
             std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
-            if(saved_ti.find(tmp_vec) != saved_ti.end()){
+
+            if (saved_ti.find(tmp_vec) != saved_ti.end()) {
               t_food.insert(t_food.end(), saved_ti.at(tmp_vec).begin(), saved_ti.at(tmp_vec).end());
               saved_ti.erase(tmp_vec);
             }
@@ -451,7 +452,7 @@ namespace firefly {
               curr_zi_order_num.clear();
               curr_zi_order_den.clear();
 
-              FFInt first_coef = denominator.coefs[denominator.min_deg()];
+              FFInt first_coef = denominator.coefs[min_deg_den_vec];
 
               // normalize
               FFInt equializer = FFInt(1) / first_coef;
@@ -469,7 +470,7 @@ namespace firefly {
               }
               saved_ti.clear();
               std::unique_lock<std::mutex> lock(mutex_status);
-              std::fill(curr_zi_order.begin(), curr_zi_order.end() - 1, 1);
+              std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
               curr_zi_order[n - 1] = prime_number;
               curr_zi = 2;
               zi = 2;
@@ -886,24 +887,18 @@ namespace firefly {
     ff_map numerator;
     ff_map denominator;
 
-    int terms_num = non_solved_degs_num.size() - 1;
+    int terms_num = non_solved_degs_num.size();
 
-    if (terms_num == -1) {
-      terms_num == 0;
-    } else {
-      for (int i = 0; i <= terms_num; i ++) {
-        std::vector<uint> power = non_solved_degs_num[i];
-        numerator.emplace(std::make_pair(std::move(power), results[i]));
-      }
+    for (int i = 0; i < terms_num; i ++) {
+      std::vector<uint> power = non_solved_degs_num[i];
+      numerator.emplace(std::make_pair(std::move(power), results[i]));
     }
 
-    int terms_den = non_solved_degs_den.size() - 1;
+    int terms_den = non_solved_degs_den.size();
 
-    if (terms_den != -1) {
-      for (uint i = 0; i <= terms_den; i ++) {
-        std::vector<uint> power = non_solved_degs_den[i];
-        denominator.emplace(std::make_pair(std::move(power), results[i + 1 + terms_num]));
-      }
+    for (uint i = 0; i < terms_den; i ++) {
+      std::vector<uint> power = non_solved_degs_den[i];
+      denominator.emplace(std::make_pair(std::move(power), results[i + terms_num]));
     }
 
     return std::make_pair(PolynomialFF(n, numerator), PolynomialFF(n, denominator));
@@ -1022,7 +1017,7 @@ namespace firefly {
   }
 
   void RatReconst::set_new_rand(std::pair<uint, uint>& key) {
-    if(rand_zi.find(key) == rand_zi.end())
+    if (rand_zi.find(key) == rand_zi.end())
       rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(key.first, 1)].pow(key.second)));
   }
 
@@ -1336,7 +1331,7 @@ namespace firefly {
     // Increase the whole zi_order by 1
     if (n > 1) {
       std::transform(curr_zi_order.begin(), curr_zi_order.end(),
-      curr_zi_order.begin(), [](int x) {return x + 1;});
+      curr_zi_order.begin(), [](uint x) {return x + 1;});
 
       // set new random
       for (uint zi = 2; zi <= n; zi ++) {
@@ -1382,7 +1377,7 @@ namespace firefly {
         coef *= yis[i].pow(el.first[i]);
       }
 
-      eq.back() += -coef;
+      eq.back() -= coef;
     }
 
     for (const auto & el : g_di) {

@@ -4,7 +4,6 @@ project(Firefly VERSION 0.0.1)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(GMP REQUIRED)
-find_package(Eigen3 3.0 REQUIRED)
 
 # set your favorite compile here
 set (CMAKE_CXX_COMPILER g++)
