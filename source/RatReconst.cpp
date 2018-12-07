@@ -1,9 +1,10 @@
-#include "RatReconst.hpp"
 #include "Logger.hpp"
+#include "RatReconst.hpp"
 #include "ReconstHelper.hpp"
 #include "utils.hpp"
-#include <chrono>
 #include <algorithm>
+#include <chrono>
+#include <cmath>
 
 namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
@@ -105,7 +106,6 @@ namespace firefly {
         // theorem
         {
           std::unique_lock<std::mutex> lock(mutex_status);
-
           if (prime_number == 0) zi = 1;
         }
 
@@ -224,8 +224,11 @@ namespace firefly {
 
             // set number of equations needed for univariate rational function
             // reconstruction needed for multivariate polynomial feed
-            num_eqn = max_deg_den + max_deg_num + 1
-                      - tmp_solved_coefs_num - tmp_solved_coefs_den;
+            {
+              std::unique_lock<std::mutex> lock(mutex_status);
+              num_eqn = max_deg_den + max_deg_num + 1
+                        - tmp_solved_coefs_num - tmp_solved_coefs_den;
+            }
             ai.clear();
             ti.clear();
           } else if (prime_number == 0)
@@ -345,7 +348,6 @@ namespace firefly {
                   {
                     std::unique_lock<std::mutex> lock(mutex_status);
                     curr_zi_order = rec_new.curr_zi_order;
-                    curr_zi_order.emplace_back(prime_number);
                     curr_zi = rec_new.next_zi + 1;
                     zi = curr_zi;
                   }
@@ -464,14 +466,10 @@ namespace firefly {
 
               combine_primes(tmp);
 
-              {
-                std::unique_lock<std::mutex> lock(mutex_status);
-                prime_number++;
-              }
-              saved_ti.clear();
               std::unique_lock<std::mutex> lock(mutex_status);
+              prime_number++;
+              saved_ti.clear();
               std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
-              curr_zi_order[n - 1] = prime_number;
               curr_zi = 2;
               zi = 2;
               new_prime = true;
@@ -496,11 +494,14 @@ namespace firefly {
 
             return;
           } else {
-            if (n > 1)
+            if (n > 1) {
+              std::unique_lock<std::mutex> lock(mutex_status);
               std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
+            }
 
             std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(canonical);
             combine_primes(tmp);
+            std::unique_lock<std::mutex> lock(mutex_status);
             prime_number ++;
             new_prime = true;
           }
@@ -623,8 +624,11 @@ namespace firefly {
             curr_deg = -1;
         }
 
-        num_eqn = max_deg_den + max_deg_num + 1
-                  - tmp_solved_coefs_num - tmp_solved_coefs_den;
+        {
+          std::unique_lock<std::mutex> lock(mutex_status);
+          num_eqn = max_deg_den + max_deg_num + 1
+                    - tmp_solved_coefs_num - tmp_solved_coefs_den;
+        }
 
         if (curr_deg >= 0) {
           rec = coef[curr_deg];
@@ -758,6 +762,7 @@ namespace firefly {
     // Sort non solved coefficients to have a uniquely defined system of equations
     std::sort(non_solved_degs_num.begin(), non_solved_degs_num.end());
     std::sort(non_solved_degs_den.begin(), non_solved_degs_den.end());
+    std::unique_lock<std::mutex> lock(mutex_status);
     num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
   }
 
@@ -1330,8 +1335,11 @@ namespace firefly {
 
     // Increase the whole zi_order by 1
     if (n > 1) {
-      std::transform(curr_zi_order.begin(), curr_zi_order.end(),
-      curr_zi_order.begin(), [](uint x) {return x + 1;});
+      {
+        std::unique_lock<std::mutex> lock(mutex_status);
+        std::transform(curr_zi_order.begin(), curr_zi_order.end(),
+        curr_zi_order.begin(), [](uint x) {return x + 1;});
+      }
 
       // set new random
       for (uint zi = 2; zi <= n; zi ++) {
@@ -1406,7 +1414,7 @@ namespace firefly {
       return 13;
 
     // We can't find a prime that will exceed ~0UL.
-    if (n >= (~0UL / log(~0UL)))
+    if (n >= (~0UL / std::log(~0UL)))
       return 0;
 
     // Binary search for the right value.
@@ -1415,7 +1423,7 @@ namespace firefly {
 
     do {
       unsigned long mid   = low + (high - low) / 2;
-      double        guess = mid / log(mid);
+      double        guess = mid / std::log(mid);
 
       if (guess > n)
         high = (unsigned long) mid - 1;
