@@ -362,8 +362,8 @@ namespace firefly {
       //      =  c_0 + c_1*Z + ... + Z^n
       cis[num_eqn - 1] = -vis[0];
 
-      for (int i = 1; i < num_eqn; i++) {
-        for (int j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
+      for (uint i = 1; i < num_eqn; i++) {
+        for (uint j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
           cis[j] -= vis[i] * cis[j + 1];
         }
 
@@ -375,7 +375,7 @@ namespace firefly {
       // and supplied with a denominator (since all vi should be different,
       // there is no additional check if a coefficient in synthetical division
       // leads to a vanishing denominator)
-      for (int i = 0; i < num_eqn; i++) {
+      for (uint i = 0; i < num_eqn; i++) {
         FFInt t = 1;
         FFInt b = 1;
         FFInt s = nums[num_eqn - 1];

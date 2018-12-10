@@ -287,7 +287,7 @@ namespace firefly {
                 PolyReconst rec(n - 1, anchor_points, i);
                 coef_d.emplace(std::make_pair(i, std::move(rec)));
 
-                if (i < max_deg_den) {
+                if ((int) i < max_deg_den) {
                   std::vector<uint> zero_deg(n);
                   ff_map zero_mon = {{zero_deg, 0}};
                   sub_den.emplace(std::make_pair(i, PolynomialFF(n, zero_mon)));
@@ -900,7 +900,7 @@ namespace firefly {
       numerator.emplace(std::make_pair(std::move(power), results[i]));
     }
 
-    int terms_den = non_solved_degs_den.size();
+    uint terms_den = non_solved_degs_den.size();
 
     for (uint i = 0; i < terms_den; i ++) {
       std::vector<uint> power = non_solved_degs_den[i];
