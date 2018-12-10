@@ -1,9 +1,11 @@
 #include <sstream>
 #include "FFInt.hpp"
+#include "flint/ulong_extras.h"
 
 namespace firefly {
 
   uint64_t FFInt::p;
+  uint64_t FFInt::p_inv;
 
   FFInt::FFInt(const FFInt& ffint) : n(ffint.n) {}
 
@@ -53,87 +55,45 @@ namespace firefly {
   }
 
   FFInt& FFInt::operator+=(const FFInt& ffint) {
-    n += ffint.n;
-
-    if (n >= p) n -= p;
+    n = n_addmod(n, ffint.n, p);
 
     return *this;
   }
 
   FFInt& FFInt::operator-=(const FFInt& ffint) {
-    if (ffint.n > n) n += p;
+    n = n_submod(n, ffint.n, p);
 
-    n -= ffint.n;
     return *this;
   }
 
   FFInt& FFInt::operator*=(const FFInt& ffint) {
-    n = mod_mul(n, ffint.n);
+    n = n_mulmod2_preinv(n, ffint.n, p, p_inv);
     return *this;
   }
 
   FFInt& FFInt::operator/=(const FFInt& ffint) {
-    n = mod_mul(n, mod_inv(ffint.n));
+    n = n_mulmod2_preinv(n, n_invmod(ffint.n, p), p, p_inv);
     return *this;
   }
 
   FFInt FFInt::pow(const FFInt& ffint) const {
-    FFInt result;
-    std::uint64_t exp;
-    std::uint64_t base;
-
-    if (ffint.n == 0) {
-      result.n = 1;
-    } else {
-      if (2 * ffint.n < p) {
-        // treat as positive exponent
-        exp = ffint.n;
-        base = n;
-        result.n = base;
-      } else {
-        // treat as negative exponent
-        exp = p - ffint.n;
-        base = mod_inv(n);  // =1/ffint1.n
-        result.n = base;
-      }
-
-      for (std::uint64_t i = 1; i != exp; ++i) {
-        result.n = mod_mul(result.n, base);
-      }
-    }
-
-    return result;
+    return FFInt(n_powmod2_preinv(n, ffint.n, p, p_inv));
   }
 
   FFInt FFInt::operator+(const FFInt& ffint) {
-    auto sum = ffint.n + n;
-
-    if (sum >= p) sum -= p;
-
-    return FFInt(sum);
+    return FFInt(n_addmod(n, ffint.n, p));
   }
 
   FFInt FFInt::operator-(const FFInt& ffint) {
-    auto diff = n;
-
-    if (ffint.n > diff) diff += p;
-
-    diff -= ffint.n;
-    return FFInt(diff);
+    return FFInt(n_submod(n, ffint.n, p));
   }
 
   FFInt FFInt::operator-() {
     return FFInt(p - n);
   }
 
-  /*FFInt FFInt::operator*(const FFInt& ffint) {
-    return FFInt(mod_mul(n, ffint.n));
-  }*/
-
   FFInt FFInt::operator/(const FFInt& ffint) {
-    // test if the upper one is faster (Fermat's little theorem)
-    //return mod_mul(n, ffint.pow(p-1).n);
-    return mod_mul(n, mod_inv(ffint.n));
+    return FFInt(n_mulmod2_preinv(n, n_invmod(ffint.n, p), p, p_inv));
   }
 
   bool FFInt::operator==(const FFInt& ffint) const {
@@ -142,65 +102,6 @@ namespace firefly {
 
   bool FFInt::operator!=(const FFInt& ffint) const {
     return (n != ffint.n);
-  }
-
-#ifndef VALGRIND
-  uint64_t FFInt::mod_mul(uint64_t a, uint64_t b) const {
-    // Note: this version does not work in valgrind.
-    long double x;
-    uint64_t c;
-    int64_t r;
-
-    if (a >= p) a %= p;
-
-    if (b >= p) b %= p;
-
-    x = a;
-    c = x * b / p;
-    r = (int64_t)(a * b - c * p) % (int64_t) p;
-    return r < 0 ? r + p : r;
-  }
-#else
-  // the version below works with valgrind
-  uint64_t FFInt::mod_mul(uint64_t a, uint64_t b) const {
-    uint64_t d = 0;
-    uint64_t mp2 = p >> 1;
-
-    for (int i = 0; i != 64; ++i) {
-      d = (d > mp2) ? (d << 1) - p : d << 1;
-
-      if (a & 0x8000000000000000ULL) d += b;
-
-      if (d > p) d -= p;
-
-      a <<= 1;
-    }
-
-    return d;
-  }
-#endif
-
-  uint64_t FFInt::mod_inv(const uint64_t a) const {
-    int64_t t {0};
-    int64_t newt {1};
-    int64_t tmpt;
-    uint64_t r {p};
-    uint64_t newr {a};
-    uint64_t tmpr;
-    uint64_t q;
-
-    while (newr) {
-      q = r / newr;
-      tmpt = t;
-      t = newt;
-      newt = tmpt - q * newt;
-      tmpr = r;
-      r = newr;
-      newr = tmpr - q * newr;
-    }
-
-    // if(r > 1) throw init_error("mod_inv: not invertible");
-    return t < 0 ? t + p : t;
   }
 
   uint64_t FFInt::parse_longint(const std::string& str) {
@@ -228,7 +129,7 @@ namespace firefly {
 
       // result=0 in the first pass or when the string is zero padded
       // on the left so that the first (few) chunks give zero.
-      if (result) result = mod_mul(result, 1000000000000000000uLL);
+      if (result) result = n_mulmod2_preinv(result, 1000000000000000000uLL, FFInt::p, FFInt::p_inv);
 
       result += intchunk;
       result %= p;
@@ -238,7 +139,7 @@ namespace firefly {
   }
 
   FFInt operator*(const FFInt& a, const FFInt& b) {
-    return FFInt(a.mod_mul(a.n, b.n));
+    return FFInt(n_mulmod2_preinv(a.n, b.n, FFInt::p, FFInt::p_inv));
   }
 
   FFInt pow(const FFInt& ffint, const FFInt& power) {
@@ -248,6 +149,11 @@ namespace firefly {
   std::ostream& operator<<(std::ostream& out, const FFInt& ffint) {
     out << ffint.n;
     return out;
+  }
+
+  void FFInt::set_new_prime(uint64_t prime) {
+    FFInt::p = prime;
+    FFInt::p_inv = n_preinvert_limb(prime);
   }
 
 }

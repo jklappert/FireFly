@@ -106,6 +106,7 @@ namespace firefly {
         // theorem
         {
           std::unique_lock<std::mutex> lock(mutex_status);
+
           if (prime_number == 0) zi = 1;
         }
 
@@ -1032,9 +1033,9 @@ namespace firefly {
   }
 
   void RatReconst::generate_anchor_points() {
-    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
-    std::lock(lock_status, lock_feed);
+//     std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
+//     std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
+//     std::lock(lock_status, lock_feed);
 
     rand_zi.clear();
     anchor_points.clear();

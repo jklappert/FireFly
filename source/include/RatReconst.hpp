@@ -20,9 +20,9 @@ namespace firefly {
      */
     RatReconst(uint n_);
     RatReconst(const RatReconst& other);
-    RatReconst(RatReconst&& other);
+    RatReconst(RatReconst && other);
     RatReconst& operator=(const RatReconst& other);
-    RatReconst& operator=(RatReconst&& other);
+    RatReconst& operator=(RatReconst && other);
     /**
      *
      */
@@ -113,16 +113,16 @@ namespace firefly {
      */
     std::pair<PolynomialFF, PolynomialFF> solve_gauss();
     /**
-     * 
+     *
      */
     std::pair<PolynomialFF, PolynomialFF> solve_multi_gauss();
     /**
      *
      */
     std::tuple<int, uint, std::vector<uint>> feed_poly(int curr_deg,
-                             uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
-                             PolyReconst& rec, ff_map_map& saved_num,
-                             std::unordered_map<uint, PolynomialFF>& sub_save, bool is_num);
+                                                       uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
+                                                       PolyReconst& rec, ff_map_map& saved_num,
+                                                       std::unordered_map<uint, PolynomialFF>& sub_save, bool is_num);
     /**
      *
      */
@@ -132,11 +132,11 @@ namespace firefly {
      */
     void set_new_rand(std::pair<uint, uint>& key);
     /**
-     * 
+     *
      */
     void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
     /**
-     * 
+     *
      */
     void build_multi_gauss(const FFInt& tmp_num, const std::vector<FFInt>& yis);
     uint n; /**< The number of parameters */
@@ -184,11 +184,11 @@ namespace firefly {
     mpz_map combined_di {};  /**< The combination of the coefficients of the denominator over finite field with the chinese remained theorem */
 
     /**
-     * 
+     *
      */
     uint64_t find_nth_prime(uint n);
     /**
-     * 
+     *
      */
     uint64_t find_sieve_size(uint n);
     mutable std::mutex mutex_status;

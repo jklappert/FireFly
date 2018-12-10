@@ -6,18 +6,16 @@
 #include <algorithm>
 
 int main() {
-  const uint n = 3;
+  const uint n = 4;
   uint64_t prime = firefly::primes()[0];
-  firefly::FFInt::p = prime;
+  firefly::FFInt::set_new_prime(prime);
   firefly::RatReconst rec(n);
 
   // Example for the reconstruction of a rational function
   try {
     // Initialize all values. t_yis are the scaled y-values and yis are the
     // unshifted ones
-    std::vector<firefly::FFInt> t_yis;
-    std::vector<firefly::FFInt> yis;
-    yis.reserve(n - 1);
+    std::vector<firefly::FFInt> t_yis(n);
     t_yis.reserve(n - 1);
     // t is the scaling variable
     firefly::FFInt t;
@@ -29,12 +27,6 @@ int main() {
 
     // Feed loop
     while (!rec.is_done()) {
-      if (yis.size() > 0) {
-        for (uint j = 2; j <= n; j++) {
-          t_yis[j - 2] = yis[j - 2];
-        }
-      }
-
       // If a new prime is needed, set it, generate new random variables
       // and reset counters
       if (primes_used != rec.get_prime()) {
@@ -45,53 +37,23 @@ int main() {
         primes_used = std::max(primes_used, rec.get_prime());
 
         prime = firefly::primes()[rec.get_prime()];
-        firefly::FFInt::p = prime;
+        firefly::FFInt::set_new_prime(prime);
 
         kk = 0;
-
-        for (uint j = 2; j <= n; j++) {
-          yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])];
-          t_yis[j - 2] = yis[j - 2];
-        }
       }
 
       // Always set the scaling variable to a random value
       t = rec.get_rand();
 
-      // Fill the t_yis vector if it is empty
-      if (t_yis.size() == 0) {
-        for (uint j = 2; j <= n; j++) {
-          yis.emplace_back(rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])]);
-
-          if (primes_used == 0)
-            t_yis.emplace_back(t * yis[j - 2] + firefly::RatReconst::shift[j - 1]);
-          else
-            t_yis.emplace_back(yis[j - 2]);
-        }
-      }
-
-      // Check whether we are currently reconstructing multivariate polynomials,
-      // change the yis and t_yis accordingly and add the static shift
-      if (rec.get_zi() >= 2) {
-        for (uint j = 2; j <= n; j++) {
-          yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])];
-
-          if (primes_used == 0)
-            t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
-          else
-            t_yis[j - 2] = yis[j - 2];
-        }
-      } else {
-        for (uint j = 2; j <= n; j++) {
-          if (primes_used == 0)
-            t_yis[j - 2] = t * yis[j - 2] + firefly::RatReconst::shift[j - 1];
-          else
-            t_yis[j - 2] = yis[j - 2];
-        }
-      }
-
       // Add the shift to the scaling variable
       firefly::FFInt z1 = t + firefly::RatReconst::shift[0];
+
+      for (uint j = 2; j <= n; j++) {
+        if (primes_used == 0)
+          t_yis[j - 2] = t * rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])] + firefly::RatReconst::shift[j - 1];
+        else
+          t_yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])];
+      }
 
       // Some examples for number for which one needs to use the Chinese
       // Remainder theorem
@@ -110,13 +72,12 @@ int main() {
                                                                  + 96 * z1 - 128) * t_yis[1].pow(2)) * t_yis[0].pow(2) + ((-3 * z1.pow(3) + 36 * z1.pow(2)
                                                                      - 144 * z1 + 192) * t_yis[1].pow(2)) * t_yis[0] + (z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64)
                                    * t_yis[1].pow(2));
-      //firefly::FFInt den = cr_1;
       firefly::FFInt num = cr_2 * ((-6 * z1.pow(3) + 54 * z1.pow(2) - 156 * z1 + 144)
                                    * t_yis[0].pow(4) + ((-4 * z1.pow(3) + 36 * z1.pow(2) - 104 * z1 + 96) * t_yis[1]
                                                         + 9 * z1.pow(3) - 84 * z1.pow(2) + 252 * z1 - 240) * t_yis[0].pow(3) + ((46 * z1.pow(3)
                                                             - 389 * z1.pow(2) + 1074 * z1 - 960) * t_yis[1] - 3 * z1.pow(3) + 30 * z1.pow(2) - 96 * z1 + 96)
                                    * t_yis[0].pow(2) + ((-10 * z1.pow(3) + 93 * z1.pow(2) - 278 * z1 + 264)
-                                                        * t_yis[1]) * t_yis[0]);// + z1.pow(15)*t_yis[0].pow(15)*t_yis[1].pow(15)*t_yis[2].pow(15);*/
+                                                        * t_yis[1]) * t_yis[0]) + z1.pow(15) * t_yis[0].pow(15) * t_yis[1].pow(15) * t_yis[2].pow(15);
 
       //firefly::FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + t_yis[1].pow(2);
       //firefly::FFInt den = 2*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];
