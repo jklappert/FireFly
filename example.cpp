@@ -1,9 +1,7 @@
 #include <iostream>
-#include "PolyReconst.hpp"
 #include "RatReconst.hpp"
 #include "ReconstHelper.hpp"
 #include "Logger.hpp"
-#include <algorithm>
 
 int main() {
   const uint n = 4;
