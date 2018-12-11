@@ -38,6 +38,9 @@ namespace firefly {
 
       // fill in the rand_vars for zi_order = 1
       if (rand_zi.empty()) {
+        // this is not thread-safe, but there should be no problem if used correctly
+        lock_feed.unlock();
+        lock_status.unlock();
         generate_anchor_points();
       }
     }
@@ -49,6 +52,11 @@ namespace firefly {
   }
 
   void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime, std::unique_lock<std::mutex>& lock) {
+    // change later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (prime_number > 0) {
+      curr_zi_order = feed_zi_ord;
+    }
+
     if (!done && fed_prime == prime_number) {
       std::vector<uint> tmp_vec;
 
@@ -995,13 +1003,8 @@ namespace firefly {
     yis[0] = ti[0];
 
     for (uint i = 1; i < n; i++) {
-      if (prime_number == 0)
-        yis[i] = yis[0] * rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])] + shift[i];
-      else
-        yis[i] = rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])];
+      yis[i] = rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])];
     }
-
-    yis[0] += shift[0];
 
     return (g_ny.calc(yis) / g_dy.calc(yis)) == num;
   }
@@ -1022,8 +1025,9 @@ namespace firefly {
   }
 
   void RatReconst::set_new_rand(std::pair<uint, uint>& key) {
-    if (rand_zi.find(key) == rand_zi.end())
+    if (rand_zi.find(key) == rand_zi.end()) {
       rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(key.first, 1)].pow(key.second)));
+    }
   }
 
   uint RatReconst::get_num_eqn() {
@@ -1031,7 +1035,7 @@ namespace firefly {
     return num_eqn;
   }
 
-  void RatReconst::generate_anchor_points() {
+  void RatReconst::generate_anchor_points(uint max_order) {
     std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
     std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
     std::lock(lock_status, lock_feed);
@@ -1040,11 +1044,20 @@ namespace firefly {
     anchor_points.clear();
 
     for (uint i = 2; i <= n; i++) {
-      const FFInt rand = find_nth_prime(i - 1);//get_rand();
+      FFInt rand;
+      if (prime_number == 0) {
+        rand = find_nth_prime(i - 1);
+        rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
+      } else {
+        rand = get_rand();
+      }
       rand_zi.emplace(std::make_pair(std::make_pair(i, 1), rand));
-      rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
-
       anchor_points.emplace_back(rand);
+
+      for (uint j = 1; j <= max_order; j++) {
+        auto key = std::make_pair(i, j);
+        set_new_rand(key);
+      }
     }
   }
 
@@ -1342,10 +1355,10 @@ namespace firefly {
       }
 
       // set new random
-      for (uint zi = 2; zi <= n; zi ++) {
-        auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
-        set_new_rand(key);
-      }
+//      for (uint zi = 2; zi <= n; zi ++) {
+//        auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
+//        set_new_rand(key);
+//      }
     }
 
     // Build system of equations; in combined_.. are the non-solved coefficients

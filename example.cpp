@@ -6,7 +6,7 @@
 #include <algorithm>
 
 int main() {
-  const uint n = 3;
+  const uint n = 4;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::p = prime;
   firefly::RatReconst rec(n);
@@ -39,7 +39,7 @@ int main() {
       // and reset counters
       if (primes_used != rec.get_prime()) {
         rec.disable_shift();
-        rec.generate_anchor_points();
+        rec.generate_anchor_points(rec.get_num_eqn());
 
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
         primes_used = std::max(primes_used, rec.get_prime());
@@ -102,8 +102,13 @@ int main() {
       firefly::FFInt cr_1(cr_1_mpz);
       firefly::FFInt cr_2(cr_2_mpz);
 
+      // example for n = 4
+      // (3*d-6)/((d-4)*t^2-d+4)
+      firefly::FFInt num = 1;
+      firefly::FFInt den = firefly::FFInt(1)-z1;
+
       // example for n = 4 using the Chinese Remainder theorem
-      firefly::FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
+/*      firefly::FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
                                    * t_yis[0].pow(5) + ((-3 * z1.pow(3) + 36 * z1.pow(2)
                                                          - 144 * z1 + 192) * t_yis[1].pow(2)) * t_yis[0].pow(4) + ((2 * z1.pow(3) - 24 * z1.pow(2)
                                                              + 96 * z1 - 128) * t_yis[1].pow(2)) * t_yis[0].pow(3) + ((2 * z1.pow(3) - 24 * z1.pow(2)
@@ -154,4 +159,3 @@ int main() {
 
   return 0;
 }
-

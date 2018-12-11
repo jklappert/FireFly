@@ -39,7 +39,7 @@ namespace firefly {
      */
     FFInt get_rand();
     uint get_num_eqn();
-    void generate_anchor_points();
+    void generate_anchor_points(uint max_order = 1);
     bool is_done();
     uint get_prime();
     std::vector<uint> get_zi_order();
@@ -113,7 +113,7 @@ namespace firefly {
      */
     std::pair<PolynomialFF, PolynomialFF> solve_gauss();
     /**
-     * 
+     *
      */
     std::pair<PolynomialFF, PolynomialFF> solve_multi_gauss();
     /**
@@ -132,11 +132,11 @@ namespace firefly {
      */
     void set_new_rand(std::pair<uint, uint>& key);
     /**
-     * 
+     *
      */
     void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
     /**
-     * 
+     *
      */
     void build_multi_gauss(const FFInt& tmp_num, const std::vector<FFInt>& yis);
     uint n; /**< The number of parameters */
@@ -184,11 +184,11 @@ namespace firefly {
     mpz_map combined_di {};  /**< The combination of the coefficients of the denominator over finite field with the chinese remained theorem */
 
     /**
-     * 
+     *
      */
     uint64_t find_nth_prime(uint n);
     /**
-     * 
+     *
      */
     uint64_t find_sieve_size(uint n);
     mutable std::mutex mutex_status;
