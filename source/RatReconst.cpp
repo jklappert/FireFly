@@ -1003,11 +1003,7 @@ namespace firefly {
     yis[0] = ti[0];
 
     for (uint i = 1; i < n; i++) {
-<<<<<<< HEAD
       yis[i] = rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])];
-=======
-        yis[i] = rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])];
->>>>>>> 1f6bf465b27e72e12e81e0f513cefe9619b423aa
     }
 
     return (g_ny.calc(yis) / g_dy.calc(yis)) == num;
@@ -1039,17 +1035,10 @@ namespace firefly {
     return num_eqn;
   }
 
-<<<<<<< HEAD
   void RatReconst::generate_anchor_points(uint max_order) {
     std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
     std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
     std::lock(lock_status, lock_feed);
-=======
-  void RatReconst::generate_anchor_points() {
-//     std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
-//     std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
-//     std::lock(lock_status, lock_feed);
->>>>>>> 1f6bf465b27e72e12e81e0f513cefe9619b423aa
 
     rand_zi.clear();
     anchor_points.clear();
