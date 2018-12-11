@@ -20,6 +20,7 @@ namespace firefly {
     ti.reserve(300);
     ai.reserve(300);
     combined_prime = FFInt::p;
+
 //std::srand(std::time(nullptr));
     if (!shifted) {
       shift = std::vector<FFInt> (n);
@@ -128,7 +129,7 @@ namespace firefly {
             if (num == comp_fyi(i - 1, i - 1, ti.back())) check = true;
 
             //todo remove if check = true
-            if(!check)
+            if (!check)
               ai.emplace_back(comp_ai(i, i, num));
           }
         } else {
@@ -449,7 +450,8 @@ namespace firefly {
 
               // if the denominator is just a constant, there is no corresponding
               // PolyReconst object. Thus we set the minimal degree to a zero tuple
-              FFInt const_shift = sub_den[0].calc({0,0,0});
+              FFInt const_shift = sub_den[0].calc( {0, 0, 0});
+
               if (min_deg_den_vec.empty() || const_shift != 1) {
                 min_deg_den_vec = std::vector<uint> (n);
                 ff_map dummy_map;
@@ -1045,12 +1047,14 @@ namespace firefly {
 
     for (uint i = 2; i <= n; i++) {
       FFInt rand;
+
       if (prime_number == 0) {
         rand = find_nth_prime(i - 1);
         rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
       } else {
         rand = get_rand();
       }
+
       rand_zi.emplace(std::make_pair(std::make_pair(i, 1), rand));
       anchor_points.emplace_back(rand);
 

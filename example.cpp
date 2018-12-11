@@ -82,7 +82,7 @@ int main() {
                                    * t_yis[0].pow(2) + ((-10 * z1.pow(3) + 93 * z1.pow(2) - 278 * z1 + 264)
                                                         * t_yis[1]) * t_yis[0]) + z1.pow(15) * t_yis[0].pow(15) * t_yis[1].pow(15) * t_yis[2].pow(15);*/
       firefly::FFInt num =  1;//(-firefly::FFInt(3)*z1+firefly::FFInt(6));
-      firefly::FFInt den = firefly::FFInt(1)*z1 - t_yis[1];
+      firefly::FFInt den = firefly::FFInt(1) - t_yis[1];
       //firefly::FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + t_yis[1].pow(2);
       //firefly::FFInt den = 2*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];
 
