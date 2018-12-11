@@ -4,6 +4,7 @@ project(Firefly VERSION 0.0.1)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(GMP REQUIRED)
+find_package(FLINT REQUIRED)
 
 # set your favorite compile here
 set (CMAKE_CXX_COMPILER g++)
@@ -53,7 +54,7 @@ file(GLOB LIBSOURCES
 add_library(Firefly STATIC ${LIBSOURCES})
 
 add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp)
-target_link_libraries(example Firefly gmp)
+target_link_libraries(example Firefly gmp flint)
 
 # needed to install libray
 #install(TARGETS Firefly_static RUNTIME DESTINATION bin)

@@ -28,6 +28,7 @@ namespace firefly {
      *    Default constructor
      */
     FFInt();
+    static void set_new_prime(uint64_t prime);
 
     // defining new operators for finite field arithmetic
     FFInt& operator=(const FFInt&) = default;
@@ -46,21 +47,8 @@ namespace firefly {
 
     uint64_t n; /**< the integer member of the finite field */
     static uint64_t p; /**< the prime defining the finite field */
-    /**
-     *    A function to calculate a*b mod p
-     *    taken from https://en.wikipedia.org/wiki/Modular_arithmetic
-     *    @param a the input
-     *    @param b the ceil
-     *    @param p the prime which defines the finite field
-     */
-    uint64_t mod_mul(uint64_t a, uint64_t b) const;
-    /**
-     *    Extended Euclidian algorithm to calculate the multiplicative
-     *    invrse.
-     *    mod_inv(a,p) solves a*t = 1 mod p for t.
-     */
+    static uint64_t p_inv;
   private:
-    uint64_t mod_inv(const uint64_t a) const;
     uint64_t parse_longint(const std::string& str);
   };
 

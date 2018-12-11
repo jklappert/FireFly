@@ -20,9 +20,9 @@ namespace firefly {
      */
     RatReconst(uint n_);
     RatReconst(const RatReconst& other);
-    RatReconst(RatReconst&& other);
+    RatReconst(RatReconst && other);
     RatReconst& operator=(const RatReconst& other);
-    RatReconst& operator=(RatReconst&& other);
+    RatReconst& operator=(RatReconst && other);
     /**
      *
      */
@@ -120,9 +120,9 @@ namespace firefly {
      *
      */
     std::tuple<int, uint, std::vector<uint>> feed_poly(int curr_deg,
-                             uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
-                             PolyReconst& rec, ff_map_map& saved_num,
-                             std::unordered_map<uint, PolynomialFF>& sub_save, bool is_num);
+                                                       uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
+                                                       PolyReconst& rec, ff_map_map& saved_num,
+                                                       std::unordered_map<uint, PolynomialFF>& sub_save, bool is_num);
     /**
      *
      */

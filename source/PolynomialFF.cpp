@@ -265,7 +265,7 @@ namespace firefly {
       std::vector<uint> powers = mon.first;
       std::vector<uint> decr_power = powers;
 
-      std::clock_t begin = clock();
+//      std::clock_t begin = clock();
 
       for (uint j = 0; j < n; j++) {
         uint deg = powers[j];
@@ -278,7 +278,7 @@ namespace firefly {
           decr_power[j] = 0;
           std::vector<std::vector<uint>> powers(deg + 1, std::vector<uint> (n));
 
-          for (int jj = 0; jj <= deg; jj++) {
+          for (uint jj = 0; jj <= deg; jj++) {
             powers[jj][j] = deg - jj;
 
             if (jj == 0) {

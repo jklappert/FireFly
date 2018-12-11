@@ -4,9 +4,10 @@
 namespace firefly {
 
   Polynomial::Polynomial(const rn_map& coef) {
-    for(const auto& el : coef){
+    for (const auto & el : coef) {
       coefs.emplace_back(Monomial(el.first, el.second));
     }
+
     n = coefs[0].powers.size();
   }
 

@@ -20,7 +20,7 @@ namespace firefly {
     ti.reserve(300);
     ai.reserve(300);
     combined_prime = FFInt::p;
-
+//std::srand(std::time(nullptr));
     if (!shifted) {
       shift = std::vector<FFInt> (n);
 
@@ -114,6 +114,7 @@ namespace firefly {
         // theorem
         {
           std::unique_lock<std::mutex> lock(mutex_status);
+
           if (prime_number == 0) zi = 1;
         }
 
@@ -126,7 +127,9 @@ namespace firefly {
           } else {
             if (num == comp_fyi(i - 1, i - 1, ti.back())) check = true;
 
-            ai.emplace_back(comp_ai(i, i, num));
+            //todo remove if check = true
+            if(!check)
+              ai.emplace_back(comp_ai(i, i, num));
           }
         } else {
           if (coef_mat.empty())
@@ -192,7 +195,6 @@ namespace firefly {
             }
 
             ti.pop_back();
-            ai.pop_back();
 
             canonical = construct_canonical();
             PolynomialFF denominator = canonical.second;
@@ -294,7 +296,7 @@ namespace firefly {
                 PolyReconst rec(n - 1, anchor_points, i);
                 coef_d.emplace(std::make_pair(i, std::move(rec)));
 
-                if (i < max_deg_den) {
+                if ((int) i < max_deg_den) {
                   std::vector<uint> zero_deg(n);
                   ff_map zero_mon = {{zero_deg, 0}};
                   sub_den.emplace(std::make_pair(i, PolynomialFF(n, zero_mon)));
@@ -447,13 +449,11 @@ namespace firefly {
 
               // if the denominator is just a constant, there is no corresponding
               // PolyReconst object. Thus we set the minimal degree to a zero tuple
-              bool min_deg_empty = min_deg_den_vec.empty();
-
-              if (min_deg_empty) min_deg_den_vec = std::vector<uint> (n);
-
-              if (min_deg_empty) {
+              FFInt const_shift = sub_den[0].calc({0,0,0});
+              if (min_deg_den_vec.empty() || const_shift != 1) {
+                min_deg_den_vec = std::vector<uint> (n);
                 ff_map dummy_map;
-                dummy_map.emplace(std::make_pair(min_deg_den_vec, FFInt(1)));
+                dummy_map.emplace(std::make_pair(min_deg_den_vec, FFInt(1) - const_shift));
                 denominator = denominator + PolynomialFF(n, dummy_map);
               }
 
@@ -907,7 +907,7 @@ namespace firefly {
       numerator.emplace(std::make_pair(std::move(power), results[i]));
     }
 
-    int terms_den = non_solved_degs_den.size();
+    uint terms_den = non_solved_degs_den.size();
 
     for (uint i = 0; i < terms_den; i ++) {
       std::vector<uint> power = non_solved_degs_den[i];
@@ -1003,7 +1003,11 @@ namespace firefly {
     yis[0] = ti[0];
 
     for (uint i = 1; i < n; i++) {
+<<<<<<< HEAD
       yis[i] = rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])];
+=======
+        yis[i] = rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])];
+>>>>>>> 1f6bf465b27e72e12e81e0f513cefe9619b423aa
     }
 
     return (g_ny.calc(yis) / g_dy.calc(yis)) == num;
@@ -1035,10 +1039,17 @@ namespace firefly {
     return num_eqn;
   }
 
+<<<<<<< HEAD
   void RatReconst::generate_anchor_points(uint max_order) {
     std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
     std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
     std::lock(lock_status, lock_feed);
+=======
+  void RatReconst::generate_anchor_points() {
+//     std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
+//     std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
+//     std::lock(lock_status, lock_feed);
+>>>>>>> 1f6bf465b27e72e12e81e0f513cefe9619b423aa
 
     rand_zi.clear();
     anchor_points.clear();
