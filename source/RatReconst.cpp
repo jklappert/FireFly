@@ -39,9 +39,6 @@ namespace firefly {
 
       // fill in the rand_vars for zi_order = 1
       if (rand_zi.empty()) {
-        // this is not thread-safe, but there should be no problem if used correctly
-        lock_feed.unlock();
-        lock_status.unlock();
         generate_anchor_points();
       }
     }
@@ -1040,10 +1037,6 @@ namespace firefly {
   }
 
   void RatReconst::generate_anchor_points(uint max_order) {
-    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
-    std::lock(lock_status, lock_feed);
-
     rand_zi.clear();
     anchor_points.clear();
 
