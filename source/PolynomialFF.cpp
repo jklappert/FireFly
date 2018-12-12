@@ -237,7 +237,7 @@ namespace firefly {
           std::vector<uint> new_deg(n);
           std::transform(coef_a.first.begin(), coef_a.first.end(),
                          coef_b.first.begin(), new_deg.begin(),
-                         std::plus<int>());
+                         std::plus<uint>());
 
           if (new_monomials.find(new_deg) == new_monomials.end()) {
             new_monomials.emplace(std::make_pair(new_deg, new_coef));
@@ -276,17 +276,17 @@ namespace firefly {
         if (deg > 0) {
           ff_map tmp_pow_poly;
           decr_power[j] = 0;
-          std::vector<std::vector<uint>> powers(deg + 1, std::vector<uint> (n));
+          std::vector<std::vector<uint>> tmp_powers(deg + 1, std::vector<uint> (n));
 
           for (uint jj = 0; jj <= deg; jj++) {
-            powers[jj][j] = deg - jj;
+            tmp_powers[jj][j] = deg - jj;
 
             if (jj == 0) {
-              tmp_pow_poly.emplace(std::make_pair(powers[jj], 1));
+              tmp_pow_poly.emplace(std::make_pair(tmp_powers[jj], 1));
             } else if (jj == deg) {
-              tmp_pow_poly.emplace(std::make_pair(powers[jj], shift[j].pow(deg)));
+              tmp_pow_poly.emplace(std::make_pair(tmp_powers[jj], shift[j].pow(deg)));
             } else {
-              tmp_pow_poly.emplace(std::make_pair(powers[jj], bin_coef(deg, jj)*shift[j].pow(jj)));
+              tmp_pow_poly.emplace(std::make_pair(tmp_powers[jj], bin_coef(deg, jj)*shift[j].pow(jj)));
             }
           }
 

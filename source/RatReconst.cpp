@@ -21,7 +21,7 @@ namespace firefly {
     ai.reserve(300);
     combined_prime = FFInt::p;
 
-//std::srand(std::time(nullptr));
+    //std::srand(std::time(nullptr));
     if (!shifted) {
       shift = std::vector<FFInt> (n);
 
@@ -1051,7 +1051,7 @@ namespace firefly {
       FFInt rand;
 
       if (prime_number == 0) {
-        rand = find_nth_prime(i - 1);
+        rand = get_rand();//find_nth_prime(i - 1);
         rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
       } else {
         rand = get_rand();

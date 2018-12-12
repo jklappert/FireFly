@@ -131,8 +131,7 @@ namespace firefly {
       // on the left so that the first (few) chunks give zero.
       if (result) result = n_mulmod2_preinv(result, 1000000000000000000uLL, FFInt::p, FFInt::p_inv);
 
-      result += intchunk;
-      result %= p;
+      result = n_addmod(result, intchunk, FFInt::p);
     }
 
     return result;

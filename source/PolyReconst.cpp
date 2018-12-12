@@ -143,7 +143,6 @@ namespace firefly {
           ais[next_zi].pop_back();
 
         if (n > 1) {
-          // todo combine ai's to get the new polynomial, check degrees etc.
           // combine the current stage with the multivariate polynomial of the
           // previous stages and extract the reconstructed degrees to prepare
           // the gauss system
@@ -171,7 +170,6 @@ namespace firefly {
           std::sort(rec_degs.begin(), rec_degs.end());
 
           nums.reserve(rec_degs.size());
-          //coef_mat.reserve(rec_degs.size());
 
           if (rec_degs.size() == 0 && next_zi != n) {
             for (uint zi = next_zi + 1; zi <= n; zi++) {
