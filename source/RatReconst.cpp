@@ -301,6 +301,8 @@ namespace firefly {
                   std::vector<uint> zero_deg(n);
                   ff_map zero_mon = {{zero_deg, 0}};
                   sub_den.emplace(std::make_pair(i, PolynomialFF(n, zero_mon)));
+                  if(i == 1)
+                    sub_den.emplace(std::make_pair(0, PolynomialFF(n, zero_mon)));
                 }
               }
 
@@ -450,7 +452,7 @@ namespace firefly {
 
               // if the denominator is just a constant, there is no corresponding
               // PolyReconst object. Thus we set the minimal degree to a zero tuple
-              FFInt const_shift = sub_den[0].calc( {0, 0, 0});
+              FFInt const_shift = sub_den[0].calc(std::vector<FFInt> (n, 0));
 
               if (min_deg_den_vec.empty() || const_shift != 1) {
                 min_deg_den_vec = std::vector<uint> (n);

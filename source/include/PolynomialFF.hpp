@@ -23,7 +23,7 @@ namespace firefly {
     PolynomialFF operator*(const PolynomialFF&);
     PolynomialFF operator*(const FFInt&);
     PolynomialFF operator/(const FFInt&);
-    uint n;
+    uint n = 0;
     FFInt calc(std::vector<FFInt> x);
     ff_map coefs;
     bool zero();

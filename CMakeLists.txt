@@ -9,10 +9,6 @@ find_package(FLINT REQUIRED)
 # set your favorite compile here
 set (CMAKE_CXX_COMPILER g++)
 
-# to use Valgrind uncomment the following line
-#add_definitions(-DVALGRIND -g)
-
-
 set(CMAKE_BUILD_TYPE Release)
 # set the build type to release. If one needs debugging symbols, compile
 # with "CMAKE_BUILD_TYPE Debug"
