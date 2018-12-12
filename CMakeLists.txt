@@ -37,8 +37,6 @@ endif()
 # set paths
 set(SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(INCLUDE_PATH ${SOURCE_PATH}/include)
-include_directories(${EIGEN3_INCLUDE_DIR})
-
 
 # include headers
 include_directories(${INCLUDE_PATH})
