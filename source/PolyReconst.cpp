@@ -21,11 +21,9 @@ namespace firefly {
       max_deg.insert(std::make_pair(i, -1));
     }
 
-    if (n > 1) {
-      for (uint i = 1; i <= n; i ++) {
-        yis[i].emplace_back(1);
-        yis[i].emplace_back(anchor_points[i - 1]);
-      }
+    for (uint i = 1; i <= n; i ++) {
+      yis[i].emplace_back(1);
+      yis[i].emplace_back(anchor_points[i - 1]);
     }
   }
 
