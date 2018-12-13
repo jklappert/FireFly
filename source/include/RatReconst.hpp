@@ -130,7 +130,7 @@ namespace firefly {
     /*
      *
      */
-    void set_new_rand(std::pair<uint, uint>& key);
+    void set_new_rand(std::unique_lock<std::mutex>& lock_statics, std::pair<uint, uint>& key);
     /**
      *
      */
@@ -139,6 +139,7 @@ namespace firefly {
      *
      */
     void build_multi_gauss(const FFInt& tmp_num, const std::vector<FFInt>& yis);
+    void generate_anchor_points(std::unique_lock<std::mutex>& lock_status, std::unique_lock<std::mutex>& lock_feed, std::unique_lock<std::mutex>& lock_statics, uint max_order = 1);
     uint n; /**< The number of parameters */
     bool done = false;
     uint zi = 1;
@@ -193,5 +194,6 @@ namespace firefly {
     uint64_t find_sieve_size(uint n);
     mutable std::mutex mutex_status;
     mutable std::mutex mutex_feed;
+    static std::mutex mutex_statics;
   };
 }
