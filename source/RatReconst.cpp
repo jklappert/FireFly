@@ -11,6 +11,7 @@ namespace firefly {
   bool RatReconst::shifted = false;
   ff_pair_map RatReconst::rand_zi;
   std::vector<FFInt> RatReconst::anchor_points {};
+  std::mutex RatReconst::mutex_statics;
 
   RatReconst::RatReconst(uint n_) : n(n_) {
     std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
@@ -22,15 +23,19 @@ namespace firefly {
     combined_prime = FFInt::p;
 
     //std::srand(std::time(nullptr));
-    if (!shifted) {
-      shift = std::vector<FFInt> (n);
+    {
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-      if (n > 1) {
-        for (auto & el : shift) el = FFInt(std::rand() % 1000000) + FFInt(1);
+      if (!shifted) {
+        shift = std::vector<FFInt> (n);
 
-        curr_zi_order_num = std::vector<uint> (n - 1, 1);
-        curr_zi_order_den = std::vector<uint> (n - 1, 1);
-        shifted = true;
+        if (n > 1) {
+          for (auto & el : shift) el = FFInt(std::rand() % 1000000) + FFInt(1);
+
+          curr_zi_order_num = std::vector<uint> (n - 1, 1);
+          curr_zi_order_den = std::vector<uint> (n - 1, 1);
+          shifted = true;
+        }
       }
     }
 
@@ -38,8 +43,10 @@ namespace firefly {
       curr_zi_order = std::vector<uint> (n - 1, 1);
 
       // fill in the rand_vars for zi_order = 1
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
       if (rand_zi.empty()) {
-        generate_anchor_points();
+        generate_anchor_points(lock_status, lock_feed, lock_statics);
       }
     }
   }
@@ -156,6 +163,7 @@ namespace firefly {
 
             if (n > 1) {
               for (uint i = 0; i < curr_zi_order.size(); i ++) {
+                std::unique_lock<std::mutex> lock_statics(mutex_statics);
                 yis.emplace_back(rand_zi[std::make_pair(i + 2, curr_zi_order[i])]);
               }
             }
@@ -266,8 +274,11 @@ namespace firefly {
             // save the current results to the map to access them later
             for (int i = 0; i <= (int)(max_deg_num - tmp_solved_coefs_num); i++) {
               if (first_run) {
-                PolyReconst rec(n - 1, anchor_points, (uint) i);
-                coef_n.emplace(std::make_pair((uint) i, std::move(rec)));
+                {
+                  std::unique_lock<std::mutex> lock_statics(mutex_statics);
+                  PolyReconst rec(n - 1, anchor_points, (uint) i);
+                  coef_n.emplace(std::make_pair((uint) i, std::move(rec)));
+                }
 
                 if (i < max_deg_num) {
                   std::vector<uint> zero_deg(n);
@@ -291,14 +302,18 @@ namespace firefly {
 
             for (uint i = 1; i <= max_deg_den - tmp_solved_coefs_den; i++) {
               if (first_run) {
-                PolyReconst rec(n - 1, anchor_points, i);
-                coef_d.emplace(std::make_pair(i, std::move(rec)));
+                {
+                  std::unique_lock<std::mutex> lock_statics(mutex_statics);
+                  PolyReconst rec(n - 1, anchor_points, i);
+                  coef_d.emplace(std::make_pair(i, std::move(rec)));
+                }
 
                 if ((int) i < max_deg_den) {
                   std::vector<uint> zero_deg(n);
                   ff_map zero_mon = {{zero_deg, 0}};
                   sub_den.emplace(std::make_pair(i, PolynomialFF(n, zero_mon)));
-                  if(i == 1)
+
+                  if (i == 1)
                     sub_den.emplace(std::make_pair(0, PolynomialFF(n, zero_mon)));
                 }
               }
@@ -486,7 +501,8 @@ namespace firefly {
               // set new random
               for (uint zi = 2; zi <= n; zi ++) {
                 auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
-                set_new_rand(key);
+                std::unique_lock<std::mutex> lock_statics(mutex_statics);
+                set_new_rand(lock_statics, key);
               }
             }
 
@@ -545,6 +561,7 @@ namespace firefly {
         std::vector<FFInt> yis {};
 
         for (uint i = 0; i < tmp_zi_ord.size(); i ++) {
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
           yis.emplace_back(rand_zi[std::make_pair(i + 2, tmp_zi_ord[i])]);
         }
 
@@ -1004,6 +1021,7 @@ namespace firefly {
     yis[0] = ti[0];
 
     for (uint i = 1; i < n; i++) {
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
       yis[i] = rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])];
     }
 
@@ -1025,7 +1043,7 @@ namespace firefly {
     return FFInt(std::rand() % (FFInt::p - 1)) + FFInt(1);
   }
 
-  void RatReconst::set_new_rand(const std::pair<uint, uint>& key) {
+  void RatReconst::set_new_rand(std::unique_lock<std::mutex>& lock_statics, const std::pair<uint, uint>& key) {
     if (rand_zi.find(key) == rand_zi.end()) {
       rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(key.first, 1)].pow(key.second)));
     }
@@ -1037,6 +1055,16 @@ namespace firefly {
   }
 
   void RatReconst::generate_anchor_points(uint max_order) {
+    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
+    std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
+    std::unique_lock<std::mutex> lock_statics(mutex_statics, std::defer_lock);
+    lock_statics.lock();
+//    std::lock(lock_status, lock_feed); // this does not work for some reason
+//    std::lock(lock_status, lock_feed, lock_statics); // this does not work for some reason
+    generate_anchor_points(lock_status, lock_feed, lock_statics, max_order);
+  }
+
+  void RatReconst::generate_anchor_points(std::unique_lock<std::mutex>& lock_status, std::unique_lock<std::mutex>& lock_feed, std::unique_lock<std::mutex>& lock_statics, uint max_order) {
     rand_zi.clear();
     anchor_points.clear();
 
@@ -1055,7 +1083,7 @@ namespace firefly {
 
       for (uint j = 1; j <= max_order; j++) {
         auto key = std::make_pair(i, j);
-        set_new_rand(key);
+        set_new_rand(lock_statics, key);
       }
     }
   }
