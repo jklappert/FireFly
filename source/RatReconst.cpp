@@ -1025,7 +1025,7 @@ namespace firefly {
     return FFInt(std::rand() % (FFInt::p - 1)) + FFInt(1);
   }
 
-  void RatReconst::set_new_rand(std::pair<uint, uint>& key) {
+  void RatReconst::set_new_rand(const std::pair<uint, uint>& key) {
     if (rand_zi.find(key) == rand_zi.end()) {
       rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(key.first, 1)].pow(key.second)));
     }

@@ -130,7 +130,7 @@ namespace firefly {
     /*
      *
      */
-    void set_new_rand(std::pair<uint, uint>& key);
+    void set_new_rand(const std::pair<uint, uint>& key);
     /**
      *
      */
