@@ -19,12 +19,7 @@ namespace firefly {
   class UintPairHasher {
   public:
     std::size_t operator()(std::pair<uint, uint> const& pair) const {
-      std::size_t seed = 2;
-
-      seed ^= pair.first + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-      seed ^= pair.second + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-
-      return seed;
+      return std::hash<uint>()(pair.first) ^ std::hash<uint>()(pair.second);
     }
   };
 }
