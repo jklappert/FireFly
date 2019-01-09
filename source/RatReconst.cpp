@@ -51,7 +51,8 @@ namespace firefly {
 
   void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
-    queue.emplace_back(std::make_tuple(new_ti, num, feed_zi_ord, fed_prime));
+    if(fed_prime == prime_number)
+      queue.emplace_back(std::make_tuple(new_ti, num, feed_zi_ord));
   }
 
   void RatReconst::interpolate() {
@@ -65,7 +66,7 @@ namespace firefly {
         auto food = queue.front();
         queue.pop_front();
         lock.unlock();
-        interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food), std::get<3>(food));
+        interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food));
         lock.lock();
       }
     }
@@ -73,13 +74,13 @@ namespace firefly {
     is_interpolating = false;
   }
 
-  void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime) {
+  void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord) {
     // change later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if (prime_number > 0) {
       curr_zi_order = feed_zi_ord;
     }
 
-    if (!done && fed_prime == prime_number) {
+    if (!done) {
       std::vector<uint> tmp_vec;
 
       if (n > 1)
@@ -531,7 +532,7 @@ namespace firefly {
             if (saved_ti.find(tmp_vec) != saved_ti.end()) {
               std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
               saved_ti.at(tmp_vec).pop_back();
-              interpolate(key_val.first, key_val.second, tmp_vec, prime_number);
+              interpolate(key_val.first, key_val.second, tmp_vec);
             }
 
             return;

@@ -51,7 +51,7 @@ namespace firefly {
     uint get_zi();
     void disable_shift();
   private:
-    void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime);
+    void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord);
     FFInt comp_ai(int i, int ip, const FFInt& num);
     /**
      *    Normalize the rational function such that the first non-zero coefficient
@@ -156,7 +156,7 @@ namespace firefly {
     bool first_run = true;
     static bool shifted;
     bool is_interpolating = false;
-    std::list<std::tuple<FFInt, FFInt, std::vector<uint>, uint>> queue;
+    std::list<std::tuple<FFInt, FFInt, std::vector<uint>>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
     uint curr_zi = 2;
     ff_vec_map saved_ti {};
