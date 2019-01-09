@@ -33,7 +33,7 @@ namespace firefly {
      */
     RationalFunction get_result();
     /**
-     * 
+     *
      */
     void interpolate();
     static std::vector<FFInt> shift;
@@ -144,7 +144,7 @@ namespace firefly {
      *
      */
     void build_multi_gauss(const FFInt& tmp_num, const std::vector<FFInt>& yis);
-    void generate_anchor_points(std::unique_lock<std::mutex>& lock_status, std::unique_lock<std::mutex>& lock_statics, uint max_order = 1);
+    void generate_anchor_points(std::unique_lock<std::mutex>& lock_statics, uint max_order = 1);
     uint n; /**< The number of parameters */
     bool done = false;
     uint zi = 1;

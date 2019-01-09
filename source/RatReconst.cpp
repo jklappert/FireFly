@@ -44,7 +44,7 @@ namespace firefly {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
       if (rand_zi.empty()) {
-        generate_anchor_points(lock_status, lock_statics);
+        generate_anchor_points(lock_statics);
       }
     }
   }
@@ -1073,15 +1073,14 @@ namespace firefly {
   }
 
   void RatReconst::generate_anchor_points(uint max_order) {
-    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_statics(mutex_statics, std::defer_lock);
-    //lock_statics.lock();
-    std::lock(lock_status, lock_statics); // this does not work for some reason
+//    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+//    std::lock(lock_status, lock_statics); // this does not work for some reason
 //    std::lock(lock_status, lock_feed, lock_statics); // this does not work for some reason
-    generate_anchor_points(lock_status, lock_statics, max_order);
+    generate_anchor_points(lock_statics, max_order);
   }
 
-  void RatReconst::generate_anchor_points(std::unique_lock<std::mutex>& lock_status, std::unique_lock<std::mutex>& lock_statics, uint max_order) {
+  void RatReconst::generate_anchor_points(std::unique_lock<std::mutex>& lock_statics, uint max_order) {
     rand_zi.clear();
     anchor_points.clear();
 
