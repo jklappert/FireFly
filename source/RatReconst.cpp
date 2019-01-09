@@ -14,9 +14,7 @@ namespace firefly {
   std::mutex RatReconst::mutex_statics;
 
   RatReconst::RatReconst(uint n_) : n(n_) {
-    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
-    std::lock(lock_status, lock_feed);
+    std::unique_lock<std::mutex> lock_status(mutex_status);
 
     ti.reserve(300);
     ai.reserve(300);
@@ -46,17 +44,36 @@ namespace firefly {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
       if (rand_zi.empty()) {
-        generate_anchor_points(lock_status, lock_feed, lock_statics);
+        generate_anchor_points(lock_status, lock_statics);
       }
     }
   }
 
   void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime) {
-    std::unique_lock<std::mutex> lock(mutex_feed);
-    feed(new_ti, num, feed_zi_ord, fed_prime, lock);
+    std::unique_lock<std::mutex> lock(mutex_status);
+    queue.emplace_back(std::make_tuple(new_ti, num, feed_zi_ord, fed_prime));
   }
 
-  void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime, std::unique_lock<std::mutex>& lock) {
+  void RatReconst::interpolate() {
+    std::unique_lock<std::mutex> lock(mutex_status);
+
+    if (is_interpolating || queue.empty()) return;
+    else {
+      is_interpolating = true;
+
+      while (!queue.empty()) {
+        auto food = queue.front();
+        queue.pop_front();
+        lock.unlock();
+        interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food), std::get<3>(food));
+        lock.lock();
+      }
+    }
+
+    is_interpolating = false;
+  }
+
+  void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime) {
     // change later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if (prime_number > 0) {
       curr_zi_order = feed_zi_ord;
@@ -514,7 +531,7 @@ namespace firefly {
             if (saved_ti.find(tmp_vec) != saved_ti.end()) {
               std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
               saved_ti.at(tmp_vec).pop_back();
-              feed(key_val.first, key_val.second, tmp_vec, prime_number, lock);
+              interpolate(key_val.first, key_val.second, tmp_vec, prime_number);
             }
 
             return;
@@ -793,9 +810,7 @@ namespace firefly {
   }
 
   RationalFunction RatReconst::get_result() {
-    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
-    std::lock(lock_status, lock_feed);
+    std::unique_lock<std::mutex> lock(mutex_status);
 
     if (done) {
       if (result.numerator.coefs.empty()) {
@@ -905,8 +920,8 @@ namespace firefly {
       denominator.emplace(std::make_pair(std::move(power), results[i + terms_num]));
     }
 
+    //for(auto iii : results) std::cout << iii << "\n";
     //std::cout << " univ gauss (n = " << num_eqn << ") time : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
-
     return std::make_pair(PolynomialFF(1, numerator), PolynomialFF(1, denominator));
   }
 
@@ -1056,15 +1071,14 @@ namespace firefly {
 
   void RatReconst::generate_anchor_points(uint max_order) {
     std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_feed(mutex_feed, std::defer_lock);
     std::unique_lock<std::mutex> lock_statics(mutex_statics, std::defer_lock);
-    lock_statics.lock();
-//    std::lock(lock_status, lock_feed); // this does not work for some reason
+    //lock_statics.lock();
+    std::lock(lock_status, lock_statics); // this does not work for some reason
 //    std::lock(lock_status, lock_feed, lock_statics); // this does not work for some reason
-    generate_anchor_points(lock_status, lock_feed, lock_statics, max_order);
+    generate_anchor_points(lock_status, lock_statics, max_order);
   }
 
-  void RatReconst::generate_anchor_points(std::unique_lock<std::mutex>& lock_status, std::unique_lock<std::mutex>& lock_feed, std::unique_lock<std::mutex>& lock_statics, uint max_order) {
+  void RatReconst::generate_anchor_points(std::unique_lock<std::mutex>& lock_status, std::unique_lock<std::mutex>& lock_statics, uint max_order) {
     rand_zi.clear();
     anchor_points.clear();
 
@@ -1115,10 +1129,8 @@ namespace firefly {
 
   RatReconst::RatReconst(const RatReconst& other) {
     std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_my_feed(mutex_feed, std::defer_lock);
     std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_other_feed(other.mutex_feed, std::defer_lock);
-    std::lock(lock_my_status, lock_my_feed, lock_other_status, lock_other_feed);
+    std::lock(lock_my_status, lock_other_status);
 
     n = other.n;
     done = other.done;
@@ -1161,10 +1173,8 @@ namespace firefly {
 
   RatReconst::RatReconst(RatReconst && other) {
     std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_my_feed(mutex_feed, std::defer_lock);
     std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_other_feed(other.mutex_feed, std::defer_lock);
-    std::lock(lock_my_status, lock_my_feed, lock_other_status, lock_other_feed);
+    std::lock(lock_my_status, lock_other_status);
 
     n = std::move(other.n);
     done = std::move(other.done);
@@ -1208,10 +1218,8 @@ namespace firefly {
   RatReconst& RatReconst::operator=(const RatReconst& other) {
     if (this != &other) {
       std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
-      std::unique_lock<std::mutex> lock_my_feed(mutex_feed, std::defer_lock);
       std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
-      std::unique_lock<std::mutex> lock_other_feed(other.mutex_feed, std::defer_lock);
-      std::lock(lock_my_status, lock_my_feed, lock_other_status, lock_other_feed);
+      std::lock(lock_my_status, lock_other_status);
 
       n = other.n;
       done = other.done;
@@ -1258,10 +1266,8 @@ namespace firefly {
   RatReconst& RatReconst::operator=(RatReconst && other) {
     if (this != &other) {
       std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
-      std::unique_lock<std::mutex> lock_my_feed(mutex_feed, std::defer_lock);
       std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
-      std::unique_lock<std::mutex> lock_other_feed(other.mutex_feed, std::defer_lock);
-      std::lock(lock_my_status, lock_my_feed, lock_other_status, lock_other_feed);
+      std::lock(lock_my_status, lock_other_status);
 
       n = std::move(other.n);
       done = std::move(other.done);

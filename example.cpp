@@ -6,8 +6,8 @@ int main() {
   const uint n = 4;
   uint64_t prime = firefly::primes()[0];
   firefly::FFInt::set_new_prime(prime);
-  firefly::RatReconst rec(n);
 
+  firefly::RatReconst rec(n);
   // Example for the reconstruction of a rational function
   try {
     // Initialize all values. t_yis are the scaled y-values and yis are the
@@ -78,7 +78,9 @@ int main() {
       /*firefly::FFInt num = (((2*z1-7)*t_yis[0]-z1+3)*t_yis[2]+((-2*z1+3)*t_yis[0]-z1+3)*t_yis[1]+(-2*z1+3)*t_yis[0].pow(2)+(z1)*t_yis[0]+z1-3);
       firefly::FFInt den = ((2*z1-6)*t_yis[2].pow(2)+((2*z1-6)*t_yis[1]+(2*z1-6)*t_yis[0]-2*z1+6)*t_yis[2]);;*/
       //firefly::FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + t_yis[1].pow(2);
-      //firefly::FFInt den = 2*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];
+      //firefly::FFInt den = 12*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];
+      /*firefly::FFInt num = 3*z1 + 7*t_yis[0];
+      firefly::FFInt den = 4*z1*t_yis[0] + z1 + t_yis[0];*/
 
       // example for n = 1
       /*firefly::FFInt num = (576 * z1.pow(12) - 35145 * z1.pow(11)
@@ -103,6 +105,7 @@ int main() {
 
       // Feed the algorithm with the current zi_order
       rec.feed(t, num / den, tmp_vec, primes_used);
+      rec.interpolate();
     }
 
     std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";

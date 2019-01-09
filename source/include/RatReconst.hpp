@@ -2,6 +2,7 @@
 
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
+#include <list>
 #include <mutex>
 
 namespace firefly {
@@ -31,6 +32,10 @@ namespace firefly {
      *
      */
     RationalFunction get_result();
+    /**
+     * 
+     */
+    void interpolate();
     static std::vector<FFInt> shift;
     static ff_pair_map rand_zi;
     static std::vector<FFInt> anchor_points;
@@ -46,7 +51,7 @@ namespace firefly {
     uint get_zi();
     void disable_shift();
   private:
-    void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime, std::unique_lock<std::mutex>& lock);
+    void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime);
     FFInt comp_ai(int i, int ip, const FFInt& num);
     /**
      *    Normalize the rational function such that the first non-zero coefficient
@@ -139,7 +144,7 @@ namespace firefly {
      *
      */
     void build_multi_gauss(const FFInt& tmp_num, const std::vector<FFInt>& yis);
-    void generate_anchor_points(std::unique_lock<std::mutex>& lock_status, std::unique_lock<std::mutex>& lock_feed, std::unique_lock<std::mutex>& lock_statics, uint max_order = 1);
+    void generate_anchor_points(std::unique_lock<std::mutex>& lock_status, std::unique_lock<std::mutex>& lock_statics, uint max_order = 1);
     uint n; /**< The number of parameters */
     bool done = false;
     uint zi = 1;
@@ -150,6 +155,8 @@ namespace firefly {
     bool new_prime = false;
     bool first_run = true;
     static bool shifted;
+    bool is_interpolating = false;
+    std::list<std::tuple<FFInt, FFInt, std::vector<uint>, uint>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
     uint curr_zi = 2;
     ff_vec_map saved_ti {};
@@ -193,7 +200,6 @@ namespace firefly {
      */
     uint64_t find_sieve_size(uint n);
     mutable std::mutex mutex_status;
-    mutable std::mutex mutex_feed;
     static std::mutex mutex_statics;
   };
 }
