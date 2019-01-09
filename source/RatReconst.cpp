@@ -276,6 +276,7 @@ namespace firefly {
             {
               std::unique_lock<std::mutex> lock(mutex_status);
               prime_number++;
+              queue.clear();
             }
             saved_ti.clear();
             new_prime = true;
@@ -510,6 +511,7 @@ namespace firefly {
 
               std::unique_lock<std::mutex> lock(mutex_status);
               prime_number++;
+              queue.clear();
               saved_ti.clear();
               std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
               curr_zi = 2;
