@@ -3,17 +3,19 @@
 #include "ReconstHelper.hpp"
 #include "Logger.hpp"
 #include "utils.hpp"
+#include "RatReconst.hpp"
 #include <chrono>
 
 namespace firefly {
-  // TODO set anchor points through member function
   // TODO add random nunmber generator to utils
   // TODO add generate anchor points function to utils
   // TODO check if this interpolates in combination with RatReconst to use the
-  // static rand_zi of RatReconst to save additional memory
+  // static rand_zi of RatReconst to save additional memory -> note that
+  // zi order in RatReconst and PolyReconst is not the same!
   // TODO for new prime just use Vandermonde matrices to solve interpolation problem
 
   ff_pair_map PolyReconst::rand_zi;
+  std::mutex PolyReconst::mutex_statics;
 
   PolyReconst::PolyReconst(uint n_, const int deg_inp) : n(n_) {
     combined_prime = FFInt::p;
@@ -33,16 +35,14 @@ namespace firefly {
   PolyReconst::PolyReconst() {}
 
   void PolyReconst::set_anchor_points(const std::vector<FFInt>& anchor_points, bool force) {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
     if (rand_zi.empty() || force) {
       for (uint i = 1; i <= n; i ++) {
         rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
         rand_zi.emplace(std::make_pair(std::make_pair(i, 1), anchor_points[i - 1]));
       }
     }
-  }
-
-  void PolyReconst::ref_yi_to_rat_reconst() {
-
   }
 
   void PolyReconst::feed(const std::vector<FFInt>& new_yis, const FFInt& num) {
@@ -86,10 +86,10 @@ namespace firefly {
         if (!use_chinese_remainder) use_chinese_remainder = true;
 
         new_prime = false;
-//         yis[next_zi].pop_back();
       }
 
       for (uint j = 0; j < n; j++) {
+        std::unique_lock<std::mutex> lock_statics(mutex_statics);
         rand_zi.emplace(std::make_pair(j + 1, curr_zi_order[j]), new_yis[j]);
       }
 
@@ -120,6 +120,7 @@ namespace firefly {
 
           for (uint zi = 1; zi < next_zi; zi++) {
             // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+            std::unique_lock<std::mutex> lock_statics(mutex_statics);
             coef_num *= rand_zi[std::make_pair(zi, curr_zi_order[zi - 1])].pow(deg_vec[zi - 1]);
           }
 
@@ -272,8 +273,13 @@ namespace firefly {
                                     const PolynomialFF& num, std::vector<PolynomialFF>& ai) {
     if (ip == 0) return num;
 
-    FFInt yi_i_p_1 = rand_zi[std::make_pair(zi, i + 1)];
-    FFInt yi_ip = rand_zi[std::make_pair(zi, ip)];
+    FFInt yi_i_p_1;
+    FFInt yi_ip;
+    {
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      yi_i_p_1 = rand_zi[std::make_pair(zi, i + 1)];
+      yi_ip = rand_zi[std::make_pair(zi, ip)];
+    }
 
     return (comp_ai(zi, i, ip - 1, num, ai) - ai[ip - 1]) / (yi_i_p_1 - yi_ip); //yi[i + 1] - yi[ip - 1 + 1] the +1 in the first and the +1 in the second is due to the 0th element in the vector
   }
@@ -285,7 +291,11 @@ namespace firefly {
   }
 
   PolynomialFF PolyReconst::iterate_canonical(const uint zi, uint i, std::vector<PolynomialFF>& ai) {
-    FFInt yi = rand_zi[std::make_pair(zi, i)];
+    FFInt yi;
+    {
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      yi = rand_zi[std::make_pair(zi, i)];
+    }
 
     if (i < ai.size() - 1) {
       PolynomialFF poly = ai[i] + iterate_canonical(zi, i + 1, ai);
@@ -301,7 +311,9 @@ namespace firefly {
     std::vector<FFInt> chosen_yi(n);
 
     for (uint i = 1; i <= n; i++) {
-      chosen_yi[i - 1] = rand_zi[std::make_pair(i,1)];
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
+      chosen_yi[i - 1] = rand_zi[std::make_pair(i, 1)];
     }
 
     return gy.calc(chosen_yi) == num;
@@ -357,7 +369,8 @@ namespace firefly {
 
         for (uint zi = 1; zi < next_zi; zi++) {
           // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-          vi *= rand_zi[std::make_pair(zi, 1)].pow(el[zi - 1]); // fetch the already calculated values instead?
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+          vi *= rand_zi[std::make_pair(zi, el[zi - 1])];
         }
 
         vis.emplace_back(vi);
@@ -412,3 +425,4 @@ namespace firefly {
   }
 
 }
+

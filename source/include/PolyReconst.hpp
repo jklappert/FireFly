@@ -5,6 +5,7 @@
 #include <gmpxx.h>
 #include "Polynomial.hpp"
 #include "RationalNumber.hpp"
+#include <mutex>
 
 namespace firefly {
 
@@ -35,13 +36,10 @@ namespace firefly {
     uint next_zi = 1;
     uint prime_number = 0;
     static ff_pair_map rand_zi;
-    //static ff_pair_map * rand_zi_p
     Polynomial get_result();
     PolynomialFF get_result_ff();
     std::vector<uint> curr_zi_order{};
     void set_anchor_points(const std::vector<FFInt> &anchor_points, bool force = false);
-    void ref_yi_to_rat_reconst();
-    
   private:
     /**
      *    Computes the coefficient a(i) = ai.at(i) recursively using eq. (3.11) of
@@ -110,5 +108,6 @@ namespace firefly {
     //std::unordered_map<uint, std::vector<FFInt>> yis {};
     std::unordered_map<uint, std::vector<PolynomialFF>> ais {};
     std::unordered_map<uint, int> max_deg {};
+    static std::mutex mutex_statics;
   };
 }

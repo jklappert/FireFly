@@ -3,7 +3,6 @@
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
 #include <list>
-#include <mutex>
 
 namespace firefly {
   typedef std::unordered_map<std::vector<uint>, std::unordered_map<std::vector<uint>, FFInt, UintHasher>, UintHasher> ff_map_map;
