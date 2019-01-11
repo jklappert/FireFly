@@ -10,6 +10,7 @@ namespace firefly {
 
   typedef std::unordered_map<std::vector<uint>, mpz_class, UintHasher> mpz_map;
   typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
+  typedef std::unordered_map<std::pair<uint, uint>, FFInt, UintPairHasher> ff_pair_map;
 
   class PolyReconst {
   public:
@@ -17,7 +18,7 @@ namespace firefly {
      *    A constructor
      *    @param n_ The number of parameters as an integer
      */
-    PolyReconst(uint n_, const std::vector<FFInt> &anchor_points = std::vector<FFInt> (), const int deg_inp = -1);
+    PolyReconst(uint n_, const int deg_inp = -1);
     /**
      *    Default constructor. Should not be used explicitly.
      */
@@ -33,9 +34,14 @@ namespace firefly {
     bool new_prime = false;
     uint next_zi = 1;
     uint prime_number = 0;
+    static ff_pair_map rand_zi;
+    //static ff_pair_map * rand_zi_p
     Polynomial get_result();
     PolynomialFF get_result_ff();
     std::vector<uint> curr_zi_order{};
+    void set_anchor_points(const std::vector<FFInt> &anchor_points, bool force = false);
+    void ref_yi_to_rat_reconst();
+    
   private:
     /**
      *    Computes the coefficient a(i) = ai.at(i) recursively using eq. (3.11) of
@@ -101,7 +107,7 @@ namespace firefly {
     mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */
-    std::unordered_map<uint, std::vector<FFInt>> yis {};
+    //std::unordered_map<uint, std::vector<FFInt>> yis {};
     std::unordered_map<uint, std::vector<PolynomialFF>> ais {};
     std::unordered_map<uint, int> max_deg {};
   };

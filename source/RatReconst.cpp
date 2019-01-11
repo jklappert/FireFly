@@ -51,7 +51,8 @@ namespace firefly {
 
   void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
-    if(fed_prime == prime_number)
+
+    if (fed_prime == prime_number)
       queue.emplace_back(std::make_tuple(new_ti, num, feed_zi_ord));
   }
 
@@ -295,7 +296,8 @@ namespace firefly {
               if (first_run) {
                 {
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  PolyReconst rec(n - 1, anchor_points, (uint) i);
+                  PolyReconst rec(n - 1, (uint) i);
+                  rec.set_anchor_points(anchor_points);
                   coef_n.emplace(std::make_pair((uint) i, std::move(rec)));
                 }
 
@@ -323,7 +325,8 @@ namespace firefly {
               if (first_run) {
                 {
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  PolyReconst rec(n - 1, anchor_points, i);
+                  PolyReconst rec(n - 1, i);
+                  rec.set_anchor_points(anchor_points);
                   coef_d.emplace(std::make_pair(i, std::move(rec)));
                 }
 
@@ -570,7 +573,7 @@ namespace firefly {
     std::vector<uint> tmp_zi_ord = curr_zi_order;
 
     while (!rec.new_prime) {
-      if (clock_test == 0) clock_test = clock();
+      //if (clock_test == 0) clock_test = clock();
 
       try {
         std::vector<uint> key = {(uint) curr_deg, tmp_zi};
@@ -658,7 +661,7 @@ namespace firefly {
          */
         curr_deg--;
 
-        clock_test = 0;
+        //clock_test = 0;
 
         if (is_num)
           tmp_solved_coefs_num ++;
@@ -1389,11 +1392,6 @@ namespace firefly {
         curr_zi_order.begin(), [](uint x) {return x + 1;});
       }
 
-      // set new random
-//      for (uint zi = 2; zi <= n; zi ++) {
-//        auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
-//        set_new_rand(key);
-//      }
     }
 
     // Build system of equations; in combined_.. are the non-solved coefficients

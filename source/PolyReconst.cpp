@@ -6,8 +6,16 @@
 #include <chrono>
 
 namespace firefly {
+  // TODO set anchor points through member function
+  // TODO add random nunmber generator to utils
+  // TODO add generate anchor points function to utils
+  // TODO check if this interpolates in combination with RatReconst to use the
+  // static rand_zi of RatReconst to save additional memory
+  // TODO for new prime just use Vandermonde matrices to solve interpolation problem
 
-  PolyReconst::PolyReconst(uint n_, const std::vector<FFInt>& anchor_points, const int deg_inp) : n(n_) {
+  ff_pair_map PolyReconst::rand_zi;
+
+  PolyReconst::PolyReconst(uint n_, const int deg_inp) : n(n_) {
     combined_prime = FFInt::p;
     curr_zi_order = std::vector<uint>(n, 1);
 
@@ -20,24 +28,31 @@ namespace firefly {
       ais.emplace(std::make_pair(i, std::move(ai)));
       max_deg.insert(std::make_pair(i, -1));
     }
-
-    for (uint i = 1; i <= n; i ++) {
-      yis[i].emplace_back(1);
-      yis[i].emplace_back(anchor_points[i - 1]);
-    }
   }
 
   PolyReconst::PolyReconst() {}
 
+  void PolyReconst::set_anchor_points(const std::vector<FFInt>& anchor_points, bool force) {
+    if (rand_zi.empty() || force) {
+      for (uint i = 1; i <= n; i ++) {
+        rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
+        rand_zi.emplace(std::make_pair(std::make_pair(i, 1), anchor_points[i - 1]));
+      }
+    }
+  }
+
+  void PolyReconst::ref_yi_to_rat_reconst() {
+
+  }
+
   void PolyReconst::feed(const std::vector<FFInt>& new_yis, const FFInt& num) {
     if (!done) {
       if (new_prime) {
+        // be sure that you have called set_anchor_points!
         bool runtest = true;
 
         for (uint i = 0; i < n; i++) {
-          yis[i + 1].clear();
           ais[i + 1].clear();
-          yis[i + 1].emplace_back(new_yis[i]);
         }
 
         for (const auto ci : combined_ci) {
@@ -55,7 +70,6 @@ namespace firefly {
           done = test_guess(num);
 
           if (done) {
-            yis.clear();
             ais.clear();
             combined_prime = 0;
             combined_ci.clear();
@@ -72,15 +86,14 @@ namespace firefly {
         if (!use_chinese_remainder) use_chinese_remainder = true;
 
         new_prime = false;
-        yis[next_zi].pop_back();
+//         yis[next_zi].pop_back();
       }
 
       for (uint j = 0; j < n; j++) {
-        if (curr_zi_order[j] > yis[j + 1].size() - 1)
-          yis[j + 1].emplace_back(new_yis[j]);
+        rand_zi.emplace(std::make_pair(j + 1, curr_zi_order[j]), new_yis[j]);
       }
 
-      uint i = yis[next_zi].size() - 2;
+      uint i = curr_zi_order[next_zi - 1] - 1;
 
       // Univariate Newton interpolation for the lowest stage.
       if (next_zi == 1) {
@@ -107,7 +120,7 @@ namespace firefly {
 
           for (uint zi = 1; zi < next_zi; zi++) {
             // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-            coef_num *= yis[zi][curr_zi_order[zi - 1]].pow(deg_vec[zi - 1]);
+            coef_num *= rand_zi[std::make_pair(zi, curr_zi_order[zi - 1])].pow(deg_vec[zi - 1]);
           }
 
           res -= coef_num;
@@ -257,11 +270,12 @@ namespace firefly {
 
   PolynomialFF PolyReconst::comp_ai(const uint zi, int i, int ip,
                                     const PolynomialFF& num, std::vector<PolynomialFF>& ai) {
-    std::vector<FFInt>& yi = yis[zi];
-
     if (ip == 0) return num;
 
-    return (comp_ai(zi, i, ip - 1, num, ai) - ai[ip - 1]) / (yi[i + 1] - yi[ip - 1 + 1]);
+    FFInt yi_i_p_1 = rand_zi[std::make_pair(zi, i + 1)];
+    FFInt yi_ip = rand_zi[std::make_pair(zi, ip)];
+
+    return (comp_ai(zi, i, ip - 1, num, ai) - ai[ip - 1]) / (yi_i_p_1 - yi_ip); //yi[i + 1] - yi[ip - 1 + 1] the +1 in the first and the +1 in the second is due to the 0th element in the vector
   }
 
   PolynomialFF PolyReconst::construct_canonical(const uint zi, std::vector<PolynomialFF>& ai) {
@@ -271,14 +285,14 @@ namespace firefly {
   }
 
   PolynomialFF PolyReconst::iterate_canonical(const uint zi, uint i, std::vector<PolynomialFF>& ai) {
-    std::vector<FFInt>& yi = yis[zi];
+    FFInt yi = rand_zi[std::make_pair(zi, i)];
 
     if (i < ai.size() - 1) {
       PolynomialFF poly = ai[i] + iterate_canonical(zi, i + 1, ai);
-      return poly.mul(zi) + poly * (-yi[i + 1 - 1]);
+      return poly.mul(zi) + poly * (-yi); //yi[i - 1 + 1] +1 is due to 0th element
     }
 
-    return ai[i] * (-yi[i + 1 - 1]) + ai[i].mul(zi);
+    return ai[i] * (-yi) + ai[i].mul(zi); // yi[i - 1 + 1]
   }
 
   bool PolyReconst::test_guess(const FFInt& num) {
@@ -287,7 +301,7 @@ namespace firefly {
     std::vector<FFInt> chosen_yi(n);
 
     for (uint i = 1; i <= n; i++) {
-      chosen_yi[i - 1] = yis[i][0];
+      chosen_yi[i - 1] = rand_zi[std::make_pair(i,1)];
     }
 
     return gy.calc(chosen_yi) == num;
@@ -343,7 +357,7 @@ namespace firefly {
 
         for (uint zi = 1; zi < next_zi; zi++) {
           // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-          vi *= yis[zi][1].pow(el[zi - 1]);
+          vi *= rand_zi[std::make_pair(zi, 1)].pow(el[zi - 1]); // fetch the already calculated values instead?
         }
 
         vis.emplace_back(vi);

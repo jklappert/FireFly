@@ -6,11 +6,8 @@
 #include <mutex>
 
 namespace firefly {
-  typedef std::unordered_map<std::vector<uint>, mpz_class, UintHasher> mpz_map;
-  typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
   typedef std::unordered_map<std::vector<uint>, std::unordered_map<std::vector<uint>, FFInt, UintHasher>, UintHasher> ff_map_map;
   typedef std::unordered_map<std::vector<uint>, std::vector<std::pair<FFInt, FFInt>>, UintHasher> ff_vec_map;
-  typedef std::unordered_map<std::pair<uint, uint>, FFInt, UintPairHasher> ff_pair_map;
   typedef std::unordered_map<std::vector<uint>, uint, UintHasher> uint_map;
 
   class RatReconst {
