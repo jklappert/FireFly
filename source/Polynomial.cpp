@@ -8,7 +8,10 @@ namespace firefly {
       coefs.emplace_back(Monomial(el.first, el.second));
     }
 
-    n = coefs[0].powers.size();
+    if(coefs.size() > 0)
+      n = coefs[0].powers.size();
+    else 
+      n = 0;
   }
 
   Polynomial::Polynomial(const Monomial& coef) {
@@ -72,6 +75,9 @@ namespace firefly {
       }
 
     }
+    
+    if(pol.coefs.empty())
+      out << "0";
 
     out << "\n";
     return out;

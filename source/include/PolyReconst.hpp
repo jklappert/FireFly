@@ -1,25 +1,18 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
-#include <gmpxx.h>
+#include <list>
 #include "Polynomial.hpp"
-#include "RationalNumber.hpp"
-#include <mutex>
+#include "BaseReconst.hpp"
 
 namespace firefly {
-
-  typedef std::unordered_map<std::vector<uint>, mpz_class, UintHasher> mpz_map;
-  typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
-  typedef std::unordered_map<std::pair<uint, uint>, FFInt, UintPairHasher> ff_pair_map;
-
-  class PolyReconst {
+  class PolyReconst : public BaseReconst {
   public:
     /**
      *    A constructor
      *    @param n_ The number of parameters as an integer
      */
-    PolyReconst(uint n_, const int deg_inp = -1);
+    PolyReconst(uint n_, const int deg_inp = -1, const bool with_rat_reconst_inp = false);
     /**
      *    Default constructor. Should not be used explicitly.
      */
@@ -31,44 +24,43 @@ namespace firefly {
      *    rational coefficients
      */
     void feed(const std::vector<FFInt>& yis, const FFInt& num);
-    bool done = false;
-    bool new_prime = false;
-    uint next_zi = 1;
-    uint prime_number = 0;
+    void feed(const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime);
+    void interpolate();
     static ff_pair_map rand_zi;
     Polynomial get_result();
     PolynomialFF get_result_ff();
-    std::vector<uint> curr_zi_order{};
+    void generate_anchor_points(uint max_order = 1);
     void set_anchor_points(const std::vector<FFInt> &anchor_points, bool force = false);
   private:
+    void interpolate(const FFInt& num, const std::vector<uint>& zi_ord);
     /**
      *    Computes the coefficient a(i) = ai.at(i) recursively using eq. (3.11) of
      *    arXiv:1608.01902
-     *    @param zi the integer i to a zi
+     *    @param tmp_zi the integer i to a zi
      *    @param ai The vector of previously computed ai
      *    @param num f(y_i)
      *    @param i The order of a(i)
      *    @param ip Recursion order
      *    @return a(i)
      */
-    PolynomialFF comp_ai(const uint zi, int i, int ip, const PolynomialFF& num, std::vector<PolynomialFF>& ai);
+    PolynomialFF comp_ai(const uint tmp_zi, int i, int ip, const PolynomialFF& num, std::vector<PolynomialFF>& ai);
     /**
      *    Convert the reconstructed polynomial to the canonical form
-     *    @param zi the integer i to a zi
+     *    @param tmp_zi the integer i to a zi
      *    @param ai The computed ai
      *    @param prime The prime number of the finite field
      *    @return The vector of coefficients of the canonical form
      */
-    PolynomialFF construct_canonical(const uint zi, std::vector<PolynomialFF>& ai);
+    PolynomialFF construct_canonical(const uint tmp_zi, std::vector<PolynomialFF>& ai);
     /**
      *    Iterative construction of the canonical form
-     *    @param zi the integer i to a z
+     *    @param tmp_zi the integer i to a z
      *    @param ai The computed ai
      *    @param prime The prime number of the finite field
      *    @param i The iteration step; stops at ai.size()
      *    @return One iteration step of the canonical polynomial
      */
-    PolynomialFF iterate_canonical(const uint zi, uint i, std::vector<PolynomialFF>& ai);
+    PolynomialFF iterate_canonical(const uint tmp_zi, uint i, std::vector<PolynomialFF>& ai);
     /**
      *    Test if the guess yields the same answer for the function in the finite
      *    field of prime
@@ -93,19 +85,15 @@ namespace firefly {
      * 
      */
     PolynomialFF solve_transposed_vandermonde();
+    std::list<std::tuple<FFInt, std::vector<uint>>> queue;
     int deg = -1;
-    uint n; /**< The number of parameters */
-    bool use_chinese_remainder = false;
-    bool check = false;
+    bool with_rat_reconst = false;
     Polynomial result;
-    //std::vector<std::vector<FFInt>> coef_mat {};
     std::vector<std::vector<uint>> rec_degs {};
     ff_map solved_degs {};
     std::vector<FFInt> nums {};
-    mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */
-    //std::unordered_map<uint, std::vector<FFInt>> yis {};
     std::unordered_map<uint, std::vector<PolynomialFF>> ais {};
     std::unordered_map<uint, int> max_deg {};
     static std::mutex mutex_statics;

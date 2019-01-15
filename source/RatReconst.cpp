@@ -10,10 +10,12 @@ namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
   bool RatReconst::shifted = false;
   ff_pair_map RatReconst::rand_zi;
-  std::vector<FFInt> RatReconst::anchor_points {};
   std::mutex RatReconst::mutex_statics;
+  std::vector<FFInt> RatReconst::anchor_points {};
 
-  RatReconst::RatReconst(uint n_) : n(n_) {
+  RatReconst::RatReconst(uint n_) {
+    n = n_;
+    type = RAT;
     std::unique_lock<std::mutex> lock_status(mutex_status);
 
     ti.reserve(300);
@@ -41,10 +43,8 @@ namespace firefly {
       curr_zi_order = std::vector<uint> (n - 1, 1);
 
       // fill in the rand_vars for zi_order = 1
-      std::unique_lock<std::mutex> lock_statics(mutex_statics);
-
       if (rand_zi.empty()) {
-        generate_anchor_points(lock_statics);
+        generate_anchor_points();
       }
     }
   }
@@ -296,7 +296,7 @@ namespace firefly {
               if (first_run) {
                 {
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  PolyReconst rec(n - 1, (uint) i);
+                  PolyReconst rec(n - 1, (uint) i, true);
                   rec.set_anchor_points(anchor_points);
                   coef_n.emplace(std::make_pair((uint) i, std::move(rec)));
                 }
@@ -325,7 +325,7 @@ namespace firefly {
               if (first_run) {
                 {
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  PolyReconst rec(n - 1, i);
+                  PolyReconst rec(n - 1, i, true);
                   rec.set_anchor_points(anchor_points);
                   coef_d.emplace(std::make_pair(i, std::move(rec)));
                 }
@@ -350,17 +350,17 @@ namespace firefly {
 
             uint zi_num = 0;
 
-            if (curr_deg_num > 0) zi_num = coef_n[curr_deg_num].next_zi + 1;
+            if (curr_deg_num > 0) zi_num = coef_n[curr_deg_num].get_zi() + 1;
 
             uint zi_den = 0;
 
-            if (curr_deg_den > 0) zi_den = coef_d[curr_deg_den].next_zi + 1;
+            if (curr_deg_den > 0) zi_den = coef_d[curr_deg_den].get_zi() + 1;
 
             // reconstruct the numerator
             if (curr_deg_num >= 0) {
               PolyReconst rec = coef_n[curr_deg_num];
 
-              if (rec.curr_zi_order == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
+              if (rec.get_zi_order() == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
                 auto res = feed_poly(curr_deg_num, max_deg_num, coef_n, rec,
                                      saved_num_num, sub_num, true);
                 curr_deg_num = std::get<0>(res);
@@ -377,12 +377,12 @@ namespace firefly {
               // denominator
               if (curr_deg_num == -1) {
                 std::unique_lock<std::mutex> lock(mutex_status);
-                curr_zi_order = rec.curr_zi_order;
-                curr_zi = rec.next_zi + 1;
+                curr_zi_order = rec.get_zi_order();
+                curr_zi = rec.get_zi() + 1;
                 zi = curr_zi;
               }
 
-              if (rec.curr_zi_order == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
+              if (rec.get_zi_order() == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
                 auto res = feed_poly(curr_deg_den, max_deg_den, coef_d, rec,
                                      saved_num_den, sub_den, false);
                 curr_deg_den = std::get<0>(res);
@@ -394,12 +394,12 @@ namespace firefly {
                   PolyReconst rec_new = coef_n[curr_deg_num];
                   {
                     std::unique_lock<std::mutex> lock(mutex_status);
-                    curr_zi_order = rec_new.curr_zi_order;
-                    curr_zi = rec_new.next_zi + 1;
+                    curr_zi_order = rec_new.get_zi_order();
+                    curr_zi = rec_new.get_zi() + 1;
                     zi = curr_zi;
                   }
 
-                  if (rec_new.curr_zi_order == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
+                  if (rec_new.get_zi_order() == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
                     auto res_new = feed_poly(curr_deg_num, max_deg_num, coef_n, rec_new,
                                              saved_num_num, sub_num, true);
                     curr_deg_num = std::get<0>(res_new);
@@ -569,10 +569,10 @@ namespace firefly {
                                                                  uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
                                                                  PolyReconst& rec, ff_map_map& saved_num,
   std::unordered_map<uint, PolynomialFF>& sub_save, bool is_num) {
-    uint tmp_zi = rec.next_zi + 1;
+    uint tmp_zi = rec.get_zi() + 1;
     std::vector<uint> tmp_zi_ord = curr_zi_order;
 
-    while (!rec.new_prime) {
+    while (!rec.is_new_prime()) {
       //if (clock_test == 0) clock_test = clock();
 
       try {
@@ -592,7 +592,7 @@ namespace firefly {
         // since the constant is just a constant, we do not have to get mutliple
         // numerical values to reconstruct the coefficient
         if (curr_deg == 0) {
-          while (!rec.new_prime) {
+          while (!rec.is_new_prime()) {
             if (curr_deg == (int) max_deg)
               rec.feed(yis, food);
             else {
@@ -613,8 +613,8 @@ namespace firefly {
             rec.feed(yis, food - num_subtraction);
           }
 
-          tmp_zi = rec.next_zi + 1;
-          tmp_zi_ord = rec.curr_zi_order;
+          tmp_zi = rec.get_zi() + 1;
+          tmp_zi_ord = rec.get_zi_order();
         }
       } catch (std::out_of_range& e) {
         coef[curr_deg] = rec;
@@ -624,7 +624,7 @@ namespace firefly {
       /*
        * Check for new prime & save subtraction term
        */
-      if (rec.new_prime) {
+      if (rec.is_new_prime()) {
         coef[curr_deg] = rec;
 
         if (curr_deg > 0) {
@@ -682,12 +682,12 @@ namespace firefly {
         if (curr_deg >= 0) {
           rec = coef[curr_deg];
           std::fill(tmp_zi_ord.begin(), tmp_zi_ord.end(), 1);
-          tmp_zi = rec.next_zi + 1;
+          tmp_zi = rec.get_zi() + 1;
         } else break;
       }
     }
 
-    tmp_zi = rec.next_zi + 1;
+    tmp_zi = rec.get_zi() + 1;
     return std::make_tuple(curr_deg, tmp_zi, tmp_zi_ord);
   }
 
@@ -1059,92 +1059,11 @@ namespace firefly {
     combined_di.erase(deg_vec);
   }
 
-  //TODO allow for seed with std::srand(std::time(nullptr));
-  FFInt RatReconst::get_rand() {
-    return FFInt(std::rand() % (FFInt::p - 1)) + FFInt(1);
-  }
-
-  void RatReconst::set_new_rand(std::unique_lock<std::mutex>& lock_statics, const std::pair<uint, uint>& key) {
-    if (rand_zi.find(key) == rand_zi.end()) {
-      rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(key.first, 1)].pow(key.second)));
-    }
-  }
-
-  uint RatReconst::get_num_eqn() {
-    std::unique_lock<std::mutex> lock(mutex_status);
-    return num_eqn;
-  }
-
-  void RatReconst::generate_anchor_points(uint max_order) {
-//    std::unique_lock<std::mutex> lock_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
-//    std::lock(lock_status, lock_statics); // this does not work for some reason
-//    std::lock(lock_status, lock_feed, lock_statics); // this does not work for some reason
-    generate_anchor_points(lock_statics, max_order);
-  }
-
-  void RatReconst::generate_anchor_points(std::unique_lock<std::mutex>& lock_statics, uint max_order) {
-    rand_zi.clear();
-    anchor_points.clear();
-
-    for (uint i = 2; i <= n; i++) {
-      FFInt rand;
-
-      if (prime_number == 0) {
-        rand = get_rand();//find_nth_prime(i - 1);
-        rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
-      } else {
-        rand = get_rand();
-      }
-
-      rand_zi.emplace(std::make_pair(std::make_pair(i, 1), rand));
-      anchor_points.emplace_back(rand);
-
-      for (uint j = 1; j <= max_order; j++) {
-        auto key = std::make_pair(i, j);
-        set_new_rand(lock_statics, key);
-      }
-    }
-  }
-
-  bool RatReconst::is_done() {
-    std::unique_lock<std::mutex> lock(mutex_status);
-    return done;
-  }
-
-  uint RatReconst::get_prime() {
-    std::unique_lock<std::mutex> lock(mutex_status);
-    return prime_number;
-  }
-
-  std::vector<uint> RatReconst::get_zi_order() {
-    std::unique_lock<std::mutex> lock(mutex_status);
-
-    if (n == 1) {
-      return std::vector<uint> {};
-    } else {
-      return std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
-    }
-  }
-
-  uint RatReconst::get_zi() {
-    std::unique_lock<std::mutex> lock(mutex_status);
-    return zi;
-  }
-
   RatReconst::RatReconst(const RatReconst& other) {
     std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
     std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
     std::lock(lock_my_status, lock_other_status);
 
-    n = other.n;
-    done = other.done;
-    zi = other.zi;
-    prime_number = other.prime_number;
-    curr_zi_order = other.curr_zi_order;
-    check = other.check;
-    use_chinese_remainder = other.use_chinese_remainder;
-    new_prime = other.new_prime;
     first_run = other.first_run;
     coef_mat = other.coef_mat;
     curr_zi = other.curr_zi;
@@ -1166,9 +1085,7 @@ namespace firefly {
     curr_zi_order_den = other.curr_zi_order_den;
     tmp_solved_coefs_num = other.tmp_solved_coefs_num;
     tmp_solved_coefs_den = other.tmp_solved_coefs_den;
-    num_eqn = other.num_eqn;
     result = other.result;
-    combined_prime = other.combined_prime;
     ti = other.ti;
     g_ni = other.g_ni;
     g_di = other.g_di;
@@ -1181,14 +1098,6 @@ namespace firefly {
     std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
     std::lock(lock_my_status, lock_other_status);
 
-    n = std::move(other.n);
-    done = std::move(other.done);
-    zi = std::move(other.zi);
-    prime_number = std::move(other.prime_number);
-    curr_zi_order = std::move(other.curr_zi_order);
-    check = std::move(other.check);
-    use_chinese_remainder = std::move(other.use_chinese_remainder);
-    new_prime = std::move(other.new_prime);
     first_run = std::move(other.first_run);
     coef_mat = std::move(other.coef_mat);
     curr_zi = std::move(other.curr_zi);
@@ -1210,9 +1119,7 @@ namespace firefly {
     curr_zi_order_den = std::move(other.curr_zi_order_den);
     tmp_solved_coefs_num = std::move(other.tmp_solved_coefs_num);
     tmp_solved_coefs_den = std::move(other.tmp_solved_coefs_den);
-    num_eqn = std::move(other.num_eqn);
     result = std::move(other.result);
-    combined_prime = std::move(other.combined_prime);
     ti = std::move(other.ti);
     g_ni = std::move(other.g_ni);
     g_di = std::move(other.g_di);
@@ -1226,14 +1133,6 @@ namespace firefly {
       std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
       std::lock(lock_my_status, lock_other_status);
 
-      n = other.n;
-      done = other.done;
-      zi = other.zi;
-      prime_number = other.prime_number;
-      curr_zi_order = other.curr_zi_order;
-      check = other.check;
-      use_chinese_remainder = other.use_chinese_remainder;
-      new_prime = other.new_prime;
       first_run = other.first_run;
       coef_mat = other.coef_mat;
       curr_zi = other.curr_zi;
@@ -1255,9 +1154,7 @@ namespace firefly {
       curr_zi_order_den = other.curr_zi_order_den;
       tmp_solved_coefs_num = other.tmp_solved_coefs_num;
       tmp_solved_coefs_den = other.tmp_solved_coefs_den;
-      num_eqn = other.num_eqn;
       result = other.result;
-      combined_prime = other.combined_prime;
       ti = other.ti;
       g_ni = other.g_ni;
       g_di = other.g_di;
@@ -1274,14 +1171,6 @@ namespace firefly {
       std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
       std::lock(lock_my_status, lock_other_status);
 
-      n = std::move(other.n);
-      done = std::move(other.done);
-      zi = std::move(other.zi);
-      prime_number = std::move(other.prime_number);
-      curr_zi_order = std::move(other.curr_zi_order);
-      check = std::move(other.check);
-      use_chinese_remainder = std::move(other.use_chinese_remainder);
-      new_prime = std::move(other.new_prime);
       first_run = std::move(other.first_run);
       coef_mat = std::move(other.coef_mat);
       curr_zi = std::move(other.curr_zi);
@@ -1303,9 +1192,7 @@ namespace firefly {
       curr_zi_order_den = std::move(other.curr_zi_order_den);
       tmp_solved_coefs_num = std::move(other.tmp_solved_coefs_num);
       tmp_solved_coefs_den = std::move(other.tmp_solved_coefs_den);
-      num_eqn = std::move(other.num_eqn);
       result = std::move(other.result);
-      combined_prime = std::move(other.combined_prime);
       ti = std::move(other.ti);
       g_ni = std::move(other.g_ni);
       g_di = std::move(other.g_di);
@@ -1332,7 +1219,7 @@ namespace firefly {
     for (int r = 0; r <= max_deg_num; r++) {
       // If the current degree is smaller than the total degree of the polynomial
       // subtract the higher terms to save numerical runs
-      if (shift[0] != 0 && coef_n.size() > 0 && coef_n[r].new_prime) {
+      if (shift[0] != 0 && coef_n.size() > 0 && coef_n[r].is_new_prime()) {
         FFInt sub;
 
         if (r < max_deg_num)
@@ -1348,7 +1235,7 @@ namespace firefly {
     for (int rp = 1; rp <= max_deg_den; rp++) {
       // If the current degree is smaller than the total degree of the polynomial
       // subtract the higher terms to save numerical runs
-      if (shift[0] != 0  && coef_d.size() > 0 && coef_d[rp].new_prime) {
+      if (shift[0] != 0  && coef_d.size() > 0 && coef_d[rp].is_new_prime()) {
         FFInt sub;
 
         if (rp < max_deg_den)
@@ -1520,5 +1407,10 @@ namespace firefly {
     }
 
     return 0;
+  }
+
+  void RatReconst::generate_anchor_points(uint max_order) {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    gen_anchor_points(lock_statics, max_order);
   }
 }
