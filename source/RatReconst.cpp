@@ -41,9 +41,12 @@ namespace firefly {
 
     if (n > 1) {
       curr_zi_order = std::vector<uint> (n - 1, 1);
+      lock_status.unlock();
 
       // fill in the rand_vars for zi_order = 1
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
       if (rand_zi.empty()) {
+        lock_statics.unlock();
         generate_anchor_points();
       }
     }
@@ -78,6 +81,7 @@ namespace firefly {
   void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord) {
     // change later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if (prime_number > 0) {
+      std::unique_lock<std::mutex> lock(mutex_status);
       curr_zi_order = feed_zi_ord;
     }
 
@@ -129,7 +133,10 @@ namespace firefly {
 
           if (!use_chinese_remainder) use_chinese_remainder = true;
 
-          new_prime = false;
+          {
+            std::unique_lock<std::mutex> lock(mutex_status);
+            new_prime = false;
+          }
           ti.pop_back();
         }
 
@@ -138,7 +145,6 @@ namespace firefly {
         // theorem
         {
           std::unique_lock<std::mutex> lock(mutex_status);
-
           if (prime_number == 0) zi = 1;
         }
 
@@ -274,12 +280,10 @@ namespace firefly {
           if (n == 1) {
             std::pair<mpz_map, mpz_map> tmp = convert_to_mpz(canonical);
             combine_primes(tmp);
-            {
-              std::unique_lock<std::mutex> lock(mutex_status);
-              prime_number++;
-              queue.clear();
-            }
             saved_ti.clear();
+            std::unique_lock<std::mutex> lock(mutex_status);
+            prime_number++;
+            queue.clear();
             new_prime = true;
             return;
           } else if (prime_number == 0) {
@@ -552,6 +556,7 @@ namespace firefly {
             std::unique_lock<std::mutex> lock(mutex_status);
             prime_number ++;
             new_prime = true;
+            queue.clear();
           }
         }
       } else if (n > 1 && prime_number == 0 && feed_zi_ord != tmp_vec) {
@@ -1091,6 +1096,18 @@ namespace firefly {
     g_di = other.g_di;
     combined_ni = other.combined_ni;
     combined_di = other.combined_di;
+
+    done = other.done;
+    new_prime = other.new_prime;
+    check = other.check;
+    use_chinese_remainder = other.use_chinese_remainder;
+    curr_zi_order = other.curr_zi_order;
+    prime_number = other.prime_number;
+    num_eqn = other.num_eqn;
+    n = other.n;
+    type = other.type;
+    zi = other.zi;
+    combined_prime = other.combined_prime;
   }
 
   RatReconst::RatReconst(RatReconst && other) {
@@ -1125,6 +1142,18 @@ namespace firefly {
     g_di = std::move(other.g_di);
     combined_ni = std::move(other.combined_ni);
     combined_di = std::move(other.combined_di);
+
+    done = std::move(other.done);
+    new_prime = std::move(other.new_prime);
+    check = std::move(other.check);
+    use_chinese_remainder = std::move(other.use_chinese_remainder);
+    curr_zi_order = std::move(other.curr_zi_order);
+    prime_number = std::move(other.prime_number);
+    num_eqn = std::move(other.num_eqn);
+    n = std::move(other.n);
+    type = std::move(other.type);
+    zi = std::move(other.zi);
+    combined_prime = std::move(other.combined_prime);
   }
 
   RatReconst& RatReconst::operator=(const RatReconst& other) {
@@ -1160,6 +1189,18 @@ namespace firefly {
       g_di = other.g_di;
       combined_ni = other.combined_ni;
       combined_di = other.combined_di;
+
+      done = other.done;
+      new_prime = other.new_prime;
+      check = other.check;
+      use_chinese_remainder = other.use_chinese_remainder;
+      curr_zi_order = other.curr_zi_order;
+      prime_number = other.prime_number;
+      num_eqn = other.num_eqn;
+      n = other.n;
+      type = other.type;
+      zi = other.zi;
+      combined_prime = other.combined_prime;
     }
 
     return *this;
@@ -1198,6 +1239,18 @@ namespace firefly {
       g_di = std::move(other.g_di);
       combined_ni = std::move(other.combined_ni);
       combined_di = std::move(other.combined_di);
+
+      done = std::move(other.done);
+      new_prime = std::move(other.new_prime);
+      check = std::move(other.check);
+      use_chinese_remainder = std::move(other.use_chinese_remainder);
+      curr_zi_order = std::move(other.curr_zi_order);
+      prime_number = std::move(other.prime_number);
+      num_eqn = std::move(other.num_eqn);
+      n = std::move(other.n);
+      type = std::move(other.type);
+      zi = std::move(other.zi);
+      combined_prime = std::move(other.combined_prime);
     }
 
     return *this;

@@ -148,7 +148,9 @@ namespace firefly {
     for (uint i = start; i <= n; i++) {
       FFInt rand;
 
+      std::unique_lock<std::mutex> lock(mutex_status);
       if (prime_number == 0) {
+        lock.unlock();
         rand = get_rand();//find_nth_prime(i - 1);
         rand_zi->emplace(std::make_pair(std::make_pair(i, 0), 1));
       } else {

@@ -56,10 +56,13 @@ namespace firefly {
       queue.emplace_back(std::make_tuple(num, feed_zi_ord));
   }
 
+  // this function is not thread-safe; therefore, it should only be called from RatReconst
   void PolyReconst::feed(const std::vector<FFInt>& new_yis, const FFInt& num) {
-    for (uint j = 0; j < n; j++) {
+    {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
-      rand_zi.emplace(std::make_pair(j + 1, curr_zi_order[j]), new_yis[j]);
+      for (uint j = 0; j < n; j++) {
+        rand_zi.emplace(std::make_pair(j + 1, curr_zi_order[j]), new_yis[j]);
+      }
     }
 
     interpolate(num, curr_zi_order);
@@ -109,24 +112,28 @@ namespace firefly {
           }
 
           if (runtest) {
-            done = test_guess(num);
+            {
+              std::unique_lock<std::mutex> lock(mutex_status);
+              done = test_guess(num);
+            }
 
             if (done) {
               ais.clear();
               combined_prime = 0;
               combined_ci.clear();
               max_deg.clear();
-              new_prime = false;
               use_chinese_remainder = false;
+              std::unique_lock<std::mutex> lock(mutex_status);
+              new_prime = false;
               return;
             }
           }
 
           gi.clear();
-          zi = 1;
-
           if (!use_chinese_remainder) use_chinese_remainder = true;
 
+          std::unique_lock<std::mutex> lock(mutex_status);
+          zi = 1;
           new_prime = false;
         }
 
@@ -146,6 +153,7 @@ namespace firefly {
             ais[zi].emplace_back(comp_ai(zi, i, i, PolynomialFF(n, zero_map), ais[zi]));
           }
 
+          std::unique_lock<std::mutex> lock(mutex_status);
           curr_zi_order[zi - 1] ++;
         } else {
           // Build Vandermonde system
@@ -171,14 +179,18 @@ namespace firefly {
           // Solve Vandermonde system and calculate the next a_i
           if (nums.size() == rec_degs.size()) {
             const uint order_save = curr_zi_order[zi - 1];
-            curr_zi_order = std::vector<uint> (n, 1);
+            {
+              std::unique_lock<std::mutex> lock(mutex_status);
+              curr_zi_order = std::vector<uint> (n, 1);
 
-            for (uint i = 1; i < zi; i++) curr_zi_order[i - 1] = 0;
+              for (uint i = 1; i < zi; i++) curr_zi_order[i - 1] = 0;
 
-            curr_zi_order[zi - 1] = order_save + 1;
+              curr_zi_order[zi - 1] = order_save + 1;
+            }
             ais[zi].emplace_back(comp_ai(zi, i, i, solve_transposed_vandermonde(), ais[zi]));
           } else {
             // increase all zi order of the lower stages by one
+            std::unique_lock<std::mutex> lock(mutex_status);
             for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
               curr_zi_order[tmp_zi - 1] ++;
             }
@@ -225,10 +237,12 @@ namespace firefly {
                 ais[tmp_zi].emplace_back(pol_ff);
               }
 
+              std::unique_lock<std::mutex> lock(mutex_status);
               zi = n;
             }
 
             if (zi != n) {
+              std::unique_lock<std::mutex> lock(mutex_status);
               zi ++;
               // save last interpolation of the lower stage as first a_0 of the
               // current stage
@@ -245,7 +259,10 @@ namespace firefly {
             check = true;
 
           if (check && zi == n) {
-            curr_zi_order = std::vector<uint> (n, 1);
+            {
+              std::unique_lock<std::mutex> lock(mutex_status);
+              curr_zi_order = std::vector<uint> (n, 1);
+            }
             PolynomialFF tmp_pol_ff = construct_canonical(zi, ais[zi]);
             tmp_pol_ff.coefs.insert(solved_degs.begin(), solved_degs.end());
             mpz_map ci_tmp = convert_to_mpz(tmp_pol_ff);
@@ -270,6 +287,7 @@ namespace firefly {
               combined_prime = p3.second;
             }
 
+            std::unique_lock<std::mutex> lock(mutex_status);
             new_prime = true;
             prime_number ++;
             check = false;
@@ -482,9 +500,3 @@ namespace firefly {
     gen_anchor_points(lock_statics, max_order);
   }
 }
-
-
-
-
-
-
