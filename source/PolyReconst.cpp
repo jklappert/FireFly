@@ -15,6 +15,8 @@ namespace firefly {
   std::mutex PolyReconst::mutex_statics;
 
   PolyReconst::PolyReconst(uint n_, const int deg_inp, const bool with_rat_reconst_inp) {
+    std::unique_lock<std::mutex> lock_status(mutex_status);
+
     type = POLY;
     n = n_;
     combined_prime = FFInt::p;
@@ -83,193 +85,203 @@ namespace firefly {
   }
 
   void PolyReconst::interpolate(const FFInt& num, const std::vector<uint>& feed_zi_ord) {
-    if (!done) {
-      if (new_prime) {
-        // be sure that you have called generate_anchor_points!
-        bool runtest = true;
+    if (feed_zi_ord == curr_zi_order) {
+      if (!done) {
+        if (new_prime) {
+          // be sure that you have called generate_anchor_points!
+          bool runtest = true;
 
-        solved_degs.clear();
+          solved_degs.clear();
 
-        for (uint i = 1; i <= n; i++) {
-          ais[i].clear();
-        }
-
-        for (const auto ci : combined_ci) {
-          mpz_class a = ci.second;
-
-          try {
-            gi.insert(std::make_pair(ci.first, get_rational_coef(a, combined_prime)));
-          } catch (const std::exception&) {
-            runtest = false;
-            break;
+          for (uint i = 1; i <= n; i++) {
+            ais[i].clear();
           }
-        }
 
-        if (runtest) {
-          done = test_guess(num);
+          for (const auto ci : combined_ci) {
+            mpz_class a = ci.second;
 
-          if (done) {
-            ais.clear();
-            combined_prime = 0;
-            combined_ci.clear();
-            max_deg.clear();
-            new_prime = false;
-            use_chinese_remainder = false;
-            return;
+            try {
+              gi.insert(std::make_pair(ci.first, get_rational_coef(a, combined_prime)));
+            } catch (const std::exception&) {
+              runtest = false;
+              break;
+            }
           }
+
+          if (runtest) {
+            done = test_guess(num);
+
+            if (done) {
+              ais.clear();
+              combined_prime = 0;
+              combined_ci.clear();
+              max_deg.clear();
+              new_prime = false;
+              use_chinese_remainder = false;
+              return;
+            }
+          }
+
+          gi.clear();
+          zi = 1;
+
+          if (!use_chinese_remainder) use_chinese_remainder = true;
+
+          new_prime = false;
         }
 
-        gi.clear();
-        zi = 1;
+        uint i = curr_zi_order[zi - 1] - 1;
 
-        if (!use_chinese_remainder) use_chinese_remainder = true;
+        // Univariate Newton interpolation for the lowest stage.
+        if (zi == 1) {
+          if (i == 0) {
+            std::vector<uint> zero_element(n);
+            ff_map zero_map;
+            zero_map.emplace(std::make_pair(std::move(zero_element), num));
+            ais[zi].emplace_back(PolynomialFF(n, zero_map));
+          } else {
+            std::vector<uint> zero_element(n);
+            ff_map zero_map;
+            zero_map.emplace(std::make_pair(std::move(zero_element), num));
+            ais[zi].emplace_back(comp_ai(zi, i, i, PolynomialFF(n, zero_map), ais[zi]));
+          }
 
-        new_prime = false;
-      }
-
-      uint i = curr_zi_order[zi - 1] - 1;
-
-      // Univariate Newton interpolation for the lowest stage.
-      if (zi == 1) {
-        if (i == 0) {
-          std::vector<uint> zero_element(n);
-          ff_map zero_map;
-          zero_map.emplace(std::make_pair(std::move(zero_element), num));
-          ais[zi].emplace_back(PolynomialFF(n, zero_map));
+          curr_zi_order[zi - 1] ++;
         } else {
-          std::vector<uint> zero_element(n);
-          ff_map zero_map;
-          zero_map.emplace(std::make_pair(std::move(zero_element), num));
-          ais[zi].emplace_back(comp_ai(zi, i, i, PolynomialFF(n, zero_map), ais[zi]));
-        }
+          // Build Vandermonde system
+          FFInt res = num;
 
-        curr_zi_order[zi - 1] ++;
-      } else {
-        // Build Vandermonde system
-        FFInt res = num;
+          for (const auto & el : solved_degs) {
+            std::vector<uint> deg_vec = el.first;
+            FFInt coef_num = el.second;
 
-        for (const auto & el : solved_degs) {
-          std::vector<uint> deg_vec = el.first;
-          FFInt coef_num = el.second;
-
-          for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
-            // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-            std::unique_lock<std::mutex> lock_statics(mutex_statics);
-            coef_num *= rand_zi[std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1])].pow(deg_vec[tmp_zi - 1]);
-          }
-
-          res -= coef_num;
-        }
-
-        nums.emplace_back(res);
-
-        // to total degree (save them in solved degs including their coefficient
-        // to subtract them)
-        // Solve Vandermonde system and calculate the next a_i
-        if (nums.size() == rec_degs.size()) {
-          const uint order_save = curr_zi_order[zi - 1];
-          curr_zi_order = std::vector<uint> (n, 1);
-
-          for (uint i = 1; i < zi; i++) curr_zi_order[i - 1] = 0;
-
-          curr_zi_order[zi - 1] = order_save + 1;
-          ais[zi].emplace_back(comp_ai(zi, i, i, solve_transposed_vandermonde(), ais[zi]));
-        } else {
-          // increase all zi order of the lower stages by one
-          for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
-            curr_zi_order[tmp_zi - 1] ++;
-          }
-        }
-      }
-
-      // if the lowest stage ai is zero, combine them into an ai for a higher stage
-      // and check if we are done
-      if (ais[zi].back().zero() || (deg != -1 && ais[zi].size() - 1 == (uint) deg)) {
-        if (deg == -1 || ais[zi].back().zero())
-          ais[zi].pop_back();
-
-        if (n > 1) {
-          // combine the current stage with the multivariate polynomial of the
-          // previous stages and extract the reconstructed degrees to prepare
-          // the gauss system
-          // Remove all terms which are of total degree of the polynomial
-          // to remove them from the next Vandermonde systems
-          rec_degs.clear();
-          PolynomialFF pol_ff = construct_canonical(zi, ais[zi]);
-          PolynomialFF tmp_pol_ff = pol_ff;
-
-          for (auto & el : tmp_pol_ff.coefs) {
-            int total_deg = 0;
-
-            for (auto & e : el.first) total_deg += e;
-
-            if (total_deg == deg) {
-              solved_degs.emplace(std::make_pair(el.first, el.second));
-              pol_ff.coefs.erase(el.first);
-            } else
-              rec_degs.emplace_back(el.first);
-          }
-
-          // The monomials which have to be reconstructed have to
-          // ordered in a monotonical way to utilize the Vandermonde
-          // system solver
-          std::sort(rec_degs.begin(), rec_degs.end());
-
-          nums.reserve(rec_degs.size());
-
-          if (rec_degs.size() == 0 && zi != n) {
-            for (uint tmp_zi = zi + 1; tmp_zi <= n; tmp_zi++) {
-              ais[tmp_zi].emplace_back(pol_ff);
+            for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+              // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+              std::unique_lock<std::mutex> lock_statics(mutex_statics);
+              coef_num *= rand_zi[std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1])].pow(deg_vec[tmp_zi - 1]);
             }
 
-            zi = n;
+            res -= coef_num;
           }
 
-          if (zi != n) {
-            zi ++;
-            // save last interpolation of the lower stage as first a_0 of the
-            // current stage
-            ais[zi].emplace_back(comp_ai(zi, 0, 0, pol_ff, ais[zi]));
-            // reset zi order
+          nums.emplace_back(res);
+
+          // to total degree (save them in solved degs including their coefficient
+          // to subtract them)
+          // Solve Vandermonde system and calculate the next a_i
+          if (nums.size() == rec_degs.size()) {
+            const uint order_save = curr_zi_order[zi - 1];
             curr_zi_order = std::vector<uint> (n, 1);
 
             for (uint i = 1; i < zi; i++) curr_zi_order[i - 1] = 0;
 
-            curr_zi_order[zi - 1] = 2;
-          } else
-            check = true;
-        } else if (zi == 1 && n == 1)
-          check = true;
-
-        if (check && zi == n) {
-          curr_zi_order = std::vector<uint> (n, 1);
-          PolynomialFF tmp_pol_ff = construct_canonical(zi, ais[zi]);
-          tmp_pol_ff.coefs.insert(solved_degs.begin(), solved_degs.end());
-          mpz_map ci_tmp = convert_to_mpz(tmp_pol_ff);
-
-          if (!use_chinese_remainder) {
-            combined_ci = ci_tmp;
+            curr_zi_order[zi - 1] = order_save + 1;
+            ais[zi].emplace_back(comp_ai(zi, i, i, solve_transposed_vandermonde(), ais[zi]));
           } else {
-            // use another prime to utilize the Chinese Remainder Theorem to reconstruct the rational
-            // coefficients
+            // increase all zi order of the lower stages by one
+            for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+              curr_zi_order[tmp_zi - 1] ++;
+            }
+          }
+        }
 
-            std::pair<mpz_class, mpz_class> p1;
-            std::pair<mpz_class, mpz_class> p2;
-            std::pair<mpz_class, mpz_class> p3;
+        // if the lowest stage ai is zero, combine them into an ai for a higher stage
+        // and check if we are done
+        if (ais[zi].back().zero() || (deg != -1 && ais[zi].size() - 1 == (uint) deg)) {
+          if (deg == -1 || ais[zi].back().zero())
+            ais[zi].pop_back();
 
-            for (auto it = combined_ci.begin(); it != combined_ci.end(); ++it) {
-              p1 = std::make_pair(it->second, combined_prime);
-              p2 = std::make_pair(ci_tmp[it->first], FFInt::p);
-              p3 = run_chinese_remainder(p1, p2);
-              combined_ci[it->first] = p3.first;
+          if (n > 1) {
+            // combine the current stage with the multivariate polynomial of the
+            // previous stages and extract the reconstructed degrees to prepare
+            // the gauss system
+            // Remove all terms which are of total degree of the polynomial
+            // to remove them from the next Vandermonde systems
+            rec_degs.clear();
+            PolynomialFF pol_ff = construct_canonical(zi, ais[zi]);
+            PolynomialFF tmp_pol_ff = pol_ff;
+
+            for (auto & el : tmp_pol_ff.coefs) {
+              int total_deg = 0;
+
+              for (auto & e : el.first) total_deg += e;
+
+              if (total_deg == deg) {
+                solved_degs.emplace(std::make_pair(el.first, el.second));
+                pol_ff.coefs.erase(el.first);
+              } else
+                rec_degs.emplace_back(el.first);
             }
 
-            combined_prime = p3.second;
+            // The monomials which have to be reconstructed have to
+            // ordered in a monotonical way to utilize the Vandermonde
+            // system solver
+            std::sort(rec_degs.begin(), rec_degs.end());
+
+            nums.reserve(rec_degs.size());
+
+            if (rec_degs.size() == 0 && zi != n) {
+              for (uint tmp_zi = zi + 1; tmp_zi <= n; tmp_zi++) {
+                ais[tmp_zi].emplace_back(pol_ff);
+              }
+
+              zi = n;
+            }
+
+            if (zi != n) {
+              zi ++;
+              // save last interpolation of the lower stage as first a_0 of the
+              // current stage
+              ais[zi].emplace_back(comp_ai(zi, 0, 0, pol_ff, ais[zi]));
+              // reset zi order
+              curr_zi_order = std::vector<uint> (n, 1);
+
+              for (uint i = 1; i < zi; i++) curr_zi_order[i - 1] = 0;
+
+              curr_zi_order[zi - 1] = 2;
+            } else
+              check = true;
+          } else if (zi == 1 && n == 1)
+            check = true;
+
+          if (check && zi == n) {
+            curr_zi_order = std::vector<uint> (n, 1);
+            PolynomialFF tmp_pol_ff = construct_canonical(zi, ais[zi]);
+            tmp_pol_ff.coefs.insert(solved_degs.begin(), solved_degs.end());
+            mpz_map ci_tmp = convert_to_mpz(tmp_pol_ff);
+
+            if (!use_chinese_remainder) {
+              combined_ci = ci_tmp;
+            } else {
+              // use another prime to utilize the Chinese Remainder Theorem to reconstruct the rational
+              // coefficients
+
+              std::pair<mpz_class, mpz_class> p1;
+              std::pair<mpz_class, mpz_class> p2;
+              std::pair<mpz_class, mpz_class> p3;
+
+              for (auto it = combined_ci.begin(); it != combined_ci.end(); ++it) {
+                p1 = std::make_pair(it->second, combined_prime);
+                p2 = std::make_pair(ci_tmp[it->first], FFInt::p);
+                p3 = run_chinese_remainder(p1, p2);
+                combined_ci[it->first] = p3.first;
+              }
+
+              combined_prime = p3.second;
+            }
+
+            new_prime = true;
+            prime_number ++;
+            check = false;
+            return;
           }
 
-          new_prime = true;
-          prime_number ++;
-          check = false;
+          if (!with_rat_reconst) {
+            auto key = std::make_pair(zi, curr_zi_order[zi - 1]);
+            std::unique_lock<std::mutex> lock_statics(mutex_statics);
+            set_new_rand(lock_statics, key);
+          }
+
           return;
         }
 
@@ -278,14 +290,6 @@ namespace firefly {
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
           set_new_rand(lock_statics, key);
         }
-
-        return;
-      }
-
-      if (!with_rat_reconst) {
-        auto key = std::make_pair(zi, curr_zi_order[zi - 1]);
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
-        set_new_rand(lock_statics, key);
       }
     }
   }
@@ -478,4 +482,9 @@ namespace firefly {
     gen_anchor_points(lock_statics, max_order);
   }
 }
+
+
+
+
+
 
