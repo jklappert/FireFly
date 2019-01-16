@@ -5,13 +5,11 @@
 using namespace firefly;
 
 int main() {
-  const uint n = 4;
+  // Example for the reconstruction of a rational function
+  uint n = 4;
   uint64_t prime = primes()[0];
   FFInt::set_new_prime(prime);
-
   RatReconst rec(n);
-
-  // Example for the reconstruction of a rational function
   try {
     std::cout << "--------------------------------------------------------------\n";
     std::cout << "Interpolating rational function\n";
@@ -121,11 +119,11 @@ int main() {
     ERROR_MSG(e.what());
   }
 
+  // Example for the reconstruction of a polynomial
   prime = primes()[0];
   FFInt::set_new_prime(prime);
-  PolyReconst rec_poly(n);
-
-  // Example for the reconstruction of a polynomial
+  n = 3;
+  PolyReconst rec_poly(n, 5);
   try {
     std::cout << "Interpolating polynomial\n";
     std::cout << "--------------------------------------------------------------\n";
@@ -159,10 +157,10 @@ int main() {
       }
 
       mpz_class cr_1_mpz;
-      cr_1_mpz = "12340982929";
+      cr_1_mpz = "123456789109898799879870980";
       FFInt cr_1(cr_1_mpz);
 
-      FFInt num = cr_1 * yis[0].pow(3) + yis[1].pow(4) + yis[2].pow(2) + yis[3];
+      FFInt num = yis[0].pow(5) + yis[0]*yis[1].pow(4) + yis[0]*yis[1]*yis[2].pow(3) + yis[1].pow(5);
 
       kk++;
       count++;

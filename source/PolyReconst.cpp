@@ -243,7 +243,9 @@ namespace firefly {
 
         if (check && zi == n) {
           curr_zi_order = std::vector<uint> (n, 1);
-          mpz_map ci_tmp = convert_to_mpz(construct_canonical(n, ais[n]));
+          PolynomialFF tmp_pol_ff = construct_canonical(zi, ais[zi]);
+          tmp_pol_ff.coefs.insert(solved_degs.begin(), solved_degs.end());
+          mpz_map ci_tmp = convert_to_mpz(tmp_pol_ff);
 
           if (!use_chinese_remainder) {
             combined_ci = ci_tmp;
