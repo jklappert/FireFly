@@ -32,13 +32,13 @@ int main() {
       // and reset counters
       if (primes_used != rec.get_prime()) {
         rec.disable_shift();
-        rec.generate_anchor_points(rec.get_num_eqn());
 
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
         primes_used = std::max(primes_used, rec.get_prime());
 
         prime = primes()[rec.get_prime()];
         FFInt::set_new_prime(prime);
+        rec.generate_anchor_points(rec.get_num_eqn());
 
         kk = 0;
       }
@@ -141,14 +141,12 @@ int main() {
       // If a new prime is needed, set it, generate new random variables
       // and reset counters
       if (primes_used != rec_poly.get_prime()) {
-        rec_poly.generate_anchor_points();
-
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
         primes_used = std::max(primes_used, rec_poly.get_prime());
 
         prime = primes()[rec_poly.get_prime()];
         FFInt::set_new_prime(prime);
-
+        rec_poly.generate_anchor_points();
         kk = 0;
       }
 
