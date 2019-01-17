@@ -99,6 +99,11 @@ namespace firefly {
           ti.emplace_back(new_ti);
           sub_num.clear();
           sub_den.clear();
+          // release memory?
+          {
+            std::unordered_map<uint, PolynomialFF>().swap(sub_num);
+            std::unordered_map<uint, PolynomialFF>().swap(sub_den);
+          }
 
           if (rec_rat_coef()) {
             {
@@ -119,6 +124,23 @@ namespace firefly {
               saved_num_num.clear();
               saved_num_den.clear();
               use_chinese_remainder = false;
+              // release memory?
+              {
+                std::unordered_map<uint, PolyReconst>().swap(coef_n);
+                std::unordered_map<uint, PolyReconst>().swap(coef_d);
+                mpz_map().swap(combined_di);
+                mpz_map().swap(combined_ni);
+                curr_zi_order.shrink_to_fit();
+                ff_map_map().swap(saved_num_num);
+                ff_map_map().swap(saved_num_den);
+
+                ai.shrink_to_fit();
+                ti.shrink_to_fit();
+                ff_vec_map().swap(saved_ti);
+                curr_zi_order_num.shrink_to_fit();
+                curr_zi_order_den.shrink_to_fit();
+                coef_mat.shrink_to_fit();
+              }
               return;
             } else {
               for (const auto & ci : combined_ni) {
@@ -162,8 +184,10 @@ namespace firefly {
               ai.emplace_back(comp_ai(i, i, num));
           }
         } else {
-          if (coef_mat.empty())
+          if (coef_mat.empty()) {
+            coef_mat.shrink_to_fit();
             coef_mat.reserve(num_eqn);
+          }
 
           std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
 
@@ -816,6 +840,11 @@ namespace firefly {
     // Sort non solved coefficients to have a uniquely defined system of equations
     std::sort(non_solved_degs_num.begin(), non_solved_degs_num.end());
     std::sort(non_solved_degs_den.begin(), non_solved_degs_den.end());
+    // resize to release memory?
+    {
+      non_solved_degs_num.shrink_to_fit();
+      non_solved_degs_den.shrink_to_fit();
+    }
     std::unique_lock<std::mutex> lock(mutex_status);
     num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
   }
@@ -832,6 +861,11 @@ namespace firefly {
         denominator = Polynomial(g_di);
         g_ni.clear();
         g_di.clear();
+        // release memory?
+        {
+          rn_map().swap(g_ni);
+          rn_map().swap(g_di);
+        }
 
         numerator.sort();
         denominator.sort();
