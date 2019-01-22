@@ -102,6 +102,7 @@ namespace firefly {
     int max_deg_den = -1;
     int curr_deg_num = -1;
     int curr_deg_den = -1;
+    bool is_singular_system = false;
     //std::clock_t clock_test = 0;
     //std::clock_t clock_test_2 = 0;
     std::vector<uint> curr_zi_order_num {};
@@ -121,5 +122,12 @@ namespace firefly {
     static std::mutex mutex_statics;
     void add_non_solved_num(const std::vector<uint>& deg);
     void add_non_solved_den(const std::vector<uint>& deg);
+    void check_for_solved_degs(std::vector<uint>& uni_degs, const bool is_num);
+    void find_sparsest_terms();
+    //sctructure: is_den, degree, number of terms
+    std::vector<uint> min_deg_1;
+    std::vector<uint> min_deg_2;
+    std::vector<std::vector<uint>> singular_normalizer {};
+    std::vector<std::vector<uint>> singular_helper {};
   };
 }
