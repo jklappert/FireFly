@@ -266,8 +266,8 @@ namespace firefly {
               std::unique_lock<std::mutex> lock(mutex_status);
               curr_zi_order = std::vector<uint> (n, 1);
             }
-            PolynomialFF tmp_pol_ff = construct_canonical(zi, ais[zi]);
-            tmp_pol_ff.coefs.insert(solved_degs.begin(), solved_degs.end());
+            ff_map tmp_pol_ff = construct_canonical(zi, ais[zi]);
+            tmp_pol_ff.insert(solved_degs.begin(), solved_degs.end());
 
             mpz_map ci_tmp = convert_to_mpz(tmp_pol_ff);
 
