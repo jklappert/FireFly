@@ -35,11 +35,10 @@ int main() {
 
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
         primes_used = std::max(primes_used, rec.get_prime());
-
+        if(primes_used > 5) std::exit(-1);
         prime = primes()[rec.get_prime()];
         FFInt::set_new_prime(prime);
-        rec.generate_anchor_points(rec.get_num_eqn());
-
+        rec.generate_anchor_points();
         kk = 0;
       }
 
@@ -50,10 +49,7 @@ int main() {
       FFInt z1 = t + RatReconst::shift[0];
 
       for (uint j = 2; j <= n; j++) {
-        if (primes_used == 0)
           t_yis[j - 2] = t * rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])] + RatReconst::shift[j - 1];
-        else
-          t_yis[j - 2] = rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])];
       }
 
       // Some examples for number for which one needs to use the Chinese
@@ -83,8 +79,8 @@ int main() {
       FFInt den = ((2*z1-6)*t_yis[2].pow(2)+((2*z1-6)*t_yis[1]+(2*z1-6)*t_yis[0]-2*z1+6)*t_yis[2]);;*/
       //FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + t_yis[1].pow(2);
       //FFInt den = 12*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];
-      /*FFInt num = 3*z1 + 7*t_yis[0];
-      FFInt den = 4*z1*t_yis[0] + z1 + t_yis[0];*/
+      /*FFInt num = 17*z1 + 7*t_yis[0];
+      FFInt den = 4*z1*t_yis[0] + cr_1*z1 + 12*t_yis[0];*/
 
       // example for n = 1
       /*FFInt num = (576 * z1.pow(12) - 35145 * z1.pow(11)
@@ -99,6 +95,7 @@ int main() {
                             + 125545488 * z1.pow(6) - 408157280 * z1.pow(5)
                             + 899198016 * z1.pow(4) - 1278172800 * z1.pow(3)
                             + 1055033856 * z1.pow(2) - 383201280 * z1);*/
+
       kk++;
       count++;
 

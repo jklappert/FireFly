@@ -51,7 +51,7 @@ namespace firefly {
      *    @param prime The prime number of the finite field
      *    @return The vector of coefficients of the canonical form
      */
-    PolynomialFF construct_canonical(const uint tmp_zi, std::vector<PolynomialFF>& ai);
+    ff_map construct_canonical(const uint tmp_zi, std::vector<PolynomialFF>& ai);
     /**
      *    Iterative construction of the canonical form
      *    @param tmp_zi the integer i to a z
@@ -68,19 +68,6 @@ namespace firefly {
      *    @return true or false
      */
     bool test_guess(const FFInt& num);
-    /**
-     *    Converts a vector of FFInts to a vector of mpz_class
-     *    @param ai a vector of FFInts
-     *    @return The vector ai converted to mpz_class objects
-     */
-    mpz_map convert_to_mpz(const PolynomialFF& poly) const;
-    /**
-     *    Convert a vector of RationalNumber objects to FFInts
-     *    @param ri a vector of RationalNumber objects
-     *    @param prime a prime defining the current finite field
-     *    @return the vector ri converted to FFInt objects
-     */
-    ff_map convert_to_ffint(const rn_map& ri) const;
     /**
      * 
      */

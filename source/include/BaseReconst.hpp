@@ -2,12 +2,15 @@
 #include <vector>
 #include <mutex>
 #include <unordered_map>
+#include <memory>
 #include "RationalNumber.hpp"
+#include "PolynomialFF.hpp"
 #include "UintHasher.hpp"
 #include "FFInt.hpp"
 
 namespace firefly {
   typedef std::unordered_map<std::vector<uint>, mpz_class, UintHasher> mpz_map;
+  typedef std::unordered_map<uint, std::unordered_map<std::vector<uint>, mpz_class, UintHasher>> mpz_map_map;
   typedef std::unordered_map<std::pair<uint, uint>, FFInt, UintPairHasher> ff_pair_map;
   typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
   typedef std::unordered_map<std::vector<uint>, std::unordered_map<std::vector<uint>, FFInt, UintHasher>, UintHasher> ff_map_map;
@@ -45,6 +48,20 @@ namespace firefly {
     mutable std::mutex mutex_status;
     void set_new_rand(std::unique_lock<std::mutex>& lock_statics, const std::pair<uint, uint>& key);
     void gen_anchor_points(std::unique_lock<std::mutex>& lock_statics, uint max_order = 1);
+    /**
+     *    Converts the coefficients of a rational function from FFInts to mpz_class
+     *    objects
+     *    @param coefs a ff_map over a finite field
+     *    @return the coefficients of the given rational function converted to
+     *    mpz_class objects
+     */
+    mpz_map convert_to_mpz(const ff_map& coefs) const;
+    /**
+     *    Converts the elements of a vector of RationalNumber objects to FFInts
+     *    @param ri the vector of RationalNumber objects
+     *    @return elements of ri converted to FFInts
+     */
+    ff_map convert_to_ffint(const rn_map& ri) const;
     enum reconst_type {POLY, RAT};
   };
 }

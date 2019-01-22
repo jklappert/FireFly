@@ -184,4 +184,34 @@ namespace firefly {
     }
   }
 
+  mpz_map BaseReconst::convert_to_mpz(const ff_map& coefs) const {
+    mpz_map ci_mpz;
+
+    for (const auto & coef : coefs) {
+      ci_mpz.insert(std::make_pair(coef.first, mpz_class(coef.second.n)));
+    }
+
+    return ci_mpz;
+  }
+
+  ff_map BaseReconst::convert_to_ffint(const rn_map& ri) const {
+    ff_map gi_ffi;
+
+    for (const auto & g_i : ri) {
+      mpz_class tmp(g_i.second.numerator % FFInt::p);
+
+      if (tmp < 0) tmp = tmp + FFInt::p;
+
+      FFInt n(std::stoull(tmp.get_str()));
+
+      tmp = g_i.second.denominator % FFInt::p;
+
+      FFInt d(std::stoull(tmp.get_str()));
+
+      gi_ffi.emplace(std::make_pair(g_i.first, n / d));
+    }
+
+    return gi_ffi;
+  }
+
 }

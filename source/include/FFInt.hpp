@@ -48,6 +48,7 @@ namespace firefly {
     uint64_t n; /**< the integer member of the finite field */
     static uint64_t p; /**< the prime defining the finite field */
     static uint64_t p_inv;
+    FFInt gcd(const FFInt& a, const FFInt& b);
   private:
     uint64_t parse_longint(const std::string& str);
   };

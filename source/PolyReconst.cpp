@@ -60,6 +60,7 @@ namespace firefly {
   void PolyReconst::feed(const std::vector<FFInt>& new_yis, const FFInt& num) {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
       for (uint j = 0; j < n; j++) {
         rand_zi.emplace(std::make_pair(j + 1, curr_zi_order[j]), new_yis[j]);
       }
@@ -130,6 +131,7 @@ namespace firefly {
           }
 
           gi.clear();
+
           if (!use_chinese_remainder) use_chinese_remainder = true;
 
           std::unique_lock<std::mutex> lock(mutex_status);
@@ -191,6 +193,7 @@ namespace firefly {
           } else {
             // increase all zi order of the lower stages by one
             std::unique_lock<std::mutex> lock(mutex_status);
+
             for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
               curr_zi_order[tmp_zi - 1] ++;
             }
@@ -210,17 +213,17 @@ namespace firefly {
             // Remove all terms which are of total degree of the polynomial
             // to remove them from the next Vandermonde systems
             rec_degs.clear();
-            PolynomialFF pol_ff = construct_canonical(zi, ais[zi]);
-            PolynomialFF tmp_pol_ff = pol_ff;
+            ff_map pol_ff = construct_canonical(zi, ais[zi]);
+            ff_map tmp_pol_ff = pol_ff;
 
-            for (auto & el : tmp_pol_ff.coefs) {
+            for (auto & el : tmp_pol_ff) {
               int total_deg = 0;
 
               for (auto & e : el.first) total_deg += e;
 
               if (total_deg == deg) {
                 solved_degs.emplace(std::make_pair(el.first, el.second));
-                pol_ff.coefs.erase(el.first);
+                pol_ff.erase(el.first);
               } else
                 rec_degs.emplace_back(el.first);
             }
@@ -234,7 +237,7 @@ namespace firefly {
 
             if (rec_degs.size() == 0 && zi != n) {
               for (uint tmp_zi = zi + 1; tmp_zi <= n; tmp_zi++) {
-                ais[tmp_zi].emplace_back(pol_ff);
+                ais[tmp_zi].emplace_back(PolynomialFF(n, pol_ff));
               }
 
               std::unique_lock<std::mutex> lock(mutex_status);
@@ -246,7 +249,7 @@ namespace firefly {
               zi ++;
               // save last interpolation of the lower stage as first a_0 of the
               // current stage
-              ais[zi].emplace_back(comp_ai(zi, 0, 0, pol_ff, ais[zi]));
+              ais[zi].emplace_back(comp_ai(zi, 0, 0, PolynomialFF(n, pol_ff), ais[zi]));
               // reset zi order
               curr_zi_order = std::vector<uint> (n, 1);
 
@@ -265,6 +268,7 @@ namespace firefly {
             }
             PolynomialFF tmp_pol_ff = construct_canonical(zi, ais[zi]);
             tmp_pol_ff.coefs.insert(solved_degs.begin(), solved_degs.end());
+
             mpz_map ci_tmp = convert_to_mpz(tmp_pol_ff);
 
             if (!use_chinese_remainder) {
@@ -319,11 +323,11 @@ namespace firefly {
         result.sort();
         gi.clear();
       } else {
-        PolynomialFF poly = construct_canonical(n, ais[n]);
-        poly.coefs.insert(solved_degs.begin(), solved_degs.end());
+        ff_map poly = construct_canonical(n, ais[n]);
+        poly.insert(solved_degs.begin(), solved_degs.end());
         rn_map res;
 
-        for (auto & el : poly.coefs) {
+        for (auto & el : poly) {
           res.emplace(std::make_pair(el.first, RationalNumber(el.second.n, 1)));
         }
 
@@ -335,9 +339,9 @@ namespace firefly {
   }
 
   PolynomialFF PolyReconst::get_result_ff() {
-    PolynomialFF poly = construct_canonical(n, ais[n]);
-    poly.coefs.insert(solved_degs.begin(), solved_degs.end());
-    return poly;
+    ff_map poly = construct_canonical(n, ais[n]);
+    poly.insert(solved_degs.begin(), solved_degs.end());
+    return PolynomialFF(n, poly);
   }
 
   PolynomialFF PolyReconst::comp_ai(const uint tmp_zi, int i, int ip,
@@ -355,10 +359,10 @@ namespace firefly {
     return (comp_ai(tmp_zi, i, ip - 1, num, ai) - ai[ip - 1]) / (yi_i_p_1 - yi_ip); //yi[i + 1] - yi[ip - 1 + 1] the +1 in the first and the +1 in the second is due to the 0th element in the vector
   }
 
-  PolynomialFF PolyReconst::construct_canonical(const uint tmp_zi, std::vector<PolynomialFF>& ai) {
-    if (ai.size() == 1) return ai[0];
+  ff_map PolyReconst::construct_canonical(const uint tmp_zi, std::vector<PolynomialFF>& ai) {
+    if (ai.size() == 1) return ai[0].coefs;
 
-    return (ai[0] + iterate_canonical(tmp_zi, 1, ai));
+    return (ai[0] + iterate_canonical(tmp_zi, 1, ai)).coefs;
   }
 
   PolynomialFF PolyReconst::iterate_canonical(const uint tmp_zi, uint i, std::vector<PolynomialFF>& ai) {
@@ -388,36 +392,6 @@ namespace firefly {
     }
 
     return gy.calc(chosen_yi) == num;
-  }
-
-  mpz_map PolyReconst::convert_to_mpz(const PolynomialFF& poly) const {
-    mpz_map ci_mpz;
-
-    for (const auto & coef : poly.coefs) {
-      ci_mpz.insert(std::make_pair(coef.first, mpz_class(coef.second.n)));
-    }
-
-    return ci_mpz;
-  }
-
-  ff_map PolyReconst::convert_to_ffint(const rn_map& ri) const {
-    ff_map gi_ffi;
-
-    for (const auto & g_i : ri) {
-      mpz_class tmp(g_i.second.numerator % FFInt::p);
-
-      if (tmp < 0) tmp = tmp + FFInt::p;
-
-      FFInt n(std::stoull(tmp.get_str()));
-
-      tmp = g_i.second.denominator % FFInt::p;
-
-      FFInt d(std::stoull(tmp.get_str()));
-
-      gi_ffi.insert(std::make_pair(g_i.first, n / d));
-    }
-
-    return gi_ffi;
   }
 
   // Solves the Vandermonde linear system V*x=a

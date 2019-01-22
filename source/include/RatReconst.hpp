@@ -41,7 +41,7 @@ namespace firefly {
      *    @param prime a prime number defining the current finite field
      *    @return the rational function in its canonical form
      */
-    std::pair<PolynomialFF, PolynomialFF>  construct_canonical();
+    std::pair<ff_map, ff_map>  construct_canonical();
     /**
      *    Iterates Thiele's interpolation formula to get the canonical form
      *    of the rational function
@@ -68,35 +68,25 @@ namespace firefly {
      *    @return true or false
      */
     bool test_guess(const FFInt& num);
-    /**
-     *    Converts the coefficients of a rational function from FFInts to mpz_class
-     *    objects
-     *    @param rf a rational function
-     *    @return the coefficients of the given rational function converted to
-     *    mpz_class objects
-     */
-    std::pair<mpz_map, mpz_map> convert_to_mpz(const std::pair<PolynomialFF, PolynomialFF>& rf) const;
-    /**
-     *    Converts the elements of a vector of RationalNumber objects to FFInts
-     *    @param ri the vector of RationalNumber objects
-     *    @param prime the prime number defining the corresponding finite field
-     *    @return elements of ri converted to FFInts
-     */
-    ff_map convert_to_ffint(const rn_map& ri) const;
     bool rec_rat_coef();
-    std::pair<PolynomialFF, PolynomialFF> solve_gauss();
-    std::pair<PolynomialFF, PolynomialFF> solve_multi_gauss();
+    std::pair<ff_map, ff_map> solve_gauss();
+    std::pair<ff_map, ff_map> solve_homogenized_multi_gauss();
+    PolynomialFF solve_multi_gauss(const std::vector<std::vector<uint>>& degs, std::vector<std::vector<FFInt>>& mat);
     std::tuple<int, uint, std::vector<uint>> feed_poly(int curr_deg,
                                                        uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
                                                        PolyReconst& rec, ff_map_map& saved_num,
                                                        std::unordered_map<uint, PolynomialFF>& sub_save, bool is_num);
     void combine_primes(std::pair<mpz_map, mpz_map>& tmp);
     void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
-    void build_multi_gauss(const FFInt& tmp_num, const std::vector<FFInt>& yis);
+    void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
     bool first_run = true;
     static bool shifted;
     std::list<std::tuple<FFInt, FFInt, std::vector<uint>>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
+    std::unordered_map<uint,std::vector<std::vector<FFInt>>> coef_mat_num {};
+    std::unordered_map<uint,std::vector<std::vector<FFInt>>> coef_mat_den {};
+    PolynomialFF solved_num; //new
+    PolynomialFF solved_den; //new
     uint curr_zi = 2;
     ff_vec_map saved_ti {};
     std::vector<FFInt> ai {};
@@ -104,8 +94,8 @@ namespace firefly {
     std::unordered_map<uint, PolyReconst> coef_d {};
     std::unordered_map<uint, PolynomialFF> sub_num {};
     std::unordered_map<uint, PolynomialFF> sub_den {};
-    std::vector<std::vector<uint>> non_solved_degs_num {};
-    std::vector<std::vector<uint>> non_solved_degs_den {};
+    std::unordered_map<uint, std::vector<std::vector<uint>>> non_solved_degs_num {};// a vector entry should be just a pointer to save memory
+    std::unordered_map<uint, std::vector<std::vector<uint>>> non_solved_degs_den {};
     ff_map_map saved_num_num {};
     ff_map_map saved_num_den {};
     int max_deg_num = -1;
@@ -114,7 +104,6 @@ namespace firefly {
     int curr_deg_den = -1;
     //std::clock_t clock_test = 0;
     //std::clock_t clock_test_2 = 0;
-    std::vector<uint> min_deg_den_vec = {};
     std::vector<uint> curr_zi_order_num {};
     std::vector<uint> curr_zi_order_den {};
     uint tmp_solved_coefs_num = 0;
@@ -130,5 +119,7 @@ namespace firefly {
     uint64_t find_nth_prime(uint n);
     uint64_t find_sieve_size(uint n);
     static std::mutex mutex_statics;
+    void add_non_solved_num(const std::vector<uint>& deg);
+    void add_non_solved_den(const std::vector<uint>& deg);
   };
 }

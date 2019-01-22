@@ -53,7 +53,21 @@ namespace firefly {
   }
 
   std::vector<FFInt> solve_gauss_system(uint num_eqn,
-                                            std::vector<std::vector<FFInt>>& coef_mat) {
+                                        std::vector<std::vector<FFInt>>& coef_mat) {
+    /*std::cout << "begin----------------------------\n";
+
+    for (const auto & el : coef_mat) {
+      for (int i = 0; i <= num_eqn; i++) {
+        if (i != num_eqn) {
+          if (i < num_eqn - 1)
+            std::cout << el[i] << "*c" << i << "+";
+          else
+            std::cout << el[i] << "*c" << i;
+        } else
+          std::cout << "==" << el[i] << "\n";
+      }
+    }*/
+
     // Transform the matrix in upper triangular form
     for (uint i = 0; i < num_eqn; i++) {
       // search for maximum in this column
@@ -87,15 +101,33 @@ namespace firefly {
       }
     }
 
-    // Solve equation A * x = b for an upper triangular matrix
+    /*std::cout << "finish triangular\n";
+
+    for (const auto & el : coef_mat) {
+      for (int ii = 0; ii <= num_eqn; ii++) {
+        if (ii != num_eqn) {
+          if (ii < num_eqn - 1)
+            std::cout << el[ii] << "*c" << ii << "+";
+          else
+            std::cout << el[ii] << "*c" << ii;
+        } else
+          std::cout << "==" << el[ii] << "\n";
+      }
+    }*/
+
     std::vector<FFInt> results(num_eqn);
 
-    for (int i = num_eqn - 1; i >= 0; i--) {
-      results[i] = coef_mat[i][num_eqn] / coef_mat[i][i];
+    if (coef_mat[num_eqn - 1][num_eqn - 1] != 0) {
+      // Solve equation A * x = b for an upper triangular matrix
+      for (int i = num_eqn - 1; i >= 0; i--) {
+        results[i] = coef_mat[i][num_eqn] / coef_mat[i][i];
 
-      for (int k = i - 1; k >= 0; k--) {
-        coef_mat[k][num_eqn] -= coef_mat[k][i] * results[i];
+        for (int k = i - 1; k >= 0; k--) {
+          coef_mat[k][num_eqn] -= coef_mat[k][i] * results[i];
+        }
       }
+    } else {
+      throw std::runtime_error("Singular system of equations!");
     }
 
     return results;
