@@ -71,7 +71,7 @@ namespace firefly {
     bool rec_rat_coef();
     std::pair<ff_map, ff_map> solve_gauss();
     std::pair<ff_map, ff_map> solve_homogenized_multi_gauss();
-    PolynomialFF solve_multi_gauss(const std::vector<std::vector<uint>>& degs, std::vector<std::vector<FFInt>>& mat);
+    std::pair<ff_map, ff_map> solve_singular_normalizer();
     std::tuple<int, uint, std::vector<uint>> feed_poly(int curr_deg,
                                                        uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
                                                        PolyReconst& rec, ff_map_map& saved_num,
@@ -129,7 +129,11 @@ namespace firefly {
     std::vector<uint> min_deg_2;
     std::vector<std::vector<uint>> singular_normalizer {};
     std::vector<std::vector<uint>> singular_helper {};
+    void remove_singular_normalizers();
+    std::vector<std::vector<FFInt>> singular_coef_mat {};
     PolynomialFF solve_transposed_vandermonde(std::vector<std::vector<uint>>& degs,
                                               const std::vector<FFInt>& nums);
+    std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_num {};
+    std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_den {};
   };
 }
