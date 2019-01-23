@@ -569,7 +569,7 @@ namespace firefly {
                 }
 
                 if (terminator.n == 0) {
-                  find_sparsest_terms();
+                  //find_sparsest_terms();
                   //TODO rewrite terminator with respec to min_deg_1
                   terminator = denominator.coefs[min_deg_den_vec];
                   is_singular_system = true;
@@ -597,7 +597,7 @@ namespace firefly {
               prime_number++;
               queue.clear();
               saved_ti.clear();
-              std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
+              std::fill(curr_zi_order.begin(), curr_zi_order.end(), 0);
               curr_zi = 2;
               zi = 2;
               new_prime = true;
@@ -638,31 +638,16 @@ namespace firefly {
 
             yis.insert(yis.begin(), FFInt(1));
 
-            if (!is_singular_system()) {
+            if (!is_singular_system) {
               // build multivariate gauss systems and evaluate them if possible
               for (const auto & sol : canonical.first) {
                 uint key = sol.first[0];
-                std::vector<FFInt> eq {};
-
-                // Build system of equations for given key
-                for (const auto & deg : non_solved_degs_num[key]) {
-                  FFInt coef = 1;
-
-                  for (uint i = 0; i < n; i++) {
-                    coef *= yis[i].pow(deg[i]);
-                  }
-
-                  eq.emplace_back(coef);
-                }
-
-                eq.emplace_back(sol.second);
-
-                coef_mat_num[key].emplace_back(eq);
+                coef_mat_num[key].emplace_back(sol.second);
 
                 // Solve multivariate gauss system for corresponding degree,
                 // remove entry from non_solved_degs and add it to solve_degs
                 if (coef_mat_num[key].size() == non_solved_degs_num[key].size()) {
-                  solved_num += solve_multi_gauss(non_solved_degs_num[key], coef_mat_num[key]);
+                  solved_num += solve_transposed_vandermonde(non_solved_degs_num[key], coef_mat_num[key]);
                   non_solved_degs_num.erase(key);
                   coef_mat_num.erase(key);
                 }
@@ -670,27 +655,12 @@ namespace firefly {
 
               for (const auto & sol : canonical.second) {
                 uint key = sol.first[0];
-                std::vector<FFInt> eq {};
-
-                // Build system of equations for given key
-                for (const auto & deg : non_solved_degs_den[key]) {
-                  FFInt coef = 1;
-
-                  for (uint i = 0; i < n; i++) {
-                    coef *= yis[i].pow(deg[i]);
-                  }
-
-                  eq.emplace_back(coef);
-                }
-
-                eq.emplace_back(sol.second);
-
-                coef_mat_den[key].emplace_back(eq);
+                coef_mat_den[key].emplace_back(sol.second);
 
                 // Solve multivariate gauss system for corresponding degree,
                 // remove entry from non_solved_degs and add it to solve_degs
                 if (coef_mat_den[key].size() == non_solved_degs_den[key].size()) {
-                  solved_den += solve_multi_gauss(non_solved_degs_den[key], coef_mat_den[key]);
+                  solved_den += solve_transposed_vandermonde(non_solved_degs_den[key], coef_mat_den[key]);
                   non_solved_degs_den.erase(key);
                   coef_mat_den.erase(key);
                 }
@@ -707,7 +677,7 @@ namespace firefly {
                   prime_number++;
                   queue.clear();
                   saved_ti.clear();
-                  std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
+                  std::fill(curr_zi_order.begin(), curr_zi_order.end(), 0);
                   new_prime = true;
                 }
                 // reset solved coefficients
@@ -735,24 +705,24 @@ namespace firefly {
             } else {
               std::vector<FFInt> eq {};
 
-              
-              
-              if (min_deg_2[0] == 0) {
-                for (const auto & el : non_solved_degs_den[min_deg_2[1]) {
-                FFInt coef = 1;
 
-                for (uint ii = 0; ii < n; ii++) {
-                    coef *= yis[ii].pow(el.first[ii]);
+
+              if (min_deg_2[0] == 0) {
+                for (const auto & el : non_solved_degs_den[min_deg_2[1]]) {
+                  FFInt coef = 1;
+
+                  for (uint ii = 0; ii < n; ii++) {
+                    coef *= yis[ii].pow(el[ii]);
                   }
 
                   eq.emplace_back(coef);
                 }
               } else {
-                for (const auto & el : non_solved_degs_num[min_deg_2[1]) {
-                FFInt coef = 1;
+                for (const auto & el : non_solved_degs_num[min_deg_2[1]]) {
+                  FFInt coef = 1;
 
-                for (uint ii = 0; ii < n; ii++) {
-                    coef *= yis[ii].pow(el.first[ii]);
+                  for (uint ii = 0; ii < n; ii++) {
+                    coef *= yis[ii].pow(el[ii]);
                   }
 
                   eq.emplace_back(coef);
@@ -1612,6 +1582,7 @@ namespace firefly {
 
       // Subtract singular normalizer
       eq.emplace_back(0);
+
       if (min_deg_1[0] == 0) eq.back() -= tmp_ti.pow(min_deg_1[1]);
       else eq.back() += tmp_num * tmp_ti.pow(min_deg_1[1]);
 
@@ -1801,6 +1772,79 @@ namespace firefly {
       singular_helper = non_solved_degs_den[min_deg_2[1]];
       non_solved_degs_den.erase(min_deg_2[1]);
     }
+  }
+
+  PolynomialFF RatReconst::solve_transposed_vandermonde(std::vector<std::vector<uint>>& degs,
+  const std::vector<FFInt>& nums) {
+    uint num_eqn = degs.size();
+    std::vector<FFInt> result(num_eqn);
+
+    if (num_eqn == 1)
+      result[0] = nums[0];
+    else {
+      // calculate base entries of Vandermonde matrix
+      std::vector<FFInt> vis;
+      vis.reserve(num_eqn);
+      std::sort(degs.begin(), degs.end(), std::greater<std::vector<uint>>());
+
+      for (const auto & el : degs) {
+        FFInt vi = 1;
+
+        // z_1 is always = 1 which does not matter while determining the coefficient
+        for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi++) {
+          // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+          vi *= rand_zi[std::make_pair(tmp_zi, 1)].pow(el[tmp_zi - 1]);
+        }
+
+        vis.emplace_back(vi);
+      }
+
+      // Initialize the coefficient vector of the master polynomial
+      std::vector<FFInt> cis(num_eqn);
+
+      // The coefficients of the master polynomial are found by recursion
+      // where we have
+      // P(Z) = (Z - v_0)*(Z - v_1)*...*(Z - v_{n-1})
+      //      =  c_0 + c_1*Z + ... + Z^n
+      cis[num_eqn - 1] = -vis[0];
+
+      for (uint i = 1; i < num_eqn; i++) {
+        for (uint j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
+          cis[j] -= vis[i] * cis[j + 1];
+        }
+
+        cis[num_eqn - 1] -= vis[i];
+      }
+
+      // Each subfactor in turn is synthetically divided,
+      // matrix-multiplied by the right hand-side,
+      // and supplied with a denominator (since all vi should be different,
+      // there is no additional check if a coefficient in synthetical division
+      // leads to a vanishing denominator)
+      for (uint i = 0; i < num_eqn; i++) {
+        FFInt t = 1;
+        FFInt b = 1;
+        FFInt s = nums[num_eqn - 1];
+
+        for (int j = num_eqn - 1; j > 0; j--) {
+          b = cis[j] + vis[i] * b;
+          s += nums[j - 1] * b;
+          t = vis[i] * t + b;
+        }
+
+        result[i] = s / t;
+      }
+    }
+
+    // Bring result in canonical form
+    ff_map poly;
+
+    for (uint i = 0; i < num_eqn; i ++) {
+      poly.emplace(std::make_pair(degs[i], result[i]));
+    }
+
+    return PolynomialFF(n, poly);
   }
 }
 

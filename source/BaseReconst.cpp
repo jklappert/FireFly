@@ -155,9 +155,7 @@ namespace firefly {
         rand_zi->emplace(std::make_pair(std::make_pair(i, 0), 1));
       } else {
         rand = get_rand();
-
-        if (type == POLY)
-          rand_zi->emplace(std::make_pair(std::make_pair(i, 0), 1));
+        rand_zi->emplace(std::make_pair(std::make_pair(i, 0), 1));
       }
 
       rand_zi->emplace(std::make_pair(std::make_pair(i, 1), rand));
