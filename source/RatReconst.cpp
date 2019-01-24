@@ -554,7 +554,6 @@ namespace firefly {
                 }
 
                 if (terminator.n == 0) {
-
                   for (const auto & el : numerator.coefs) {
                     add_non_solved_num(el.first);
                   }
@@ -652,6 +651,7 @@ namespace firefly {
                 // remove entry from non_solved_degs and add it to solve_degs
                 if (coef_mat_num[key].size() == non_solved_degs_num[key].size()) {
                   solved_num += solve_transposed_vandermonde(non_solved_degs_num[key], coef_mat_num[key]);
+                  non_solved_degs_num.erase(key);
                   coef_mat_num.erase(key);
                 }
               }
@@ -664,6 +664,7 @@ namespace firefly {
                 // remove entry from non_solved_degs and add it to solve_degs
                 if (coef_mat_den[key].size() == non_solved_degs_den[key].size()) {
                   solved_den += solve_transposed_vandermonde(non_solved_degs_den[key], coef_mat_den[key]);
+                  non_solved_degs_den.erase(key);
                   coef_mat_den.erase(key);
                 }
               }
@@ -1158,7 +1159,6 @@ namespace firefly {
         try {
           RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
           RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
-          bool equal = last_rn == curr_rn;
 
           if (last_rn == curr_rn)
             remove_di(c_di.first, curr_rn);

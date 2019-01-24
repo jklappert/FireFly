@@ -6,7 +6,7 @@ using namespace firefly;
 
 int main() {
   // Example for the reconstruction of a rational function
-  uint n = 3;
+  uint n = 4;
   uint64_t prime = primes()[0];
   FFInt::set_new_prime(prime);
   RatReconst rec(n);
@@ -35,7 +35,6 @@ int main() {
 
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
         primes_used = std::max(primes_used, rec.get_prime());
-        if(primes_used > 10) std::exit(-1);
         prime = primes()[rec.get_prime()];
         FFInt::set_new_prime(prime);
         rec.generate_anchor_points();
@@ -74,12 +73,12 @@ int main() {
                                                + 9 * z1.pow(3) - 84 * z1.pow(2) + 252 * z1 - 240) * t_yis[0].pow(3) + ((46 * z1.pow(3)
                                                    - 389 * z1.pow(2) + 1074 * z1 - 960) * t_yis[1] - 3 * z1.pow(3) + 30 * z1.pow(2) - 96 * z1 + 96)
                           * t_yis[0].pow(2) + ((-10 * z1.pow(3) + 93 * z1.pow(2) - 278 * z1 + 264)
-                                               * t_yis[1]) * t_yis[0]) + z1.pow(15) * t_yis[0].pow(15) * t_yis[1].pow(15) * t_yis[2].pow(15);*/
+                                               * t_yis[1]) * t_yis[0]) + 0*z1.pow(15) * t_yis[0].pow(15) * t_yis[1].pow(15) * t_yis[2].pow(15);*/
       /*FFInt num = (((2*z1-7)*t_yis[0]-z1+3)*t_yis[2]+((-2*z1+3)*t_yis[0]-z1+3)*t_yis[1]+(-2*z1+3)*t_yis[0].pow(2)+(z1)*t_yis[0]+z1-3);
       FFInt den = ((2*z1-6)*t_yis[2].pow(2)+((2*z1-6)*t_yis[1]+(2*z1-6)*t_yis[0]-2*z1+6)*t_yis[2]);*/
       //FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + t_yis[1].pow(2);
       //FFInt den = 12*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];
-      FFInt num = 17*cr_1*cr_2*z1 + 7*t_yis[0] + z1.pow(10);
+      FFInt num = 17*cr_1*cr_2*z1 + 7*t_yis[0];
       FFInt den = z1*cr_1*cr_2*cr_2*t_yis[0] + 3*t_yis[0]*t_yis[1] + z1*cr_1*t_yis[1] + cr_1*z1 + 12*t_yis[0];
 
       // example for n = 1
