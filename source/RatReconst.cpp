@@ -86,15 +86,16 @@ namespace firefly {
   }
 
   void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord) {
-    // change later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    if (prime_number > 0) {
+    //TODO change later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/*    if (prime_number > 0) {
       std::unique_lock<std::mutex> lock(mutex_status);
       curr_zi_order = feed_zi_ord;
-    }
+    }*/
 
     if (!done) {
       std::vector<uint> tmp_vec;
 
+      //TODO is the if necessary?
       if (n > 1)
         tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
 
@@ -176,7 +177,6 @@ namespace firefly {
         // theorem
         {
           std::unique_lock<std::mutex> lock(mutex_status);
-
           if (prime_number == 0) zi = 1;
         }
 
@@ -635,7 +635,6 @@ namespace firefly {
               for (uint i = 0; i < curr_zi_order.size(); i ++) {
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
                 yis.emplace_back(rand_zi[std::make_pair(i + 2, curr_zi_order[i])]);
-
               }
             }
 
@@ -912,7 +911,9 @@ namespace firefly {
             }
           }
         }
-      } else if (n > 1 && prime_number == 0 && feed_zi_ord != tmp_vec) {
+      } else {
+        //TODO remove?
+//      } else if (n > 1 && prime_number == 0 && feed_zi_ord != tmp_vec) {
         if (saved_ti.find(feed_zi_ord) == saved_ti.end()) {
           std::vector<std::pair<FFInt, FFInt>> tmp_ti = {std::make_pair(new_ti, num)};
           saved_ti[feed_zi_ord] = tmp_ti;
@@ -1195,7 +1196,6 @@ namespace firefly {
 
     // set the number of equations
     std::unique_lock<std::mutex> lock(mutex_status);
-
     uint sub = is_singular_system ? 1 : 0;
     num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size() + sub;
   }
@@ -1508,6 +1508,17 @@ namespace firefly {
     g_di = other.g_di;
     combined_ni = other.combined_ni;
     combined_di = other.combined_di;
+    coef_mat_num = other.coef_mat_num;
+    coef_mat_den = other.coef_mat_den;
+    solved_num = other.solved_num;
+    solved_den = other.solved_den;
+    min_deg_1 = other.min_deg_1;
+    min_deg_1 = other.min_deg_2;
+    singular_normalizer = other.singular_normalizer;
+    singular_helper = other.singular_helper;
+    singular_coef_mat = other.singular_coef_mat;
+    solved_degs_num = other.solved_degs_num;
+    solved_degs_den = other.solved_degs_den;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -1554,6 +1565,17 @@ namespace firefly {
     g_di = std::move(other.g_di);
     combined_ni = std::move(other.combined_ni);
     combined_di = std::move(other.combined_di);
+    coef_mat_num = std::move(other.coef_mat_num);
+    coef_mat_den = std::move(other.coef_mat_den);
+    solved_num = std::move(other.solved_num);
+    solved_den = std::move(other.solved_den);
+    min_deg_1 = std::move(other.min_deg_1);
+    min_deg_1 = std::move(other.min_deg_2);
+    singular_normalizer = std::move(other.singular_normalizer);
+    singular_helper = std::move(other.singular_helper);
+    singular_coef_mat = std::move(other.singular_coef_mat);
+    solved_degs_num = std::move(other.solved_degs_num);
+    solved_degs_den = std::move(other.solved_degs_den);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -1601,6 +1623,17 @@ namespace firefly {
       g_di = other.g_di;
       combined_ni = other.combined_ni;
       combined_di = other.combined_di;
+      coef_mat_num = other.coef_mat_num;
+      coef_mat_den = other.coef_mat_den;
+      solved_num = other.solved_num;
+      solved_den = other.solved_den;
+      min_deg_1 = other.min_deg_1;
+      min_deg_1 = other.min_deg_2;
+      singular_normalizer = other.singular_normalizer;
+      singular_helper = other.singular_helper;
+      singular_coef_mat = other.singular_coef_mat;
+      solved_degs_num = other.solved_degs_num;
+      solved_degs_den = other.solved_degs_den;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -1651,6 +1684,17 @@ namespace firefly {
       g_di = std::move(other.g_di);
       combined_ni = std::move(other.combined_ni);
       combined_di = std::move(other.combined_di);
+      coef_mat_num = std::move(other.coef_mat_num);
+      coef_mat_den = std::move(other.coef_mat_den);
+      solved_num = std::move(other.solved_num);
+      solved_den = std::move(other.solved_den);
+      min_deg_1 = std::move(other.min_deg_1);
+      min_deg_1 = std::move(other.min_deg_2);
+      singular_normalizer = std::move(other.singular_normalizer);
+      singular_helper = std::move(other.singular_helper);
+      singular_coef_mat = std::move(other.singular_coef_mat);
+      solved_degs_num = std::move(other.solved_degs_num);
+      solved_degs_den = std::move(other.solved_degs_den);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);
@@ -2085,5 +2129,3 @@ namespace firefly {
     return PolynomialFF(n, poly);
   }
 }
-
-

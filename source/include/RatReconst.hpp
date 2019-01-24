@@ -83,8 +83,8 @@ namespace firefly {
     static bool shifted;
     std::list<std::tuple<FFInt, FFInt, std::vector<uint>>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
-    std::unordered_map<uint,std::vector<FFInt>> coef_mat_num {};
-    std::unordered_map<uint,std::vector<FFInt>> coef_mat_den {};
+    std::unordered_map<uint,std::vector<FFInt>> coef_mat_num {}; //new
+    std::unordered_map<uint,std::vector<FFInt>> coef_mat_den {}; //new
     PolynomialFF solved_num; //new
     PolynomialFF solved_den; //new
     uint curr_zi = 2;
@@ -125,15 +125,15 @@ namespace firefly {
     void check_for_solved_degs(std::vector<uint>& uni_degs, const bool is_num);
     void find_sparsest_terms();
     //sctructure: is_den, degree, number of terms
-    std::vector<uint> min_deg_1;
-    std::vector<uint> min_deg_2;
-    std::vector<std::vector<uint>> singular_normalizer {};
-    std::vector<std::vector<uint>> singular_helper {};
+    std::vector<uint> min_deg_1; //new
+    std::vector<uint> min_deg_2; //new
+    std::vector<std::vector<uint>> singular_normalizer {}; //new
+    std::vector<std::vector<uint>> singular_helper {}; //new
     void remove_singular_normalizers();
-    std::vector<std::vector<FFInt>> singular_coef_mat {};
+    std::vector<std::vector<FFInt>> singular_coef_mat {}; //new
     PolynomialFF solve_transposed_vandermonde(std::vector<std::vector<uint>>& degs,
                                               const std::vector<FFInt>& nums);
-    std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_num {};
-    std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_den {};
+    std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_num {}; //new
+    std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_den {}; //new
   };
 }
