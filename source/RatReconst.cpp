@@ -322,6 +322,7 @@ namespace firefly {
             std::unique_lock<std::mutex> lock(mutex_status);
             prime_number++;
             queue.clear();
+            fed_zero = false;
             new_prime = true;
             return;
           } else if (prime_number == 0) {
@@ -583,7 +584,7 @@ namespace firefly {
               coef_d.clear();
               curr_zi_order_num.clear();
               curr_zi_order_den.clear();
-
+              std::cout << "is singular " << is_singular_system << "\n";
               // normalize
               FFInt equializer = FFInt(1) / terminator;
 
@@ -598,6 +599,7 @@ namespace firefly {
 
               std::unique_lock<std::mutex> lock(mutex_status);
               prime_number++;
+              fed_zero = false;
               queue.clear();
               saved_ti.clear();
               std::fill(curr_zi_order.begin(), curr_zi_order.end(), 0);
@@ -764,6 +766,7 @@ namespace firefly {
 
               eq.emplace_back(res);
               singular_coef_mat.emplace_back(eq);
+              //TODO why does this work should be optimized in future versions!
 
               if (singular_coef_mat.size() == singular_normalizer.size() + singular_helper.size()) {
                 std::vector<std::vector<uint>> tmp_vec {};
@@ -874,7 +877,7 @@ namespace firefly {
             }
 
             // promote to next prime and combine results
-            if (coef_mat_num.empty() && coef_mat_den.empty()) {
+            if (coef_mat_num.empty() && coef_mat_den.empty() && singular_coef_mat.empty()) {
               std::pair<mpz_map, mpz_map> tmp;
               tmp.first = convert_to_mpz(solved_num.coefs);
               tmp.second = convert_to_mpz(solved_den.coefs);
@@ -1142,13 +1145,13 @@ namespace firefly {
           RationalNumber last_rn = get_rational_coef(c_ni.second, combined_prime_back);
           RationalNumber curr_rn = get_rational_coef(combined_ni[c_ni.first], combined_prime);
 
-          if (last_rn == curr_rn)
+          if (last_rn == curr_rn && !fed_zero)
             remove_ni(c_ni.first, curr_rn);
           else
             add_non_solved_num(c_ni.first);
         } catch (std::exception& e) {
-          //TODO how does this work?
-          if (c_ni.second == combined_ni[c_ni.first]) {
+
+          if (c_ni.second == combined_ni[c_ni.first] && !fed_zero) {
             RationalNumber rn = RationalNumber(c_ni.second, 1);
             remove_ni(c_ni.first, rn);
           } else
@@ -1161,15 +1164,15 @@ namespace firefly {
           RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
           RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
 
-          if (last_rn == curr_rn)
+          if (last_rn == curr_rn && !fed_zero)
             remove_di(c_di.first, curr_rn);
           else
             add_non_solved_den(c_di.first);
         } catch (std::exception& e) {
-          //TODO how does this work?
 
-          if (c_di.second == combined_di[c_di.first]) {
+          if (c_di.second == combined_di[c_di.first] && !fed_zero) {
             RationalNumber rn = RationalNumber(c_di.second, 1);
+
             remove_di(c_di.first, rn);
           } else
             add_non_solved_den(c_di.first);
@@ -1782,6 +1785,9 @@ namespace firefly {
   }
 
   void RatReconst::build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis) {
+    if (!fed_zero && tmp_num.n == 0)
+      fed_zero = true;
+
     if (!is_singular_system) {
       std::vector<FFInt> eq;
       eq.reserve(num_eqn + 1);
@@ -1842,29 +1848,41 @@ namespace firefly {
 
       coef_mat.emplace_back(std::move(eq));
     } else {
-      std::vector<FFInt> eq;
-      eq.reserve(num_eqn + 1);
+      if (tmp_num.n != 0) {
+        std::vector<FFInt> eq;
+        eq.reserve(num_eqn + 1);
 
-      // Build system of equations; in combined_.. are the non-solved coefficients
-      for (const auto & pow_vec : non_solved_degs_num) {
-        eq.emplace_back(tmp_ti.pow(pow_vec.first));
+        // Build system of equations; in combined_.. are the non-solved coefficients
+        for (const auto & pow_vec : non_solved_degs_num) {
+          eq.emplace_back(tmp_ti.pow(pow_vec.first));
+        }
+
+        for (const auto & pow_vec : non_solved_degs_den) {
+          eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(pow_vec.first));
+        }
+
+        // Add singular_helper
+        if (min_deg_2[0] == 0) eq.emplace_back(tmp_ti.pow(min_deg_2[1]));
+        else eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(min_deg_2[1]));
+
+        // Subtract singular normalizer
+        eq.emplace_back(0);
+
+        if (min_deg_1[0] == 0) eq.back() -= tmp_ti.pow(min_deg_1[1]);
+        else eq.back() += tmp_num * tmp_ti.pow(min_deg_1[1]);
+
+        coef_mat.emplace_back(std::move(eq));
+      } else {
+        std::unique_lock<std::mutex> lock(mutex_status);
+        std::transform(curr_zi_order.begin(), curr_zi_order.end(),
+        curr_zi_order.begin(), [](uint x) {return x + 1;});
+
+        for (uint zi = 2; zi <= n; zi ++) {
+          auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+          set_new_rand(lock_statics, key);
+        }
       }
-
-      for (const auto & pow_vec : non_solved_degs_den) {
-        eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(pow_vec.first));
-      }
-
-      // Add singular_helper
-      if (min_deg_2[0] == 0) eq.emplace_back(tmp_ti.pow(min_deg_2[1]));
-      else eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(min_deg_2[1]));
-
-      // Subtract singular normalizer
-      eq.emplace_back(0);
-
-      if (min_deg_1[0] == 0) eq.back() -= tmp_ti.pow(min_deg_1[1]);
-      else eq.back() += tmp_num * tmp_ti.pow(min_deg_1[1]);
-
-      coef_mat.emplace_back(std::move(eq));
     }
   }
 

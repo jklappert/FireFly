@@ -76,6 +76,7 @@ namespace firefly {
     int deg = -1;
     bool with_rat_reconst = false;
     Polynomial result;
+    PolynomialFF result_ff;
     std::vector<std::vector<uint>> rec_degs {};
     ff_map solved_degs {};
     std::vector<FFInt> nums {};

@@ -91,7 +91,7 @@ namespace firefly {
   void PolyReconst::interpolate(const FFInt& num, const std::vector<uint>& feed_zi_ord) {
     if (feed_zi_ord == curr_zi_order) {
       if (!done) {
-        if (new_prime) {
+        if (new_prime && !with_rat_reconst) {
           // be sure that you have called generate_anchor_points!
           bool runtest = true;
 
@@ -323,11 +323,15 @@ namespace firefly {
         result.sort();
         gi.clear();
       } else {
-        ff_map poly = construct_canonical(n, ais[n]);
-        poly.insert(solved_degs.begin(), solved_degs.end());
-        rn_map res;
+        rn_map res {};
 
-        for (auto & el : poly) {
+        if (result_ff.coefs.empty()) {
+          ff_map poly = construct_canonical(n, ais[n]);
+          poly.insert(solved_degs.begin(), solved_degs.end());
+          result_ff = PolynomialFF(n, poly);
+        }
+
+        for (auto & el : result_ff.coefs) {
           res.emplace(std::make_pair(el.first, RationalNumber(el.second.n, 1)));
         }
 
@@ -339,9 +343,13 @@ namespace firefly {
   }
 
   PolynomialFF PolyReconst::get_result_ff() {
-    ff_map poly = construct_canonical(n, ais[n]);
-    poly.insert(solved_degs.begin(), solved_degs.end());
-    return PolynomialFF(n, poly);
+    if(result_ff.coefs.empty()){
+      ff_map poly = construct_canonical(n, ais[n]);
+      poly.insert(solved_degs.begin(), solved_degs.end());
+      result_ff = PolynomialFF(n, poly);
+      ais.clear();
+    }
+    return result_ff;
   }
 
   PolynomialFF PolyReconst::comp_ai(const uint tmp_zi, int i, int ip,

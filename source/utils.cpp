@@ -117,7 +117,7 @@ namespace firefly {
 
     std::vector<FFInt> results(num_eqn);
 
-    if (coef_mat[num_eqn - 1][num_eqn - 1] != 0) {
+    //if (coef_mat[num_eqn - 1][num_eqn - 1] != 0) {
       // Solve equation A * x = b for an upper triangular matrix
       for (int i = num_eqn - 1; i >= 0; i--) {
         results[i] = coef_mat[i][num_eqn] / coef_mat[i][i];
@@ -126,9 +126,7 @@ namespace firefly {
           coef_mat[k][num_eqn] -= coef_mat[k][i] * results[i];
         }
       }
-    } else {
-      throw std::runtime_error("Singular system of equations!");
-    }
+    //}
 
     return results;
   }

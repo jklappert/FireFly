@@ -135,5 +135,6 @@ namespace firefly {
                                               const std::vector<FFInt>& nums);
     std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_num {}; //new
     std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_den {}; //new
+    bool fed_zero = false;
   };
 }

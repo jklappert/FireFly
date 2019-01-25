@@ -61,7 +61,7 @@ int main() {
       FFInt cr_2(cr_2_mpz);
 
       // example for n = 4 using the Chinese Remainder theorem
-      /*FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
+      FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
                           * t_yis[0].pow(5) + ((-3 * z1.pow(3) + 36 * z1.pow(2)
                                                 - 144 * z1 + 192) * t_yis[1].pow(2)) * t_yis[0].pow(4) + ((2 * z1.pow(3) - 24 * z1.pow(2)
                                                     + 96 * z1 - 128) * t_yis[1].pow(2)) * t_yis[0].pow(3) + ((2 * z1.pow(3) - 24 * z1.pow(2)
@@ -73,13 +73,15 @@ int main() {
                                                + 9 * z1.pow(3) - 84 * z1.pow(2) + 252 * z1 - 240) * t_yis[0].pow(3) + ((46 * z1.pow(3)
                                                    - 389 * z1.pow(2) + 1074 * z1 - 960) * t_yis[1] - 3 * z1.pow(3) + 30 * z1.pow(2) - 96 * z1 + 96)
                           * t_yis[0].pow(2) + ((-10 * z1.pow(3) + 93 * z1.pow(2) - 278 * z1 + 264)
-                                               * t_yis[1]) * t_yis[0]) + 0*z1.pow(15) * t_yis[0].pow(15) * t_yis[1].pow(15) * t_yis[2].pow(15);*/
+                                               * t_yis[1]) * t_yis[0]) + z1.pow(15) * t_yis[0].pow(15) * t_yis[1].pow(15) * t_yis[2].pow(15);
       /*FFInt num = (((2*z1-7)*t_yis[0]-z1+3)*t_yis[2]+((-2*z1+3)*t_yis[0]-z1+3)*t_yis[1]+(-2*z1+3)*t_yis[0].pow(2)+(z1)*t_yis[0]+z1-3);
       FFInt den = ((2*z1-6)*t_yis[2].pow(2)+((2*z1-6)*t_yis[1]+(2*z1-6)*t_yis[0]-2*z1+6)*t_yis[2]);*/
       //FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + t_yis[1].pow(2);
       //FFInt den = 12*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];
-      FFInt num = 17*cr_1*cr_2*z1 + 7*t_yis[0];
-      FFInt den = z1*cr_1*cr_2*cr_2*t_yis[0] + 3*t_yis[0]*t_yis[1] + z1*cr_1*t_yis[1] + cr_1*z1 + 12*t_yis[0];
+      /*FFInt num = 17*cr_1*cr_2*z1 + 7*t_yis[0];
+      FFInt den = z1*cr_1*cr_2*cr_2*t_yis[0] + 3*t_yis[0]*t_yis[1] + z1*cr_1*t_yis[1] + cr_1*z1 + 12*t_yis[0];*/
+      //FFInt den = z1-t_yis[1];//cr_1*(z1 - t_yis[0]) + cr_1*(z1.pow(2) - t_yis[0].pow(2));
+      //FFInt num = 1;//(z1 - t_yis[1]);// + (z1-t_yis[0]) + cr_1*t_yis[1].pow(2) + z1.pow(2) + t_yis[0].pow(2);//cr_2*cr_2*(z1 + t_yis[0]) + cr_2*cr_2*cr_1*(t_yis[0]*z1 + t_yis[1]*z1);
 
       // example for n = 1
       /*FFInt num = (576 * z1.pow(12) - 35145 * z1.pow(11)
@@ -146,7 +148,7 @@ int main() {
         kk = 0;
       }
 
-      for (int i = 0; i < n; i++) {
+      for (uint i = 0; i < n; i++) {
         yis[i] = rec_poly.rand_zi[std::make_pair(i + 1, rec_poly.get_zi_order()[i])];
       }
 
