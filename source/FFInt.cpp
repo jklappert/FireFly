@@ -158,15 +158,16 @@ namespace firefly {
   FFInt FFInt::gcd(const FFInt& a, const FFInt& b) {
     FFInt aa = a, bb = b;
 
-    if(b.n > a.n)
-      return gcd(b,a);
+    if (b.n > a.n)
+      return gcd(b, a);
 
-    FFInt x1 = 0, x2 = 1, y1 = 1, y2 =0;
-    while (bb.n > 0){
-      FFInt q = aa/bb;
+    FFInt x1 = 0, x2 = 1, y1 = 1, y2 = 0;
+
+    while (bb.n > 0) {
+      FFInt q = aa / bb;
       FFInt r = FFInt(aa.n % bb.n);
-      FFInt x = x2 - q*x1;
-      FFInt y = y2 - q*y1;
+      FFInt x = x2 - q * x1;
+      FFInt y = y2 - q * y1;
       aa = bb;
       bb = r;
       x2 = x1;
@@ -174,6 +175,7 @@ namespace firefly {
       y2 = y1;
       y1 = y;
     }
+
     std::cout << x2 << " " << y2 << " " << aa << " " << FFInt(5194436596886959390)*x2 << " " << FFInt(5194436596886959390)*y2 << "\n";
     return aa;
   }

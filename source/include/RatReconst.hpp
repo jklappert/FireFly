@@ -83,8 +83,8 @@ namespace firefly {
     static bool shifted;
     std::list<std::tuple<FFInt, FFInt, std::vector<uint>>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
-    std::unordered_map<uint,std::vector<FFInt>> coef_mat_num {}; //new
-    std::unordered_map<uint,std::vector<FFInt>> coef_mat_den {}; //new
+    std::unordered_map<uint, std::vector<FFInt>> coef_mat_num {}; //new
+    std::unordered_map<uint, std::vector<FFInt>> coef_mat_den {}; //new
     PolynomialFF solved_num; //new
     PolynomialFF solved_den; //new
     uint curr_zi = 2;
@@ -135,6 +135,5 @@ namespace firefly {
                                               const std::vector<FFInt>& nums);
     std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_num {}; //new
     std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_den {}; //new
-    bool fed_zero = false;
   };
 }

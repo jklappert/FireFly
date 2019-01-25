@@ -87,10 +87,10 @@ namespace firefly {
 
   void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord) {
     //TODO change later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-/*    if (prime_number > 0) {
-      std::unique_lock<std::mutex> lock(mutex_status);
-      curr_zi_order = feed_zi_ord;
-    }*/
+    /*    if (prime_number > 0) {
+          std::unique_lock<std::mutex> lock(mutex_status);
+          curr_zi_order = feed_zi_ord;
+        }*/
 
     if (!done) {
       std::vector<uint> tmp_vec;
@@ -177,6 +177,7 @@ namespace firefly {
         // theorem
         {
           std::unique_lock<std::mutex> lock(mutex_status);
+
           if (prime_number == 0) zi = 1;
         }
 
@@ -322,7 +323,6 @@ namespace firefly {
             std::unique_lock<std::mutex> lock(mutex_status);
             prime_number++;
             queue.clear();
-            fed_zero = false;
             new_prime = true;
             return;
           } else if (prime_number == 0) {
@@ -599,10 +599,9 @@ namespace firefly {
 
               std::unique_lock<std::mutex> lock(mutex_status);
               prime_number++;
-              fed_zero = false;
               queue.clear();
               saved_ti.clear();
-              std::fill(curr_zi_order.begin(), curr_zi_order.end(), 0);
+              std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
               curr_zi = 2;
               zi = 2;
               new_prime = true;
@@ -887,7 +886,7 @@ namespace firefly {
                 prime_number++;
                 queue.clear();
                 saved_ti.clear();
-                std::fill(curr_zi_order.begin(), curr_zi_order.end(), 0);
+                std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
                 new_prime = true;
               }
               // reset solved coefficients
@@ -1145,13 +1144,13 @@ namespace firefly {
           RationalNumber last_rn = get_rational_coef(c_ni.second, combined_prime_back);
           RationalNumber curr_rn = get_rational_coef(combined_ni[c_ni.first], combined_prime);
 
-          if (last_rn == curr_rn && !fed_zero)
+          if (last_rn == curr_rn)
             remove_ni(c_ni.first, curr_rn);
           else
             add_non_solved_num(c_ni.first);
         } catch (std::exception& e) {
 
-          if (c_ni.second == combined_ni[c_ni.first] && !fed_zero) {
+          if (c_ni.second == combined_ni[c_ni.first]) {
             RationalNumber rn = RationalNumber(c_ni.second, 1);
             remove_ni(c_ni.first, rn);
           } else
@@ -1164,13 +1163,13 @@ namespace firefly {
           RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
           RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
 
-          if (last_rn == curr_rn && !fed_zero)
+          if (last_rn == curr_rn)
             remove_di(c_di.first, curr_rn);
           else
             add_non_solved_den(c_di.first);
         } catch (std::exception& e) {
 
-          if (c_di.second == combined_di[c_di.first] && !fed_zero) {
+          if (c_di.second == combined_di[c_di.first]) {
             RationalNumber rn = RationalNumber(c_di.second, 1);
 
             remove_di(c_di.first, rn);
@@ -1785,9 +1784,6 @@ namespace firefly {
   }
 
   void RatReconst::build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis) {
-    if (!fed_zero && tmp_num.n == 0)
-      fed_zero = true;
-
     if (!is_singular_system) {
       std::vector<FFInt> eq;
       eq.reserve(num_eqn + 1);
@@ -1848,41 +1844,29 @@ namespace firefly {
 
       coef_mat.emplace_back(std::move(eq));
     } else {
-      if (tmp_num.n != 0) {
-        std::vector<FFInt> eq;
-        eq.reserve(num_eqn + 1);
+      std::vector<FFInt> eq;
+      eq.reserve(num_eqn + 1);
 
-        // Build system of equations; in combined_.. are the non-solved coefficients
-        for (const auto & pow_vec : non_solved_degs_num) {
-          eq.emplace_back(tmp_ti.pow(pow_vec.first));
-        }
-
-        for (const auto & pow_vec : non_solved_degs_den) {
-          eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(pow_vec.first));
-        }
-
-        // Add singular_helper
-        if (min_deg_2[0] == 0) eq.emplace_back(tmp_ti.pow(min_deg_2[1]));
-        else eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(min_deg_2[1]));
-
-        // Subtract singular normalizer
-        eq.emplace_back(0);
-
-        if (min_deg_1[0] == 0) eq.back() -= tmp_ti.pow(min_deg_1[1]);
-        else eq.back() += tmp_num * tmp_ti.pow(min_deg_1[1]);
-
-        coef_mat.emplace_back(std::move(eq));
-      } else {
-        std::unique_lock<std::mutex> lock(mutex_status);
-        std::transform(curr_zi_order.begin(), curr_zi_order.end(),
-        curr_zi_order.begin(), [](uint x) {return x + 1;});
-
-        for (uint zi = 2; zi <= n; zi ++) {
-          auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
-          std::unique_lock<std::mutex> lock_statics(mutex_statics);
-          set_new_rand(lock_statics, key);
-        }
+      // Build system of equations; in combined_.. are the non-solved coefficients
+      for (const auto & pow_vec : non_solved_degs_num) {
+        eq.emplace_back(tmp_ti.pow(pow_vec.first));
       }
+
+      for (const auto & pow_vec : non_solved_degs_den) {
+        eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(pow_vec.first));
+      }
+
+      // Add singular_helper
+      if (min_deg_2[0] == 0) eq.emplace_back(tmp_ti.pow(min_deg_2[1]));
+      else eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(min_deg_2[1]));
+
+      // Subtract singular normalizer
+      eq.emplace_back(0);
+
+      if (min_deg_1[0] == 0) eq.back() -= tmp_ti.pow(min_deg_1[1]);
+      else eq.back() += tmp_num * tmp_ti.pow(min_deg_1[1]);
+
+      coef_mat.emplace_back(std::move(eq));
     }
   }
 
@@ -2079,9 +2063,19 @@ namespace firefly {
     uint num_eqn = degs.size();
     std::vector<FFInt> result(num_eqn);
 
-    if (num_eqn == 1)
-      result[0] = nums[0];
-    else {
+    if (num_eqn == 1) {
+      FFInt vi = 1;
+
+      for (const auto & el : degs) {
+        for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi++) {
+          // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+          vi *= rand_zi[std::make_pair(tmp_zi, 1)].pow(el[tmp_zi - 1]);
+        }
+      }
+
+      result[0] = nums[0] * 1 / vi;
+    } else {
       // calculate base entries of Vandermonde matrix
       std::vector<FFInt> vis;
       vis.reserve(num_eqn);
@@ -2133,7 +2127,7 @@ namespace firefly {
           t = vis[i] * t + b;
         }
 
-        result[i] = s / t;
+        result[i] = s / t / vis[i];
       }
     }
 

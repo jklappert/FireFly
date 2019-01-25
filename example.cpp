@@ -10,6 +10,7 @@ int main() {
   uint64_t prime = primes()[0];
   FFInt::set_new_prime(prime);
   RatReconst rec(n);
+
   try {
     std::cout << "--------------------------------------------------------------\n";
     std::cout << "Interpolating rational function\n";
@@ -37,6 +38,9 @@ int main() {
         primes_used = std::max(primes_used, rec.get_prime());
         prime = primes()[rec.get_prime()];
         FFInt::set_new_prime(prime);
+
+        if (primes_used > 6) std::exit(-1);
+
         rec.generate_anchor_points();
         kk = 0;
       }
@@ -48,7 +52,7 @@ int main() {
       FFInt z1 = t + RatReconst::shift[0];
 
       for (uint j = 2; j <= n; j++) {
-          t_yis[j - 2] = t * rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])] + RatReconst::shift[j - 1];
+        t_yis[j - 2] = t * rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])] + RatReconst::shift[j - 1];
       }
 
       // Some examples for number for which one needs to use the Chinese
@@ -76,12 +80,12 @@ int main() {
                                                * t_yis[1]) * t_yis[0]) + z1.pow(15) * t_yis[0].pow(15) * t_yis[1].pow(15) * t_yis[2].pow(15);
       /*FFInt num = (((2*z1-7)*t_yis[0]-z1+3)*t_yis[2]+((-2*z1+3)*t_yis[0]-z1+3)*t_yis[1]+(-2*z1+3)*t_yis[0].pow(2)+(z1)*t_yis[0]+z1-3);
       FFInt den = ((2*z1-6)*t_yis[2].pow(2)+((2*z1-6)*t_yis[1]+(2*z1-6)*t_yis[0]-2*z1+6)*t_yis[2]);*/
-      //FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + t_yis[1].pow(2);
-      //FFInt den = 12*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0];
+      //FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + cr_1*t_yis[1].pow(2);
+      //FFInt den = 12*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0] + 1;
       /*FFInt num = 17*cr_1*cr_2*z1 + 7*t_yis[0];
       FFInt den = z1*cr_1*cr_2*cr_2*t_yis[0] + 3*t_yis[0]*t_yis[1] + z1*cr_1*t_yis[1] + cr_1*z1 + 12*t_yis[0];*/
-      //FFInt den = z1-t_yis[1];//cr_1*(z1 - t_yis[0]) + cr_1*(z1.pow(2) - t_yis[0].pow(2));
-      //FFInt num = 1;//(z1 - t_yis[1]);// + (z1-t_yis[0]) + cr_1*t_yis[1].pow(2) + z1.pow(2) + t_yis[0].pow(2);//cr_2*cr_2*(z1 + t_yis[0]) + cr_2*cr_2*cr_1*(t_yis[0]*z1 + t_yis[1]*z1);
+      //FFInt den = cr_1*(z1-t_yis[1]);//cr_1*(z1 - t_yis[0]) + cr_1*(z1.pow(2) - t_yis[0].pow(2));
+      //FFInt num = (z1 - t_yis[0]);// + (z1-t_yis[0]) + cr_1*t_yis[1].pow(2) + z1.pow(2) + t_yis[0].pow(2);//cr_2*cr_2*(z1 + t_yis[0]) + cr_2*cr_2*cr_1*(t_yis[0]*z1 + t_yis[1]*z1);
 
       // example for n = 1
       /*FFInt num = (576 * z1.pow(12) - 35145 * z1.pow(11)
@@ -105,6 +109,8 @@ int main() {
       if (n > 1)
         tmp_vec = rec.get_zi_order();
 
+      //std::cout << tmp_vec[0] << " " << tmp_vec[1] << " " << tmp_vec[2] << "\n";
+
       // Feed the algorithm with the current zi_order
       rec.feed(t, num / den, tmp_vec, primes_used);
       rec.interpolate();
@@ -122,6 +128,7 @@ int main() {
   FFInt::set_new_prime(prime);
   n = 3;
   PolyReconst rec_poly(n, 5);
+
   try {
     std::cout << "Interpolating polynomial\n";
     std::cout << "--------------------------------------------------------------\n";
@@ -156,7 +163,7 @@ int main() {
       cr_1_mpz = "123456789109898799879870980";
       FFInt cr_1(cr_1_mpz);
 
-      FFInt num = yis[0].pow(5) + yis[0]*yis[1].pow(4) + yis[0]*yis[1]*yis[2].pow(3) + yis[1].pow(5);
+      FFInt num = yis[0].pow(5) + yis[0] * yis[1].pow(4) + yis[0] * yis[1] * yis[2].pow(3) + yis[1].pow(5);
 
       kk++;
       count++;

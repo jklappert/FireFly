@@ -184,9 +184,6 @@ namespace firefly {
             {
               std::unique_lock<std::mutex> lock(mutex_status);
               curr_zi_order = std::vector<uint> (n, 1);
-
-              for (uint i = 1; i < zi; i++) curr_zi_order[i - 1] = 0;
-
               curr_zi_order[zi - 1] = order_save + 1;
             }
             ais[zi].emplace_back(comp_ai(zi, i, i, solve_transposed_vandermonde(), ais[zi]));
@@ -252,9 +249,6 @@ namespace firefly {
               ais[zi].emplace_back(comp_ai(zi, 0, 0, PolynomialFF(n, pol_ff), ais[zi]));
               // reset zi order
               curr_zi_order = std::vector<uint> (n, 1);
-
-              for (uint i = 1; i < zi; i++) curr_zi_order[i - 1] = 0;
-
               curr_zi_order[zi - 1] = 2;
             } else
               check = true;
@@ -343,12 +337,13 @@ namespace firefly {
   }
 
   PolynomialFF PolyReconst::get_result_ff() {
-    if(result_ff.coefs.empty()){
+    if (result_ff.coefs.empty()) {
       ff_map poly = construct_canonical(n, ais[n]);
       poly.insert(solved_degs.begin(), solved_degs.end());
       result_ff = PolynomialFF(n, poly);
       ais.clear();
     }
+
     return result_ff;
   }
 
@@ -410,9 +405,19 @@ namespace firefly {
     uint num_eqn = rec_degs.size();
     std::vector<FFInt> result(num_eqn);
 
-    if (num_eqn == 1)
-      result[0] = nums[0];
-    else {
+    if (num_eqn == 1) {
+      FFInt vi = 1;
+
+      for (const auto & el : rec_degs) {
+        for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+          // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+          vi *= rand_zi[std::make_pair(tmp_zi, el[tmp_zi - 1])];
+        }
+      }
+
+      result[0] = nums[0] / vi;
+    } else {
       // calculate base entries of Vandermonde matrix
       std::vector<FFInt> vis;
       vis.reserve(num_eqn);
@@ -462,7 +467,7 @@ namespace firefly {
           t = vis[i] * t + b;
         }
 
-        result[i] = s / t;
+        result[i] = s / t / vis[i];
       }
     }
 
