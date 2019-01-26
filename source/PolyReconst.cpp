@@ -256,35 +256,36 @@ namespace firefly {
             check = true;
 
           if (check && zi == n) {
-            {
-              std::unique_lock<std::mutex> lock(mutex_status);
-              curr_zi_order = std::vector<uint> (n, 1);
-            }
-            ff_map tmp_pol_ff = construct_canonical(zi, ais[zi]);
-            tmp_pol_ff.insert(solved_degs.begin(), solved_degs.end());
-
-            mpz_map ci_tmp = convert_to_mpz(tmp_pol_ff);
-
-            if (!use_chinese_remainder) {
-              combined_ci = ci_tmp;
-            } else {
-              // use another prime to utilize the Chinese Remainder Theorem to reconstruct the rational
-              // coefficients
-
-              std::pair<mpz_class, mpz_class> p1;
-              std::pair<mpz_class, mpz_class> p2;
-              std::pair<mpz_class, mpz_class> p3;
-
-              for (auto it = combined_ci.begin(); it != combined_ci.end(); ++it) {
-                p1 = std::make_pair(it->second, combined_prime);
-                p2 = std::make_pair(ci_tmp[it->first], FFInt::p);
-                p3 = run_chinese_remainder(p1, p2);
-                combined_ci[it->first] = p3.first;
-              }
-
-              combined_prime = p3.second;
-            }
-
+	    if(!with_rat_reconst){
+	      {
+		std::unique_lock<std::mutex> lock(mutex_status);
+		curr_zi_order = std::vector<uint> (n, 1);
+	      }
+	      ff_map tmp_pol_ff = construct_canonical(zi, ais[zi]);
+	      tmp_pol_ff.insert(solved_degs.begin(), solved_degs.end());
+	      
+	      mpz_map ci_tmp = convert_to_mpz(tmp_pol_ff);
+	      
+	      if (!use_chinese_remainder) {
+		combined_ci = ci_tmp;
+	      } else {
+		// use another prime to utilize the Chinese Remainder Theorem to reconstruct the rational
+		// coefficients
+		
+		std::pair<mpz_class, mpz_class> p1;
+		std::pair<mpz_class, mpz_class> p2;
+		std::pair<mpz_class, mpz_class> p3;
+		
+		for (auto it = combined_ci.begin(); it != combined_ci.end(); ++it) {
+		  p1 = std::make_pair(it->second, combined_prime);
+		  p2 = std::make_pair(ci_tmp[it->first], FFInt::p);
+		  p3 = run_chinese_remainder(p1, p2);
+		  combined_ci[it->first] = p3.first;
+		}
+		
+		combined_prime = p3.second;
+	      }
+	    }
             std::unique_lock<std::mutex> lock(mutex_status);
             new_prime = true;
             prime_number ++;

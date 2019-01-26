@@ -2,7 +2,6 @@
 #include <vector>
 #include <mutex>
 #include <unordered_map>
-#include <memory>
 #include "RationalNumber.hpp"
 #include "PolynomialFF.hpp"
 #include "UintHasher.hpp"

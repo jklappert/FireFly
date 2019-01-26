@@ -18,8 +18,6 @@ namespace firefly {
     type = RAT;
     std::unique_lock<std::mutex> lock_status(mutex_status);
 
-    ti.reserve(300);
-    ai.reserve(300);
     combined_prime = FFInt::p;
 
     //std::srand(std::time(nullptr));
@@ -107,11 +105,6 @@ namespace firefly {
           ti.emplace_back(new_ti);
           sub_num.clear();
           sub_den.clear();
-          // release memory?
-          {
-            std::unordered_map<uint, PolynomialFF>().swap(sub_num);
-            std::unordered_map<uint, PolynomialFF>().swap(sub_den);
-          }
 
           if (rec_rat_coef()) {
             {
@@ -134,23 +127,6 @@ namespace firefly {
               saved_num_num.clear();
               saved_num_den.clear();
               use_chinese_remainder = false;
-              // release memory?
-              {
-                std::unordered_map<uint, PolyReconst>().swap(coef_n);
-                std::unordered_map<uint, PolyReconst>().swap(coef_d);
-                mpz_map().swap(combined_di);
-                mpz_map().swap(combined_ni);
-                curr_zi_order.shrink_to_fit();
-                ff_map_map().swap(saved_num_num);
-                ff_map_map().swap(saved_num_den);
-
-                ai.shrink_to_fit();
-                ti.shrink_to_fit();
-                ff_vec_map().swap(saved_ti);
-                curr_zi_order_num.shrink_to_fit();
-                curr_zi_order_den.shrink_to_fit();
-                coef_mat.shrink_to_fit();
-              }
               return;
             } else {
               for (const auto & ci : combined_ni) {
@@ -196,7 +172,6 @@ namespace firefly {
           }
         } else {
           if (coef_mat.empty()) {
-            coef_mat.shrink_to_fit();
             coef_mat.reserve(num_eqn);
           }
 
@@ -258,10 +233,6 @@ namespace firefly {
           // If the maximal/minimal degree of the polynomials are not set
           // determine them and save all information
           if (max_deg_num == -1) {
-            if (ai.capacity() != ai.size()) {
-              ai.shrink_to_fit();
-              ti.shrink_to_fit();
-            }
 
             ti.pop_back();
 
@@ -519,14 +490,18 @@ namespace firefly {
               FFInt const_shift = sub_den[0].calc(std::vector<FFInt> (n, 0));
 
               if (const_shift != 1) {
-                ff_map dummy_map;
+                ff_map dummy_map{};
                 terminator = FFInt(1) - const_shift;
                 dummy_map.emplace(std::make_pair(std::vector<uint> (n, 0), terminator));
                 denominator = denominator + PolynomialFF(n, dummy_map);
               } else if (numerator.coefs.find(std::vector<uint> (n, 0)) != numerator.coefs.end()) {
                 terminator = numerator.coefs[std::vector<uint> (n, 0)];
               } else {
-                std::vector<uint> min_deg_den_vec;
+                std::vector<uint> min_deg_den_vec {};
+		//TODO change rand_zi from a pair key to the zi and
+		// just a vector so we can ensure that there is
+		// no rehash problem. It should be at worst as fast
+		// as the unordered map if not faster
 
                 for (const auto & el : denominator.coefs) {
                   std::vector<uint> degs_reverse = el.first;
@@ -584,7 +559,7 @@ namespace firefly {
               coef_d.clear();
               curr_zi_order_num.clear();
               curr_zi_order_den.clear();
-              std::cout << "is singular " << is_singular_system << "\n";
+	      //              std::cout << "is singular " << is_singular_system << "\n";
               // normalize
               FFInt equializer = FFInt(1) / terminator;
 
@@ -701,9 +676,9 @@ namespace firefly {
                 for (const auto & el : solved_degs_num[min_deg_2[1]]) {
                   FFInt coef = 1;
 
-                  for (uint ii = 0; ii < n; ii++) {
-                    coef *= yis[ii].pow(el[ii]);
-                  }
+                  for (uint i = 1; i < n; i++) {
+		    coef *= yis[i].pow(el[i]);
+		  }
 
                   res -= coef * FFInt(g_ni[el].numerator) / FFInt(g_ni[el].denominator);
                 }
@@ -713,8 +688,8 @@ namespace firefly {
                 for (const auto & el : solved_degs_den[min_deg_2[1]]) {
                   FFInt coef = 1;
 
-                  for (uint ii = 0; ii < n; ii++) {
-                    coef *= yis[ii].pow(el[ii]);
+                  for (uint i = 1; i < n; i++) {
+                    coef *= yis[i].pow(el[i]);
                   }
 
                   res -= coef * FFInt(g_di[el].numerator) / FFInt(g_di[el].denominator);
@@ -725,8 +700,8 @@ namespace firefly {
                 for (const auto & el : solved_degs_num[min_deg_1[1]]) {
                   FFInt coef = num;
 
-                  for (uint ii = 0; ii < n; ii++) {
-                    coef *= yis[ii].pow(el[ii]);
+                  for (uint i = 1; i < n; i++) {
+                    coef *= yis[i].pow(el[i]);
                   }
 
                   res += coef * FFInt(g_ni[el].numerator) / FFInt(g_ni[el].denominator);
@@ -735,8 +710,8 @@ namespace firefly {
                 for (const auto & el : solved_degs_den[min_deg_1[1]]) {
                   FFInt coef = num;
 
-                  for (uint ii = 0; ii < n; ii++) {
-                    coef *= yis[ii].pow(el[ii]);
+                  for (uint i = 1; i < n; i++) {
+                    coef *= yis[i].pow(el[i]);
                   }
 
                   res += coef * FFInt(g_di[el].numerator) / FFInt(g_di[el].denominator);
@@ -746,8 +721,8 @@ namespace firefly {
               for (const auto & el : singular_helper) {
                 FFInt coef = 1;
 
-                for (uint ii = 0; ii < n; ii++) {
-                  coef *= yis[ii].pow(el[ii]);
+                for (uint i = 1; i < n; i++) {
+                  coef *= yis[i].pow(el[i]);
                 }
 
                 eq.emplace_back(coef);
@@ -756,39 +731,32 @@ namespace firefly {
               for (const auto & el : singular_normalizer) {
                 FFInt coef = -num;
 
-                for (uint ii = 0; ii < n; ii++) {
-                  coef *= yis[ii].pow(el[ii]);
+                for (uint i = 1; i < n; i++) {
+                  coef *= yis[i].pow(el[i]);
                 }
 
                 eq.emplace_back(coef);
               }
-
+	      std::cout << "Num " << num << " yis " << yis[0] << " " << yis[1] << " " << yis[2] << " " << yis[3] << "\n";
               eq.emplace_back(res);
               singular_coef_mat.emplace_back(eq);
               //TODO why does this work should be optimized in future versions!
 
               if (singular_coef_mat.size() == singular_normalizer.size() + singular_helper.size()) {
-                std::vector<std::vector<uint>> tmp_vec {};
-                tmp_vec.insert(tmp_vec.end(), singular_helper.begin(), singular_helper.end());
-                tmp_vec.insert(tmp_vec.end(), singular_normalizer.begin(), singular_normalizer.end());
-                auto tmp = solve_singular_normalizer();
+		std::pair<ff_map, ff_map> tmp = solve_singular_normalizer();
                 ff_map singular_solver_coefs {};
 
+		for (const auto & el : singular_normalizer){
+		  singular_solver_coefs[el] = tmp.second[el];
+		}
+		
                 if (min_deg_1[0] == 0) {
-                  for (const auto & el : singular_normalizer) {
-                    singular_solver_coefs[el] = tmp.second[el];
-                  }
-
                   solved_num.coefs.insert(singular_solver_coefs.begin(), singular_solver_coefs.end());
 
                   for (const auto & el : solved_degs_num[min_deg_1[1]]) {
                     singular_solver_coefs[el] = FFInt(g_ni[el].numerator) / FFInt(g_ni[el].denominator);
                   }
                 } else {
-                  for (const auto & el : singular_normalizer) {
-                    singular_solver_coefs[el] = tmp.second[el];
-                  }
-
                   solved_den.coefs.insert(singular_solver_coefs.begin(), singular_solver_coefs.end());
 
                   for (const auto & el : solved_degs_den[min_deg_1[1]]) {
@@ -812,14 +780,14 @@ namespace firefly {
                   canonical.second.erase(std::vector<uint>(1, min_deg_2[1]));
                 }
 
-                for (auto & el : canonical.first) {
+                for (const auto & el : canonical.first) {
                   uint key = el.first[0];
 
                   for (uint i = 0; i < coef_mat_num[key].size(); i++) {
                     std::vector<FFInt> tmp_yis(n, 1);
 
                     for (uint j = 2; j <= n; j++) {
-                      tmp_yis[j - 1] = rand_zi[std::make_pair(j, i)];
+                      tmp_yis[j - 1] = rand_zi[std::make_pair(j, i + 1)];
                     }
 
                     coef_mat_num[key][i] *= singular_solver.calc(tmp_yis);
@@ -849,11 +817,11 @@ namespace firefly {
                     std::vector<FFInt> tmp_yis(n, 1);
 
                     for (uint j = 2; j <= n; j++) {
-                      tmp_yis[j - 1] = rand_zi[std::make_pair(j, i)];
+                      tmp_yis[j - 1] = rand_zi[std::make_pair(j, i + 1)];
                     }
 
                     coef_mat_den[key][i] *= singular_solver.calc(tmp_yis);
-
+		    //TODO save g_di[solved] to save runtime
                     for (const auto & solved : solved_degs_den[key]) {
                       FFInt coef = FFInt(g_di[solved].numerator) / FFInt(g_di[solved].denominator);
 
@@ -901,8 +869,8 @@ namespace firefly {
                 std::transform(curr_zi_order.begin(), curr_zi_order.end(),
                 curr_zi_order.begin(), [](uint x) {return x + 1;});
 
-                for (uint zi = 2; zi <= n; zi ++) {
-                  auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
+                for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
+                  auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
                   set_new_rand(lock_statics, key);
                 }
@@ -1214,12 +1182,6 @@ namespace firefly {
         denominator = Polynomial(g_di);
         g_ni.clear();
         g_di.clear();
-        // release memory?
-        {
-          rn_map().swap(g_ni);
-          rn_map().swap(g_di);
-        }
-
         numerator.sort();
         denominator.sort();
         result = RationalFunction(numerator, denominator);
@@ -1447,6 +1409,7 @@ namespace firefly {
 
       solved_degs_num[deg].emplace_back(deg_vec);
 
+      //TODO get iterator to save a find
       if (min_deg_1[0] == 0 && std::find(singular_normalizer.begin(), singular_normalizer.end(), deg_vec) != singular_normalizer.end()) {
         singular_normalizer.erase(std::find(singular_normalizer.begin(), singular_normalizer.end(), deg_vec));
       }

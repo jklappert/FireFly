@@ -154,8 +154,8 @@ namespace firefly {
         rand = get_rand();//find_nth_prime(i - 1);
         rand_zi->emplace(std::make_pair(std::make_pair(i, 0), 1));
       } else {
+	lock.unlock();
         rand = get_rand();
-        rand_zi->emplace(std::make_pair(std::make_pair(i, 0), 1));
       }
 
       rand_zi->emplace(std::make_pair(std::make_pair(i, 1), rand));

@@ -38,9 +38,6 @@ int main() {
         primes_used = std::max(primes_used, rec.get_prime());
         prime = primes()[rec.get_prime()];
         FFInt::set_new_prime(prime);
-
-        if (primes_used > 6) std::exit(-1);
-
         rec.generate_anchor_points();
         kk = 0;
       }
@@ -65,7 +62,7 @@ int main() {
       FFInt cr_2(cr_2_mpz);
 
       // example for n = 4 using the Chinese Remainder theorem
-      FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
+      /*            FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
                           * t_yis[0].pow(5) + ((-3 * z1.pow(3) + 36 * z1.pow(2)
                                                 - 144 * z1 + 192) * t_yis[1].pow(2)) * t_yis[0].pow(4) + ((2 * z1.pow(3) - 24 * z1.pow(2)
                                                     + 96 * z1 - 128) * t_yis[1].pow(2)) * t_yis[0].pow(3) + ((2 * z1.pow(3) - 24 * z1.pow(2)
@@ -82,10 +79,10 @@ int main() {
       FFInt den = ((2*z1-6)*t_yis[2].pow(2)+((2*z1-6)*t_yis[1]+(2*z1-6)*t_yis[0]-2*z1+6)*t_yis[2]);*/
       //FFInt num = z1.pow(4) + 3*t_yis[0].pow(5) + cr_1*t_yis[1].pow(2);
       //FFInt den = 12*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0] + 1;
-      /*FFInt num = 17*cr_1*cr_2*z1 + 7*t_yis[0];
-      FFInt den = z1*cr_1*cr_2*cr_2*t_yis[0] + 3*t_yis[0]*t_yis[1] + z1*cr_1*t_yis[1] + cr_1*z1 + 12*t_yis[0];*/
-      //FFInt den = cr_1*(z1-t_yis[1]);//cr_1*(z1 - t_yis[0]) + cr_1*(z1.pow(2) - t_yis[0].pow(2));
-      //FFInt num = (z1 - t_yis[0]);// + (z1-t_yis[0]) + cr_1*t_yis[1].pow(2) + z1.pow(2) + t_yis[0].pow(2);//cr_2*cr_2*(z1 + t_yis[0]) + cr_2*cr_2*cr_1*(t_yis[0]*z1 + t_yis[1]*z1);
+      //FFInt num = 17*cr_1*z1 + 7*t_yis[0];
+      //FFInt den = z1*cr_1*cr_2*cr_2*t_yis[0] + 3*t_yis[0]*t_yis[1] + z1*cr_1*t_yis[1] + cr_1*z1 + 12*t_yis[0];
+      FFInt den = cr_1*(z1-t_yis[1]);//cr_1*(z1 - t_yis[0]) + cr_1*(z1.pow(2) - t_yis[0].pow(2));
+      FFInt num = (z1 - t_yis[0]);// + (z1-t_yis[0]) + cr_1*t_yis[1].pow(2) + z1.pow(2) + t_yis[0].pow(2);//cr_2*cr_2*(z1 + t_yis[0]) + cr_2*cr_2*cr_1*(t_yis[0]*z1 + t_yis[1]*z1);
 
       // example for n = 1
       /*FFInt num = (576 * z1.pow(12) - 35145 * z1.pow(11)

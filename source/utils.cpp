@@ -127,6 +127,20 @@ namespace firefly {
         }
       }
     } else {
+          std::cout << "finish triangular\n";                                                                                                      
+                                                                                                                                               
+    for (const auto & el : coef_mat) {                                                                                                         
+      for (int ii = 0; ii <= num_eqn; ii++) {                                                                                                  
+        if (ii != num_eqn) {                                                                                                                   
+          if (ii < num_eqn - 1)                                                                                                                
+            std::cout << el[ii] << "*c" << ii << "+";                                                                                          
+          else                                                                                                                                 
+            std::cout << el[ii] << "*c" << ii;                                                                                                 
+        } else                                                                                                                                 
+          std::cout << "==" << el[ii] << "\n";                                                                                                 
+      }                                                                                                                                        
+    }
+    std::cout << "Number of eq. : " << num_eqn << "\n";
       throw std::runtime_error("Singular system of equations!");
     }
 
