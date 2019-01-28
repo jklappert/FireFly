@@ -84,18 +84,10 @@ namespace firefly {
   }
 
   void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord) {
-    //TODO change later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    /*    if (prime_number > 0) {
-          std::unique_lock<std::mutex> lock(mutex_status);
-          curr_zi_order = feed_zi_ord;
-        }*/
-
     if (!done) {
       std::vector<uint> tmp_vec;
 
-      //TODO is the if necessary?
-      if (n > 1)
-        tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
+      tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
 
       // Compare if the food is the expected food; if not, store it for later use
       if (feed_zi_ord == tmp_vec) {
@@ -107,9 +99,10 @@ namespace firefly {
           sub_den.clear();
 
           if (rec_rat_coef()) {
+            bool tmp_done = test_guess(num);
             {
               std::unique_lock<std::mutex> lock(mutex_status);
-              done = test_guess(num);
+              done = tmp_done;
             }
 
             if (done) {
@@ -605,13 +598,9 @@ namespace firefly {
             // Get yi's for the current feed
             std::vector<FFInt> yis;
 
-            {
-              std::unique_lock<std::mutex> lock_statics(mutex_status);
-
-              for (uint i = 0; i < curr_zi_order.size(); i ++) {
-                std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                yis.emplace_back(rand_zi[std::make_pair(i + 2, curr_zi_order[i])]);
-              }
+            for (uint i = 0; i < curr_zi_order.size(); i ++) {
+              std::unique_lock<std::mutex> lock_statics(mutex_statics);
+              yis.emplace_back(rand_zi[std::make_pair(i + 2, curr_zi_order[i])]);
             }
 
             yis.insert(yis.begin(), FFInt(1));
@@ -749,7 +738,7 @@ namespace firefly {
 		for (const auto & el : singular_normalizer){
 		  singular_solver_coefs[el] = tmp.second[el];
 		}
-		
+
                 if (min_deg_1[0] == 0) {
                   solved_num.coefs.insert(singular_solver_coefs.begin(), singular_solver_coefs.end());
 
@@ -882,8 +871,6 @@ namespace firefly {
           }
         }
       } else {
-        //TODO remove?
-//      } else if (n > 1 && prime_number == 0 && feed_zi_ord != tmp_vec) {
         if (saved_ti.find(feed_zi_ord) == saved_ti.end()) {
           std::vector<std::pair<FFInt, FFInt>> tmp_ti = {std::make_pair(new_ti, num)};
           saved_ti[feed_zi_ord] = tmp_ti;

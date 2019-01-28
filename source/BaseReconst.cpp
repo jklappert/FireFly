@@ -108,12 +108,7 @@ namespace firefly {
 
   std::vector<uint> BaseReconst::get_zi_order() {
     std::unique_lock<std::mutex> lock(mutex_status);
-
-    if (n == 1 && type == RAT) {
-      return std::vector<uint> {};
-    } else {
-      return std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
-    }
+    return std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
   }
 
   bool BaseReconst::is_done() {
