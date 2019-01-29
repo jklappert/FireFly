@@ -121,62 +121,6 @@ namespace firefly {
     return new_prime;
   }
 
-  void BaseReconst::gen_anchor_points(std::unique_lock<std::mutex>& lock_statics, uint max_order) {
-    ff_pair_map* rand_zi;
-    uint start;
-
-    switch (type) {
-      case POLY:
-        start = 1;
-        rand_zi = &PolyReconst::rand_zi;
-        break;
-
-      case RAT:
-        start = 2;
-        rand_zi = &RatReconst::rand_zi;
-        RatReconst::anchor_points.clear();
-        break;
-    }
-
-    rand_zi->clear();
-
-    for (uint i = start; i <= n; i++) {
-      FFInt rand;
-
-      std::unique_lock<std::mutex> lock(mutex_status);
-      if (prime_number == 0) {
-        lock.unlock();
-        rand = get_rand();//find_nth_prime(i - 1);
-        rand_zi->emplace(std::make_pair(std::make_pair(i, 0), 1));
-      } else {
-	lock.unlock();
-        rand = get_rand();
-      }
-
-      rand_zi->emplace(std::make_pair(std::make_pair(i, 1), rand));
-
-      if (type == RAT)
-        RatReconst::anchor_points.emplace_back(rand);
-
-      for (uint j = 1; j <= max_order; j++) {
-        auto key = std::make_pair(i, j);
-        set_new_rand(lock_statics, key);
-      }
-    }
-  }
-
-  void BaseReconst::set_new_rand(std::unique_lock<std::mutex>& lock_statics, const std::pair<uint, uint>& key) {
-    switch (type) {
-      case POLY:
-        PolyReconst::rand_zi.emplace(std::make_pair(key, PolyReconst::rand_zi[std::make_pair(key.first, 1)].pow(key.second)));;
-        break;
-
-      case RAT:
-        RatReconst::rand_zi.emplace(std::make_pair(key, RatReconst::rand_zi[std::make_pair(key.first, 1)].pow(key.second)));;
-        break;
-    }
-  }
-
   mpz_map BaseReconst::convert_to_mpz(const ff_map& coefs) const {
     mpz_map ci_mpz;
 

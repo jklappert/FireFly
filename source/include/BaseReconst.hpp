@@ -45,8 +45,6 @@ namespace firefly {
     uint zi = 1;
     mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */
     mutable std::mutex mutex_status;
-    void set_new_rand(std::unique_lock<std::mutex>& lock_statics, const std::pair<uint, uint>& key);
-    void gen_anchor_points(std::unique_lock<std::mutex>& lock_statics, uint max_order = 1);
     /**
      *    Converts the coefficients of a rational function from FFInts to mpz_class
      *    objects

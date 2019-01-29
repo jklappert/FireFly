@@ -26,10 +26,11 @@ namespace firefly {
     void feed(const std::vector<FFInt>& yis, const FFInt& num);
     void feed(const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime);
     void interpolate();
-    static ff_pair_map rand_zi;
+    FFInt get_rand_zi(uint zi, uint order);
+    bool is_rand_zi_empty();
     Polynomial get_result();
     PolynomialFF get_result_ff();
-    void generate_anchor_points(uint max_order = 1);
+    void generate_anchor_points();
     void set_anchor_points(const std::vector<FFInt> &anchor_points, bool force = false);
   private:
     void interpolate(const FFInt& num, const std::vector<uint>& zi_ord);
@@ -85,5 +86,6 @@ namespace firefly {
     std::unordered_map<uint, std::vector<PolynomialFF>> ais {};
     std::unordered_map<uint, int> max_deg {};
     static std::mutex mutex_statics;
+    static ff_pair_map rand_zi;
   };
 }

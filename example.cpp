@@ -46,10 +46,10 @@ int main() {
       t = rec.get_rand();
 
       // Add the shift to the scaling variable
-      FFInt z1 = t + RatReconst::shift[0];
+      FFInt z1 = t + rec.get_zi_shift(1);
 
       for (uint j = 2; j <= n; j++) {
-        t_yis[j - 2] = t * rec.rand_zi[std::make_pair(j, rec.get_zi_order()[j - 2])] + RatReconst::shift[j - 1];
+        t_yis[j - 2] = t * rec.get_rand_zi(j, rec.get_zi_order()[j - 2]) + rec.get_zi_shift(j);
       }
 
       // Some examples for number for which one needs to use the Chinese
@@ -62,7 +62,7 @@ int main() {
       FFInt cr_2(cr_2_mpz);
 
       // example for n = 4 using the Chinese Remainder theorem
-      /*            FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
+      FFInt den = cr_1 * (((z1.pow(3) - 12 * z1.pow(2) + 48 * z1 - 64) * t_yis[1].pow(2))
                           * t_yis[0].pow(5) + ((-3 * z1.pow(3) + 36 * z1.pow(2)
                                                 - 144 * z1 + 192) * t_yis[1].pow(2)) * t_yis[0].pow(4) + ((2 * z1.pow(3) - 24 * z1.pow(2)
                                                     + 96 * z1 - 128) * t_yis[1].pow(2)) * t_yis[0].pow(3) + ((2 * z1.pow(3) - 24 * z1.pow(2)
@@ -81,8 +81,8 @@ int main() {
       //FFInt den = 12*z1*t_yis[0]*t_yis[1].pow(2) + 3*t_yis[0] + 1;
       //FFInt num = 17*cr_1*z1 + 7*t_yis[0];
       //FFInt den = z1*cr_1*cr_2*cr_2*t_yis[0] + 3*t_yis[0]*t_yis[1] + z1*cr_1*t_yis[1] + cr_1*z1 + 12*t_yis[0];
-      FFInt den = cr_1*(z1-t_yis[1]);//cr_1*(z1 - t_yis[0]) + cr_1*(z1.pow(2) - t_yis[0].pow(2));
-      FFInt num = (z1 - t_yis[0]);// + (z1-t_yis[0]) + cr_1*t_yis[1].pow(2) + z1.pow(2) + t_yis[0].pow(2);//cr_2*cr_2*(z1 + t_yis[0]) + cr_2*cr_2*cr_1*(t_yis[0]*z1 + t_yis[1]*z1);
+      //FFInt den = cr_1*(z1-t_yis[1]);//cr_1*(z1 - t_yis[0]) + cr_1*(z1.pow(2) - t_yis[0].pow(2));
+      //FFInt num = (z1 - t_yis[0]);// + (z1-t_yis[0]) + cr_1*t_yis[1].pow(2) + z1.pow(2) + t_yis[0].pow(2);//cr_2*cr_2*(z1 + t_yis[0]) + cr_2*cr_2*cr_1*(t_yis[0]*z1 + t_yis[1]*z1);
 
       // example for n = 1
       /*FFInt num = (576 * z1.pow(12) - 35145 * z1.pow(11)
@@ -101,15 +101,10 @@ int main() {
       kk++;
       count++;
 
-      std::vector<uint> tmp_vec;
-
-      if (n > 1)
-        tmp_vec = rec.get_zi_order();
-
       //std::cout << tmp_vec[0] << " " << tmp_vec[1] << " " << tmp_vec[2] << "\n";
 
       // Feed the algorithm with the current zi_order
-      rec.feed(t, num / den, tmp_vec, primes_used);
+      rec.feed(t, num / den, rec.get_zi_order(), primes_used);
       rec.interpolate();
     }
 
@@ -153,7 +148,7 @@ int main() {
       }
 
       for (uint i = 0; i < n; i++) {
-        yis[i] = rec_poly.rand_zi[std::make_pair(i + 1, rec_poly.get_zi_order()[i])];
+        yis[i] = rec_poly.get_rand_zi(i + 1, rec_poly.get_zi_order()[i]);
       }
 
       mpz_class cr_1_mpz;
@@ -164,6 +159,7 @@ int main() {
 
       kk++;
       count++;
+
       rec_poly.feed(num, rec_poly.get_zi_order(), primes_used);
       rec_poly.interpolate();
     }
@@ -177,3 +173,4 @@ int main() {
 
   return 0;
 }
+

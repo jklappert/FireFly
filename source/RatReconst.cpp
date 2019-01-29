@@ -11,7 +11,6 @@ namespace firefly {
   bool RatReconst::shifted = false;
   ff_pair_map RatReconst::rand_zi;
   std::mutex RatReconst::mutex_statics;
-  std::vector<FFInt> RatReconst::anchor_points {};
 
   RatReconst::RatReconst(uint n_) {
     n = n_;
@@ -76,6 +75,18 @@ namespace firefly {
         queue.pop_front();
         lock.unlock();
         interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food));
+
+        while (saved_ti.find(curr_zi_order) != saved_ti.end()) {
+          /*
+          * If not finished, check if we can use some saved runs
+          */
+          if (saved_ti.find(curr_zi_order) != saved_ti.end()) {
+            std::pair<FFInt, FFInt> key_val = saved_ti.at(curr_zi_order).back();
+            saved_ti.at(curr_zi_order).pop_back();
+            interpolate(key_val.first, key_val.second, curr_zi_order);
+          }
+        }
+
         lock.lock();
       }
     }
@@ -85,12 +96,9 @@ namespace firefly {
 
   void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord) {
     if (!done) {
-      std::vector<uint> tmp_vec;
-
-      tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
 
       // Compare if the food is the expected food; if not, store it for later use
-      if (feed_zi_ord == tmp_vec) {
+      if (feed_zi_ord == curr_zi_order) {
         // first check if we are done. If not start the reconstruction again using
         // the chinese remainder theorem in combining the previous results
         if (new_prime) {
@@ -172,11 +180,9 @@ namespace firefly {
 
           // Prepare food for Gauss system
           if (n > 1) {
-            std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
-
-            if (saved_ti.find(tmp_vec) != saved_ti.end()) {
-              t_food.insert(t_food.end(), saved_ti.at(tmp_vec).begin(), saved_ti.at(tmp_vec).end());
-              saved_ti.erase(tmp_vec);
+            if (saved_ti.find(curr_zi_order) != saved_ti.end()) {
+              t_food.insert(t_food.end(), saved_ti[curr_zi_order].begin(), saved_ti[curr_zi_order].end());
+              saved_ti.erase(curr_zi_order);
             }
           }
 
@@ -304,7 +310,13 @@ namespace firefly {
                 {
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
                   PolyReconst rec(n - 1, (uint) i, true);
-                  rec.set_anchor_points(anchor_points);
+                  if(rec.is_rand_zi_empty()){
+                    std::vector<FFInt> anchor_points{};
+                    for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++){
+                      anchor_points.emplace_back(rand_zi[std::make_pair(tmp_zi, 1)]);
+                    }
+                    rec.set_anchor_points(anchor_points);
+                  }
                   coef_n.emplace(std::make_pair((uint) i, std::move(rec)));
                 }
 
@@ -333,7 +345,12 @@ namespace firefly {
                 {
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
                   PolyReconst rec(n - 1, i, true);
-                  rec.set_anchor_points(anchor_points);
+                  if(rec.is_rand_zi_empty()){
+                    std::vector<FFInt> anchor_points{};
+                    for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++)
+                      anchor_points.emplace_back(rand_zi[std::make_pair(tmp_zi, 1)]);
+                    rec.set_anchor_points(anchor_points);
+                  }
                   coef_d.emplace(std::make_pair(i, std::move(rec)));
                 }
 
@@ -483,7 +500,7 @@ namespace firefly {
               FFInt const_shift = sub_den[0].calc(std::vector<FFInt> (n, 0));
 
               if (const_shift != 1) {
-                ff_map dummy_map{};
+                ff_map dummy_map {};
                 terminator = FFInt(1) - const_shift;
                 dummy_map.emplace(std::make_pair(std::vector<uint> (n, 0), terminator));
                 denominator = denominator + PolynomialFF(n, dummy_map);
@@ -491,10 +508,10 @@ namespace firefly {
                 terminator = numerator.coefs[std::vector<uint> (n, 0)];
               } else {
                 std::vector<uint> min_deg_den_vec {};
-		//TODO change rand_zi from a pair key to the zi and
-		// just a vector so we can ensure that there is
-		// no rehash problem. It should be at worst as fast
-		// as the unordered map if not faster
+                //TODO change rand_zi from a pair key to the zi and
+                // just a vector so we can ensure that there is
+                // no rehash problem. It should be at worst as fast
+                // as the unordered map if not faster
 
                 for (const auto & el : denominator.coefs) {
                   std::vector<uint> degs_reverse = el.first;
@@ -552,7 +569,7 @@ namespace firefly {
               coef_d.clear();
               curr_zi_order_num.clear();
               curr_zi_order_den.clear();
-	      //              std::cout << "is singular " << is_singular_system << "\n";
+              //              std::cout << "is singular " << is_singular_system << "\n";
               // normalize
               FFInt equializer = FFInt(1) / terminator;
 
@@ -575,22 +592,11 @@ namespace firefly {
               new_prime = true;
             } else if (zi > 0) {
               // set new random
-              for (uint zi = 2; zi <= n; zi ++) {
-                auto key = std::make_pair(zi, curr_zi_order[zi - 2]);
+              for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
+                auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                set_new_rand(lock_statics, key);
+                rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
               }
-            }
-
-            /*
-             * If not finished, check if we can use some saved runs
-             */
-            std::vector<uint> tmp_vec = std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
-
-            if (saved_ti.find(tmp_vec) != saved_ti.end()) {
-              std::pair<FFInt, FFInt> key_val = saved_ti.at(tmp_vec).back();
-              saved_ti.at(tmp_vec).pop_back();
-              interpolate(key_val.first, key_val.second, tmp_vec);
             }
 
             return;
@@ -666,8 +672,8 @@ namespace firefly {
                   FFInt coef = 1;
 
                   for (uint i = 1; i < n; i++) {
-		    coef *= yis[i].pow(el[i]);
-		  }
+                    coef *= yis[i].pow(el[i]);
+                  }
 
                   res -= coef * FFInt(g_ni[el].numerator) / FFInt(g_ni[el].denominator);
                 }
@@ -726,18 +732,19 @@ namespace firefly {
 
                 eq.emplace_back(coef);
               }
-	      std::cout << "Num " << num << " yis " << yis[0] << " " << yis[1] << " " << yis[2] << " " << yis[3] << "\n";
+
+              std::cout << "Num " << num << " yis " << yis[0] << " " << yis[1] << " " << yis[2] << " " << yis[3] << "\n";
               eq.emplace_back(res);
               singular_coef_mat.emplace_back(eq);
               //TODO why does this work should be optimized in future versions!
 
               if (singular_coef_mat.size() == singular_normalizer.size() + singular_helper.size()) {
-		std::pair<ff_map, ff_map> tmp = solve_singular_normalizer();
+                std::pair<ff_map, ff_map> tmp = solve_singular_normalizer();
                 ff_map singular_solver_coefs {};
 
-		for (const auto & el : singular_normalizer){
-		  singular_solver_coefs[el] = tmp.second[el];
-		}
+                for (const auto & el : singular_normalizer) {
+                  singular_solver_coefs[el] = tmp.second[el];
+                }
 
                 if (min_deg_1[0] == 0) {
                   solved_num.coefs.insert(singular_solver_coefs.begin(), singular_solver_coefs.end());
@@ -810,7 +817,8 @@ namespace firefly {
                     }
 
                     coef_mat_den[key][i] *= singular_solver.calc(tmp_yis);
-		    //TODO save g_di[solved] to save runtime
+
+                    //TODO save g_di[solved] to save runtime
                     for (const auto & solved : solved_degs_den[key]) {
                       FFInt coef = FFInt(g_di[solved].numerator) / FFInt(g_di[solved].denominator);
 
@@ -861,7 +869,7 @@ namespace firefly {
                 for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
                   auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  set_new_rand(lock_statics, key);
+                  rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
                 }
 
                 uint sub = is_singular_system ? 1 : 0;
@@ -875,7 +883,7 @@ namespace firefly {
           std::vector<std::pair<FFInt, FFInt>> tmp_ti = {std::make_pair(new_ti, num)};
           saved_ti[feed_zi_ord] = tmp_ti;
         } else {
-          saved_ti.at(feed_zi_ord).emplace_back(std::make_pair(new_ti, num));
+          saved_ti[feed_zi_ord].emplace_back(std::make_pair(new_ti, num));
         }
       }
     }
@@ -1820,78 +1828,15 @@ namespace firefly {
     }
   }
 
-  uint64_t RatReconst::find_sieve_size(uint n) {
-    // For small n, the formula returns a value too low, so we can just
-    // hardcode the sieve size to 5 (5th prime is 11).
-    if (n < 6)
-      return 13;
-
-    // We can't find a prime that will exceed ~0UL.
-    if (n >= (~0UL / std::log(~0UL)))
-      return 0;
-
-    // Binary search for the right value.
-    unsigned long low  = n;
-    unsigned long high = ~0UL - 1;
-
-    do {
-      unsigned long mid   = low + (high - low) / 2;
-      double        guess = mid / std::log(mid);
-
-      if (guess > n)
-        high = (unsigned long) mid - 1;
-      else
-        low = (unsigned long) mid + 1;
-    } while (low < high);
-
-    return high + 1;
-  }
-
-  uint64_t RatReconst::find_nth_prime(uint n) {
-    if (!n) return 1;           // "0th prime"
-
-    if (!--n) return 2;         // first prime
-
-    unsigned long sieve_size = find_sieve_size(n);
-    unsigned long count = 0;
-    unsigned long max_i = sqrt(sieve_size - 1) + 1;
-
-    if (sieve_size == 0)
-      return 0;
-
-    std::vector<bool> sieve(sieve_size);
-
-    for (unsigned long i = 3;  true;  i += 2) {
-      if (!sieve[i]) {
-        if (++count == n)
-          return i;
-
-        if (i >= max_i)
-          continue;
-
-        unsigned long j = i * i;
-        unsigned long inc = i + i;
-        unsigned long maxj = sieve_size - inc;
-
-        // This loop checks j before adding inc so that we can stop
-        // before j overflows.
-        do {
-          sieve[j] = true;
-
-          if (j >= maxj)
-            break;
-
-          j += inc;
-        } while (1);
-      }
-    }
-
-    return 0;
-  }
-
-  void RatReconst::generate_anchor_points(uint max_order) {
+  void RatReconst::generate_anchor_points() {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
-    gen_anchor_points(lock_statics, max_order);
+
+    rand_zi.clear();
+
+    for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
+      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
+      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), get_rand()));
+    }
   }
 
   void RatReconst::add_non_solved_num(const std::vector<uint>& deg) {
@@ -2089,5 +2034,29 @@ namespace firefly {
     }
 
     return PolynomialFF(n, poly);
+  }
+
+  FFInt RatReconst::get_rand_zi(uint zi, uint order) {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    return rand_zi.at(std::make_pair(zi, order));
+  }
+
+  std::vector<FFInt> RatReconst::get_rand_zi_vec(std::vector<uint> order) {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::vector<FFInt> res {};
+    for(uint i = 0; i < n; i++){
+      res.emplace_back(rand_zi.at(std::make_pair(i + 2, order[i])));
+    }
+    return res;
+  }
+
+  FFInt RatReconst::get_zi_shift(uint zi) {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    return shift[zi - 1];
+  }
+
+  std::vector<FFInt> RatReconst::get_zi_shit_vec() {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    return shift;
   }
 }

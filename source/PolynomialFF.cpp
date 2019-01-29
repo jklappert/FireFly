@@ -251,7 +251,7 @@ namespace firefly {
     return PolynomialFF(n, new_monomials);
   }
 
-  PolynomialFF PolynomialFF::add_shift(std::vector<FFInt>& shift) {
+  PolynomialFF PolynomialFF::add_shift(const std::vector<FFInt>& shift) {
     if (shift.size() != coefs.begin()->first.size())
       throw std::runtime_error("Mismatch in sizes of the shift and variables!");
 

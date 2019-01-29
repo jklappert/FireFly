@@ -31,7 +31,7 @@ namespace firefly {
     PolynomialFF mul(const uint zi);
     std::vector<uint> min_deg();
     std::vector<uint> max_deg();
-    PolynomialFF add_shift(std::vector<FFInt>& shift);
+    PolynomialFF add_shift(const std::vector<FFInt>& shift);
   private:
     std::vector<uint> min_degree {};
     std::vector<uint> max_degree {};

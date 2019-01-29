@@ -28,7 +28,6 @@ namespace firefly {
     for (uint i = 1; i <= n; i++) {
       std::vector<FFInt> yi;
       std::vector<PolynomialFF> ai;
-      ai.reserve(300);
       ais.emplace(std::make_pair(i, std::move(ai)));
       max_deg.insert(std::make_pair(i, -1));
     }
@@ -256,56 +255,53 @@ namespace firefly {
             check = true;
 
           if (check && zi == n) {
-	    if(!with_rat_reconst){
-	      {
-		std::unique_lock<std::mutex> lock(mutex_status);
-		curr_zi_order = std::vector<uint> (n, 1);
-	      }
-	      ff_map tmp_pol_ff = construct_canonical(zi, ais[zi]);
-	      tmp_pol_ff.insert(solved_degs.begin(), solved_degs.end());
-	      
-	      mpz_map ci_tmp = convert_to_mpz(tmp_pol_ff);
-	      
-	      if (!use_chinese_remainder) {
-		combined_ci = ci_tmp;
-	      } else {
-		// use another prime to utilize the Chinese Remainder Theorem to reconstruct the rational
-		// coefficients
-		
-		std::pair<mpz_class, mpz_class> p1;
-		std::pair<mpz_class, mpz_class> p2;
-		std::pair<mpz_class, mpz_class> p3;
-		
-		for (auto it = combined_ci.begin(); it != combined_ci.end(); ++it) {
-		  p1 = std::make_pair(it->second, combined_prime);
-		  p2 = std::make_pair(ci_tmp[it->first], FFInt::p);
-		  p3 = run_chinese_remainder(p1, p2);
-		  combined_ci[it->first] = p3.first;
-		}
-		
-		combined_prime = p3.second;
-	      }
-	    }
+            if (!with_rat_reconst) {
+              {
+                std::unique_lock<std::mutex> lock(mutex_status);
+                curr_zi_order = std::vector<uint> (n, 1);
+              }
+              ff_map tmp_pol_ff = construct_canonical(zi, ais[zi]);
+              tmp_pol_ff.insert(solved_degs.begin(), solved_degs.end());
+
+              mpz_map ci_tmp = convert_to_mpz(tmp_pol_ff);
+
+              if (!use_chinese_remainder) {
+                combined_ci = ci_tmp;
+              } else {
+                // use another prime to utilize the Chinese Remainder Theorem to reconstruct the rational
+                // coefficients
+
+                std::pair<mpz_class, mpz_class> p1;
+                std::pair<mpz_class, mpz_class> p2;
+                std::pair<mpz_class, mpz_class> p3;
+
+                for (auto it = combined_ci.begin(); it != combined_ci.end(); ++it) {
+                  p1 = std::make_pair(it->second, combined_prime);
+                  p2 = std::make_pair(ci_tmp[it->first], FFInt::p);
+                  p3 = run_chinese_remainder(p1, p2);
+                  combined_ci[it->first] = p3.first;
+                }
+
+                combined_prime = p3.second;
+              }
+            }
+
             std::unique_lock<std::mutex> lock(mutex_status);
             new_prime = true;
             prime_number ++;
             check = false;
             return;
           }
-
-          if (!with_rat_reconst) {
-            auto key = std::make_pair(zi, curr_zi_order[zi - 1]);
-            std::unique_lock<std::mutex> lock_statics(mutex_statics);
-            set_new_rand(lock_statics, key);
-          }
-
-          return;
         }
+      }
 
-        if (!with_rat_reconst) {
-          auto key = std::make_pair(zi, curr_zi_order[zi - 1]);
+      if (!with_rat_reconst) {
+        for (uint tmp_zi = 1; tmp_zi <= n; tmp_zi ++) {
+          auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1]);
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
-          set_new_rand(lock_statics, key);
+
+          if (rand_zi.find(key) == rand_zi.end())
+            rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
         }
       }
     }
@@ -413,7 +409,7 @@ namespace firefly {
         for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
           // curr_zi_ord starts at 1, thus we need to subtract 1 entry
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
-          vi *= rand_zi[std::make_pair(tmp_zi, el[tmp_zi - 1])];
+          vi *= rand_zi.at(std::make_pair(tmp_zi, el[tmp_zi - 1]));
         }
       }
 
@@ -429,7 +425,7 @@ namespace firefly {
         for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
           // curr_zi_ord starts at 1, thus we need to subtract 1 entry
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
-          vi *= rand_zi[std::make_pair(tmp_zi, el[tmp_zi - 1])];
+          vi *= rand_zi.at(std::make_pair(tmp_zi, el[tmp_zi - 1]));
         }
 
         vis.emplace_back(vi);
@@ -483,8 +479,24 @@ namespace firefly {
     return PolynomialFF(n, poly);
   }
 
-  void PolyReconst::generate_anchor_points(uint max_order) {
+  void PolyReconst::generate_anchor_points() {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
-    gen_anchor_points(lock_statics, max_order);
+
+    rand_zi.clear();
+
+    for (uint tmp_zi = 1; tmp_zi <= n; tmp_zi ++) {
+      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
+      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), get_rand()));
+    }
+  }
+
+  FFInt PolyReconst::get_rand_zi(uint zi, uint order) {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    return rand_zi.at(std::make_pair(zi, order));
+  }
+
+  bool PolyReconst::is_rand_zi_empty() {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    return rand_zi.empty();
   }
 }

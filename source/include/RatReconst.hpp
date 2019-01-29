@@ -19,11 +19,12 @@ namespace firefly {
     void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime);
     RationalFunction get_result();
     void interpolate();
-    static std::vector<FFInt> shift;
-    static ff_pair_map rand_zi;
-    static std::vector<FFInt> anchor_points;
     void disable_shift();
-    void generate_anchor_points(uint max_order = 1);
+    void generate_anchor_points();
+    FFInt get_rand_zi(uint zi, uint order);
+    std::vector<FFInt> get_rand_zi_vec(std::vector<uint> order);
+    FFInt get_zi_shift(uint zi);
+    std::vector<FFInt> get_zi_shit_vec();
   private:
     void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord);
     FFInt comp_ai(int i, int ip, const FFInt& num);
@@ -80,7 +81,6 @@ namespace firefly {
     void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
     void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
     bool first_run = true;
-    static bool shifted;
     std::list<std::tuple<FFInt, FFInt, std::vector<uint>>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
     std::unordered_map<uint, std::vector<FFInt>> coef_mat_num {}; //new
@@ -103,8 +103,6 @@ namespace firefly {
     int curr_deg_num = -1;
     int curr_deg_den = -1;
     bool is_singular_system = false;
-    //std::clock_t clock_test = 0;
-    //std::clock_t clock_test_2 = 0;
     std::vector<uint> curr_zi_order_num {};
     std::vector<uint> curr_zi_order_den {};
     uint tmp_solved_coefs_num = 0;
@@ -117,15 +115,12 @@ namespace firefly {
     rn_map g_di {}; /**< rational coefficient guesses for the denominator*/
     mpz_map combined_ni {};  /**< The combination of the coefficients of the numerator over finite field with the chinese remained theorem */
     mpz_map combined_di {};  /**< The combination of the coefficients of the denominator over finite field with the chinese remained theorem */
-    uint64_t find_nth_prime(uint n);
-    uint64_t find_sieve_size(uint n);
     static std::mutex mutex_statics;
     void add_non_solved_num(const std::vector<uint>& deg);
     void add_non_solved_den(const std::vector<uint>& deg);
     void check_for_solved_degs(std::vector<uint>& uni_degs, const bool is_num);
     void find_sparsest_terms();
-    //sctructure: is_den, degree, number of terms
-    std::vector<uint> min_deg_1; //new
+    std::vector<uint> min_deg_1; //new //structure: is_den, degree, number of terms
     std::vector<uint> min_deg_2; //new
     std::vector<std::vector<uint>> singular_normalizer {}; //new
     std::vector<std::vector<uint>> singular_helper {}; //new
@@ -135,5 +130,8 @@ namespace firefly {
                                               const std::vector<FFInt>& nums);
     std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_num {}; //new
     std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_den {}; //new
+    static std::vector<FFInt> shift;
+    static ff_pair_map rand_zi;
+    static bool shifted;
   };
 }
