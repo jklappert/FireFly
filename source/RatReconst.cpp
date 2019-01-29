@@ -2044,8 +2044,8 @@ namespace firefly {
   std::vector<FFInt> RatReconst::get_rand_zi_vec(std::vector<uint> order) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> res {};
-    for(uint i = 0; i < n; i++){
-      res.emplace_back(rand_zi.at(std::make_pair(i + 2, order[i])));
+    for(uint i = 2; i <= n; i++){
+      res.emplace_back(rand_zi.at(std::make_pair(i, order[i - 2])));
     }
     return res;
   }
