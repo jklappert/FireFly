@@ -28,11 +28,13 @@ int main() {
     uint primes_used = 0;
 
     // Feed loop
+    std::vector<FFInt> shift = rec.get_zi_shift_vec();
     while (!rec.is_done()) {
       // If a new prime is needed, set it, generate new random variables
       // and reset counters
       if (primes_used != rec.get_prime()) {
         rec.disable_shift();
+        std::fill(shift.begin(), shift.end(), 0);
 
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
         primes_used = std::max(primes_used, rec.get_prime());
@@ -46,10 +48,10 @@ int main() {
       t = rec.get_rand();
 
       // Add the shift to the scaling variable
-      FFInt z1 = t + rec.get_zi_shift(1);
+      FFInt z1 = t + shift[0];
 
       for (uint j = 2; j <= n; j++) {
-        t_yis[j - 2] = t * rec.get_rand_zi(j, rec.get_zi_order()[j - 2]) + rec.get_zi_shift(j);
+        t_yis[j - 2] = t * rec.get_rand_zi(j, rec.get_zi_order()[j - 2]) + shift[j - 1];
       }
 
       // Some examples for number for which one needs to use the Chinese

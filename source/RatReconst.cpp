@@ -2055,7 +2055,7 @@ namespace firefly {
     return shift[zi - 1];
   }
 
-  std::vector<FFInt> RatReconst::get_zi_shit_vec() {
+  std::vector<FFInt> RatReconst::get_zi_shift_vec() {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return shift;
   }

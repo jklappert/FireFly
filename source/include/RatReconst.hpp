@@ -24,7 +24,7 @@ namespace firefly {
     FFInt get_rand_zi(uint zi, uint order);
     std::vector<FFInt> get_rand_zi_vec(std::vector<uint> order);
     FFInt get_zi_shift(uint zi);
-    std::vector<FFInt> get_zi_shit_vec();
+    std::vector<FFInt> get_zi_shift_vec();
   private:
     void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord);
     FFInt comp_ai(int i, int ip, const FFInt& num);
