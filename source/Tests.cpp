@@ -1,14 +1,20 @@
 #include "Tests.hpp"
 
 namespace firefly {
-  //example for gg->HH large interpolation problem
+  //example for gg->HH large interpolation problem augmented with large coefficients
   FFInt gghh(std::vector<FFInt> yis) {
     FFInt z1 = yis[0];
     std::vector<FFInt> t_yis(3);
     t_yis[0] = yis[1];
     t_yis[1] = yis[2];
     t_yis[2] = yis[3];
-    FFInt num = t_yis[0] * (-FFInt(96) + 96 * z1 - 24 * z1 . pow(2)) * t_yis[2] . pow(9) +
+    mpz_class cr_1_mpz;
+    cr_1_mpz = "123456789109898799879870980";
+    mpz_class cr_2_mpz;
+    cr_2_mpz = "123456789109898799879";
+    FFInt cr_1(cr_1_mpz);
+    FFInt cr_2(cr_2_mpz);
+    FFInt num = cr_1*(t_yis[0] * (-FFInt(96) + 96 * z1 - 24 * z1 . pow(2)) * t_yis[2] . pow(9) +
                 t_yis[2] . pow(8) * (432 - 384 * z1 + 84 * z1 . pow(2) +
                                      t_yis[0] * t_yis[1] * (432 - 432 * z1 + 108 * z1 . pow(2)) + t_yis[0] * (1552 - 1500 * z1 + 362 * z1 . pow(2)) +
                                      (16 - 104 * z1 + 48 * z1 . pow(2)) * t_yis[0] . pow(2)) +
@@ -167,9 +173,9 @@ namespace firefly {
                                                                        (-2496 + 2412 * z1 - 582 * z1 . pow(2)) * t_yis[0] . pow(2) +
                                                                        (-52 + 56 * z1 - 15 * z1 . pow(2)) * t_yis[0] . pow(3)) * t_yis[1] . pow(5) +
                                                                       (-160 + 144 * z1 + t_yis[0] * (-320 + 304 * z1 - 72 * z1 . pow(2)) - 32 * z1 . pow(2) +
-                                                                       (-12 + 12 * z1 - 3 * z1 . pow(2)) * t_yis[0] . pow(2)) * t_yis[1] . pow(6));
+                                                                       (-12 + 12 * z1 - 3 * z1 . pow(2)) * t_yis[0] . pow(2)) * t_yis[1] . pow(6)));
 
-    FFInt den = t_yis[2] . pow(10) * (192 - 48 * z1 + (288 - 72 * z1) * t_yis[0] + (-192 + 48 * z1) * t_yis[0] . pow(2)) +
+    FFInt den = cr_2*(t_yis[2] . pow(10) * (192 - 48 * z1 + (288 - 72 * z1) * t_yis[0] + (-192 + 48 * z1) * t_yis[0] . pow(2)) +
                 t_yis[2] . pow(9) * (-2304 + 576 * z1 + (-3712 + 928 * z1) * t_yis[0] + (960 - 240 * z1) * t_yis[0] . pow(2) +
                                      t_yis[1] * (-1024 + 256 * z1 + (-1440 + 360 * z1) * t_yis[0] + (736 - 184 * z1) * t_yis[0] . pow(2)) +
                                      (736 - 184 * z1) * t_yis[0] . pow(3)) + t_yis[1] * ((1024 - 256 * z1) * t_yis[0] . pow(6) +
@@ -297,7 +303,7 @@ namespace firefly {
                              (-8128 + 2032 * z1) * t_yis[0] . pow(3) + (-48 + 12 * z1) * t_yis[0] . pow(4)) * t_yis[1] . pow(5) +
                             (-2048 + 512 * z1 + (-4160 + 1040 * z1) * t_yis[0] + (-2480 + 620 * z1) * t_yis[0] . pow(2) +
                              (-64 + 16 * z1) * t_yis[0] . pow(3)) * t_yis[1] . pow(6) +
-                            (-256 + 64 * z1 + (-272 + 68 * z1) * t_yis[0] + (-16 + 4 * z1) * t_yis[0] . pow(2)) * t_yis[1] . pow(7));
+                            (-256 + 64 * z1 + (-272 + 68 * z1) * t_yis[0] + (-16 + 4 * z1) * t_yis[0] . pow(2)) * t_yis[1] . pow(7)));
     return num / den;
   }
 
@@ -328,7 +334,7 @@ namespace firefly {
     return num / den;
   }
 
-  // example for n = 4 using the Chinese Remainder theorem
+  // example for n = 4 using the Chinese Remainder Theorem
   FFInt n_eq_4(std::vector<FFInt> yis) {
     mpz_class cr_1_mpz;
     cr_1_mpz = "123456789109898799879870980";

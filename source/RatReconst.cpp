@@ -1625,7 +1625,7 @@ namespace firefly {
         // If the current degree is smaller than the total degree of the polynomial
         // subtract the higher terms to save numerical runs
         if (r > curr_deg_den)
-          res += tmp_num * (solved_degs_den[r].calc(yis) + sub_den[r].calc(yis)) * tmp_ti.pow(r);
+         res += tmp_num * (solved_degs_den[r].calc(yis) + sub_den[r].calc(yis)) * tmp_ti.pow(r);
         else
           eq.emplace_back(-tmp_ti.pow(r) * tmp_num);
       }
@@ -1827,7 +1827,7 @@ namespace firefly {
     uint solved_degs = 1;
     curr_deg_num --;
 
-    if (curr_deg_num >= 0) {
+    if (curr_deg_num > -1) {
       while (!found) {
         if (coef_mat_num.find(curr_deg_num) == coef_mat_num.end()) {
           curr_deg_num --;
@@ -1841,6 +1841,11 @@ namespace firefly {
     }
 
     tmp_solved_coefs_num += solved_degs;
+    {
+      std::unique_lock<std::mutex> lock(mutex_status);
+      num_eqn = max_deg_den + max_deg_num + 1
+                - tmp_solved_coefs_num - tmp_solved_coefs_den;
+    }
   }
 
   void RatReconst::set_new_curr_deg_den_singular(uint key) {
@@ -1875,13 +1880,11 @@ namespace firefly {
     uint solved_degs = 1;
     curr_deg_den --;
 
-    if (curr_deg_den > 0) {
+    if (curr_deg_den > -1) {
       while (!found) {
         if (coef_mat_den.find(curr_deg_den) == coef_mat_den.end()) {
           curr_deg_den --;
-
-          if (curr_deg_den > 0)
-            solved_degs ++;
+          solved_degs ++;
         } else
           found = true;
 
@@ -1890,9 +1893,13 @@ namespace firefly {
           found = true;
         }
       }
-    } else
-      curr_deg_den = -1;
+    }
 
     tmp_solved_coefs_den += solved_degs;
+    {
+      std::unique_lock<std::mutex> lock(mutex_status);
+      num_eqn = max_deg_den + max_deg_num + 1
+                - tmp_solved_coefs_num - tmp_solved_coefs_den;
+    }
   }
 }
