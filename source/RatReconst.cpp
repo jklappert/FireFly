@@ -98,7 +98,10 @@ namespace firefly {
 
       // Compare if the food is the expected food; if not, store it for later use
       if (feed_zi_ord == curr_zi_order) {
-        if (need_prime_shift) is_singular_system = true;
+        {
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+          if (need_prime_shift) is_singular_system = true;
+        }
 
         // first check if we are done. If not start the reconstruction again using
         // the chinese remainder theorem in combining the previous results
@@ -1332,6 +1335,7 @@ namespace firefly {
     solved_den = other.solved_den;
     solved_degs_num = other.solved_degs_num;
     solved_degs_den = other.solved_degs_den;
+    min_deg_den_vec = other.min_deg_den_vec;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -1384,6 +1388,7 @@ namespace firefly {
     solved_den = std::move(other.solved_den);
     solved_degs_num = std::move(other.solved_degs_num);
     solved_degs_den = std::move(other.solved_degs_den);
+    min_deg_den_vec = std::move(other.min_deg_den_vec);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -1437,6 +1442,7 @@ namespace firefly {
       solved_den = other.solved_den;
       solved_degs_num = other.solved_degs_num;
       solved_degs_den = other.solved_degs_den;
+      min_deg_den_vec = other.min_deg_den_vec;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -1493,6 +1499,7 @@ namespace firefly {
       solved_den = std::move(other.solved_den);
       solved_degs_num = std::move(other.solved_degs_num);
       solved_degs_den = std::move(other.solved_degs_den);
+      min_deg_den_vec = std::move(other.min_deg_den_vec);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);
