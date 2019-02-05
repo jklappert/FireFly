@@ -1625,7 +1625,7 @@ namespace firefly {
         // If the current degree is smaller than the total degree of the polynomial
         // subtract the higher terms to save numerical runs
         if (r > curr_deg_den)
-         res += tmp_num * (solved_degs_den[r].calc(yis) + sub_den[r].calc(yis)) * tmp_ti.pow(r);
+          res += tmp_num * (solved_degs_den[r].calc(yis) + sub_den[r].calc(yis)) * tmp_ti.pow(r);
         else
           eq.emplace_back(-tmp_ti.pow(r) * tmp_num);
       }
@@ -1880,18 +1880,18 @@ namespace firefly {
     uint solved_degs = 1;
     curr_deg_den --;
 
-    if (curr_deg_den > -1) {
+    if (curr_deg_den > 0) {
       while (!found) {
         if (coef_mat_den.find(curr_deg_den) == coef_mat_den.end()) {
           curr_deg_den --;
           solved_degs ++;
+
+          if (curr_deg_den == 0) {
+            curr_deg_den = -1;
+            found = true;
+          }
         } else
           found = true;
-
-        if (curr_deg_den == 0) {
-          curr_deg_den = -1;
-          found = true;
-        }
       }
     }
 
