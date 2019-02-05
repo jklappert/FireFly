@@ -1336,6 +1336,8 @@ namespace firefly {
     solved_degs_num = other.solved_degs_num;
     solved_degs_den = other.solved_degs_den;
     min_deg_den_vec = other.min_deg_den_vec;
+    is_singular_system = other.is_singular_system;
+    queue = other.queue;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -1389,6 +1391,8 @@ namespace firefly {
     solved_degs_num = std::move(other.solved_degs_num);
     solved_degs_den = std::move(other.solved_degs_den);
     min_deg_den_vec = std::move(other.min_deg_den_vec);
+    is_singular_system = std::move(other.is_singular_system);
+    queue = std::move(other.queue);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -1443,6 +1447,8 @@ namespace firefly {
       solved_degs_num = other.solved_degs_num;
       solved_degs_den = other.solved_degs_den;
       min_deg_den_vec = other.min_deg_den_vec;
+      is_singular_system = other.is_singular_system;
+      queue = other.queue;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -1500,6 +1506,8 @@ namespace firefly {
       solved_degs_num = std::move(other.solved_degs_num);
       solved_degs_den = std::move(other.solved_degs_den);
       min_deg_den_vec = std::move(other.min_deg_den_vec);
+      is_singular_system = std::move(other.is_singular_system);
+      queue = std::move(other.queue);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);
