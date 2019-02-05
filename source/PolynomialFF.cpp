@@ -259,6 +259,7 @@ namespace firefly {
     std::vector<uint> zero_deg(n);
 
     PolynomialFF res;
+    res.n = n;
 
     for (auto & mon : coefs) {
       PolynomialFF pow_poly;

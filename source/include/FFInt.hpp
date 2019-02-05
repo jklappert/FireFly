@@ -36,24 +36,26 @@ namespace firefly {
     FFInt& operator-=(const FFInt&);
     FFInt& operator*=(const FFInt&);
     FFInt& operator/=(const FFInt&);
-    FFInt operator+(const FFInt&);
-    FFInt operator-(const FFInt&);
     FFInt operator-();
-    //FFInt operator*(const FFInt&);
-    FFInt operator/(const FFInt&);
-    bool operator==(const FFInt&) const;
-    bool operator!=(const FFInt&) const;
     FFInt pow(const FFInt& ffint) const;
 
     uint64_t n; /**< the integer member of the finite field */
     static uint64_t p; /**< the prime defining the finite field */
     static uint64_t p_inv;
-    FFInt gcd(const FFInt& a, const FFInt& b);
   private:
     uint64_t parse_longint(const std::string& str);
   };
 
-  FFInt operator*(const FFInt&, const FFInt&);
+  bool operator<(const FFInt& a, const FFInt&b);
+  bool operator<=(const FFInt& a, const FFInt&b);
+  bool operator>(const FFInt& a, const FFInt&b);
+  bool operator>=(const FFInt& a, const FFInt&b);
+  bool operator==(const FFInt& a, const FFInt&b);
+  bool operator!=(const FFInt& a, const FFInt&b);
+  FFInt operator/(const FFInt& a, const FFInt& b);
+  FFInt operator+(const FFInt& a, const FFInt& b);
+  FFInt operator-(const FFInt& a, const FFInt& b);
+  FFInt operator*(const FFInt& a, const FFInt& b);
   FFInt pow(const FFInt& ffint, const FFInt& power);
   std::ostream& operator<<(std::ostream& out, const FFInt& ffint);
 

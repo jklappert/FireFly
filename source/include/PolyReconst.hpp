@@ -27,6 +27,7 @@ namespace firefly {
     void feed(const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime);
     void interpolate();
     FFInt get_rand_zi(uint zi, uint order);
+    std::vector<FFInt> get_rand_zi_vec(std::vector<uint> orders);
     bool is_rand_zi_empty();
     Polynomial get_result();
     PolynomialFF get_result_ff();

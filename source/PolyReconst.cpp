@@ -495,6 +495,15 @@ namespace firefly {
     return rand_zi.at(std::make_pair(zi, order));
   }
 
+  std::vector<FFInt> PolyReconst::get_rand_zi_vec(std::vector<uint> orders) {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::vector<FFInt> yis {};
+    for(uint i = 0; i < n; i++){
+      yis.emplace_back(rand_zi.at(std::make_pair(i + 1, orders[i])));
+    }
+    return yis;
+  }
+
   bool PolyReconst::is_rand_zi_empty() {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return rand_zi.empty();

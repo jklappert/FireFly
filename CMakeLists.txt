@@ -7,7 +7,7 @@ find_package(GMP REQUIRED)
 find_package(FLINT REQUIRED)
 
 # set your favorite compile here
-set (CMAKE_CXX_COMPILER g++-7)
+set (CMAKE_CXX_COMPILER g++)
 
 set(CMAKE_BUILD_TYPE Release)
 # set the build type to release. If one needs debugging symbols, compile

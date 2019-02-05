@@ -80,28 +80,16 @@ namespace firefly {
     return FFInt(n_powmod2_preinv(n, ffint.n, p, p_inv));
   }
 
-  FFInt FFInt::operator+(const FFInt& ffint) {
-    return FFInt(n_addmod(n, ffint.n, p));
+  FFInt operator+(const FFInt& a, const FFInt& b) {
+    return FFInt(n_addmod(a.n, b.n, FFInt::p));
   }
 
-  FFInt FFInt::operator-(const FFInt& ffint) {
-    return FFInt(n_submod(n, ffint.n, p));
+  FFInt operator-(const FFInt& a, const FFInt& b) {
+    return FFInt(n_submod(a.n, b.n, FFInt::p));
   }
 
   FFInt FFInt::operator-() {
     return FFInt(p - n);
-  }
-
-  FFInt FFInt::operator/(const FFInt& ffint) {
-    return FFInt(n_mulmod2_preinv(n, n_invmod(ffint.n, p), p, p_inv));
-  }
-
-  bool FFInt::operator==(const FFInt& ffint) const {
-    return (n == ffint.n);
-  }
-
-  bool FFInt::operator!=(const FFInt& ffint) const {
-    return (n != ffint.n);
   }
 
   uint64_t FFInt::parse_longint(const std::string& str) {
@@ -137,6 +125,34 @@ namespace firefly {
     return result;
   }
 
+  bool operator==(const FFInt& a, const FFInt& b){
+    return (a.n == b.n);
+  }
+
+  bool operator!=(const FFInt& a, const FFInt& b){
+    return (a.n != b.n);
+  }
+
+  bool operator<(const FFInt& a, const FFInt& b) {
+    return (a.n < b.n);
+  }
+
+  bool operator<=(const FFInt& a, const FFInt& b) {
+    return (a.n <= b.n);
+  }
+
+  bool operator>(const FFInt& a, const FFInt& b) {
+    return (a.n > b.n);
+  }
+
+  bool operator>=(const FFInt& a, const FFInt& b) {
+    return (a.n >= b.n);
+  }
+
+  FFInt operator/(const FFInt& a, const FFInt& b) {
+    return FFInt(n_mulmod2_preinv(a.n, n_invmod(b.n, FFInt::p), FFInt::p, FFInt::p_inv));
+  }
+
   FFInt operator*(const FFInt& a, const FFInt& b) {
     return FFInt(n_mulmod2_preinv(a.n, b.n, FFInt::p, FFInt::p_inv));
   }
@@ -155,28 +171,4 @@ namespace firefly {
     FFInt::p_inv = n_preinvert_limb(prime);
   }
 
-  FFInt FFInt::gcd(const FFInt& a, const FFInt& b) {
-    FFInt aa = a, bb = b;
-
-    if (b.n > a.n)
-      return gcd(b, a);
-
-    FFInt x1 = 0, x2 = 1, y1 = 1, y2 = 0;
-
-    while (bb.n > 0) {
-      FFInt q = aa / bb;
-      FFInt r = FFInt(aa.n % bb.n);
-      FFInt x = x2 - q * x1;
-      FFInt y = y2 - q * y1;
-      aa = bb;
-      bb = r;
-      x2 = x1;
-      x1 = x;
-      y2 = y1;
-      y1 = y;
-    }
-
-    std::cout << x2 << " " << y2 << " " << aa << " " << FFInt(5194436596886959390)*x2 << " " << FFInt(5194436596886959390)*y2 << "\n";
-    return aa;
-  }
 }

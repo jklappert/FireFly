@@ -25,6 +25,7 @@ namespace firefly {
     std::vector<FFInt> get_rand_zi_vec(std::vector<uint> order);
     FFInt get_zi_shift(uint zi);
     std::vector<FFInt> get_zi_shift_vec();
+    bool need_shift();
   private:
     void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord);
     FFInt comp_ai(int i, int ip, const FFInt& num);
@@ -72,7 +73,6 @@ namespace firefly {
     bool rec_rat_coef();
     std::pair<ff_map, ff_map> solve_gauss();
     std::pair<ff_map, ff_map> solve_homogenized_multi_gauss();
-    std::pair<ff_map, ff_map> solve_singular_normalizer();
     std::tuple<int, uint, std::vector<uint>> feed_poly(int curr_deg,
                                                        uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
                                                        PolyReconst& rec, ff_map_map& saved_num,
@@ -119,19 +119,15 @@ namespace firefly {
     void add_non_solved_num(const std::vector<uint>& deg);
     void add_non_solved_den(const std::vector<uint>& deg);
     void check_for_solved_degs(std::vector<uint>& uni_degs, const bool is_num);
-    void find_sparsest_terms();
-    std::vector<uint> min_deg_1; //new //structure: is_den, degree, number of terms
-    std::vector<uint> min_deg_2; //new
-    std::vector<std::vector<uint>> singular_normalizer {}; //new
-    std::vector<std::vector<uint>> singular_helper {}; //new
-    void remove_singular_normalizers();
-    std::vector<std::vector<FFInt>> singular_coef_mat {}; //new
     PolynomialFF solve_transposed_vandermonde(std::vector<std::vector<uint>>& degs,
                                               const std::vector<FFInt>& nums);
-    std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_num {}; //new
-    std::unordered_map<uint, std::vector<std::vector<uint>>> solved_degs_den {}; //new
+    void set_new_curr_deg_num_singular(uint key);
+    void set_new_curr_deg_den_singular(uint key);
+    std::unordered_map<uint, PolynomialFF> solved_degs_num {}; //new
+    std::unordered_map<uint, PolynomialFF> solved_degs_den {}; //new
+    std::vector<uint> min_deg_den_vec {};//new
     static std::vector<FFInt> shift;
     static ff_pair_map rand_zi;
-    static bool shifted;
+    static bool need_prime_shift;
   };
 }

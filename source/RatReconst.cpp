@@ -8,7 +8,7 @@
 
 namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
-  bool RatReconst::shifted = false;
+  bool RatReconst::need_prime_shift = false;
   ff_pair_map RatReconst::rand_zi;
   std::mutex RatReconst::mutex_statics;
 
@@ -23,7 +23,7 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-      if (!shifted) {
+      if (shift.empty()) {
         shift = std::vector<FFInt> (n);
 
         if (n > 1) {
@@ -31,7 +31,6 @@ namespace firefly {
 
           curr_zi_order_num = std::vector<uint> (n - 1, 1);
           curr_zi_order_den = std::vector<uint> (n - 1, 1);
-          shifted = true;
         }
       }
     }
@@ -99,12 +98,12 @@ namespace firefly {
 
       // Compare if the food is the expected food; if not, store it for later use
       if (feed_zi_ord == curr_zi_order) {
+        if (need_prime_shift) is_singular_system = true;
+
         // first check if we are done. If not start the reconstruction again using
         // the chinese remainder theorem in combining the previous results
         if (new_prime) {
           ti.emplace_back(new_ti);
-          sub_num.clear();
-          sub_den.clear();
 
           if (rec_rat_coef()) {
             bool tmp_done = test_guess(num);
@@ -167,14 +166,12 @@ namespace firefly {
           } else {
             if (num == comp_fyi(i - 1, i - 1, ti.back())) check = true;
 
-            //todo remove if check = true
             if (!check)
               ai.emplace_back(comp_ai(i, i, num));
           }
         } else {
-          if (coef_mat.empty()) {
+          if (coef_mat.empty())
             coef_mat.reserve(num_eqn);
-          }
 
           std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
 
@@ -200,14 +197,14 @@ namespace firefly {
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
                 yis.emplace_back(rand_zi[std::make_pair(i + 2, curr_zi_order[i])]);
 
-                if (prime_number > 0)
+                if (prime_number > 0 && !is_singular_system)
                   yis.back() *= tmp_ti;
               }
             }
 
             yis.insert(yis.begin(), FFInt(1));
 
-            if (prime_number > 0)
+            if (prime_number > 0  && !is_singular_system)
               yis.front() *= tmp_ti;
 
             // build Gauss system for univariate reconstruction needed for
@@ -303,6 +300,8 @@ namespace firefly {
 
             ff_map num_coef = canonical.first;
             ff_map den_coef = canonical.second;
+            std::vector<uint> zero_deg(n);
+            ff_map zero_mon = {{zero_deg, 0}};
 
             // save the current results to the map to access them later
             for (int i = 0; i <= (int)(max_deg_num - tmp_solved_coefs_num); i++) {
@@ -310,21 +309,21 @@ namespace firefly {
                 {
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
                   PolyReconst rec(n - 1, (uint) i, true);
-                  if(rec.is_rand_zi_empty()){
-                    std::vector<FFInt> anchor_points{};
-                    for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++){
+
+                  if (rec.is_rand_zi_empty()) {
+                    std::vector<FFInt> anchor_points {};
+
+                    for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
                       anchor_points.emplace_back(rand_zi[std::make_pair(tmp_zi, 1)]);
                     }
+
                     rec.set_anchor_points(anchor_points);
                   }
+
                   coef_n.emplace(std::make_pair((uint) i, std::move(rec)));
                 }
 
-                if (i < max_deg_num) {
-                  std::vector<uint> zero_deg(n);
-                  ff_map zero_mon = {{zero_deg, 0}};
-                  sub_num.emplace(std::make_pair(i, PolynomialFF(n, zero_mon)));
-                }
+                sub_num.emplace(std::make_pair(i, PolynomialFF(n, zero_mon)));
               }
 
               if (i <= curr_deg_num) {
@@ -345,23 +344,23 @@ namespace firefly {
                 {
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
                   PolyReconst rec(n - 1, i, true);
-                  if(rec.is_rand_zi_empty()){
-                    std::vector<FFInt> anchor_points{};
+
+                  if (rec.is_rand_zi_empty()) {
+                    std::vector<FFInt> anchor_points {};
+
                     for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++)
                       anchor_points.emplace_back(rand_zi[std::make_pair(tmp_zi, 1)]);
+
                     rec.set_anchor_points(anchor_points);
                   }
+
                   coef_d.emplace(std::make_pair(i, std::move(rec)));
                 }
 
-                if ((int) i < max_deg_den) {
-                  std::vector<uint> zero_deg(n);
-                  ff_map zero_mon = {{zero_deg, 0}};
-                  sub_den.emplace(std::make_pair(i, PolynomialFF(n, zero_mon)));
+                sub_den.emplace(std::make_pair(i, PolynomialFF(n, zero_mon)));
 
-                  if (i == 1)
-                    sub_den.emplace(std::make_pair(0, PolynomialFF(n, zero_mon)));
-                }
+                if (i == 1)
+                  sub_den.emplace(std::make_pair(0, PolynomialFF(n, zero_mon)));
               }
 
               if ((int) i <= curr_deg_den) {
@@ -507,12 +506,6 @@ namespace firefly {
               } else if (numerator.coefs.find(std::vector<uint> (n, 0)) != numerator.coefs.end()) {
                 terminator = numerator.coefs[std::vector<uint> (n, 0)];
               } else {
-                std::vector<uint> min_deg_den_vec {};
-                //TODO change rand_zi from a pair key to the zi and
-                // just a vector so we can ensure that there is
-                // no rehash problem. It should be at worst as fast
-                // as the unordered map if not faster
-
                 for (const auto & el : denominator.coefs) {
                   std::vector<uint> degs_reverse = el.first;
                   std::reverse(degs_reverse.begin(), degs_reverse.end());
@@ -554,12 +547,8 @@ namespace firefly {
                 }
 
                 if (terminator.n == 0) {
-                  find_sparsest_terms();
-
-                  if (min_deg_1[0] == 0)
-                    terminator = numerator.coefs[singular_normalizer[0]];
-                  else
-                    terminator = denominator.coefs[singular_normalizer[0]];
+                  // normalize to the minimal degree of the denominator
+                  terminator = denominator.coefs[min_deg_den_vec];
 
                   is_singular_system = true;
                 }
@@ -569,7 +558,7 @@ namespace firefly {
               coef_d.clear();
               curr_zi_order_num.clear();
               curr_zi_order_den.clear();
-              //              std::cout << "is singular " << is_singular_system << "\n";
+
               // normalize
               FFInt equializer = FFInt(1) / terminator;
 
@@ -601,247 +590,118 @@ namespace firefly {
 
             return;
           } else {
-            // Get yi's for the current feed
-            std::vector<FFInt> yis;
+            // build multivariate Vandermonde systems and evaluate them if possible
+            for (const auto & sol : canonical.first) {
+              uint key = sol.first[0];
 
-            for (uint i = 0; i < curr_zi_order.size(); i ++) {
-              std::unique_lock<std::mutex> lock_statics(mutex_statics);
-              yis.emplace_back(rand_zi[std::make_pair(i + 2, curr_zi_order[i])]);
-            }
-
-            yis.insert(yis.begin(), FFInt(1));
-
-            if (!is_singular_system) {
-              // build multivariate Vandermonde systems and evaluate them if possible
-              for (const auto & sol : canonical.first) {
-                uint key = sol.first[0];
-                coef_mat_num[key].emplace_back(sol.second);
+              if (coef_mat_num.find(key) != coef_mat_num.end()) {
+                if (coef_mat_num[key].size() < non_solved_degs_num[key].size())
+                  coef_mat_num[key].emplace_back(sol.second);
 
                 // Solve multivariate gauss system for corresponding degree,
                 // remove entry from non_solved_degs and add it to solve_degs
-                if (coef_mat_num[key].size() == non_solved_degs_num[key].size()) {
-                  solved_num += solve_transposed_vandermonde(non_solved_degs_num[key], coef_mat_num[key]);
-                  non_solved_degs_num.erase(key);
+                if ((key == curr_deg_num || !is_singular_system) && coef_mat_num[key].size() == non_solved_degs_num[key].size()) {
+                  if (!is_singular_system) {
+                    solved_num += solve_transposed_vandermonde(non_solved_degs_num[key], coef_mat_num[key]);
+                    non_solved_degs_num.erase(key);
+                  } else {
+                    set_new_curr_deg_num_singular(key);
+                    bool cannot_solve = false;
+
+                    while (!cannot_solve) {
+                      std::vector<uint> deleted_degs {};
+
+                      for (const auto & mat : coef_mat_num) {
+                        uint tmp_key = mat.first;
+
+                        if (tmp_key == curr_deg_num && mat.second.size() == non_solved_degs_num[tmp_key].size()) {
+                          set_new_curr_deg_num_singular(tmp_key);
+                          deleted_degs.emplace_back(tmp_key);
+                        }
+                      }
+
+                      for (const auto & el : deleted_degs) {
+                        coef_mat_num.erase(el);
+                      }
+
+                      if (deleted_degs.empty()) cannot_solve = true;
+                    }
+                  }
+
                   coef_mat_num.erase(key);
                 }
               }
+            }
 
-              for (const auto & sol : canonical.second) {
-                uint key = sol.first[0];
-                coef_mat_den[key].emplace_back(sol.second);
+            for (const auto & sol : canonical.second) {
+              uint key = sol.first[0];
+
+              if (coef_mat_den.find(key) != coef_mat_den.end()) {
+                if (coef_mat_den[key].size() < non_solved_degs_den[key].size())
+                  coef_mat_den[key].emplace_back(sol.second);
 
                 // Solve multivariate Vandermonde system for corresponding degree,
                 // remove entry from non_solved_degs and add it to solve_degs
-                if (coef_mat_den[key].size() == non_solved_degs_den[key].size()) {
-                  solved_den += solve_transposed_vandermonde(non_solved_degs_den[key], coef_mat_den[key]);
-                  non_solved_degs_den.erase(key);
+                if ((key == curr_deg_den || !is_singular_system) && coef_mat_den[key].size() == non_solved_degs_den[key].size()) {
+                  if (!is_singular_system) {
+                    solved_den += solve_transposed_vandermonde(non_solved_degs_den[key], coef_mat_den[key]);
+                    non_solved_degs_den.erase(key);
+                  } else {
+                    set_new_curr_deg_den_singular(key);
+                    bool cannot_solve = false;
+
+                    while (!cannot_solve) {
+                      std::vector<uint> deleted_degs {};
+
+                      for (const auto & mat : coef_mat_den) {
+                        uint tmp_key = mat.first;
+
+                        if (tmp_key == curr_deg_den && mat.second.size() == non_solved_degs_den[tmp_key].size()) {
+                          set_new_curr_deg_den_singular(tmp_key);
+                          deleted_degs.emplace_back(tmp_key);
+                        }
+                      }
+
+                      for (const auto & el : deleted_degs) {
+                        coef_mat_den.erase(el);
+                      }
+
+                      if (deleted_degs.empty()) cannot_solve = true;
+                    }
+                  }
+
                   coef_mat_den.erase(key);
                 }
-              }
-            } else {
-              // build multivariate Vandermonde systems and evaluate them if possible
-              for (const auto & non_solved : non_solved_degs_num) {
-                uint key = non_solved.first;
-                std::vector<uint> key_vec = {key};
-
-                if (non_solved.second.size() > coef_mat_num[key].size())
-                  coef_mat_num[key].emplace_back(canonical.first[key_vec]);
-              }
-
-              for (const auto & non_solved : non_solved_degs_den) {
-                uint key = non_solved.first;
-                std::vector<uint> key_vec = {key};
-
-                if (non_solved.second.size() > coef_mat_den[key].size())
-                  coef_mat_den[key].emplace_back(canonical.second[key_vec]);
-              }
-
-              std::vector<FFInt> eq {};
-              FFInt num = 0;
-              FFInt res = 0;
-
-              // Build the following normalizer system:
-              // num * (b_1 * z_1 + b_2 * z_2 + ...) = c_1 * z_1 + ...
-              // b_1 = 1, b_i corresponds to singular_normalizer
-              // c_i corresponds to singular_helper
-              // we remove all already solved coefficients normalized to b_1
-              if (min_deg_2[0] == 0) {
-                num = canonical.first[ {min_deg_2[1]}];
-
-                for (const auto & el : solved_degs_num[min_deg_2[1]]) {
-                  FFInt coef = 1;
-
-                  for (uint i = 1; i < n; i++) {
-                    coef *= yis[i].pow(el[i]);
-                  }
-
-                  res -= coef * FFInt(g_ni[el].numerator) / FFInt(g_ni[el].denominator);
-                }
-              } else {
-                num = canonical.second[ {min_deg_2[1]}];
-
-                for (const auto & el : solved_degs_den[min_deg_2[1]]) {
-                  FFInt coef = 1;
-
-                  for (uint i = 1; i < n; i++) {
-                    coef *= yis[i].pow(el[i]);
-                  }
-
-                  res -= coef * FFInt(g_di[el].numerator) / FFInt(g_di[el].denominator);
-                }
-              }
-
-              if (min_deg_1[0] == 0) {
-                for (const auto & el : solved_degs_num[min_deg_1[1]]) {
-                  FFInt coef = num;
-
-                  for (uint i = 1; i < n; i++) {
-                    coef *= yis[i].pow(el[i]);
-                  }
-
-                  res += coef * FFInt(g_ni[el].numerator) / FFInt(g_ni[el].denominator);
-                }
-              } else {
-                for (const auto & el : solved_degs_den[min_deg_1[1]]) {
-                  FFInt coef = num;
-
-                  for (uint i = 1; i < n; i++) {
-                    coef *= yis[i].pow(el[i]);
-                  }
-
-                  res += coef * FFInt(g_di[el].numerator) / FFInt(g_di[el].denominator);
-                }
-              }
-
-              for (const auto & el : singular_helper) {
-                FFInt coef = 1;
-
-                for (uint i = 1; i < n; i++) {
-                  coef *= yis[i].pow(el[i]);
-                }
-
-                eq.emplace_back(coef);
-              }
-
-              for (const auto & el : singular_normalizer) {
-                FFInt coef = -num;
-
-                for (uint i = 1; i < n; i++) {
-                  coef *= yis[i].pow(el[i]);
-                }
-
-                eq.emplace_back(coef);
-              }
-
-              std::cout << "Num " << num << " yis " << yis[0] << " " << yis[1] << " " << yis[2] << " " << yis[3] << "\n";
-              eq.emplace_back(res);
-              singular_coef_mat.emplace_back(eq);
-              //TODO why does this work should be optimized in future versions!
-
-              if (singular_coef_mat.size() == singular_normalizer.size() + singular_helper.size()) {
-                std::pair<ff_map, ff_map> tmp = solve_singular_normalizer();
-                ff_map singular_solver_coefs {};
-
-                for (const auto & el : singular_normalizer) {
-                  singular_solver_coefs[el] = tmp.second[el];
-                }
-
-                if (min_deg_1[0] == 0) {
-                  solved_num.coefs.insert(singular_solver_coefs.begin(), singular_solver_coefs.end());
-
-                  for (const auto & el : solved_degs_num[min_deg_1[1]]) {
-                    singular_solver_coefs[el] = FFInt(g_ni[el].numerator) / FFInt(g_ni[el].denominator);
-                  }
-                } else {
-                  solved_den.coefs.insert(singular_solver_coefs.begin(), singular_solver_coefs.end());
-
-                  for (const auto & el : solved_degs_den[min_deg_1[1]]) {
-                    singular_solver_coefs[el] = FFInt(g_di[el].numerator) / FFInt(g_di[el].denominator);
-                  }
-                }
-
-                PolynomialFF singular_solver(n, singular_solver_coefs);
-
-                if (min_deg_2[0] == 0) {
-                  for (const auto & el : singular_helper) {
-                    solved_num.coefs[el] = tmp.first[el];
-                  }
-
-                  canonical.first.erase(std::vector<uint>(1, min_deg_2[1]));
-                } else {
-                  for (const auto & el : singular_helper) {
-                    solved_den.coefs[el] = tmp.first[el];
-                  }
-
-                  canonical.second.erase(std::vector<uint>(1, min_deg_2[1]));
-                }
-
-                for (const auto & el : canonical.first) {
-                  uint key = el.first[0];
-
-                  for (uint i = 0; i < coef_mat_num[key].size(); i++) {
-                    std::vector<FFInt> tmp_yis(n, 1);
-
-                    for (uint j = 2; j <= n; j++) {
-                      tmp_yis[j - 1] = rand_zi[std::make_pair(j, i + 1)];
-                    }
-
-                    coef_mat_num[key][i] *= singular_solver.calc(tmp_yis);
-
-                    for (const auto & solved : solved_degs_num[key]) {
-                      FFInt coef = FFInt(g_ni[solved].numerator) / FFInt(g_ni[solved].denominator);
-
-                      for (uint j = 1; j < n; j++) {
-                        coef *= tmp_yis[j].pow(solved[j]);
-                      }
-
-                      coef_mat_num[key][i] -= coef;
-                    }
-                  }
-
-                  //TODO replace coef_mat_num[key] with a pointer
-                  if (coef_mat_num[key].size() == non_solved_degs_num[key].size()) {
-                    solved_num += solve_transposed_vandermonde(non_solved_degs_num[key], coef_mat_num[key]);
-                    coef_mat_num.erase(key);
-                  }
-                }
-
-                for (auto & el : canonical.second) {
-                  uint key = el.first[0];
-
-                  for (uint i = 0; i < coef_mat_den[key].size(); i++) {
-                    std::vector<FFInt> tmp_yis(n, 1);
-
-                    for (uint j = 2; j <= n; j++) {
-                      tmp_yis[j - 1] = rand_zi[std::make_pair(j, i + 1)];
-                    }
-
-                    coef_mat_den[key][i] *= singular_solver.calc(tmp_yis);
-
-                    //TODO save g_di[solved] to save runtime
-                    for (const auto & solved : solved_degs_den[key]) {
-                      FFInt coef = FFInt(g_di[solved].numerator) / FFInt(g_di[solved].denominator);
-
-                      for (uint j = 1; j < n; j++) {
-                        coef *= tmp_yis[j].pow(solved[j]);
-                      }
-
-                      coef_mat_den[key][i] -= coef;
-                    }
-                  }
-
-                  if (coef_mat_den[key].size() == non_solved_degs_den[key].size()) {
-                    solved_den += solve_transposed_vandermonde(non_solved_degs_den[key], coef_mat_den[key]);
-                    coef_mat_den.erase(key);
-                  }
-                }
-
-                is_singular_system = false;
               }
             }
 
             // promote to next prime and combine results
-            if (coef_mat_num.empty() && coef_mat_den.empty() && singular_coef_mat.empty()) {
+            if (coef_mat_num.empty() && coef_mat_den.empty()) {
+              if (is_singular_system) {
+                for (const auto & el : solved_degs_num) solved_num += el.second;
+
+                for (const auto & el : solved_degs_den) solved_den += el.second;
+
+                // normalize
+                FFInt terminator = solved_den.coefs[min_deg_den_vec];
+                FFInt equializer = FFInt(1) / terminator;
+
+                for (const auto & el : g_ni) {
+                  solved_num.coefs.erase(el.first);
+                }
+
+                for (const auto & el : g_di) {
+                  solved_den.coefs.erase(el.first);
+                }
+
+                solved_num = solved_num * equializer;
+                solved_den = solved_den * equializer;
+              }
+
+              solved_num.coefs.erase(std::vector<uint> (n, 0));
+              solved_den.coefs.erase(std::vector<uint> (n, 0));
+//              std::cout << solved_num << solved_den;
+
               std::pair<mpz_map, mpz_map> tmp;
               tmp.first = convert_to_mpz(solved_num.coefs);
               tmp.second = convert_to_mpz(solved_den.coefs);
@@ -857,6 +717,8 @@ namespace firefly {
               // reset solved coefficients
               ff_map zero_deg {};
               zero_deg.emplace(std::make_pair(std::vector<uint> (n), 0));
+              solved_degs_num.clear();
+              solved_degs_den.clear();
               solved_num.coefs = zero_deg;
               solved_den.coefs = zero_deg;
             } else {
@@ -872,8 +734,12 @@ namespace firefly {
                   rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
                 }
 
-                uint sub = is_singular_system ? 1 : 0;
-                num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size() + sub;
+                if (!is_singular_system)
+                  num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
+                else {
+                  num_eqn = max_deg_den + max_deg_num + 1
+                            - tmp_solved_coefs_num - tmp_solved_coefs_den;
+                }
               }
             }
           }
@@ -1008,11 +874,6 @@ namespace firefly {
     std::vector<uint> tmp_deg_num {};
     std::vector<uint> tmp_deg_den {};
 
-    if (!singular_normalizer.empty() && !singular_helper.empty())
-      is_singular_system = true;
-    else
-      is_singular_system = false;
-
     if (is_singular_system) {
       for (const auto & el : non_solved_degs_num) {
         tmp_deg_num.emplace_back(el.first);
@@ -1102,47 +963,47 @@ namespace firefly {
 
       // Remove already known coefficients from solve algorithm to save numerical runs
       for (auto & c_ni : combined_ni_back) {
+        if (g_ni.find(c_ni.first) == g_ni.end()) {
+          try {
+            RationalNumber last_rn = get_rational_coef(c_ni.second, combined_prime_back);
+            RationalNumber curr_rn = get_rational_coef(combined_ni[c_ni.first], combined_prime);
 
-        try {
-          RationalNumber last_rn = get_rational_coef(c_ni.second, combined_prime_back);
-          RationalNumber curr_rn = get_rational_coef(combined_ni[c_ni.first], combined_prime);
+            if (last_rn == curr_rn)
+              remove_ni(c_ni.first, curr_rn);
+            else
+              add_non_solved_num(c_ni.first);
+          } catch (std::exception& e) {
 
-          if (last_rn == curr_rn)
-            remove_ni(c_ni.first, curr_rn);
-          else
-            add_non_solved_num(c_ni.first);
-        } catch (std::exception& e) {
-
-          if (c_ni.second == combined_ni[c_ni.first]) {
-            RationalNumber rn = RationalNumber(c_ni.second, 1);
-            remove_ni(c_ni.first, rn);
-          } else
-            add_non_solved_num(c_ni.first);
+            if (c_ni.second == combined_ni[c_ni.first]) {
+              RationalNumber rn = RationalNumber(c_ni.second, 1);
+              remove_ni(c_ni.first, rn);
+            } else
+              add_non_solved_num(c_ni.first);
+          }
         }
       }
 
       for (auto & c_di : combined_di_back) {
-        try {
-          RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
-          RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
+        if (g_di.find(c_di.first) == g_di.end()) {
+          try {
+            RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
+            RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
 
-          if (last_rn == curr_rn)
-            remove_di(c_di.first, curr_rn);
-          else
-            add_non_solved_den(c_di.first);
-        } catch (std::exception& e) {
+            if (last_rn == curr_rn)
+              remove_di(c_di.first, curr_rn);
+            else
+              add_non_solved_den(c_di.first);
+          } catch (std::exception& e) {
 
-          if (c_di.second == combined_di[c_di.first]) {
-            RationalNumber rn = RationalNumber(c_di.second, 1);
+            if (c_di.second == combined_di[c_di.first]) {
+              RationalNumber rn = RationalNumber(c_di.second, 1);
 
-            remove_di(c_di.first, rn);
-          } else
-            add_non_solved_den(c_di.first);
+              remove_di(c_di.first, rn);
+            } else
+              add_non_solved_den(c_di.first);
+          }
         }
       }
-
-      if (singular_normalizer.empty() || singular_helper.empty())
-        is_singular_system = false;
 
       if (is_singular_system) {
         check_for_solved_degs(tmp_deg_num, true);
@@ -1156,13 +1017,51 @@ namespace firefly {
       combined_prime_back = 0;
     }
 
-    if (is_singular_system)
-      remove_singular_normalizers();
+    sub_num.clear();
+    sub_den.clear();
 
-    // set the number of equations
-    std::unique_lock<std::mutex> lock(mutex_status);
-    uint sub = is_singular_system ? 1 : 0;
-    num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size() + sub;
+    if (is_singular_system) {
+      tmp_solved_coefs_den = 0;
+      tmp_solved_coefs_num = 0;
+      {
+        std::unique_lock<std::mutex> lock_statics(mutex_statics);
+        need_prime_shift = true;
+      }
+
+      for (const auto & el : g_ni) add_non_solved_num(el.first);
+
+      for (const auto & el : g_di) add_non_solved_den(el.first);
+
+      curr_deg_num = max_deg_num;
+      curr_deg_den = max_deg_den;
+
+      std::vector<uint> zero_deg(n);
+      ff_map zero_mon = {{zero_deg, 0}};
+      PolynomialFF zero_poly(n, zero_mon);
+
+      for (int i = 0; i <= std::max(max_deg_num, max_deg_den); i++) {
+        if (i <= max_deg_num)
+          sub_num.emplace(std::make_pair(i, zero_poly));
+
+        if (i >= 1 && i <= max_deg_den) {
+          sub_den.emplace(std::make_pair(i, zero_poly));
+
+          if (i == 1)
+            sub_den.emplace(std::make_pair(0, zero_poly));
+        }
+      }
+
+      std::unique_lock<std::mutex> lock(mutex_status);
+      num_eqn = max_deg_den + max_deg_num + 1
+                - tmp_solved_coefs_num - tmp_solved_coefs_den;
+    } else {
+      std::unique_lock<std::mutex> lock(mutex_status);
+      num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
+    }
+
+    for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<FFInt> {};
+
+    for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<FFInt> {};
   }
 
   RationalFunction RatReconst::get_result() {
@@ -1188,7 +1087,7 @@ namespace firefly {
 
       return result;
     } else {
-      throw std::runtime_error("Access to unfinished result");
+      throw std::runtime_error("Trying to access unfinished result.");
     }
   }
 
@@ -1280,7 +1179,6 @@ namespace firefly {
   std::pair<ff_map, ff_map> RatReconst::solve_homogenized_multi_gauss() {
     std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
     coef_mat.clear();
-    //std::exit(-1);
 
     // Bring result in canonical form
     ff_map numerator;
@@ -1288,52 +1186,43 @@ namespace firefly {
 
     uint counter = 0;
 
-    for (const auto & el : non_solved_degs_num) {
-      std::vector<uint> power = {el.first};
-      numerator.emplace(std::make_pair(std::move(power), results[counter]));
-      counter ++;
-    }
-
-    for (const auto & el : non_solved_degs_den) {
-      std::vector<uint> power = {el.first};
-      denominator.emplace(std::make_pair(std::move(power), results[counter]));
-      counter ++;
-    }
-
-    if (is_singular_system) {
-      std::vector<uint> power = {min_deg_2[1]};
-
-      if (min_deg_2[0] == 0)
+    if (!is_singular_system) {
+      for (const auto & el : non_solved_degs_num) {
+        std::vector<uint> power = {el.first};
         numerator.emplace(std::make_pair(std::move(power), results[counter]));
-      else
+        counter ++;
+      }
+
+      for (const auto & el : non_solved_degs_den) {
+        std::vector<uint> power = {el.first};
         denominator.emplace(std::make_pair(std::move(power), results[counter]));
+        counter ++;
+      }
+    } else {
+      int terms_num = max_deg_num - tmp_solved_coefs_num;
+
+      if (terms_num > 0) {
+        for (uint i = 0; i <= terms_num; i++) {
+          if (non_solved_degs_num.find(i) != non_solved_degs_num.end()) {
+            std::vector<uint> power = {i};
+            numerator.emplace(std::make_pair(std::move(power), results[counter]));
+          }
+
+          counter ++;
+        }
+      }
+
+      for (uint i = 1; i <= max_deg_den - tmp_solved_coefs_den; i++) {
+        if (non_solved_degs_den.find(i) != non_solved_degs_den.end()) {
+          std::vector<uint> power = {i};
+          denominator.emplace(std::make_pair(std::move(power), results[counter]));
+        }
+
+        counter ++;
+      }
     }
 
     return std::make_pair(numerator, denominator);
-  }
-
-  std::pair<ff_map, ff_map> RatReconst::solve_singular_normalizer() {
-    uint num_eqn = singular_helper.size() + singular_normalizer.size();
-    std::vector<FFInt> results = solve_gauss_system(num_eqn, singular_coef_mat);
-    singular_coef_mat.clear();
-
-    // Bring result in canonical form
-    ff_map helper;
-    ff_map normalizer;
-
-    uint counter = 0;
-
-    for (const auto & el : singular_helper) {
-      helper[el] = results[counter];
-      counter ++;
-    }
-
-    for (const auto & el : singular_normalizer) {
-      normalizer[el] = results[counter];
-      counter ++;
-    }
-
-    return std::make_pair(helper, normalizer);
   }
 
   std::pair<ff_map, ff_map> RatReconst::construct_canonical() {
@@ -1382,12 +1271,14 @@ namespace firefly {
     ff_map g_ff_di = convert_to_ffint(g_di);
     PolynomialFF g_ny(n, g_ff_ni);
     PolynomialFF g_dy(n, g_ff_di);
-    std::vector<FFInt> yis = std::vector<FFInt> (n, FFInt(1));
-    yis[0] = ti[0];
-
-    for (uint i = 1; i < n; i++) {
+    std::vector<FFInt> yis = std::vector<FFInt> (n);
+    {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
-      yis[i] = ti[0] * rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])];
+      yis[0] = ti[0] + shift[0];
+
+      for (uint i = 1; i < n; i++) {
+        yis[i] = ti[0] * rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])] + shift[i];
+      }
     }
 
     return (g_ny.calc(yis) / g_dy.calc(yis)) == num;
@@ -1396,44 +1287,11 @@ namespace firefly {
   void RatReconst::remove_ni(const std::vector<uint>& deg_vec, RationalNumber& rn) {
     g_ni[deg_vec] =  rn;
     combined_ni.erase(deg_vec);
-
-    if (is_singular_system) {
-      uint deg = 0;
-
-      for (const auto el : deg_vec) deg += el;
-
-      solved_degs_num[deg].emplace_back(deg_vec);
-
-      //TODO get iterator to save a find
-      if (min_deg_1[0] == 0 && std::find(singular_normalizer.begin(), singular_normalizer.end(), deg_vec) != singular_normalizer.end()) {
-        singular_normalizer.erase(std::find(singular_normalizer.begin(), singular_normalizer.end(), deg_vec));
-      }
-
-      if (min_deg_2[0] == 0 && std::find(singular_helper.begin(), singular_helper.end(), deg_vec) != singular_helper.end()) {
-        singular_helper.erase(std::find(singular_helper.begin(), singular_helper.end(), deg_vec));
-      }
-    }
   }
 
   void RatReconst::remove_di(const std::vector<uint>& deg_vec, RationalNumber& rn) {
     g_di[deg_vec] =  rn;
     combined_di.erase(deg_vec);
-
-    if (is_singular_system) {
-      uint deg = 0;
-
-      for (const auto el : deg_vec) deg += el;
-
-      solved_degs_den[deg].emplace_back(deg_vec);
-
-      if (min_deg_1[0] == 1 && std::find(singular_normalizer.begin(), singular_normalizer.end(), deg_vec) != singular_normalizer.end()) {
-        singular_normalizer.erase(std::find(singular_normalizer.begin(), singular_normalizer.end(), deg_vec));
-      }
-
-      if (min_deg_2[0] == 1 && std::find(singular_helper.begin(), singular_helper.end(), deg_vec) != singular_helper.end()) {
-        singular_helper.erase(std::find(singular_helper.begin(), singular_helper.end(), deg_vec));
-      }
-    }
   }
 
   RatReconst::RatReconst(const RatReconst& other) {
@@ -1472,11 +1330,6 @@ namespace firefly {
     coef_mat_den = other.coef_mat_den;
     solved_num = other.solved_num;
     solved_den = other.solved_den;
-    min_deg_1 = other.min_deg_1;
-    min_deg_1 = other.min_deg_2;
-    singular_normalizer = other.singular_normalizer;
-    singular_helper = other.singular_helper;
-    singular_coef_mat = other.singular_coef_mat;
     solved_degs_num = other.solved_degs_num;
     solved_degs_den = other.solved_degs_den;
 
@@ -1529,11 +1382,6 @@ namespace firefly {
     coef_mat_den = std::move(other.coef_mat_den);
     solved_num = std::move(other.solved_num);
     solved_den = std::move(other.solved_den);
-    min_deg_1 = std::move(other.min_deg_1);
-    min_deg_1 = std::move(other.min_deg_2);
-    singular_normalizer = std::move(other.singular_normalizer);
-    singular_helper = std::move(other.singular_helper);
-    singular_coef_mat = std::move(other.singular_coef_mat);
     solved_degs_num = std::move(other.solved_degs_num);
     solved_degs_den = std::move(other.solved_degs_den);
 
@@ -1587,11 +1435,6 @@ namespace firefly {
       coef_mat_den = other.coef_mat_den;
       solved_num = other.solved_num;
       solved_den = other.solved_den;
-      min_deg_1 = other.min_deg_1;
-      min_deg_1 = other.min_deg_2;
-      singular_normalizer = other.singular_normalizer;
-      singular_helper = other.singular_helper;
-      singular_coef_mat = other.singular_coef_mat;
       solved_degs_num = other.solved_degs_num;
       solved_degs_den = other.solved_degs_den;
 
@@ -1648,11 +1491,6 @@ namespace firefly {
       coef_mat_den = std::move(other.coef_mat_den);
       solved_num = std::move(other.solved_num);
       solved_den = std::move(other.solved_den);
-      min_deg_1 = std::move(other.min_deg_1);
-      min_deg_1 = std::move(other.min_deg_2);
-      singular_normalizer = std::move(other.singular_normalizer);
-      singular_helper = std::move(other.singular_helper);
-      singular_coef_mat = std::move(other.singular_coef_mat);
       solved_degs_num = std::move(other.solved_degs_num);
       solved_degs_den = std::move(other.solved_degs_den);
 
@@ -1679,65 +1517,33 @@ namespace firefly {
   void RatReconst::build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis) {
     std::vector<FFInt> eq;
     eq.reserve(num_eqn + 1);
-    std::vector<FFInt> solved_coef_sub_num {};
-    std::vector<FFInt> solved_coef_sub_den {};
+    FFInt res = tmp_num;
     std::vector<FFInt> yis_wo_t = yis;
     yis_wo_t.erase(yis_wo_t.begin());
 
-    // if(clock_test_2 == 0) clock_test_2 = clock();
     for (int r = 0; r <= max_deg_num; r++) {
       // If the current degree is smaller than the total degree of the polynomial
       // subtract the higher terms to save numerical runs
-      if (shift[0] != 0 && coef_n.size() > 0 && coef_n[r].is_new_prime()) {
-        FFInt sub;
-
-        if (r < max_deg_num)
-          sub = (coef_n[r].get_result_ff().calc(yis_wo_t) + sub_num[r].calc(yis)) * tmp_ti.pow(r);
-        else
-          sub = (coef_n[r].get_result_ff().calc(yis_wo_t)) * tmp_ti.pow(r);
-
-        solved_coef_sub_num.emplace_back(sub);
-      } else
+      if (shift[0] != 0 && coef_n.size() > 0 && coef_n[r].is_new_prime())
+        res -= (coef_n[r].get_result_ff().calc(yis_wo_t) + sub_num[r].calc(yis)) * tmp_ti.pow(r);
+      else
         eq.emplace_back(tmp_ti.pow(r));
     }
 
     for (int rp = 1; rp <= max_deg_den; rp++) {
       // If the current degree is smaller than the total degree of the polynomial
       // subtract the higher terms to save numerical runs
-      if (shift[0] != 0  && coef_d.size() > 0 && coef_d[rp].is_new_prime()) {
-        FFInt sub;
-
-        if (rp < max_deg_den)
-          sub = (coef_d[rp].get_result_ff().calc(yis_wo_t) + sub_den[rp].calc(yis)) * tmp_ti.pow(rp);
-        else
-          sub = (coef_d[rp].get_result_ff().calc(yis_wo_t)) * tmp_ti.pow(rp);
-
-        solved_coef_sub_den.emplace_back(sub);
-      } else
+      if (shift[0] != 0  && coef_d.size() > 0 && coef_d[rp].is_new_prime())
+        res += (coef_d[rp].get_result_ff().calc(yis_wo_t) + sub_den[rp].calc(yis)) * tmp_ti.pow(rp) * tmp_num;
+      else
         eq.emplace_back(-tmp_ti.pow(rp) * tmp_num);
     }
 
     // The lowest degree in univariate Gauss for multivariate polynomial
     // reconstruction is always zero. Hence, we just need to emplace the
     // evaluation of f(yis) at this point
-    eq.emplace_back(tmp_num);
+    eq.emplace_back(res);
 
-    for (auto & solved_coef_num : solved_coef_sub_num) {
-      eq.back() += -solved_coef_num;
-    }
-
-    FFInt coef = 0;
-
-    for (auto & solved_coef_den : solved_coef_sub_den) {
-      coef += solved_coef_den;
-    }
-
-    coef *= tmp_num;
-    eq.back() += coef;
-
-    //std::cout << "time uni gauss : " << float(clock() - clock_test_2) / CLOCKS_PER_SEC << "\n";
-
-    //clock_test_2 = 0;
     coef_mat.emplace_back(std::move(eq));
   }
 
@@ -1804,25 +1610,27 @@ namespace firefly {
     } else {
       std::vector<FFInt> eq;
       eq.reserve(num_eqn + 1);
+      FFInt res = tmp_num;
 
-      // Build system of equations; in combined_.. are the non-solved coefficients
-      for (const auto & pow_vec : non_solved_degs_num) {
-        eq.emplace_back(tmp_ti.pow(pow_vec.first));
+      for (int r = 0; r <= max_deg_num; r++) {
+        // If the current degree is smaller than the total degree of the polynomial
+        // subtract the higher terms to save numerical runs
+        if (r > curr_deg_num)
+          res -= (solved_degs_num[r].calc(yis) + sub_num[r].calc(yis)) * tmp_ti.pow(r);
+        else
+          eq.emplace_back(tmp_ti.pow(r));
       }
 
-      for (const auto & pow_vec : non_solved_degs_den) {
-        eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(pow_vec.first));
+      for (int r = 1; r <= max_deg_den; r++) {
+        // If the current degree is smaller than the total degree of the polynomial
+        // subtract the higher terms to save numerical runs
+        if (r > curr_deg_den)
+          res += tmp_num * (solved_degs_den[r].calc(yis) + sub_den[r].calc(yis)) * tmp_ti.pow(r);
+        else
+          eq.emplace_back(-tmp_ti.pow(r) * tmp_num);
       }
 
-      // Add singular_helper
-      if (min_deg_2[0] == 0) eq.emplace_back(tmp_ti.pow(min_deg_2[1]));
-      else eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(min_deg_2[1]));
-
-      // Subtract singular normalizer
-      eq.emplace_back(0);
-
-      if (min_deg_1[0] == 0) eq.back() -= tmp_ti.pow(min_deg_1[1]);
-      else eq.back() += tmp_num * tmp_ti.pow(min_deg_1[1]);
+      eq.emplace_back(res);
 
       coef_mat.emplace_back(std::move(eq));
     }
@@ -1868,88 +1676,6 @@ namespace firefly {
           break;
         }
       }
-    }
-  }
-
-  void RatReconst::find_sparsest_terms() {
-    for (const auto & el : non_solved_degs_num) {
-      if (min_deg_1.empty()) {
-        min_deg_1.emplace_back(0);
-        min_deg_1.emplace_back(el.first);
-        min_deg_1.emplace_back(el.second.size());
-      } else if (min_deg_2.empty()) {
-        if (el.second.size() < min_deg_1[2]) {
-          min_deg_2 = min_deg_1;
-          min_deg_1[0] = 0;
-          min_deg_1[1] = el.first;
-          min_deg_1[2] = el.second.size();
-        } else {
-          min_deg_2.emplace_back(0);
-          min_deg_2.emplace_back(el.first);
-          min_deg_2.emplace_back(el.second.size());
-        }
-      } else if (el.second.size() < min_deg_2[2]) {
-        if (el.second.size() < min_deg_1[2]) {
-          min_deg_2 = min_deg_1;
-          min_deg_1[0] = 0;
-          min_deg_1[1] = el.first;
-          min_deg_1[2] = el.second.size();
-        } else {
-          min_deg_2[0] = 0;
-          min_deg_2[1] = el.first;
-          min_deg_2[2] = el.second.size();
-        }
-      }
-    }
-
-    for (const auto & el : non_solved_degs_den) {
-      if (min_deg_1.empty()) {
-        min_deg_1.emplace_back(1);
-        min_deg_1.emplace_back(el.first);
-        min_deg_1.emplace_back(el.second.size());
-      } else if (min_deg_2.empty()) {
-        if (el.second.size() < min_deg_1[2]) {
-          min_deg_2 = min_deg_1;
-          min_deg_1[0] = 1;
-          min_deg_1[1] = el.first;
-          min_deg_1[2] = el.second.size();
-        } else {
-          min_deg_2.emplace_back(1);
-          min_deg_2.emplace_back(el.first);
-          min_deg_2.emplace_back(el.second.size());
-        }
-      } else if (el.second.size() < min_deg_2[2]) {
-        if (el.second.size() < min_deg_1[2]) {
-          min_deg_2 = min_deg_1;
-          min_deg_1[0] = 1;
-          min_deg_1[1] = el.first;
-          min_deg_1[2] = el.second.size();
-        } else {
-          min_deg_2[0] = 1;
-          min_deg_2[1] = el.first;
-          min_deg_2[2] = el.second.size();
-        }
-      }
-    }
-
-    remove_singular_normalizers();
-  }
-
-  void RatReconst::remove_singular_normalizers() {
-    if (min_deg_1[0] == 0) {
-      singular_normalizer = non_solved_degs_num[min_deg_1[1]];
-      non_solved_degs_num.erase(min_deg_1[1]);
-    } else {
-      singular_normalizer = non_solved_degs_den[min_deg_1[1]];
-      non_solved_degs_den.erase(min_deg_1[1]);
-    }
-
-    if (min_deg_2[0] == 0) {
-      singular_helper = non_solved_degs_num[min_deg_2[1]];
-      non_solved_degs_num.erase(min_deg_2[1]);
-    } else {
-      singular_helper = non_solved_degs_den[min_deg_2[1]];
-      non_solved_degs_den.erase(min_deg_2[1]);
     }
   }
 
@@ -2044,9 +1770,11 @@ namespace firefly {
   std::vector<FFInt> RatReconst::get_rand_zi_vec(std::vector<uint> order) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> res {};
-    for(uint i = 2; i <= n; i++){
+
+    for (uint i = 2; i <= n; i++) {
       res.emplace_back(rand_zi.at(std::make_pair(i, order[i - 2])));
     }
+
     return res;
   }
 
@@ -2058,5 +1786,113 @@ namespace firefly {
   std::vector<FFInt> RatReconst::get_zi_shift_vec() {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return shift;
+  }
+
+  bool RatReconst::need_shift() {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    bool tmp = need_prime_shift;
+    need_prime_shift = false;
+    return tmp;
+  }
+
+  void RatReconst::set_new_curr_deg_num_singular(uint key) {
+    if (curr_deg_num < max_deg_num) {
+      for (uint i = 0; i < coef_mat_num[key].size(); i++) {
+        std::vector<uint> tmp_zi_ord(n - 1, i + 1);
+        std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
+        yis.insert(yis.begin(), 1);
+        coef_mat_num[key][i] -= sub_num[key].calc(yis);
+      }
+    }
+
+    solved_degs_num[key] = solve_transposed_vandermonde(non_solved_degs_num[key], coef_mat_num[key]);
+
+    if (curr_deg_num > 0) {
+      PolynomialFF sub_pol = solved_degs_num[key].add_shift(shift);
+      sub_pol -= solved_degs_num[key];
+
+      for (auto & el : sub_pol.coefs) {
+        uint tmp_deg = 0;
+
+        for (auto & n : el.first) {
+          tmp_deg += n;
+        }
+
+        ff_map monomial = {{el.first, el.second}};
+        sub_num[tmp_deg] += PolynomialFF(n, monomial);
+      }
+    }
+
+    bool found = false;
+    uint solved_degs = 1;
+    curr_deg_num --;
+
+    if (curr_deg_num >= 0) {
+      while (!found) {
+        if (coef_mat_num.find(curr_deg_num) == coef_mat_num.end()) {
+          curr_deg_num --;
+          solved_degs ++;
+        } else
+          found = true;
+
+        if (curr_deg_num == -1)
+          found = true;
+      }
+    }
+
+    tmp_solved_coefs_num += solved_degs;
+  }
+
+  void RatReconst::set_new_curr_deg_den_singular(uint key) {
+    if (curr_deg_den < max_deg_den) {
+      for (uint i = 0; i < coef_mat_den[key].size(); i++) {
+        std::vector<uint> tmp_zi_ord(n - 1, i + 1);
+        std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
+        yis.insert(yis.begin(), 1);
+        coef_mat_den[key][i] -= sub_den[key].calc(yis);
+      }
+    }
+
+    solved_degs_den[key] = solve_transposed_vandermonde(non_solved_degs_den[key], coef_mat_den[key]);
+
+    if (curr_deg_den > 0) {
+      PolynomialFF sub_pol = solved_degs_den[key].add_shift(shift);
+      sub_pol -= solved_degs_den[key];
+
+      for (auto & el : sub_pol.coefs) {
+        uint tmp_deg = 0;
+
+        for (auto & n : el.first) {
+          tmp_deg += n;
+        }
+
+        ff_map monomial = {{el.first, el.second}};
+        sub_den[tmp_deg] += PolynomialFF(n, monomial);
+      }
+    }
+
+    bool found = false;
+    uint solved_degs = 1;
+    curr_deg_den --;
+
+    if (curr_deg_den > 0) {
+      while (!found) {
+        if (coef_mat_den.find(curr_deg_den) == coef_mat_den.end()) {
+          curr_deg_den --;
+
+          if (curr_deg_den > 0)
+            solved_degs ++;
+        } else
+          found = true;
+
+        if (curr_deg_den == 0) {
+          curr_deg_den = -1;
+          found = true;
+        }
+      }
+    } else
+      curr_deg_den = -1;
+
+    tmp_solved_coefs_den += solved_degs;
   }
 }
