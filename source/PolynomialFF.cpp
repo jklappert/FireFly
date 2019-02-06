@@ -27,40 +27,20 @@ namespace firefly {
     PolynomialFF a = *this;
     ff_map new_coefs;
 
-    if (a.coefs.size() > b.coefs.size()) {
-      new_coefs = a.coefs;
+    new_coefs = a.coefs;
 
-      for (auto & el : b.coefs) {
-        auto got = new_coefs.find(el.first);
+    for (auto & el : b.coefs) {
+      auto got = new_coefs.find(el.first);
 
-        if (got == new_coefs.end()) {
-          new_coefs.insert(el);
+      if (got == new_coefs.end()) {
+        new_coefs.insert(el);
+      } else {
+        FFInt res = got -> second + el.second;
+
+        if (res.n != 0) {
+          got -> second = res;
         } else {
-          FFInt res = got -> second + el.second;
-
-          if (res.n != 0) {
-            got -> second = res;
-          } else {
-            new_coefs.erase(got -> first);
-          }
-        }
-      }
-    } else {
-      new_coefs = b.coefs;
-
-      for (auto & el : a.coefs) {
-        auto got = new_coefs.find(el.first);
-
-        if (got == new_coefs.end()) {
-          new_coefs.insert(el);
-        } else {
-          FFInt res = got -> second + el.second;
-
-          if (res.n != 0) {
-            got -> second = res;
-          } else {
-            new_coefs.erase(got -> first);
-          }
+          new_coefs.erase(got -> first);
         }
       }
     }
@@ -105,9 +85,10 @@ namespace firefly {
 
   PolynomialFF PolynomialFF::operator/(const FFInt& ffint) {
     ff_map new_coefs;
+    FFInt inv = 1 / ffint;
 
     for (auto el : coefs) {
-      new_coefs.insert(std::make_pair(el.first, el.second / ffint));
+      new_coefs.insert(std::make_pair(el.first, el.second * inv));
     }
 
     return PolynomialFF(n, new_coefs);
@@ -333,6 +314,3 @@ namespace firefly {
   }
 
 }
-
-
-

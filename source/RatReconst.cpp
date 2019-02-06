@@ -100,6 +100,7 @@ namespace firefly {
       if (feed_zi_ord == curr_zi_order) {
         {
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
           if (need_prime_shift) is_singular_system = true;
         }
 

@@ -8,9 +8,9 @@ namespace firefly {
       coefs.emplace_back(Monomial(el.first, el.second));
     }
 
-    if(coefs.size() > 0)
+    if (coefs.size() > 0)
       n = coefs[0].powers.size();
-    else 
+    else
       n = 0;
   }
 
@@ -75,8 +75,8 @@ namespace firefly {
       }
 
     }
-    
-    if(pol.coefs.empty())
+
+    if (pol.coefs.empty())
       out << "0";
 
     out << "\n";
