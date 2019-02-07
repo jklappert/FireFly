@@ -102,7 +102,6 @@ namespace firefly {
     int max_deg_den = -1;
     int curr_deg_num = -1;
     int curr_deg_den = -1;
-    bool is_singular_system = false;
     std::vector<uint> curr_zi_order_num {};
     std::vector<uint> curr_zi_order_den {};
     uint tmp_solved_coefs_num = 0;
@@ -126,8 +125,10 @@ namespace firefly {
     std::unordered_map<uint, PolynomialFF> solved_degs_num {}; //new
     std::unordered_map<uint, PolynomialFF> solved_degs_den {}; //new
     std::vector<uint> min_deg_den_vec {};//new
+    bool is_singular_system = false;
     static std::vector<FFInt> shift;
     static ff_pair_map rand_zi;
     static bool need_prime_shift;
+    static bool set_singular_system;
   };
 }

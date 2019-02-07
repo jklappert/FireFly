@@ -9,6 +9,7 @@
 namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
   bool RatReconst::need_prime_shift = false;
+  bool RatReconst::set_singular_system = false;
   ff_pair_map RatReconst::rand_zi;
   std::mutex RatReconst::mutex_statics;
 
@@ -58,7 +59,7 @@ namespace firefly {
   void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
 
-    if (fed_prime == prime_number)
+    if (!done && fed_prime == prime_number)
       queue.emplace_back(std::make_tuple(new_ti, num, feed_zi_ord));
   }
 
@@ -101,7 +102,7 @@ namespace firefly {
         {
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-          if (need_prime_shift) is_singular_system = true;
+          if (!is_singular_system && set_singular_system) is_singular_system = true;
         }
 
         // first check if we are done. If not start the reconstruction again using
@@ -1807,6 +1808,7 @@ namespace firefly {
   bool RatReconst::need_shift() {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     bool tmp = need_prime_shift;
+    set_singular_system = need_prime_shift;
     need_prime_shift = false;
     return tmp;
   }
@@ -1919,3 +1921,6 @@ namespace firefly {
     }
   }
 }
+
+
+
