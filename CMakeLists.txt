@@ -90,11 +90,17 @@ install(
 
 # install public headers
 install(FILES
+  "${INCLUDE_PATH}/BaseReconst.hpp"
   "${INCLUDE_PATH}/FFInt.hpp"
+  "${INCLUDE_PATH}/Logger.hpp"
+  "${INCLUDE_PATH}/Monomial.hpp"
   "${INCLUDE_PATH}/Polynomial.hpp"
+  "${INCLUDE_PATH}/PolynomialFF.hpp"
   "${INCLUDE_PATH}/PolyReconst.hpp"
   "${INCLUDE_PATH}/RationalFunction.hpp"
   "${INCLUDE_PATH}/RationalNumber.hpp"
   "${INCLUDE_PATH}/RatReconst.hpp"
   "${INCLUDE_PATH}/ReconstHelper.hpp"
+  "${INCLUDE_PATH}/UintHasher.hpp"
+  "${INCLUDE_PATH}/utils.hpp"
   DESTINATION "${INCLUDE_INSTALL_DIR}")

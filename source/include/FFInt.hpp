@@ -71,4 +71,8 @@ namespace firefly {
       n = p - (-n_) % p;
     }
   }
+
+  extern "C" {
+    void firefly_exists(void);
+  }
 }

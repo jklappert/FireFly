@@ -173,4 +173,5 @@ namespace firefly {
     FFInt::p_inv = n_preinvert_limb(prime);
   }
 
+  void firefly_exists(void) {}
 }
