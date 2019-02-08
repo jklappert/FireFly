@@ -312,7 +312,7 @@ namespace firefly {
     mpz_class cr_1_mpz;
     cr_1_mpz = "123456789109898799879870980";
     FFInt cr_1(cr_1_mpz);
-    FFInt num = 17 * yis[0] + 7 * yis[1] + 4 * yis[0].pow(2) + yis[1].pow(2) + yis[2].pow(2) + yis[0] * yis[3].pow(3) + yis[1].pow(4);
+    FFInt num = 17 * yis[0] + 7 * yis[1] + yis[2] + yis[0].pow(2) + yis[1].pow(2) + yis[2].pow(2) + yis[3].pow(2) + yis[0] * yis[3].pow(3) + yis[1].pow(4);
     FFInt den = cr_1 * yis[1] - yis[3] + yis[0] * yis[1] + yis[1] * yis[2] + yis[0] * yis[3] + yis[0].pow(2) * yis[1].pow(2) + yis[2].pow(4);
     return num / den;
   }

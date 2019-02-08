@@ -337,7 +337,8 @@ namespace firefly {
     if (result_ff.coefs.empty()) {
       ff_map poly = construct_canonical(n, ais[n]);
       poly.insert(solved_degs.begin(), solved_degs.end());
-      result_ff = PolynomialFF(n, poly);
+      result_ff = PolynomialFF(n, poly).homogenize(deg);
+      result_ff.n = n + 1;
       ais.clear();
     }
 

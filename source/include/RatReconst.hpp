@@ -75,11 +75,10 @@ namespace firefly {
     std::pair<ff_map, ff_map> solve_homogenized_multi_gauss();
     std::tuple<int, uint, std::vector<uint>> feed_poly(int curr_deg,
                                                        uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
-                                                       PolyReconst& rec, ff_map_map& saved_num,
-                                                       std::unordered_map<uint, PolynomialFF>& sub_save, bool is_num);
+                                                       PolyReconst& rec, ff_map_map& saved_num, bool is_num);
     void combine_primes(std::pair<mpz_map, mpz_map>& tmp);
-    void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
-    void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
+    void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
+    void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
     bool first_run = true;
     std::list<std::tuple<FFInt, FFInt, std::vector<uint>>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
@@ -92,8 +91,6 @@ namespace firefly {
     std::vector<FFInt> ai {};
     std::unordered_map<uint, PolyReconst> coef_n {};
     std::unordered_map<uint, PolyReconst> coef_d {};
-    std::unordered_map<uint, PolynomialFF> sub_num {};
-    std::unordered_map<uint, PolynomialFF> sub_den {};
     std::unordered_map<uint, std::vector<std::vector<uint>>> non_solved_degs_num {};// a vector entry should be just a pointer to save memory
     std::unordered_map<uint, std::vector<std::vector<uint>>> non_solved_degs_den {};
     ff_map_map saved_num_num {};
@@ -125,6 +122,7 @@ namespace firefly {
     std::unordered_map<uint, PolynomialFF> solved_degs_num {}; //new
     std::unordered_map<uint, PolynomialFF> solved_degs_den {}; //new
     std::vector<uint> min_deg_den_vec {};//new
+    FFInt const_den = 0;//new
     bool is_singular_system = false;
     static std::vector<FFInt> shift;
     static ff_pair_map rand_zi;
