@@ -17,6 +17,7 @@ namespace firefly {
     n = std::stoull(in.get_str());
   }
 
+  // copied from Kira
   FFInt::FFInt(const std::string& str, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
     for (const auto & var : replacements) {
       if (var.first == str) {
@@ -92,6 +93,7 @@ namespace firefly {
     return FFInt(p - n);
   }
 
+  // copied from Kira
   uint64_t FFInt::parse_longint(const std::string& str) {
     // Parse a long integer, passed as a string, take the modulus wrt. prime
     // and return it. The string is split into chunks of at most 18 digits
