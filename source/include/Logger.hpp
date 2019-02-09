@@ -76,12 +76,12 @@ namespace firefly {
 #define PRINT_PREFIX(level)                                        \
       do {                                                            \
          switch (level) {                                             \
-         case firefly::kVerbose: LOG_OUTPUT_STREAM << "Firefly verbose: "; break; \
-         case firefly::kDebug:   LOG_OUTPUT_STREAM << "Firefly debug: "; break; \
-         case firefly::kInfo:    LOG_OUTPUT_STREAM << "Firefly info: "; break; \
-         case firefly::kWarning: LOG_OUTPUT_STREAM << "Firefly warning: "; break; \
-         case firefly::kError:   LOG_OUTPUT_STREAM << "Firefly error: "; break; \
-         case firefly::kFatal:   LOG_OUTPUT_STREAM << "Firefly fatal error: "; break; \
+         case firefly::kVerbose: LOG_OUTPUT_STREAM << "FireFly verbose: "; break; \
+         case firefly::kDebug:   LOG_OUTPUT_STREAM << "FireFly debug: "; break; \
+         case firefly::kInfo:    LOG_OUTPUT_STREAM << "FireFly info: "; break; \
+         case firefly::kWarning: LOG_OUTPUT_STREAM << "FireFly warning: "; break; \
+         case firefly::kError:   LOG_OUTPUT_STREAM << "FireFly error: "; break; \
+         case firefly::kFatal:   LOG_OUTPUT_STREAM << "FireFly fatal error: "; break; \
          default:                                                     \
             break;                                                    \
          }                                                            \

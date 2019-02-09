@@ -26,6 +26,7 @@ namespace firefly {
     FFInt get_zi_shift(uint zi);
     std::vector<FFInt> get_zi_shift_vec();
     bool need_shift();
+    void set_tag(std::string tag_);
   private:
     void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord);
     FFInt comp_ai(int i, int ip, const FFInt& num);
@@ -82,10 +83,10 @@ namespace firefly {
     bool first_run = true;
     std::list<std::tuple<FFInt, FFInt, std::vector<uint>>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
-    std::unordered_map<uint, std::vector<FFInt>> coef_mat_num {}; //new
-    std::unordered_map<uint, std::vector<FFInt>> coef_mat_den {}; //new
-    PolynomialFF solved_num; //new
-    PolynomialFF solved_den; //new
+    std::unordered_map<uint, std::vector<FFInt>> coef_mat_num {};
+    std::unordered_map<uint, std::vector<FFInt>> coef_mat_den {};
+    PolynomialFF solved_num;
+    PolynomialFF solved_den;
     uint curr_zi = 2;
     ff_vec_map saved_ti {};
     std::vector<FFInt> ai {};
@@ -93,6 +94,7 @@ namespace firefly {
     std::unordered_map<uint, PolyReconst> coef_d {};
     std::unordered_map<uint, std::vector<std::vector<uint>>> non_solved_degs_num {};// a vector entry should be just a pointer to save memory
     std::unordered_map<uint, std::vector<std::vector<uint>>> non_solved_degs_den {};
+    std::unordered_map<std::pair<uint, uint>, std::vector<PolynomialFF>, UintPairHasher> sub {}; // bool == true -> numerator
     ff_map_map saved_num_num {};
     ff_map_map saved_num_den {};
     int max_deg_num = -1;
@@ -119,10 +121,11 @@ namespace firefly {
                                               const std::vector<FFInt>& nums);
     void set_new_curr_deg_num_singular(uint key);
     void set_new_curr_deg_den_singular(uint key);
-    std::unordered_map<uint, PolynomialFF> solved_degs_num {}; //new
-    std::unordered_map<uint, PolynomialFF> solved_degs_den {}; //new
-    std::vector<uint> min_deg_den_vec {};//new
-    FFInt const_den = 0;//new
+    std::unordered_map<uint, PolynomialFF> solved_degs_num {};
+    std::unordered_map<uint, PolynomialFF> solved_degs_den {};
+    std::vector<uint> min_deg_den_vec {};
+    FFInt const_den = 0;
+    std::string tag = "";
     bool is_singular_system = false;
     static std::vector<FFInt> shift;
     static ff_pair_map rand_zi;

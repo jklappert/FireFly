@@ -20,8 +20,7 @@ namespace firefly {
     if (m2 < 0) m2 = m2 + n;
 
     a = (m1 * p1.first + m2 * p2.first) % n;
-    //mpz_gcdext(tmp,r,s, p1.second.get_mpz_t(), tmp_c.get_mpz_t());
-    //tmp_c = mpz_class(s);
+
     mpz_clear(tmp);
     return std::pair<mpz_class, mpz_class> (a, n);
   }

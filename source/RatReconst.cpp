@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <fstream>
+#include <sys/stat.h>
 
 namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
@@ -325,11 +327,13 @@ namespace firefly {
                 // for the constant coefficient
                 if (i == 0 && first_run) {
                   std::vector<uint> key = {(uint) i, zi};
-                  saved_num_num[curr_zi_order][key] = num_coef[ {(uint) i}];
+                  uint sub_count = sub[std::make_pair(i, true)].size();
+                  saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint) i}], sub_count);
                 } else {
                   if (curr_zi_order[zi - 2] < (uint) i + 3) {
+                    uint sub_count = sub[std::make_pair(i, true)].size();
                     std::vector<uint> key = {(uint) i, zi};
-                    saved_num_num[curr_zi_order][key] = num_coef[ {(uint) i}];
+                    saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint) i}], sub_count);
                   }
                 }
               }
@@ -356,8 +360,9 @@ namespace firefly {
 
               if ((int) i <= curr_deg_den) {
                 if (curr_zi_order[zi - 2] < (uint) i + 3) {
+                  uint sub_count = sub[std::make_pair(i, false)].size();
                   std::vector<uint> key = {i, zi};
-                  saved_num_den[curr_zi_order][key] = den_coef[ {i}];
+                  saved_num_den[curr_zi_order][key] = std::make_pair(den_coef[ {i}], sub_count);
                 }
               }
             }
@@ -775,7 +780,9 @@ namespace firefly {
     while (!rec.is_new_prime()) {
       try {
         std::vector<uint> key = {(uint) curr_deg, tmp_zi};
-        FFInt food = saved_num.at(tmp_zi_ord).at(key);
+        auto food_pair = saved_num.at(tmp_zi_ord).at(key);
+        FFInt food = food_pair.first;
+        uint sub_count = food_pair.second;
         // delete unused saved data
         saved_num[tmp_zi_ord].erase(key);
         // set random values for the yis
@@ -786,10 +793,36 @@ namespace firefly {
         // numerical values to reconstruct the coefficient
         if (curr_deg == 0) {
           while (!rec.is_new_prime()) {
-            rec.feed(yis, food);
+            FFInt sub_num = 0;
+
+            if (curr_deg != max_deg) {
+              yis.insert(yis.begin(), 1);
+              std::vector<PolynomialFF> sub_polynomials = sub[std::make_pair(curr_deg, is_num)];
+
+              for (uint i = sub_count; i < sub_polynomials.size(); i++) {
+                sub_num += sub_polynomials[i].calc(yis);
+              }
+
+              yis.erase(yis.begin());
+            }
+
+            rec.feed(yis, food - sub_num);
           }
         } else {
-          rec.feed(yis, food);
+          FFInt sub_num = 0;
+
+          if (curr_deg != max_deg) {
+            yis.insert(yis.begin(), 1);
+            std::vector<PolynomialFF> sub_polynomials = sub[std::make_pair(curr_deg, is_num)];
+
+            for (uint i = sub_count; i < sub_polynomials.size(); i++) {
+              sub_num += sub_polynomials[i].calc(yis);
+            }
+
+            yis.erase(yis.begin());
+          }
+
+          rec.feed(yis, food - sub_num);
           tmp_zi = rec.get_zi() + 1;
           tmp_zi_ord = rec.get_zi_order();
         }
@@ -805,12 +838,14 @@ namespace firefly {
         coef[curr_deg] = rec;
 
         if (curr_deg > 0) {
-          std::unordered_map<uint, PolynomialFF> sub_poly_map {};
           std::vector<uint> zero_deg(n);
           PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
           for (uint i = 0; i < curr_deg; i++) {
-            sub_poly_map[i] = zero_poly;
+            if (sub[std::make_pair(i, is_num)].size() == 0)
+              sub[std::make_pair(i, is_num)] = {zero_poly};
+            else
+              sub[std::make_pair(i, is_num)].emplace_back(zero_poly);
           }
 
           PolynomialFF res = rec.get_result_ff();
@@ -831,17 +866,19 @@ namespace firefly {
 
               for (const auto & deg : el.first) tmp_deg += deg;
 
-              if (tmp_deg < curr_deg)
-                sub_poly_map[tmp_deg] += PolynomialFF(n, {{el.first, el.second}});
+              if (tmp_deg < curr_deg) {
+                sub[std::make_pair(tmp_deg, is_num)].back() += PolynomialFF(n, {{el.first, el.second}});
+                //sub_poly_map[tmp_deg] += PolynomialFF(n, {{el.first, el.second}});
+              }
             }
           }
 
           if (!is_num) {
             std::vector<FFInt> tmp_yis(n, 0);
-            const_den += sub_poly_map[0].calc(tmp_yis);
+            const_den += sub[std::make_pair(0, is_num)].back().calc(tmp_yis);
           }
 
-          std::vector<std::pair<std::vector<uint>, std::vector<uint>>> delete_keys {};
+          /*std::vector<std::pair<std::vector<uint>, std::vector<uint>>> delete_keys {};
 
           for (auto & el1 : saved_num) {
             std::vector<uint> key_1 = el1.first;
@@ -852,7 +889,7 @@ namespace firefly {
               if (tmp_deg < curr_deg) {
                 std::vector<FFInt> tmp_yis = get_rand_zi_vec(key_1);
                 tmp_yis.insert(tmp_yis.begin(), 1);
-                el2.second -= sub_poly_map[tmp_deg].calc(tmp_yis);
+                el2.second.first -= sub_poly_map[tmp_deg].calc(tmp_yis);
               } else {
                 delete_keys.emplace_back(std::make_pair(key_1, el2.first));
               }
@@ -861,7 +898,7 @@ namespace firefly {
 
           for (const auto & el : delete_keys) {
             saved_num[el.first].erase(el.second);
-          }
+          }*/
         }
 
         /*
@@ -913,6 +950,7 @@ namespace firefly {
 
     non_solved_degs_den.clear();
     non_solved_degs_num.clear();
+    sub.clear();
 
     if (!use_chinese_remainder) {
       combined_ni = tmp.first;
@@ -1072,6 +1110,80 @@ namespace firefly {
     for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<FFInt> {};
 
     for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<FFInt> {};
+
+    // Check if the state should be written out after this prime
+    if (tag.size() > 0) {
+      mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      std::ofstream file;
+      std::string file_name = std::string("ff_save/") + tag + std::string("_") + std::to_string(primes()[prime_number]) + std::string(".txt");
+      file.open(file_name.c_str());
+      file << "combined_prime\n" << combined_prime.get_str() << "\n";
+      file << "max_deg_num\n" << max_deg_num << "\n";
+      file << "max_deg_den\n" << max_deg_den << "\n";
+      file << "need_prime_shift\n" << need_prime_shift << "\n";
+      file << "min_deg_den_vec\n";
+      std::string tmp_vec = "";
+
+      for (const auto & deg : min_deg_den_vec) {
+        tmp_vec += std::to_string(deg) + std::string(" ");
+      }
+
+      tmp_vec.substr(0, tmp_vec.size() - 1);
+      tmp_vec += std::string("\n");
+      file << tmp_vec;
+      file << "g_ni\n";
+
+      for (const auto & el : g_ni) {
+        std::string tmp_entry = "";
+
+        for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
+
+        tmp_entry += std::string(el.second.numerator.get_str()) + " " + std::string(el.second.denominator.get_str()) + std::string("\n");
+        file << tmp_entry;
+      }
+
+      file << "g_di\n";
+
+      for (const auto & el : g_di) {
+        std::string tmp_entry = "";
+
+        for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
+
+        tmp_entry += std::string(el.second.numerator.get_str()) + " " + std::string(el.second.denominator.get_str()) + std::string("\n");
+        file << tmp_entry;
+      }
+
+      file << "combined_ni\n";
+
+      for (const auto & el : combined_ni) {
+        std::string tmp_entry = "";
+
+        for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
+
+        tmp_entry += std::string(el.second.get_str()) + std::string("\n");
+        file << tmp_entry;
+      }
+
+      file << "combined_di\n";
+
+      for (const auto & el : combined_di) {
+        std::string tmp_entry = "";
+
+        for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
+
+        tmp_entry += std::string(el.second.get_str()) + std::string("\n");
+        file << tmp_entry;
+      }
+
+      file.close();
+
+      if (prime_number > 0) {
+        std::string old_file_name = std::string("ff_save/") + tag + std::string("_") + std::to_string(primes()[prime_number - 1]) + std::string(".txt");
+
+        if (std::remove(old_file_name.c_str()) != 0)
+          WARNING_MSG("The previously saved file could not be deleted.");
+      }
+    }
   }
 
   RationalFunction RatReconst::get_result() {
@@ -1344,6 +1456,8 @@ namespace firefly {
     is_singular_system = other.is_singular_system;
     queue = other.queue;
     const_den = other.const_den;
+    tag = other.tag;
+    sub = other.sub;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -1398,6 +1512,8 @@ namespace firefly {
     is_singular_system = std::move(other.is_singular_system);
     queue = std::move(other.queue);
     const_den = std::move(other.const_den);
+    tag = std::move(other.tag);
+    sub = std::move(other.sub);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -1453,6 +1569,8 @@ namespace firefly {
       is_singular_system = other.is_singular_system;
       queue = other.queue;
       const_den = other.const_den;
+      tag = other.tag;
+      sub = other.sub;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -1511,6 +1629,8 @@ namespace firefly {
       is_singular_system = std::move(other.is_singular_system);
       queue = std::move(other.queue);
       const_den = std::move(other.const_den);
+      tag = std::move(other.tag);
+      sub = std::move(other.sub);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);
@@ -1972,7 +2092,8 @@ namespace firefly {
                 - tmp_solved_coefs_num - tmp_solved_coefs_den;
     }
   }
+
+  void RatReconst::set_tag(std::string tag_) {
+    tag = tag_;
+  }
 }
-
-
-

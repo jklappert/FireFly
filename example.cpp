@@ -11,6 +11,7 @@ int main() {
   uint64_t prime = primes()[0];
   FFInt::set_new_prime(prime);
   RatReconst rec(n);
+  rec.set_tag("test");
 
   try {
     std::cout << "--------------------------------------------------------------\n";
