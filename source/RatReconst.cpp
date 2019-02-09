@@ -950,9 +950,11 @@ namespace firefly {
 
     non_solved_degs_den.clear();
     non_solved_degs_num.clear();
-    sub.clear();
 
     if (!use_chinese_remainder) {
+      sub = std::unordered_map<std::pair<uint, uint>, std::vector<PolynomialFF>, UintPairHasher> ();
+      saved_num_num = ff_map_map ();
+      saved_num_den = ff_map_map ();
       combined_ni = tmp.first;
       combined_di = tmp.second;
 

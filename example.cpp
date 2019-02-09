@@ -11,7 +11,7 @@ int main() {
   uint64_t prime = primes()[0];
   FFInt::set_new_prime(prime);
   RatReconst rec(n);
-  rec.set_tag("test");
+  //rec.set_tag("test");
 
   try {
     std::cout << "--------------------------------------------------------------\n";
@@ -69,8 +69,8 @@ int main() {
 
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       //FFInt num = n_eq_1(z1); // example for n = 1
-      //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-      FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+      FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
+      //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
 
       kk++;
       count++;
