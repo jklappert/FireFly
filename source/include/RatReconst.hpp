@@ -83,8 +83,8 @@ namespace firefly {
     bool first_run = true;
     std::list<std::tuple<FFInt, FFInt, std::vector<uint>>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
-    std::unordered_map<uint, std::vector<FFInt>> coef_mat_num {};
-    std::unordered_map<uint, std::vector<FFInt>> coef_mat_den {};
+    std::unordered_map<uint, std::vector<std::pair<FFInt, uint>>> coef_mat_num {};
+    std::unordered_map<uint, std::vector<std::pair<FFInt, uint>>> coef_mat_den {};
     PolynomialFF solved_num;
     PolynomialFF solved_den;
     uint curr_zi = 2;
@@ -118,7 +118,7 @@ namespace firefly {
     void add_non_solved_den(const std::vector<uint>& deg);
     void check_for_solved_degs(std::vector<uint>& uni_degs, const bool is_num);
     PolynomialFF solve_transposed_vandermonde(std::vector<std::vector<uint>>& degs,
-                                              const std::vector<FFInt>& nums);
+                                              const std::vector<std::pair<FFInt, uint>>& nums);
     void set_new_curr_deg_num_singular(uint key);
     void set_new_curr_deg_den_singular(uint key);
     std::unordered_map<uint, PolynomialFF> solved_degs_num {};

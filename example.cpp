@@ -69,8 +69,8 @@ int main() {
 
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       //FFInt num = n_eq_1(z1); // example for n = 1
-      FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-      //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+      //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
+      FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
 
       kk++;
       count++;
