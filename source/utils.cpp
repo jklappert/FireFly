@@ -53,19 +53,6 @@ namespace firefly {
 
   std::vector<FFInt> solve_gauss_system(uint num_eqn,
                                         std::vector<std::vector<FFInt>>& coef_mat) {
-    /*std::cout << "begin----------------------------\n";
-
-    for (const auto & el : coef_mat) {
-      for (int i = 0; i <= num_eqn; i++) {
-        if (i != num_eqn) {
-          if (i < num_eqn - 1)
-            std::cout << el[i] << "*c" << i << "+";
-          else
-            std::cout << el[i] << "*c" << i;
-        } else
-          std::cout << "==" << el[i] << ",\n";
-      }
-    }*/
 
     // Transform the matrix in upper triangular form
     for (uint i = 0; i < num_eqn; i++) {
@@ -100,20 +87,6 @@ namespace firefly {
       }
     }
 
-    /*std::cout << "finish triangular\n";
-
-    for (const auto & el : coef_mat) {
-      for (int ii = 0; ii <= num_eqn; ii++) {
-        if (ii != num_eqn) {
-          if (ii < num_eqn - 1)
-            std::cout << el[ii] << "*c" << ii << "+";
-          else
-            std::cout << el[ii] << "*c" << ii;
-        } else
-          std::cout << "==" << el[ii] << ",\n";
-      }
-    }*/
-
     std::vector<FFInt> results(num_eqn);
 
     if (coef_mat[num_eqn - 1][num_eqn - 1] != 0) {
@@ -125,9 +98,9 @@ namespace firefly {
           coef_mat[k][num_eqn] -= coef_mat[k][i] * results[i];
         }
       }
-    } else {
-      std::cout << "Number of eq. : " << num_eqn << "\n";
-      throw std::runtime_error("Singular system of equations!");
+    } else{
+      ERROR_MSG("Singular system of equations!");
+      std::exit(-1);
     }
 
     return results;

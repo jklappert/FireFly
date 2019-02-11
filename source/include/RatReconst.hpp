@@ -27,6 +27,7 @@ namespace firefly {
     std::vector<FFInt> get_zi_shift_vec();
     bool need_shift();
     void set_tag(std::string tag_);
+    void start_from_saved_file(std::string file_name);
   private:
     void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord);
     FFInt comp_ai(int i, int ip, const FFInt& num);
@@ -132,5 +133,13 @@ namespace firefly {
     static ff_pair_map rand_zi;
     static bool need_prime_shift;
     static bool set_singular_system;
+    void set_singular_system_vars();
+    std::vector<bool> parsed_variables {std::vector<bool>(9, false)};//new
+    int curr_parsed_variable = -1;//new
+    std::vector<uint> parse_vector(std::string& line, int number_of_parameters = -1);
+    std::vector<mpz_class> parse_rational_number(std::string& line);
+    void parse_prime_number(std::string& file_name);
+    enum save_variables {COMBINED_PRIME, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
+    MIN_DEG_DEN_VEC, G_NI, G_DI, COMBINED_NI, COMBINED_DI};
   };
 }
