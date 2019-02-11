@@ -6,6 +6,7 @@
 #include "PolynomialFF.hpp"
 #include "UintHasher.hpp"
 #include "FFInt.hpp"
+#include <stdint.h>
 
 namespace firefly {
   typedef std::unordered_map<std::vector<uint>, mpz_class, UintHasher> mpz_map;
@@ -62,5 +63,13 @@ namespace firefly {
      */
     ff_map convert_to_ffint(const rn_map& ri) const;
     enum reconst_type {POLY, RAT};
+  private:
+    static std::mutex mutex_state;
+    static uint64_t state;
+    static uint64_t const multiplier;
+    static uint64_t const increment;
+    uint32_t rotr32(uint32_t x, uint r);
+    uint32_t pcg32();
+    void pc32_init(uint64_t seed);
   };
 }

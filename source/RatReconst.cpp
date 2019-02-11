@@ -30,7 +30,7 @@ namespace firefly {
         shift = std::vector<FFInt> (n);
 
         if (n > 1) {
-          for (auto & el : shift) el = FFInt(std::rand() % 1000000) + FFInt(1);
+          for (auto & el : shift) el = get_rand();
 
           curr_zi_order_num = std::vector<uint> (n - 1, 1);
           curr_zi_order_den = std::vector<uint> (n - 1, 1);
@@ -238,7 +238,7 @@ namespace firefly {
               INFO_MSG("No constant term in denominator! Trying again with new paramter shift...");
 
               for (uint j = 0; j < n; j++) {
-                shift[j] = FFInt(std::rand() % 1000000) + FFInt(1);
+                shift[j] = get_rand();
               }
 
               {

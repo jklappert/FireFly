@@ -1,8 +1,13 @@
 #include "BaseReconst.hpp"
 #include "PolyReconst.hpp"
 #include "RatReconst.hpp"
+#include <random>
 
 namespace firefly {
+  uint64_t const BaseReconst::multiplier = 6364136223846793005u;
+  uint64_t const BaseReconst::increment  = 1442695040888963407u;
+  uint64_t BaseReconst::state = 0x4d595df4d0f33173;
+  std::mutex BaseReconst::mutex_state;
 
   BaseReconst::BaseReconst() {}
 
@@ -98,7 +103,7 @@ namespace firefly {
 
   //TODO allow for seed with std::srand(std::time(nullptr));
   FFInt BaseReconst::get_rand() {
-    return FFInt(std::rand() % (FFInt::p - 1)) + FFInt(1);
+    return FFInt(pcg32()) + FFInt(1);
   }
 
   uint BaseReconst::get_zi() {
@@ -151,4 +156,25 @@ namespace firefly {
     return gi_ffi;
   }
 
+  uint32_t BaseReconst::rotr32(uint32_t x, uint r) {
+    return x >> r | x << (-r & 31);
+  }
+
+  void BaseReconst::pc32_init(uint64_t seed) {
+    state = seed + increment;
+    pcg32();
+  }
+
+  uint32_t BaseReconst::pcg32() {
+    uint64_t x = state;
+    uint count = (uint)(x >> 59);
+
+    {
+      std::unique_lock<std::mutex> lock_statics(mutex_state);
+      state = x * multiplier + increment;
+    }
+
+    x ^= x >> 18;
+    return rotr32((uint32_t)(x >> 27), count);
+  }
 }
