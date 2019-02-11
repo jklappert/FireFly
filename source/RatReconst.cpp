@@ -121,18 +121,16 @@ namespace firefly {
 
             if (done) {
               std::unique_lock<std::mutex> lock(mutex_status);
-              coef_n.clear();
-              coef_d.clear();
-              combined_di.clear();
-              combined_ni.clear();
+              combined_di = mpz_map();
+              combined_ni = mpz_map();
               combined_prime = 0;
               num_eqn = 0;
               new_prime = false;
-              solved_den.coefs.clear();
-              solved_num.coefs.clear();
+              solved_den = PolynomialFF();
+              solved_num = PolynomialFF();
+              coef_mat_num = std::unordered_map<uint, std::vector<std::pair<FFInt, uint>>> ();
+              coef_mat_den = std::unordered_map<uint, std::vector<std::pair<FFInt, uint>>> ();
               curr_zi_order.clear();
-              saved_num_num.clear();
-              saved_num_den.clear();
               use_chinese_remainder = false;
               return;
             } else {
@@ -327,11 +325,11 @@ namespace firefly {
                 // for the constant coefficient
                 if (i == 0 && first_run) {
                   std::vector<uint> key = {(uint) i, zi};
-                  uint sub_count = sub[std::make_pair(i, true)].size();
+                  uint sub_count = sub_num[i].size();
                   saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint) i}], sub_count);
                 } else {
                   if (curr_zi_order[zi - 2] < (uint) i + 3) {
-                    uint sub_count = sub[std::make_pair(i, true)].size();
+                    uint sub_count = sub_num[i].size();
                     std::vector<uint> key = {(uint) i, zi};
                     saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint) i}], sub_count);
                   }
@@ -360,7 +358,7 @@ namespace firefly {
 
               if ((int) i <= curr_deg_den) {
                 if (curr_zi_order[zi - 2] < (uint) i + 3) {
-                  uint sub_count = sub[std::make_pair(i, false)].size();
+                  uint sub_count = sub_den[i].size();
                   std::vector<uint> key = {i, zi};
                   saved_num_den[curr_zi_order][key] = std::make_pair(den_coef[ {i}], sub_count);
                 }
@@ -383,7 +381,7 @@ namespace firefly {
 
               if (rec.get_zi_order() == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
                 auto res = feed_poly(curr_deg_num, max_deg_num, coef_n, rec,
-                                     saved_num_num, true);
+                                     saved_num_num, sub_num,true);
                 curr_deg_num = std::get<0>(res);
                 zi_num = std::get<1>(res);
                 curr_zi_order_num = std::get<2>(res);
@@ -405,7 +403,7 @@ namespace firefly {
 
               if (rec.get_zi_order() == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
                 auto res = feed_poly(curr_deg_den, max_deg_den, coef_d, rec,
-                                     saved_num_den, false);
+                                     saved_num_den, sub_den, false);
                 curr_deg_den = std::get<0>(res);
                 zi_den = std::get<1>(res);
                 curr_zi_order_den = std::get<2>(res);
@@ -422,7 +420,7 @@ namespace firefly {
 
                   if (rec_new.get_zi_order() == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
                     auto res_new = feed_poly(curr_deg_num, max_deg_num, coef_n, rec_new,
-                                             saved_num_num, true);
+                                             saved_num_num, sub_num, true);
                     curr_deg_num = std::get<0>(res_new);
                     zi_num = std::get<1>(res_new);
                     curr_zi_order_num = std::get<2>(res_new);
@@ -623,7 +621,7 @@ namespace firefly {
                 for (uint i = 0; i <= tmp_deg; i++) {
                   if (coef_mat_num.find(i) != coef_mat_num.end()) {
                     if (coef_mat_num[i].size() < non_solved_degs_num[i].size()) {
-                      uint sub_count = sub[std::make_pair(i, true)].size();
+                      uint sub_count = sub_num[i].size();
                       coef_mat_num[i].emplace_back(std::make_pair(canonical.first[ {i}], sub_count));
                     }
 
@@ -662,7 +660,7 @@ namespace firefly {
                 for (uint i = 1; i <= tmp_deg; i++) {
                   if (coef_mat_den.find(i) != coef_mat_den.end()) {
                     if (coef_mat_den[i].size() < non_solved_degs_den[i].size()) {
-                      uint sub_count = sub[std::make_pair(i, false)].size();
+                      uint sub_count = sub_den[i].size();
                       coef_mat_den[i].emplace_back(std::make_pair(canonical.second[ {i}], sub_count));
                     }
 
@@ -737,8 +735,8 @@ namespace firefly {
               // reset solved coefficients
               ff_map zero_deg {};
               zero_deg.emplace(std::make_pair(std::vector<uint> (n), 0));
-              solved_degs_num.clear();
-              solved_degs_den.clear();
+              solved_degs_num = polff_map();
+              solved_degs_den = polff_map();
               solved_num.coefs = zero_deg;
               solved_den.coefs = zero_deg;
             } else {
@@ -777,7 +775,7 @@ namespace firefly {
 
   std::tuple<int, uint, std::vector<uint>> RatReconst::feed_poly(int curr_deg,
                                                                  uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
-  PolyReconst& rec, ff_map_map& saved_num, bool is_num) {
+  PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num) {
     uint tmp_zi = rec.get_zi() + 1;
     std::vector<uint> tmp_zi_ord = curr_zi_order;
 
@@ -799,9 +797,9 @@ namespace firefly {
           while (!rec.is_new_prime()) {
             FFInt sub_num = 0;
 
-            if (curr_deg != max_deg && sub_count < sub[std::make_pair(curr_deg, is_num)].size()) {
+            if (curr_deg != max_deg && sub_count < sub_save[curr_deg].size()) {
               yis.insert(yis.begin(), 1);
-              sub_num = sub[std::make_pair(curr_deg, is_num)][sub_count].calc(yis);
+              sub_num = sub_save[curr_deg][sub_count].calc(yis);
               yis.erase(yis.begin());
             }
 
@@ -810,9 +808,9 @@ namespace firefly {
         } else {
           FFInt sub_num = 0;
 
-          if (curr_deg != max_deg && sub_count < sub[std::make_pair(curr_deg, is_num)].size()) {
+          if (curr_deg != max_deg && sub_count < sub_save[curr_deg].size()) {
             yis.insert(yis.begin(), 1);
-            sub_num = sub[std::make_pair(curr_deg, is_num)][sub_count].calc(yis);
+            sub_num = sub_save[curr_deg][sub_count].calc(yis);
             yis.erase(yis.begin());
           }
 
@@ -836,10 +834,10 @@ namespace firefly {
           PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
           for (uint i = 0; i < curr_deg; i++) {
-            if (sub[std::make_pair(i, is_num)].size() == 0)
-              sub[std::make_pair(i, is_num)] = {zero_poly};
+            if (sub_save[i].size() == 0)
+              sub_save[i] = {zero_poly};
             else
-              sub[std::make_pair(i, is_num)].emplace_back(zero_poly);
+              sub_save[i].emplace_back(zero_poly);
           }
 
           PolynomialFF res = rec.get_result_ff();
@@ -861,7 +859,7 @@ namespace firefly {
               for (const auto & deg : el.first) tmp_deg += deg;
 
               if (tmp_deg < curr_deg) {
-                for (auto & tmp_sub : sub[std::make_pair(tmp_deg, is_num)]) {
+                for (auto & tmp_sub : sub_save[tmp_deg]) {
                   tmp_sub += PolynomialFF(n, {{el.first, el.second}});
                 }
 
@@ -872,7 +870,7 @@ namespace firefly {
 
           if (!is_num) {
             std::vector<FFInt> tmp_yis(n, 0);
-            const_den += sub[std::make_pair(0, is_num)].back().calc(tmp_yis);
+            const_den += sub_save[0].back().calc(tmp_yis);
           }
 
           /*std::vector<std::pair<std::vector<uint>, std::vector<uint>>> delete_keys {};
@@ -947,11 +945,14 @@ namespace firefly {
 
     non_solved_degs_den.clear();
     non_solved_degs_num.clear();
-    sub = std::unordered_map<std::pair<uint, uint>, std::vector<PolynomialFF>, UintPairHasher> ();
+    sub_num = polff_vec_map ();
+    sub_den = polff_vec_map ();
 
     if (!use_chinese_remainder) {
       saved_num_num = ff_map_map();
       saved_num_den = ff_map_map();
+      coef_d = std::unordered_map<uint, PolyReconst>();
+      coef_n = std::unordered_map<uint, PolyReconst>();
       combined_ni = tmp.first;
       combined_di = tmp.second;
 
@@ -1456,7 +1457,8 @@ namespace firefly {
     queue = other.queue;
     const_den = other.const_den;
     tag = other.tag;
-    sub = other.sub;
+    sub_num = other.sub_num;
+    sub_den = other.sub_den;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -1512,7 +1514,8 @@ namespace firefly {
     queue = std::move(other.queue);
     const_den = std::move(other.const_den);
     tag = std::move(other.tag);
-    sub = std::move(other.sub);
+    sub_num = std::move(other.sub_num);
+    sub_den = std::move(other.sub_den);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -1569,7 +1572,8 @@ namespace firefly {
       queue = other.queue;
       const_den = other.const_den;
       tag = other.tag;
-      sub = other.sub;
+      sub_num = other.sub_num;
+      sub_den = other.sub_den;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -1629,7 +1633,8 @@ namespace firefly {
       queue = std::move(other.queue);
       const_den = std::move(other.const_den);
       tag = std::move(other.tag);
-      sub = std::move(other.sub);
+      sub_num = std::move(other.sub_num);
+      sub_den = std::move(other.sub_den);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);
@@ -1949,11 +1954,11 @@ namespace firefly {
       for (uint i = 0; i < coef_mat_num[key].size(); i++) {
         auto tmp_pair = coef_mat_num[key][i];
 
-        if (tmp_pair.second < sub[std::make_pair(curr_deg_num, true)].size()) {
+        if (tmp_pair.second < sub_num[curr_deg_num].size()) {
           std::vector<uint> tmp_zi_ord(n - 1, i + 1);
           std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
           yis.insert(yis.begin(), 1);
-          tmp_pair.first -= sub[std::make_pair(key, true)][tmp_pair.second].calc(yis);
+          tmp_pair.first -= sub_num[key][tmp_pair.second].calc(yis);
           coef_mat_num[key][i] = tmp_pair;
         }
       }
@@ -1966,10 +1971,10 @@ namespace firefly {
 
 
     for (uint i = 0; i < curr_deg_num; i++) {
-      if (sub[std::make_pair(i, true)].size() == 0)
-        sub[std::make_pair(i, true)] = {zero_poly};
+      if (sub_num[i].size() == 0)
+        sub_num[i] = {zero_poly};
       else
-        sub[std::make_pair(i, true)].emplace_back(zero_poly);
+        sub_num[i].emplace_back(zero_poly);
     }
 
     if (curr_deg_num > 0) {
@@ -1987,7 +1992,7 @@ namespace firefly {
         for (const auto & deg : el.first) tmp_deg += deg;
 
         if (tmp_deg < curr_deg_num) {
-          for (auto & tmp_sub : sub[std::make_pair(tmp_deg, true)]) {
+          for (auto & tmp_sub : sub_num[tmp_deg]) {
             tmp_sub += PolynomialFF(n, {{el.first, el.second}});
           }
         }
@@ -2024,11 +2029,11 @@ namespace firefly {
       for (uint i = 0; i < coef_mat_den[key].size(); i++) {
         auto tmp_pair = coef_mat_den[key][i];
 
-        if (tmp_pair.second < sub[std::make_pair(curr_deg_den, false)].size()) {
+        if (tmp_pair.second < sub_den[curr_deg_den].size()) {
           std::vector<uint> tmp_zi_ord(n - 1, i + 1);
           std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
           yis.insert(yis.begin(), 1);
-          tmp_pair.first -= sub[std::make_pair(key, false)][tmp_pair.second].calc(yis);
+          tmp_pair.first -= sub_den[key][tmp_pair.second].calc(yis);
           coef_mat_den[key][i] = tmp_pair;
         }
       }
@@ -2041,10 +2046,10 @@ namespace firefly {
 
 
     for (uint i = 0; i < curr_deg_den; i++) {
-      if (sub[std::make_pair(i, false)].size() == 0)
-        sub[std::make_pair(i, false)] = {zero_poly};
+      if (sub_den[i].size() == 0)
+        sub_den[i] = {zero_poly};
       else
-        sub[std::make_pair(i, false)].emplace_back(zero_poly);
+        sub_den[i].emplace_back(zero_poly);
     }
 
     if (curr_deg_den > 0) {
@@ -2062,7 +2067,7 @@ namespace firefly {
         for (const auto & deg : el.first) tmp_deg += deg;
 
         if (tmp_deg < curr_deg_den) {
-          for (auto & tmp_sub : sub[std::make_pair(tmp_deg, false)]) {
+          for (auto & tmp_sub : sub_den[tmp_deg]) {
             tmp_sub += PolynomialFF(n, {{el.first, el.second}});
           }
         }
@@ -2070,7 +2075,7 @@ namespace firefly {
     }
 
     std::vector<FFInt> tmp_yis(n, 0);
-    const_den += sub[std::make_pair(0, false)].back().calc(tmp_yis);
+    const_den += sub_den[0].back().calc(tmp_yis);
 
     bool found = false;
     uint solved_degs = 1;

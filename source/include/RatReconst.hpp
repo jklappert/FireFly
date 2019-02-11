@@ -76,7 +76,7 @@ namespace firefly {
     std::pair<ff_map, ff_map> solve_homogenized_multi_gauss();
     std::tuple<int, uint, std::vector<uint>> feed_poly(int curr_deg,
                                                        uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
-                                                       PolyReconst& rec, ff_map_map& saved_num, bool is_num);
+                                                       PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num);
     void combine_primes(std::pair<mpz_map, mpz_map>& tmp);
     void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
     void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
@@ -94,7 +94,8 @@ namespace firefly {
     std::unordered_map<uint, PolyReconst> coef_d {};
     std::unordered_map<uint, std::vector<std::vector<uint>>> non_solved_degs_num {};// a vector entry should be just a pointer to save memory
     std::unordered_map<uint, std::vector<std::vector<uint>>> non_solved_degs_den {};
-    std::unordered_map<std::pair<uint, uint>, std::vector<PolynomialFF>, UintPairHasher> sub {}; // bool == true -> numerator
+    polff_vec_map sub_num {};
+    polff_vec_map sub_den {};
     ff_map_map saved_num_num {};
     ff_map_map saved_num_den {};
     int max_deg_num = -1;
@@ -121,8 +122,8 @@ namespace firefly {
                                               const std::vector<std::pair<FFInt, uint>>& nums);
     void set_new_curr_deg_num_singular(uint key);
     void set_new_curr_deg_den_singular(uint key);
-    std::unordered_map<uint, PolynomialFF> solved_degs_num {};
-    std::unordered_map<uint, PolynomialFF> solved_degs_den {};
+    polff_map solved_degs_num {};
+    polff_map solved_degs_den {};
     std::vector<uint> min_deg_den_vec {};
     FFInt const_den = 0;
     std::string tag = "";
