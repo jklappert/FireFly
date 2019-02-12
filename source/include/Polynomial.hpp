@@ -24,7 +24,7 @@ namespace firefly {
     PolynomialFF convert_to_PolynomialFF();
     void sort();
     void clear();
-    std::string string(const std::vector<std::string>& symbols) const;
+    std::string to_string(const std::vector<std::string>& symbols) const;
 
     std::vector<Monomial> coefs;
   private:

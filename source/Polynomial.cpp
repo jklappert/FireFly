@@ -1,4 +1,5 @@
 #include "Polynomial.hpp"
+#include "Logger.hpp"
 #include <chrono>
 
 namespace firefly {
@@ -29,8 +30,12 @@ namespace firefly {
     coefs.clear();
   }
 
-  std::string Polynomial::string(const std::vector<std::string>& symbols) const {
+  std::string Polynomial::to_string(const std::vector<std::string>& symbols) const {
     std::string str;
+    if(symbols.size() != n){
+      ERROR_MSG("Symbol size does not match to number of variables of the polynomial!");
+      std::exit(-1);
+    }
 
     for (const auto & mono : coefs) {
       str += mono.coef.string() + "*";

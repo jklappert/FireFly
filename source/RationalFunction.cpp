@@ -6,8 +6,8 @@ namespace firefly {
 
   RationalFunction::RationalFunction() {}
 
-  std::string RationalFunction::string(const std::vector<std::string>& symbols) const {
-    std::string str = "(" + numerator.string(symbols) + ")/(" + denominator.string(symbols) + ")";
+  std::string RationalFunction::to_string(const std::vector<std::string>& symbols) const {
+    std::string str = "(" + numerator.to_string(symbols) + ")/(" + denominator.to_string(symbols) + ")";
     return str;
   }
 

@@ -17,7 +17,7 @@ namespace firefly {
      */
     RationalFunction(Polynomial n, Polynomial d);
     RationalFunction();
-    std::string string(const std::vector<std::string>& symbols) const;
+    std::string to_string(const std::vector<std::string>& symbols) const;
 
     Polynomial numerator;  /**< The coefficients of the numerator */
     Polynomial denominator; /**< The coefficients of the denominator */
