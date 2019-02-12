@@ -25,8 +25,17 @@ namespace firefly {
   RationalNumber get_rational_coef(const mpz_class& a, const mpz_class& p);
 
   /**
-   * 
-   * 
+   *    Applies the rational reconstruction algorithm MQRR by Monagan
+   *    @param a a number over a finite field
+   *    @param p a prime number defining the finite field
+   *    @return a RationalNumber which has been reconstruction using the
+   *    rational reconstruction algorithm
+   */
+  RationalNumber get_rational_coef_mqrr(const mpz_class& a, const mpz_class& p);
+
+  /**
+   *
+   *
    */
   std::vector<FFInt> solve_gauss_system(uint num_eqn,
                                  std::vector<std::vector<FFInt>>& coef_mat);

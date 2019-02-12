@@ -962,7 +962,39 @@ namespace firefly {
       mpz_map combined_ni_back = combined_ni;
 
       for (auto & c_ni : combined_ni_back) {
+        RationalNumber rn_wang;
+        bool wang;
+
         try {
+          rn_wang = get_rational_coef(c_ni.second, combined_prime);
+          wang = true;
+        } catch (std::exception& e) {
+          wang = false;
+        }
+
+        RationalNumber rn_monagan;
+        bool monagan;
+
+        try {
+          rn_monagan = get_rational_coef_mqrr(c_ni.second, combined_prime);
+          monagan = true;
+        } catch (std::exception& e) {
+          monagan = false;
+        }
+
+        if (wang && monagan && rn_wang == rn_monagan) {
+          remove_ni(c_ni.first, rn_wang);
+          continue;
+        }
+
+        if (wang && rn_wang.numerator == c_ni.second && rn_wang.denominator == 1) {
+          remove_ni(c_ni.first, rn_wang);
+          continue;
+        }
+
+        add_non_solved_num(c_ni.first);
+
+/*        try {
           RationalNumber rn = get_rational_coef(c_ni.second, combined_prime);
 
           if (rn.numerator == c_ni.second && rn.denominator == 1)
@@ -971,13 +1003,45 @@ namespace firefly {
             add_non_solved_num(c_ni.first);
         } catch (std::exception& e) {
           add_non_solved_num(c_ni.first);
-        }
+        }*/
       }
 
       mpz_map combined_di_back = combined_di;
 
       for (auto & c_di : combined_di_back) {
+        RationalNumber rn_wang;
+        bool wang;
+
         try {
+          rn_wang = get_rational_coef(c_di.second, combined_prime);
+          wang = true;
+        } catch (std::exception& e) {
+          wang = false;
+        }
+
+        RationalNumber rn_monagan;
+        bool monagan;
+
+        try {
+          rn_monagan = get_rational_coef_mqrr(c_di.second, combined_prime);
+          monagan = true;
+        } catch (std::exception& e) {
+          monagan = false;
+        }
+
+        if (wang && monagan && rn_wang == rn_monagan) {
+          remove_di(c_di.first, rn_wang);
+          continue;
+        }
+
+        if (wang && rn_wang.numerator == c_di.second && rn_wang.denominator == 1) {
+          remove_di(c_di.first, rn_wang);
+          continue;
+        }
+
+        add_non_solved_den(c_di.first);
+
+/*        try {
           RationalNumber rn = get_rational_coef(c_di.second, combined_prime);
 
           if (rn.numerator == c_di.second && rn.denominator == 1)
@@ -986,7 +1050,7 @@ namespace firefly {
             add_non_solved_den(c_di.first);
         } catch (std::exception& e) {
           add_non_solved_den(c_di.first);
-        }
+        }*/
       }
 
       if (is_singular_system) {
@@ -1029,7 +1093,66 @@ namespace firefly {
       // Remove already known coefficients from solve algorithm to save numerical runs
       for (auto & c_ni : combined_ni_back) {
         if (g_ni.find(c_ni.first) == g_ni.end()) {
+          RationalNumber last_rn_wang;
+          RationalNumber curr_rn_wang;
+          bool last_wang;
+          bool curr_wang;
+
           try {
+            last_rn_wang = get_rational_coef(c_ni.second, combined_prime_back);
+            last_wang = true;
+          } catch (std::exception& e) {
+            last_wang = false;
+          }
+
+          try {
+            curr_rn_wang = get_rational_coef(combined_ni[c_ni.first], combined_prime);
+            curr_wang = true;
+          } catch (std::exception& e) {
+            curr_wang = false;
+          }
+
+          RationalNumber last_rn_monagan;
+          RationalNumber curr_rn_monagan;
+          bool last_monagan;
+          bool curr_monagan;
+
+          try {
+            last_rn_monagan = get_rational_coef_mqrr(c_ni.second, combined_prime_back);
+            last_monagan = true;
+          } catch (std::exception& e) {
+            last_monagan = false;
+          }
+
+          try {
+            curr_rn_monagan = get_rational_coef_mqrr(combined_ni[c_ni.first], combined_prime);
+            curr_monagan = true;
+          } catch (std::exception& e) {
+            curr_monagan = false;
+          }
+
+          if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
+            remove_ni(c_ni.first, curr_rn_wang);
+            continue;
+          }
+
+          if (last_monagan && curr_monagan && last_rn_monagan == curr_rn_monagan) {
+            remove_ni(c_ni.first, curr_rn_monagan);
+            continue;
+          }
+
+          if (curr_wang && curr_monagan && curr_rn_wang == curr_rn_monagan) {
+            remove_ni(c_ni.first, curr_rn_wang);
+            continue;
+          }
+
+          if (c_ni.second == combined_ni[c_ni.first]) {
+            RationalNumber rn = RationalNumber(c_ni.second, 1);
+            remove_ni(c_ni.first, rn);
+          } else
+            add_non_solved_num(c_ni.first);
+
+/*          try {
             RationalNumber last_rn = get_rational_coef(c_ni.second, combined_prime_back);
             RationalNumber curr_rn = get_rational_coef(combined_ni[c_ni.first], combined_prime);
 
@@ -1044,13 +1167,72 @@ namespace firefly {
               remove_ni(c_ni.first, rn);
             } else
               add_non_solved_num(c_ni.first);
-          }
+          }*/
         }
       }
 
       for (auto & c_di : combined_di_back) {
         if (g_di.find(c_di.first) == g_di.end()) {
+          RationalNumber last_rn_wang;
+          RationalNumber curr_rn_wang;
+          bool last_wang;
+          bool curr_wang;
+
           try {
+            last_rn_wang = get_rational_coef(c_di.second, combined_prime_back);
+            last_wang = true;
+          } catch (std::exception& e) {
+            last_wang = false;
+          }
+
+          try {
+            curr_rn_wang = get_rational_coef(combined_di[c_di.first], combined_prime);
+            curr_wang = true;
+          } catch (std::exception& e) {
+            curr_wang = false;
+          }
+
+          RationalNumber last_rn_monagan;
+          RationalNumber curr_rn_monagan;
+          bool last_monagan;
+          bool curr_monagan;
+
+          try {
+            last_rn_monagan = get_rational_coef_mqrr(c_di.second, combined_prime_back);
+            last_monagan = true;
+          } catch (std::exception& e) {
+            last_monagan = false;
+          }
+
+          try {
+            curr_rn_monagan = get_rational_coef_mqrr(combined_di[c_di.first], combined_prime);
+            curr_monagan = true;
+          } catch (std::exception& e) {
+            curr_monagan = false;
+          }
+
+          if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
+            remove_di(c_di.first, curr_rn_wang);
+            continue;
+          }
+
+          if (last_monagan && curr_monagan && last_rn_monagan == curr_rn_monagan) {
+            remove_di(c_di.first, curr_rn_monagan);
+            continue;
+          }
+
+          if (curr_wang && curr_monagan && curr_rn_wang == curr_rn_monagan) {
+            remove_di(c_di.first, curr_rn_wang);
+            continue;
+          }
+
+          if (c_di.second == combined_di[c_di.first]) {
+            RationalNumber rn = RationalNumber(c_di.second, 1);
+            remove_di(c_di.first, rn);
+          } else
+            add_non_solved_den(c_di.first);
+
+/*          try {
             RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
             RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
 
@@ -1066,7 +1248,7 @@ namespace firefly {
               remove_di(c_di.first, rn);
             } else
               add_non_solved_den(c_di.first);
-          }
+          }*/
         }
       }
 
@@ -1225,20 +1407,32 @@ namespace firefly {
         g_ni[ci.first] = get_rational_coef(a, combined_prime);
         promoted_n.emplace_back(&ci.first);
       } catch (const std::exception&) {
-        run_test = false;
-        break;
+        try {
+          g_ni[ci.first] = get_rational_coef_mqrr(a, combined_prime);
+          promoted_n.emplace_back(&ci.first);
+        } catch (const std::exception&) {
+          run_test = false;
+          break;
+        }
       }
     }
 
-    for (const auto & ci : combined_di) {
-      mpz_class a = ci.second;
+    if (run_test) {
+      for (const auto & ci : combined_di) {
+        mpz_class a = ci.second;
 
-      try {
-        g_di[ci.first] = get_rational_coef(a, combined_prime);
-        promoted_d.emplace_back(&ci.first);
-      } catch (const std::exception&) {
-        run_test = false;
-        break;
+        try {
+          g_di[ci.first] = get_rational_coef(a, combined_prime);
+          promoted_d.emplace_back(&ci.first);
+        } catch (const std::exception&) {
+          try {
+            g_di[ci.first] = get_rational_coef_mqrr(a, combined_prime);
+            promoted_d.emplace_back(&ci.first);
+          } catch (const std::exception&) {
+            run_test = false;
+            break;
+          }
+        }
       }
     }
 

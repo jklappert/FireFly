@@ -44,11 +44,66 @@ namespace firefly {
       newr = tmpr - q * newr;
     }
 
-    if (2 * newt * newt > p) throw std::runtime_error("Rational reconstruction failed!");
+    if (2 * newt * newt > p || gcd(newr, newt) != 1) throw std::runtime_error("Rational reconstruction failed!");
 
     if (newt < 0) return RationalNumber(-newr, abs(newt));
 
     return RationalNumber(newr, newt);
+  }
+
+  /* Implementation of MQRR from
+   * Maximal Quotient Rational Reconstruction: An Almost Optimal Algorithm for Rational Reconstruction
+   * by M. Monagan
+   */
+  RationalNumber get_rational_coef_mqrr(const mpz_class& u, const mpz_class& p) {
+//    throw std::runtime_error("Rational reconstruction failed!");
+    // set to T so that less than one per mil will be false positive results
+    mpz_class T = 16384 * mpz_sizeinbase(p.get_mpz_t(), 2);
+
+    if (u == 0) {
+      if (p > T) {
+        return RationalNumber(0, 1);
+      } else {
+        throw std::runtime_error("Rational reconstruction failed!");
+      }
+    }
+
+    mpz_class n = 0;
+    mpz_class d = 0;
+    mpz_class t0 = 0;
+    mpz_class r0 = p;
+    mpz_class t1 = 1;
+    mpz_class r1 = u;
+    mpz_class tmpr;
+    mpz_class tmpt;
+    mpz_class q;
+
+    while (r1 != 0 && r0 > T) {
+      q = r0 / r1; // mpz_class automatically rounds off
+
+      if (q > T) {
+        n = r1;
+        d = t1;
+        T = q;
+      }
+
+      tmpr = r0;
+      r0 = r1;
+      r1 = tmpr - q * r1;
+      tmpt = t0;
+      t0 = t1;
+      t1 = tmpt - q * t1;
+    }
+
+    if (d == 0 || gcd(n, d) != 1) {
+      throw std::runtime_error("Rational reconstruction failed!");
+    }
+
+    if (d < 0) {
+      return RationalNumber(-n, abs(d));
+    }
+
+    return RationalNumber(n, d);
   }
 
   std::vector<FFInt> solve_gauss_system(uint num_eqn,
