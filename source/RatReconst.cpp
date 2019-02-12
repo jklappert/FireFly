@@ -30,7 +30,7 @@ namespace firefly {
         shift = std::vector<FFInt> (n);
 
         if (n > 1) {
-          for (auto & el : shift) el = FFInt(std::rand() % 1000000) + FFInt(1);
+          for (auto & el : shift) el = get_rand();
 
           curr_zi_order_num = std::vector<uint> (n - 1, 1);
           curr_zi_order_den = std::vector<uint> (n - 1, 1);
@@ -104,7 +104,8 @@ namespace firefly {
         {
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-          if (!is_singular_system && set_singular_system) is_singular_system = true;
+          if (!is_singular_system && set_singular_system)
+            set_singular_system_vars();
         }
 
         // first check if we are done. If not start the reconstruction again using
@@ -237,7 +238,7 @@ namespace firefly {
               INFO_MSG("No constant term in denominator! Trying again with new paramter shift...");
 
               for (uint j = 0; j < n; j++) {
-                shift[j] = FFInt(std::rand() % 1000000) + FFInt(1);
+                shift[j] = get_rand();
               }
 
               {
@@ -252,6 +253,9 @@ namespace firefly {
 
             max_deg_num = numerator.max_deg()[0];
             max_deg_den = denominator.max_deg()[0];
+
+            if (n == 1)
+              min_deg_den_vec = denominator.min_deg();
 
             curr_deg_num = max_deg_num;
 
@@ -381,7 +385,7 @@ namespace firefly {
 
               if (rec.get_zi_order() == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
                 auto res = feed_poly(curr_deg_num, max_deg_num, coef_n, rec,
-                                     saved_num_num, sub_num,true);
+                                     saved_num_num, sub_num, true);
                 curr_deg_num = std::get<0>(res);
                 zi_num = std::get<1>(res);
                 curr_zi_order_num = std::get<2>(res);
@@ -945,8 +949,8 @@ namespace firefly {
 
     non_solved_degs_den.clear();
     non_solved_degs_num.clear();
-    sub_num = polff_vec_map ();
-    sub_den = polff_vec_map ();
+    sub_num = polff_vec_map();
+    sub_den = polff_vec_map();
 
     if (!use_chinese_remainder) {
       saved_num_num = ff_map_map();
@@ -1282,8 +1286,7 @@ namespace firefly {
       curr_deg_den = max_deg_den;
 
       std::unique_lock<std::mutex> lock(mutex_status);
-      num_eqn = max_deg_den + max_deg_num + 1
-                - tmp_solved_coefs_num - tmp_solved_coefs_den;
+      num_eqn = max_deg_den + max_deg_num + 1;
     } else {
       std::unique_lock<std::mutex> lock(mutex_status);
       num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
@@ -1297,7 +1300,7 @@ namespace firefly {
     if (tag.size() > 0) {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       std::ofstream file;
-      std::string file_name = std::string("ff_save/") + tag + std::string("_") + std::to_string(primes()[prime_number]) + std::string(".txt");
+      std::string file_name = std::string("ff_save/") + tag + std::string("_") + std::to_string(prime_number) + std::string(".txt");
       file.open(file_name.c_str());
       file << "combined_prime\n" << combined_prime.get_str() << "\n";
       file << "max_deg_num\n" << max_deg_num << "\n";
@@ -1360,7 +1363,7 @@ namespace firefly {
       file.close();
 
       if (prime_number > 0) {
-        std::string old_file_name = std::string("ff_save/") + tag + std::string("_") + std::to_string(primes()[prime_number - 1]) + std::string(".txt");
+        std::string old_file_name = std::string("ff_save/") + tag + std::string("_") + std::to_string(prime_number - 1) + std::string(".txt");
 
         if (std::remove(old_file_name.c_str()) != 0)
           WARNING_MSG("The previously saved file could not be deleted.");
@@ -1391,7 +1394,8 @@ namespace firefly {
 
       return result;
     } else {
-      throw std::runtime_error("Trying to access unfinished result.");
+      ERROR_MSG("Trying to access unfinished result.");
+      std::exit(-1);
     }
   }
 
@@ -1653,6 +1657,8 @@ namespace firefly {
     tag = other.tag;
     sub_num = other.sub_num;
     sub_den = other.sub_den;
+    parsed_variables = other.parsed_variables;
+    curr_parsed_variable = other.curr_parsed_variable;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -1710,6 +1716,8 @@ namespace firefly {
     tag = std::move(other.tag);
     sub_num = std::move(other.sub_num);
     sub_den = std::move(other.sub_den);
+    parsed_variables = std::move(other.parsed_variables);
+    curr_parsed_variable = std::move(other.curr_parsed_variable);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -1768,6 +1776,8 @@ namespace firefly {
       tag = other.tag;
       sub_num = other.sub_num;
       sub_den = other.sub_den;
+      parsed_variables = other.parsed_variables;
+      curr_parsed_variable = other.curr_parsed_variable;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -1829,6 +1839,8 @@ namespace firefly {
       tag = std::move(other.tag);
       sub_num = std::move(other.sub_num);
       sub_den = std::move(other.sub_den);
+      parsed_variables = std::move(other.parsed_variables);
+      curr_parsed_variable = std::move(other.curr_parsed_variable);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);
@@ -2306,5 +2318,241 @@ namespace firefly {
 
   void RatReconst::set_tag(std::string tag_) {
     tag = tag_;
+  }
+
+  void RatReconst::start_from_saved_file(std::string file_name) {
+    std::string line;
+    std::ifstream file(file_name.c_str());
+    bool first = true;
+    parse_prime_number(file_name);
+
+    if (file.is_open()) {
+      while (std::getline(file, line)) {
+        if (first) {
+          first = false;
+
+          if (line != "combined_prime") {
+            ERROR_MSG("Wrong input format! Has to start with 'combined_prime'!");
+            std::exit(-1);
+          }
+
+          curr_parsed_variable = COMBINED_PRIME;
+          parsed_variables[COMBINED_PRIME] = true;
+        } else {
+          if (line == "max_deg_num") {
+            curr_parsed_variable = MAX_DEG_NUM;
+            parsed_variables[MAX_DEG_NUM] = true;
+          } else if (line == "max_deg_den") {
+            curr_parsed_variable = MAX_DEG_DEN;
+            parsed_variables[MAX_DEG_DEN] = true;
+          } else if (line == "need_prime_shift") {
+            curr_parsed_variable = NEED_PRIME_SHIFT;
+            parsed_variables[NEED_PRIME_SHIFT] = true;
+          } else if (line == "min_deg_den_vec") {
+            curr_parsed_variable = MIN_DEG_DEN_VEC;
+            parsed_variables[MIN_DEG_DEN_VEC] = true;
+          } else if (line == "g_ni") {
+            curr_parsed_variable = G_NI;
+            parsed_variables[G_NI] = true;
+          } else if (line == "g_di") {
+            curr_parsed_variable = G_DI;
+            parsed_variables[G_DI] = true;
+          } else if (line == "combined_ni") {
+            curr_parsed_variable = COMBINED_NI;
+            parsed_variables[COMBINED_NI] = true;
+          } else if (line == "combined_di") {
+            curr_parsed_variable = COMBINED_DI;
+            parsed_variables[COMBINED_DI] = true;
+          } else {
+            switch (curr_parsed_variable) {
+              case COMBINED_PRIME: {
+                combined_prime = mpz_class(line);
+                break;
+              }
+
+              case MAX_DEG_NUM: {
+                max_deg_num = std::stoi(line);
+                break;
+              }
+
+              case MAX_DEG_DEN: {
+                max_deg_den = std::stoi(line);
+                break;
+              }
+
+              case NEED_PRIME_SHIFT: {
+                need_prime_shift = std::stoi(line);
+                break;
+              }
+
+              case MIN_DEG_DEN_VEC: {
+                min_deg_den_vec = parse_vector(line);
+                n = min_deg_den_vec.size();
+                break;
+              }
+
+              case G_NI: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'min_deg_den_vec' first.");
+                  std::exit(-1);
+                }
+
+                std::vector<uint> tmp_vec = parse_vector(line, n);
+                std::vector<mpz_class> tmp_rn = parse_rational_number(line);
+
+                g_ni.emplace(std::make_pair(tmp_vec, RationalNumber(tmp_rn[0], tmp_rn[1])));
+
+                break;
+              }
+
+              case G_DI: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'min_deg_den_vec' first.");
+                  std::exit(-1);
+                }
+
+                std::vector<uint> tmp_vec = parse_vector(line, n);
+                std::vector<mpz_class> tmp_rn = parse_rational_number(line);
+
+                g_di.emplace(std::make_pair(tmp_vec, RationalNumber(tmp_rn[0], tmp_rn[1])));
+                break;
+
+              }
+
+              case COMBINED_NI: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'min_deg_den_vec' first.");
+                  std::exit(-1);
+                }
+
+                std::vector<uint> tmp_vec = parse_vector(line, n);
+                combined_ni.emplace(std::make_pair(tmp_vec, mpz_class(line)));
+
+                break;
+              }
+
+              case COMBINED_DI: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'min_deg_den_vec' first.");
+                  std::exit(-1);
+                }
+
+                std::vector<uint> tmp_vec = parse_vector(line, n);
+                combined_di.emplace(std::make_pair(tmp_vec, mpz_class(line)));
+
+                break;
+              }
+            }
+
+          }
+        }
+      }
+
+      for (const auto & el : parsed_variables) {
+        if (!el) {
+          ERROR_MSG("Incomplete input file! It cannot be used to resume a run.");
+          std::exit(-1);
+        }
+      }
+
+      file.close();
+
+      for (const auto & el : combined_ni) add_non_solved_num(el.first);
+
+      for (const auto & el : combined_di) add_non_solved_den(el.first);
+
+      const_den = 0;
+      is_singular_system = need_prime_shift;
+
+      new_prime = true;
+      std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
+      new_prime = true;
+
+      if (is_singular_system) {
+        tmp_solved_coefs_den = 0;
+        tmp_solved_coefs_num = 0;
+        {
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+          need_prime_shift = true;
+        }
+
+        for (const auto & el : g_ni) add_non_solved_num(el.first);
+
+        for (const auto & el : g_di) add_non_solved_den(el.first);
+
+        curr_deg_num = max_deg_num;
+        curr_deg_den = max_deg_den;
+
+        std::unique_lock<std::mutex> lock(mutex_status);
+        num_eqn = max_deg_den + max_deg_num + 1;
+      } else {
+        std::unique_lock<std::mutex> lock(mutex_status);
+        num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
+      }
+
+      for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint>> {};
+
+      for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint>> {};
+    } else {
+      ERROR_MSG(std::string("The file '") + file_name + std::string("' could not be found!"));
+      std::exit(-1);
+    }
+  }
+
+  std::vector<uint> RatReconst::parse_vector(std::string& line, int number_of_parameters) {
+    size_t pos = 0;
+    int i = 0;
+    std::string delimiter = " ";
+    std::vector<uint> tmp {};
+
+    if (number_of_parameters > 0)
+      tmp.reserve(number_of_parameters);
+
+    while ((pos = line.find(delimiter)) != std::string::npos) {
+      tmp.emplace_back(std::stoi(line.substr(0, pos)));
+      line.erase(0, pos + 1);
+      i++;
+
+      if (i == number_of_parameters) break;
+    }
+
+    return tmp;
+  }
+
+  std::vector< mpz_class > RatReconst::parse_rational_number(std::string& line) {
+    size_t pos = line.find(" ");
+    std::vector<mpz_class> tmp {};
+    tmp.emplace_back(mpz_class(line.substr(0, pos)));
+    line.erase(0, pos + 1);
+    tmp.emplace_back(mpz_class(line));
+    return tmp;
+  }
+
+  void RatReconst::parse_prime_number(std::string& file_name) {
+    std::string reverse_file_name = file_name;
+    std::reverse(reverse_file_name.begin(), reverse_file_name.end());
+    reverse_file_name.erase(0, 4);
+    size_t pos = reverse_file_name.find("_");
+    prime_number = std::stoi(reverse_file_name.substr(0, pos)) + 1;
+  }
+
+  void RatReconst::set_singular_system_vars() {
+    is_singular_system = true;
+    tmp_solved_coefs_den = 0;
+    tmp_solved_coefs_num = 0;
+
+    for (const auto & el : g_ni) add_non_solved_num(el.first);
+
+    for (const auto & el : g_di) add_non_solved_den(el.first);
+
+    curr_deg_num = max_deg_num;
+    curr_deg_den = max_deg_den;
+
+    std::unique_lock<std::mutex> lock(mutex_status);
+    num_eqn = max_deg_den + max_deg_num + 1;
+
+    for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint>> {};
+
+    for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint>> {};
   }
 }
