@@ -4,7 +4,6 @@
 #include "Logger.hpp"
 
 //#include "utils.hpp"
-//#include <random>
 
 using namespace firefly;
 
@@ -115,11 +114,7 @@ int main() {
 
     yis = rec_poly.get_rand_zi_vec(rec_poly.get_zi_order());
 
-    mpz_class cr_1_mpz;
-    cr_1_mpz = "123456789109898799879870980";
-    FFInt cr_1(cr_1_mpz);
-
-    FFInt num = yis[0].pow(5) + yis[0] * yis[1].pow(4) + yis[0] * yis[1] * yis[2].pow(3) + yis[1].pow(5);
+    FFInt num = pol_n_eq_3(yis);
 
     kk++;
     count++;

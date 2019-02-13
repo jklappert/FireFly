@@ -25,7 +25,7 @@ namespace firefly {
     return std::pair<mpz_class, mpz_class> (a, n);
   }
 
-  RationalNumber get_rational_coef(const mpz_class& a, const mpz_class& p) {
+  std::pair<bool, RationalNumber> get_rational_coef(const mpz_class& a, const mpz_class& p) {
     mpz_class t = 0;
     mpz_class newt = 1;
     mpz_class tmpt;
@@ -33,6 +33,7 @@ namespace firefly {
     mpz_class newr = a;
     mpz_class tmpr;
     mpz_class q;
+    bool not_failed = true;
 
     while (2 * newr * newr > p) {
       q = r / newr;
@@ -44,28 +45,33 @@ namespace firefly {
       newr = tmpr - q * newr;
     }
 
-    if (2 * newt * newt > p || gcd(newr, newt) != 1) throw std::runtime_error("Rational reconstruction failed!");
+    if (2 * newt * newt > p || gcd(newr, newt) != 1) {
+      not_failed = false;
+      newr = 1;
+      newt = 1;
+    }
 
-    if (newt < 0) return RationalNumber(-newr, abs(newt));
+    if (newt < 0)
+      return std::make_pair(not_failed, RationalNumber(-newr, abs(newt)));
 
-    return RationalNumber(newr, newt);
+    return std::make_pair(not_failed, RationalNumber(newr, newt));
   }
 
   /* Implementation of MQRR from
    * Maximal Quotient Rational Reconstruction: An Almost Optimal Algorithm for Rational Reconstruction
    * by M. Monagan
    */
-  RationalNumber get_rational_coef_mqrr(const mpz_class& u, const mpz_class& p) {
+  std::pair<bool, RationalNumber> get_rational_coef_mqrr(const mpz_class& u, const mpz_class& p) {
 //    throw std::runtime_error("Rational reconstruction failed!");
     // set to T so that less than one percent will be false positive results
     mpz_class T = 1024 * mpz_sizeinbase(p.get_mpz_t(), 2);
+    bool not_failed = true;
 
     if (u == 0) {
-      if (p > T) {
-        return RationalNumber(0, 1);
-      } else {
-        throw std::runtime_error("Rational reconstruction failed!");
-      }
+      if (p > T)
+        return std::make_pair(not_failed, RationalNumber(0, 1));
+      else
+        return std::make_pair(false, RationalNumber(0, 1));
     }
 
     mpz_class n = 0;
@@ -95,15 +101,16 @@ namespace firefly {
       t1 = tmpt - q * t1;
     }
 
-    if (d == 0 || gcd(n, d) != 1) {
-      throw std::runtime_error("Rational reconstruction failed!");
+    if (d == 0 || gcd(n, d) != 1){
+      not_failed = false;
+      n = 1;
+      d = 1;
     }
 
-    if (d < 0) {
-      return RationalNumber(-n, abs(d));
-    }
+    if (d < 0)
+      return std::make_pair(not_failed, RationalNumber(-n, abs(d)));
 
-    return RationalNumber(n, d);
+    return std::make_pair(not_failed, RationalNumber(n, d));
   }
 
   std::vector<FFInt> solve_gauss_system(uint32_t num_eqn,
@@ -161,4 +168,14 @@ namespace firefly {
     return results;
   }
 
+  bool a_grt_b(const std::vector<uint>& a, const std::vector<uint>& b) {
+    for(int i = a.size() - 1; i != 0; --i){
+      if(a[i] == b[i])
+        continue;
+      else if(a[i] > b[i])
+        return true;
+      else
+        return false;
+    }
+  }
 }

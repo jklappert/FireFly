@@ -362,4 +362,8 @@ namespace firefly {
                                              * t_yis[1]) * t_yis[0]) + z1.pow(15) * t_yis[0].pow(15) * t_yis[1].pow(15) * t_yis[2].pow(15);
     return num / den;
   }
+
+  FFInt pol_n_eq_3(std::vector<FFInt> yis) {
+    return yis[0].pow(5) + yis[0] * yis[1].pow(4) + yis[0] * yis[1] * yis[2].pow(3) + yis[1].pow(5);
+  }
 }

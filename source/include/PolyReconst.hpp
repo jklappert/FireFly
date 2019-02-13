@@ -84,7 +84,7 @@ namespace firefly {
     std::vector<FFInt> nums {};
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */
-    std::unordered_map<uint32_t, std::vector<PolynomialFF>> ais {};
+    polff_vec_map ais {};
     std::unordered_map<uint32_t, int> max_deg {};
     static std::mutex mutex_statics;
     static ff_pair_map rand_zi;

@@ -23,61 +23,92 @@ namespace firefly {
     return res;
   }
 
-  PolynomialFF PolynomialFF::operator+(const PolynomialFF& b) {
-    PolynomialFF a = *this;
-    ff_map new_coefs;
+  PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b) {
+    ff_map new_coefs {};
 
-    new_coefs = a.coefs;
+    if (a.coefs.size() < b.coefs.size()) {
+      new_coefs = b.coefs;
 
-    for (auto & el : b.coefs) {
-      auto got = new_coefs.find(el.first);
+      for (const auto & el : a.coefs) {
+        auto got = new_coefs.find(el.first);
 
-      if (got == new_coefs.end()) {
-        new_coefs.insert(el);
-      } else {
-        FFInt res = got -> second + el.second;
-
-        if (res.n != 0) {
-          got -> second = res;
+        if (got == new_coefs.end()) {
+          new_coefs.emplace(el);
         } else {
-          new_coefs.erase(got -> first);
+          got -> second += el.second;
+
+          if (got -> second == 0)
+            new_coefs.erase(el.first);
+        }
+      }
+    } else {
+      new_coefs = a.coefs;
+
+      for (const auto & el : b.coefs) {
+        auto got = new_coefs.find(el.first);
+
+        if (got == new_coefs.end()) {
+          new_coefs.emplace(el);
+        } else {
+          got -> second += el.second;
+
+          if (got -> second == 0)
+            new_coefs.erase(el.first);
         }
       }
     }
 
-    return PolynomialFF(n, new_coefs);
+    return PolynomialFF(a.n, new_coefs);
   }
 
-  PolynomialFF PolynomialFF::operator-(const PolynomialFF& b) {
-    PolynomialFF a = *this;
-    ff_map new_coefs;
+  PolynomialFF operator-(const PolynomialFF& a, const PolynomialFF& b) {
+    ff_map new_coefs = a.coefs;
 
-    new_coefs = a.coefs;
-
-    for (auto & el : b.coefs) {
+    for (const auto & el : b.coefs) {
       auto got = new_coefs.find(el.first);
 
       if (got == new_coefs.end()) {
-        new_coefs.insert(std::make_pair(el.first, FFInt(0) - el.second));
+        FFInt num = FFInt(0) - el.second;
+        new_coefs.emplace(std::make_pair(el.first, num));
       } else {
-        FFInt res = got -> second - el.second;
+        got -> second -= el.second;
 
-        if (res.n != 0) {
-          got -> second = res;
-        } else {
-          new_coefs.erase(got -> first);
-        }
+        if (got -> second == 0)
+          new_coefs.erase(el.first);
       }
     }
 
-    return PolynomialFF(n, new_coefs);
+    return PolynomialFF(a.n, new_coefs);
+  }
+
+  PolynomialFF& PolynomialFF::operator-=(const PolynomialFF& b) {
+    for (const auto & coef_b : b.coefs) {
+      if (coefs.find(coef_b.first) == coefs.end())
+        coefs[coef_b.first] = FFInt(0) - coef_b.second;
+      else
+        coefs[coef_b.first] -= coef_b.second;
+    }
+
+    return *this;
+  }
+
+  //todo can be optimized using an unordered_map
+  PolynomialFF& PolynomialFF::operator+=(const PolynomialFF& b) {
+    for (const auto & coef_b : b.coefs) {
+      if (coefs.find(coef_b.first) == coefs.end())
+        coefs[coef_b.first] = coef_b.second;
+      else
+        coefs[coef_b.first] += coef_b.second;
+    }
+
+    return *this;
   }
 
   PolynomialFF PolynomialFF::operator*(const FFInt& ffint) {
     ff_map new_coefs;
 
     for (auto el : coefs) {
-      new_coefs.insert(std::make_pair(el.first, el.second * ffint));
+      new_coefs.emplace(std::make_pair(el.first, el.second * ffint));
     }
 
     return PolynomialFF(n, new_coefs);
@@ -88,7 +119,7 @@ namespace firefly {
     FFInt inv = 1 / ffint;
 
     for (auto el : coefs) {
-      new_coefs.insert(std::make_pair(el.first, el.second * inv));
+      new_coefs.emplace(std::make_pair(el.first, el.second * inv));
     }
 
     return PolynomialFF(n, new_coefs);
@@ -110,12 +141,12 @@ namespace firefly {
   }
 
   PolynomialFF PolynomialFF::mul(const uint32_t zi) {
-    ff_map new_coefs;
+    ff_map new_coefs {};
 
-    for (auto coef_ : coefs) {
+    for (const auto& coef_ : coefs) {
       std::vector<uint32_t> new_element = coef_.first;
-      new_element.at(zi - 1) ++;
-      new_coefs.insert(std::make_pair(new_element, coef_.second));
+      new_element[zi - 1] ++;
+      new_coefs.emplace(std::make_pair(new_element, coef_.second));
     }
 
     return PolynomialFF(n, new_coefs);
@@ -125,19 +156,18 @@ namespace firefly {
     ff_map tmp_coef = coefs;
     coefs.clear();
 
-    for (auto & mon : tmp_coef) {
+    for (const auto & mon : tmp_coef) {
       uint32_t old_degree = 0;
 
       std::vector<uint32_t> old_powers = mon.first;
       std::vector<uint32_t> new_powers = old_powers;
 
-      for (auto & power : old_powers) old_degree += power;
+      for (const auto & power : old_powers) old_degree += power;
 
-      new_powers.insert(new_powers.begin(), degree - old_degree);
+      new_powers.emplace(new_powers.begin(), degree - old_degree);
       coefs[new_powers] = tmp_coef[old_powers];
     }
 
-    tmp_coef.clear();
     return *this;
   }
 
@@ -182,29 +212,6 @@ namespace firefly {
     return min_degree;
   }
 
-  PolynomialFF& PolynomialFF::operator-=(const PolynomialFF& b) {
-    for (auto & coef_b : b.coefs) {
-      if (coefs.find(coef_b.first) == coefs.end())
-        coefs[coef_b.first] = FFInt(0) - coef_b.second;
-      else
-        coefs.at(coef_b.first) -= coef_b.second;
-    }
-
-    return *this;
-  }
-
-  //todo can be optimized using an unordered_map
-  PolynomialFF& PolynomialFF::operator+=(const PolynomialFF& b) {
-    for (auto & coef_b : b.coefs) {
-      if (coefs.find(coef_b.first) == coefs.end())
-        coefs[coef_b.first] = coef_b.second;
-      else
-        coefs.at(coef_b.first) += coef_b.second;
-    }
-
-    return *this;
-  }
-
   PolynomialFF PolynomialFF::operator*(const PolynomialFF& b) {
     ff_map new_monomials;
     new_monomials.reserve(coefs.size());
@@ -233,11 +240,8 @@ namespace firefly {
   }
 
   PolynomialFF PolynomialFF::add_shift(const std::vector<FFInt>& shift) {
-    if (shift.size() != coefs.begin()->first.size())
+    if (shift.size() != n)
       throw std::runtime_error("Mismatch in sizes of the shift and variables!");
-
-    uint32_t n = shift.size();
-    std::vector<uint32_t> zero_deg(n);
 
     PolynomialFF res;
     res.n = n;
@@ -246,8 +250,6 @@ namespace firefly {
       PolynomialFF pow_poly;
       std::vector<uint32_t> powers = mon.first;
       std::vector<uint32_t> decr_power = powers;
-
-//      std::clock_t begin = clock();
 
       for (uint32_t j = 0; j < n; j++) {
         uint32_t deg = powers[j];
@@ -260,15 +262,15 @@ namespace firefly {
           decr_power[j] = 0;
           std::vector<std::vector<uint32_t>> tmp_powers(deg + 1, std::vector<uint32_t> (n));
 
-          for (uint32_t jj = 0; jj <= deg; jj++) {
-            tmp_powers[jj][j] = deg - jj;
+          for (uint32_t k = 0; k <= deg; k++) {
+            tmp_powers[k][j] = deg - k;
 
-            if (jj == 0) {
-              tmp_pow_poly.emplace(std::make_pair(tmp_powers[jj], 1));
-            } else if (jj == deg) {
-              tmp_pow_poly.emplace(std::make_pair(tmp_powers[jj], shift[j].pow(deg)));
+            if (k == 0) {
+              tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], 1));
+            } else if (k == deg) {
+              tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], shift[j].pow(deg)));
             } else {
-              tmp_pow_poly.emplace(std::make_pair(tmp_powers[jj], bin_coef(deg, jj)*shift[j].pow(jj)));
+              tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], bin_coef(deg, k)*shift[j].pow(k)));
             }
           }
 
@@ -276,10 +278,6 @@ namespace firefly {
           else pow_poly = pow_poly * PolynomialFF(n, tmp_pow_poly);
         }
       }
-
-      //std::cout << " calculating terms took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
-
-      //begin = clock();
 
       // since always all variables are shifted decr_power := zero_deg
       if (!pow_poly.coefs.empty()) {
@@ -291,8 +289,6 @@ namespace firefly {
         //std::cout << " Poly + Poly took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
       }
     }
-
-    //std::cout << "size of poly " << res.coefs.size() << "\n";
 
     return res;
   }
@@ -314,3 +310,5 @@ namespace firefly {
   }
 
 }
+
+

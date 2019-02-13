@@ -46,12 +46,12 @@ namespace firefly {
     uint64_t parse_longint(const std::string& str);
   };
 
-  bool operator<(const FFInt& a, const FFInt&b);
-  bool operator<=(const FFInt& a, const FFInt&b);
-  bool operator>(const FFInt& a, const FFInt&b);
-  bool operator>=(const FFInt& a, const FFInt&b);
-  bool operator==(const FFInt& a, const FFInt&b);
-  bool operator!=(const FFInt& a, const FFInt&b);
+  bool operator<(const FFInt& a, const FFInt& b);
+  bool operator<=(const FFInt& a, const FFInt& b);
+  bool operator>(const FFInt& a, const FFInt& b);
+  bool operator>=(const FFInt& a, const FFInt& b);
+  bool operator==(const FFInt& a, const FFInt& b);
+  bool operator!=(const FFInt& a, const FFInt& b);
   FFInt operator/(const FFInt& a, const FFInt& b);
   FFInt operator+(const FFInt& a, const FFInt& b);
   FFInt operator-(const FFInt& a, const FFInt& b);

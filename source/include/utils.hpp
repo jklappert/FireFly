@@ -22,7 +22,7 @@ namespace firefly {
    *    @return a RationalNumber which has been reconstruction using the
    *    rational reconstruction algorithm
    */
-  RationalNumber get_rational_coef(const mpz_class& a, const mpz_class& p);
+  std::pair<bool, RationalNumber> get_rational_coef(const mpz_class& a, const mpz_class& p);
 
   /**
    *    Applies the rational reconstruction algorithm MQRR from
@@ -33,7 +33,7 @@ namespace firefly {
    *    @return a RationalNumber which has been reconstruction using the
    *    rational reconstruction algorithm
    */
-  RationalNumber get_rational_coef_mqrr(const mpz_class& a, const mpz_class& p);
+  std::pair<bool, RationalNumber> get_rational_coef_mqrr(const mpz_class& a, const mpz_class& p);
 
   /**
    *
@@ -41,4 +41,6 @@ namespace firefly {
    */
   std::vector<FFInt> solve_gauss_system(uint32_t num_eqn,
                                  std::vector<std::vector<FFInt>>& coef_mat);
+
+  bool a_grt_b(const std::vector<uint>& a, const std::vector<uint>& b);
 }

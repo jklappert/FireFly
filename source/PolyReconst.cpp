@@ -29,7 +29,7 @@ namespace firefly {
       std::vector<FFInt> yi;
       std::vector<PolynomialFF> ai;
       ais.emplace(std::make_pair(i, std::move(ai)));
-      max_deg.insert(std::make_pair(i, -1));
+      max_deg.emplace(std::make_pair(i, -1));
     }
   }
 
@@ -103,9 +103,10 @@ namespace firefly {
           for (const auto ci : combined_ci) {
             mpz_class a = ci.second;
 
-            try {
-              gi.insert(std::make_pair(ci.first, get_rational_coef(a, combined_prime)));
-            } catch (const std::exception&) {
+            auto res = get_rational_coef(a, combined_prime);
+            if(res.first)
+              gi.emplace(std::make_pair(ci.first, res.second));
+            else{
               runtest = false;
               break;
             }
@@ -339,7 +340,9 @@ namespace firefly {
       poly.insert(solved_degs.begin(), solved_degs.end());
       result_ff = PolynomialFF(n, poly).homogenize(deg);
       result_ff.n = n + 1;
-      ais.clear();
+      ais = polff_vec_map();
+      rec_degs = std::vector<std::vector<uint32_t>>();
+      nums = std::vector<FFInt>();
     }
 
     return result_ff;
@@ -403,70 +406,56 @@ namespace firefly {
     uint32_t num_eqn = rec_degs.size();
     std::vector<FFInt> result(num_eqn);
 
-    if (num_eqn == 1) {
+    // calculate base entries of Vandermonde matrix
+    std::vector<FFInt> vis;
+    vis.reserve(num_eqn);
+
+    for (const auto & el : rec_degs) {
       FFInt vi = 1;
 
-      for (const auto & el : rec_degs) {
-        for (uint32_t tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
-          // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-          std::unique_lock<std::mutex> lock_statics(mutex_statics);
-          vi *= rand_zi.at(std::make_pair(tmp_zi, el[tmp_zi - 1]));
-        }
+      for (uint32_t tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+        // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+        std::unique_lock<std::mutex> lock_statics(mutex_statics);
+        vi *= rand_zi.at(std::make_pair(tmp_zi, el[tmp_zi - 1]));
       }
 
-      result[0] = nums[0] / vi;
-    } else {
-      // calculate base entries of Vandermonde matrix
-      std::vector<FFInt> vis;
-      vis.reserve(num_eqn);
+      vis.emplace_back(vi);
+    }
 
-      for (const auto & el : rec_degs) {
-        FFInt vi = 1;
+    // Initialize the coefficient vector of the master polynomial
+    std::vector<FFInt> cis(num_eqn);
 
-        for (uint32_t tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
-          // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-          std::unique_lock<std::mutex> lock_statics(mutex_statics);
-          vi *= rand_zi.at(std::make_pair(tmp_zi, el[tmp_zi - 1]));
-        }
+    // The coefficients of the master polynomial are found by recursion
+    // where we have
+    // P(Z) = (Z - v_0)*(Z - v_1)*...*(Z - v_{n-1})
+    //      =  c_0 + c_1*Z + ... + Z^n
+    cis[num_eqn - 1] = -vis[0];
 
-        vis.emplace_back(vi);
+    for (uint32_t i = 1; i < num_eqn; i++) {
+      for (uint32_t j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
+        cis[j] -= vis[i] * cis[j + 1];
       }
 
-      // Initialize the coefficient vector of the master polynomial
-      std::vector<FFInt> cis(num_eqn);
+      cis[num_eqn - 1] -= vis[i];
+    }
 
-      // The coefficients of the master polynomial are found by recursion
-      // where we have
-      // P(Z) = (Z - v_0)*(Z - v_1)*...*(Z - v_{n-1})
-      //      =  c_0 + c_1*Z + ... + Z^n
-      cis[num_eqn - 1] = -vis[0];
+    // Each subfactor in turn is synthetically divided,
+    // matrix-multiplied by the right hand-side,
+    // and supplied with a denominator (since all vi should be different,
+    // there is no additional check if a coefficient in synthetical division
+    // leads to a vanishing denominator)
+    for (uint32_t i = 0; i < num_eqn; i++) {
+      FFInt t = 1;
+      FFInt b = 1;
+      FFInt s = nums[num_eqn - 1];
 
-      for (uint32_t i = 1; i < num_eqn; i++) {
-        for (uint32_t j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
-          cis[j] -= vis[i] * cis[j + 1];
-        }
-
-        cis[num_eqn - 1] -= vis[i];
+      for (int j = num_eqn - 1; j > 0; j--) {
+        b = cis[j] + vis[i] * b;
+        s += nums[j - 1] * b;
+        t = vis[i] * t + b;
       }
 
-      // Each subfactor in turn is synthetically divided,
-      // matrix-multiplied by the right hand-side,
-      // and supplied with a denominator (since all vi should be different,
-      // there is no additional check if a coefficient in synthetical division
-      // leads to a vanishing denominator)
-      for (uint32_t i = 0; i < num_eqn; i++) {
-        FFInt t = 1;
-        FFInt b = 1;
-        FFInt s = nums[num_eqn - 1];
-
-        for (int j = num_eqn - 1; j > 0; j--) {
-          b = cis[j] + vis[i] * b;
-          s += nums[j - 1] * b;
-          t = vis[i] * t + b;
-        }
-
-        result[i] = s / t / vis[i];
-      }
+      result[i] = s / t / vis[i];
     }
 
     // Bring result in canonical form
@@ -499,9 +488,11 @@ namespace firefly {
   std::vector<FFInt> PolyReconst::get_rand_zi_vec(std::vector<uint32_t> orders) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> yis {};
-    for(uint32_t i = 0; i < n; i++){
+
+    for (uint32_t i = 0; i < n; i++) {
       yis.emplace_back(rand_zi.at(std::make_pair(i + 1, orders[i])));
     }
+
     return yis;
   }
 

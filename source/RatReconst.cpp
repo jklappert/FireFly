@@ -222,7 +222,7 @@ namespace firefly {
               yis = get_rand_zi_vec(curr_zi_order);
             }
 
-            yis.insert(yis.begin(), 1);
+            yis.emplace(yis.begin(), 1);
 
             // build Gauss system for univariate reconstruction needed for
             // multivariate rational functions
@@ -457,12 +457,7 @@ namespace firefly {
             // it is promising that feeding a PolyReconst with a higher
             // zi degree will be finished next leading to less numerical runs
             if (curr_deg_den >= 0 && curr_deg_num >= 0) {
-              std::vector<uint32_t> zi_order_num_rev = curr_zi_order_num;
-              std::reverse(zi_order_num_rev.begin(), zi_order_num_rev.end());
-              std::vector<uint32_t> zi_order_den_rev = curr_zi_order_den;
-              std::reverse(zi_order_den_rev.begin(), zi_order_den_rev.end());
-
-              if (zi_order_num_rev > zi_order_den_rev) {
+              if (a_grt_b(curr_zi_order_num, curr_zi_order_den)) {
                 std::unique_lock<std::mutex> lock(mutex_status);
                 curr_zi_order = curr_zi_order_num;
                 curr_zi = zi_num;
@@ -526,22 +521,12 @@ namespace firefly {
                 terminator = numerator.coefs[std::vector<uint32_t> (n, 0)];
               } else {
                 for (const auto & el : denominator.coefs) {
-                  std::vector<uint32_t> degs_reverse = el.first;
-                  std::reverse(degs_reverse.begin(), degs_reverse.end());
-
                   add_non_solved_den(el.first);
 
                   if (min_deg_den_vec.empty())
                     min_deg_den_vec = el.first;
-                  else {
-                    std::reverse(min_deg_den_vec.begin(), min_deg_den_vec.end());
-
-                    if (min_deg_den_vec > degs_reverse) {
-                      min_deg_den_vec = degs_reverse;
-                    }
-
-                    std::reverse(min_deg_den_vec.begin(), min_deg_den_vec.end());
-                  }
+                  else if(a_grt_b(min_deg_den_vec, el.first))
+                    min_deg_den_vec = el.first;
                 }
 
                 for (const auto & candidate : non_solved_degs_den) {
@@ -798,7 +783,7 @@ namespace firefly {
   }
 
   std::tuple<int, uint32_t, std::vector<uint32_t>> RatReconst::feed_poly(int curr_deg,
-                                                                 uint32_t max_deg, std::unordered_map<uint32_t, PolyReconst>& coef,
+                                                                         uint32_t max_deg, std::unordered_map<uint32_t, PolyReconst>& coef,
   PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num) {
     uint32_t tmp_zi = rec.get_zi() + 1;
     std::vector<uint32_t> tmp_zi_ord = curr_zi_order;
@@ -822,7 +807,7 @@ namespace firefly {
             FFInt sub_num = 0;
 
             if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size()) {
-              yis.insert(yis.begin(), 1);
+              yis.emplace(yis.begin(), 1);
               sub_num = sub_save[curr_deg][sub_count].calc(yis);
               yis.erase(yis.begin());
             }
@@ -833,7 +818,7 @@ namespace firefly {
           FFInt sub_num = 0;
 
           if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size()) {
-            yis.insert(yis.begin(), 1);
+            yis.emplace(yis.begin(), 1);
             sub_num = sub_save[curr_deg][sub_count].calc(yis);
             yis.erase(yis.begin());
           }
@@ -886,8 +871,6 @@ namespace firefly {
                 for (auto & tmp_sub : sub_save[(uint32_t)tmp_deg]) {
                   tmp_sub += PolynomialFF(n, {{el.first, el.second}});
                 }
-
-                //sub_poly_map[tmp_deg] += PolynomialFF(n, {{el.first, el.second}});
               }
             }
           }
@@ -896,28 +879,6 @@ namespace firefly {
             std::vector<FFInt> tmp_yis(n, 0);
             const_den += sub_save[0].back().calc(tmp_yis);
           }
-
-          /*std::vector<std::pair<std::vector<uint32_t>, std::vector<uint32_t>>> delete_keys {};
-
-          for (auto & el1 : saved_num) {
-            std::vector<uint32_t> key_1 = el1.first;
-
-            for (auto & el2 : el1.second) {
-              uint32_t tmp_deg = el2.first[0];
-
-              if (tmp_deg < curr_deg) {
-                std::vector<FFInt> tmp_yis = get_rand_zi_vec(key_1);
-                tmp_yis.insert(tmp_yis.begin(), 1);
-                el2.second.first -= sub_poly_map[tmp_deg].calc(tmp_yis);
-              } else {
-                delete_keys.emplace_back(std::make_pair(key_1, el2.first));
-              }
-            }
-          }
-
-          for (const auto & el : delete_keys) {
-            saved_num[el.first].erase(el.second);
-          }*/
         }
 
         /*
@@ -989,12 +950,11 @@ namespace firefly {
         RationalNumber rn_wang;
         bool wang;
 
-        try {
-          rn_wang = get_rational_coef(c_ni.second, combined_prime);
-          wang = true;
-        } catch (std::exception& e) {
-          wang = false;
-        }
+        auto res = get_rational_coef(c_ni.second, combined_prime);
+        wang = res.first;
+
+        if (res.first)
+          rn_wang = res.second;
 
         if (wang && rn_wang.numerator == c_ni.second && rn_wang.denominator == 1) {
           remove_ni(c_ni.first, rn_wang);
@@ -1010,12 +970,12 @@ namespace firefly {
         RationalNumber rn_wang;
         bool wang;
 
-        try {
-          rn_wang = get_rational_coef(c_di.second, combined_prime);
-          wang = true;
-        } catch (std::exception& e) {
-          wang = false;
-        }
+        auto res = get_rational_coef(c_di.second, combined_prime);
+        wang = res.first;
+
+        if (wang)
+          rn_wang = res.second;
+
 
         if (wang && rn_wang.numerator == c_di.second && rn_wang.denominator == 1) {
           remove_di(c_di.first, rn_wang);
@@ -1069,39 +1029,38 @@ namespace firefly {
           RationalNumber curr_rn_wang;
           bool last_wang;
           bool curr_wang;
+          auto res = get_rational_coef(c_ni.second, combined_prime_back);
 
-          try {
-            last_rn_wang = get_rational_coef(c_ni.second, combined_prime_back);
-            last_wang = true;
-          } catch (std::exception& e) {
-            last_wang = false;
-          }
+          last_wang = res.first;
 
-          try {
-            curr_rn_wang = get_rational_coef(combined_ni[c_ni.first], combined_prime);
-            curr_wang = true;
-          } catch (std::exception& e) {
-            curr_wang = false;
-          }
+          if (last_wang)
+            last_rn_wang = res.second;
+
+          res = get_rational_coef(combined_ni[c_ni.first], combined_prime);
+
+          curr_wang = res.first;
+
+          if (curr_wang)
+            curr_rn_wang = res.second;
+
 
           RationalNumber last_rn_monagan;
           RationalNumber curr_rn_monagan;
           bool last_monagan;
           bool curr_monagan;
 
-          try {
-            last_rn_monagan = get_rational_coef_mqrr(c_ni.second, combined_prime_back);
-            last_monagan = true;
-          } catch (std::exception& e) {
-            last_monagan = false;
-          }
+          res = get_rational_coef_mqrr(c_ni.second, combined_prime_back);
+          last_monagan = res.first;
 
-          try {
-            curr_rn_monagan = get_rational_coef_mqrr(combined_ni[c_ni.first], combined_prime);
-            curr_monagan = true;
-          } catch (std::exception& e) {
-            curr_monagan = false;
-          }
+          if (last_monagan)
+            last_rn_monagan = res.second;
+
+          res = get_rational_coef_mqrr(combined_ni[c_ni.first], combined_prime);
+          curr_monagan = res.first;
+
+          if (curr_monagan)
+            curr_rn_monagan = res.second;
+
 
           if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
             remove_ni(c_ni.first, curr_rn_wang);
@@ -1127,39 +1086,37 @@ namespace firefly {
           RationalNumber curr_rn_wang;
           bool last_wang;
           bool curr_wang;
+          auto res = get_rational_coef(c_di.second, combined_prime_back);
 
-          try {
-            last_rn_wang = get_rational_coef(c_di.second, combined_prime_back);
-            last_wang = true;
-          } catch (std::exception& e) {
-            last_wang = false;
-          }
+          last_wang = res.first;
 
-          try {
-            curr_rn_wang = get_rational_coef(combined_di[c_di.first], combined_prime);
-            curr_wang = true;
-          } catch (std::exception& e) {
-            curr_wang = false;
-          }
+          if (last_wang)
+            last_rn_wang = res.second;
+
+          res = get_rational_coef(combined_di[c_di.first], combined_prime);
+
+          curr_wang = res.first;
+
+          if (curr_wang)
+            curr_rn_wang = res.second;
+
 
           RationalNumber last_rn_monagan;
           RationalNumber curr_rn_monagan;
           bool last_monagan;
           bool curr_monagan;
 
-          try {
-            last_rn_monagan = get_rational_coef_mqrr(c_di.second, combined_prime_back);
-            last_monagan = true;
-          } catch (std::exception& e) {
-            last_monagan = false;
-          }
+          res = get_rational_coef_mqrr(c_di.second, combined_prime_back);
+          last_monagan = res.first;
 
-          try {
-            curr_rn_monagan = get_rational_coef_mqrr(combined_di[c_di.first], combined_prime);
-            curr_monagan = true;
-          } catch (std::exception& e) {
-            curr_monagan = false;
-          }
+          if (last_monagan)
+            last_rn_monagan = res.second;
+
+          res = get_rational_coef_mqrr(combined_di[c_di.first], combined_prime);
+          curr_monagan = res.first;
+
+          if (curr_monagan)
+            curr_rn_monagan = res.second;
 
           if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
             remove_di(c_di.first, curr_rn_wang);
@@ -1308,6 +1265,7 @@ namespace firefly {
         g_di.clear();
         numerator.sort();
         denominator.sort();
+
         result = RationalFunction(numerator, denominator);
 
         RationalNumber first_coef = result.denominator.coefs[0].coef;
@@ -1329,15 +1287,18 @@ namespace firefly {
 
     for (const auto & ci : combined_ni) {
       mpz_class a = ci.second;
+      auto res = get_rational_coef(a, combined_prime);
 
-      try {
-        g_ni[ci.first] = get_rational_coef(a, combined_prime);
+      if (res.first) {
+        g_ni[ci.first] = res.second;
         promoted_n.emplace_back(&ci.first);
-      } catch (const std::exception&) {
-        try {
-          g_ni[ci.first] = get_rational_coef_mqrr(a, combined_prime);
+      } else {
+        res = get_rational_coef_mqrr(a, combined_prime);
+
+        if (res.first) {
+          g_ni[ci.first] = res.second;
           promoted_n.emplace_back(&ci.first);
-        } catch (const std::exception&) {
+        } else {
           run_test = false;
           break;
         }
@@ -1347,15 +1308,18 @@ namespace firefly {
     if (run_test) {
       for (const auto & ci : combined_di) {
         mpz_class a = ci.second;
+        auto res = get_rational_coef(a, combined_prime);
 
-        try {
-          g_di[ci.first] = get_rational_coef(a, combined_prime);
+        if (res.first) {
+          g_di[ci.first] = res.second;
           promoted_d.emplace_back(&ci.first);
-        } catch (const std::exception&) {
-          try {
-            g_di[ci.first] = get_rational_coef_mqrr(a, combined_prime);
+        } else {
+          res = get_rational_coef_mqrr(a, combined_prime);
+
+          if (res.first) {
+            g_di[ci.first] = res.second;
             promoted_d.emplace_back(&ci.first);
-          } catch (const std::exception&) {
+          } else {
             run_test = false;
             break;
           }
@@ -1929,73 +1893,58 @@ namespace firefly {
     uint32_t num_eqn = degs.size();
     std::vector<FFInt> result(num_eqn);
 
-    if (num_eqn == 1) {
+    // calculate base entries of Vandermonde matrix
+    std::vector<FFInt> vis;
+    vis.reserve(num_eqn);
+    std::sort(degs.begin(), degs.end(), std::greater<std::vector<uint32_t>>());
+
+    for (const auto & el : degs) {
       FFInt vi = 1;
 
-      for (const auto & el : degs) {
-        for (uint32_t tmp_zi = 2; tmp_zi <= n; tmp_zi++) {
-          // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-          std::unique_lock<std::mutex> lock_statics(mutex_statics);
-          vi *= rand_zi[std::make_pair(tmp_zi, 1)].pow(el[tmp_zi - 1]);
-        }
+      // z_1 is always = 1 which does not matter while determining the coefficient
+      for (uint32_t tmp_zi = 2; tmp_zi <= n; tmp_zi++) {
+        // curr_zi_ord starts at 1, thus we need to subtract 1 entry
+        std::unique_lock<std::mutex> lock_statics(mutex_statics);
+        vi *= rand_zi[std::make_pair(tmp_zi, 1)].pow(el[tmp_zi - 1]);
       }
 
-//TODO this two loops can be unreveld
-      result[0] = nums[0].first / vi;
-    } else {
-      // calculate base entries of Vandermonde matrix
-      std::vector<FFInt> vis;
-      vis.reserve(num_eqn);
-      std::sort(degs.begin(), degs.end(), std::greater<std::vector<uint32_t>>());
+      vis.emplace_back(vi);
+    }
 
-      for (const auto & el : degs) {
-        FFInt vi = 1;
+    // Initialize the coefficient vector of the master polynomial
+    std::vector<FFInt> cis(num_eqn);
 
-        // z_1 is always = 1 which does not matter while determining the coefficient
-        for (uint32_t tmp_zi = 2; tmp_zi <= n; tmp_zi++) {
-          // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-          std::unique_lock<std::mutex> lock_statics(mutex_statics);
-          vi *= rand_zi[std::make_pair(tmp_zi, 1)].pow(el[tmp_zi - 1]);
-        }
+    // The coefficients of the master polynomial are found by recursion
+    // where we have
+    // P(Z) = (Z - v_0)*(Z - v_1)*...*(Z - v_{n-1})
+    //      =  c_0 + c_1*Z + ... + Z^n
+    cis[num_eqn - 1] = -vis[0];
 
-        vis.emplace_back(vi);
+    for (uint32_t i = 1; i < num_eqn; i++) {
+      for (uint32_t j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
+        cis[j] -= vis[i] * cis[j + 1];
       }
 
-      // Initialize the coefficient vector of the master polynomial
-      std::vector<FFInt> cis(num_eqn);
+      cis[num_eqn - 1] -= vis[i];
+    }
 
-      // The coefficients of the master polynomial are found by recursion
-      // where we have
-      // P(Z) = (Z - v_0)*(Z - v_1)*...*(Z - v_{n-1})
-      //      =  c_0 + c_1*Z + ... + Z^n
-      cis[num_eqn - 1] = -vis[0];
+    // Each subfactor in turn is synthetically divided,
+    // matrix-multiplied by the right hand-side,
+    // and supplied with a denominator (since all vi should be different,
+    // there is no additional check if a coefficient in synthetical division
+    // leads to a vanishing denominator)
+    for (uint32_t i = 0; i < num_eqn; i++) {
+      FFInt t = 1;
+      FFInt b = 1;
+      FFInt s = nums[num_eqn - 1].first;
 
-      for (uint32_t i = 1; i < num_eqn; i++) {
-        for (uint32_t j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
-          cis[j] -= vis[i] * cis[j + 1];
-        }
-
-        cis[num_eqn - 1] -= vis[i];
+      for (int j = num_eqn - 1; j > 0; j--) {
+        b = cis[j] + vis[i] * b;
+        s += nums[j - 1].first * b;
+        t = vis[i] * t + b;
       }
 
-      // Each subfactor in turn is synthetically divided,
-      // matrix-multiplied by the right hand-side,
-      // and supplied with a denominator (since all vi should be different,
-      // there is no additional check if a coefficient in synthetical division
-      // leads to a vanishing denominator)
-      for (uint32_t i = 0; i < num_eqn; i++) {
-        FFInt t = 1;
-        FFInt b = 1;
-        FFInt s = nums[num_eqn - 1].first;
-
-        for (int j = num_eqn - 1; j > 0; j--) {
-          b = cis[j] + vis[i] * b;
-          s += nums[j - 1].first * b;
-          t = vis[i] * t + b;
-        }
-
-        result[i] = s / t / vis[i];
-      }
+      result[i] = s / t / vis[i];
     }
 
     // Bring result in canonical form
@@ -2050,7 +1999,7 @@ namespace firefly {
         if (tmp_pair.second < sub_num[curr_deg_num].size()) {
           std::vector<uint32_t> tmp_zi_ord(n - 1, i + 1);
           std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
-          yis.insert(yis.begin(), 1);
+          yis.emplace(yis.begin(), 1);
           tmp_pair.first -= sub_num[key][tmp_pair.second].calc(yis);
           coef_mat_num[key][i] = tmp_pair;
         }
@@ -2125,7 +2074,7 @@ namespace firefly {
         if (tmp_pair.second < sub_den[curr_deg_den].size()) {
           std::vector<uint32_t> tmp_zi_ord(n - 1, i + 1);
           std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
-          yis.insert(yis.begin(), 1);
+          yis.emplace(yis.begin(), 1);
           tmp_pair.first -= sub_den[key][tmp_pair.second].calc(yis);
           coef_mat_den[key][i] = tmp_pair;
         }
