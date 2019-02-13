@@ -649,7 +649,7 @@ namespace firefly {
                       coef_mat_num[i].emplace_back(std::make_pair(canonical.first[ {i}], sub_count));
                     }
 
-                    if (i == curr_deg_num && coef_mat_num[i].size() == non_solved_degs_num[i].size()) {
+                    if (i == (uint32_t)curr_deg_num && coef_mat_num[i].size() == non_solved_degs_num[i].size()) {
                       set_new_curr_deg_num_singular(i);
                       bool cannot_solve = false;
 
@@ -659,7 +659,7 @@ namespace firefly {
                         for (const auto & mat : coef_mat_num) {
                           uint32_t tmp_key = mat.first;
 
-                          if (tmp_key == curr_deg_num && mat.second.size() == non_solved_degs_num[tmp_key].size()) {
+                          if (tmp_key == (uint32_t)curr_deg_num && mat.second.size() == non_solved_degs_num[tmp_key].size()) {
                             set_new_curr_deg_num_singular(tmp_key);
                             deleted_degs.emplace_back(tmp_key);
                           }
@@ -688,7 +688,7 @@ namespace firefly {
                       coef_mat_den[i].emplace_back(std::make_pair(canonical.second[ {i}], sub_count));
                     }
 
-                    if (i == curr_deg_den && coef_mat_den[i].size() == non_solved_degs_den[i].size()) {
+                    if (i == (uint32_t)curr_deg_den && coef_mat_den[i].size() == non_solved_degs_den[i].size()) {
                       set_new_curr_deg_den_singular(i);
                       bool cannot_solve = false;
 
@@ -698,7 +698,7 @@ namespace firefly {
                         for (const auto & mat : coef_mat_den) {
                           uint32_t tmp_key = mat.first;
 
-                          if (tmp_key == curr_deg_den && mat.second.size() == non_solved_degs_den[tmp_key].size()) {
+                          if (tmp_key == (uint32_t)curr_deg_den && mat.second.size() == non_solved_degs_den[tmp_key].size()) {
                             set_new_curr_deg_den_singular(tmp_key);
                             deleted_degs.emplace_back(tmp_key);
                           }
@@ -821,7 +821,7 @@ namespace firefly {
           while (!rec.is_new_prime()) {
             FFInt sub_num = 0;
 
-            if (curr_deg != max_deg && sub_count < sub_save[curr_deg].size()) {
+            if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size()) {
               yis.insert(yis.begin(), 1);
               sub_num = sub_save[curr_deg][sub_count].calc(yis);
               yis.erase(yis.begin());
@@ -832,7 +832,7 @@ namespace firefly {
         } else {
           FFInt sub_num = 0;
 
-          if (curr_deg != max_deg && sub_count < sub_save[curr_deg].size()) {
+          if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size()) {
             yis.insert(yis.begin(), 1);
             sub_num = sub_save[curr_deg][sub_count].calc(yis);
             yis.erase(yis.begin());
@@ -857,11 +857,11 @@ namespace firefly {
           std::vector<uint32_t> zero_deg(n);
           PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
-          for (uint32_t i = 0; i < curr_deg; i++) {
-            if (sub_save[i].size() == 0)
-              sub_save[i] = {zero_poly};
+          for (int i = 0; i < curr_deg; i++) {
+            if (sub_save[(uint32_t)i].size() == 0)
+              sub_save[(uint32_t)i] = {zero_poly};
             else
-              sub_save[i].emplace_back(zero_poly);
+              sub_save[(uint32_t)i].emplace_back(zero_poly);
           }
 
           PolynomialFF res = rec.get_result_ff();
@@ -878,12 +878,12 @@ namespace firefly {
             sub_pol -= rec.get_result_ff();
 
             for (auto & el : sub_pol.coefs) {
-              uint32_t tmp_deg = 0;
+              int tmp_deg = 0;
 
               for (const auto & deg : el.first) tmp_deg += deg;
 
               if (tmp_deg < curr_deg) {
-                for (auto & tmp_sub : sub_save[tmp_deg]) {
+                for (auto & tmp_sub : sub_save[(uint32_t)tmp_deg]) {
                   tmp_sub += PolynomialFF(n, {{el.first, el.second}});
                 }
 
@@ -1445,9 +1445,9 @@ namespace firefly {
       int terms_num = max_deg_num - tmp_solved_coefs_num;
 
       if (terms_num > 0) {
-        for (uint32_t i = 0; i <= terms_num; i++) {
-          if (non_solved_degs_num.find(i) != non_solved_degs_num.end()) {
-            std::vector<uint32_t> power = {i};
+        for (int i = 0; i <= terms_num; i++) {
+          if (non_solved_degs_num.find((uint32_t)i) != non_solved_degs_num.end()) {
+            std::vector<uint32_t> power = {(uint32_t)i};
             numerator.emplace(std::make_pair(std::move(power), results[counter]));
           }
 
@@ -2063,11 +2063,11 @@ namespace firefly {
     PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
 
-    for (uint32_t i = 0; i < curr_deg_num; i++) {
-      if (sub_num[i].size() == 0)
-        sub_num[i] = {zero_poly};
+    for (int i = 0; i < curr_deg_num; i++) {
+      if (sub_num[(uint32_t)i].size() == 0)
+        sub_num[(uint32_t)i] = {zero_poly};
       else
-        sub_num[i].emplace_back(zero_poly);
+        sub_num[(uint32_t)i].emplace_back(zero_poly);
     }
 
     if (curr_deg_num > 0) {
@@ -2080,12 +2080,12 @@ namespace firefly {
       sub_pol -= solved_degs_num[key];
 
       for (auto & el : sub_pol.coefs) {
-        uint32_t tmp_deg = 0;
+        int tmp_deg = 0;
 
         for (const auto & deg : el.first) tmp_deg += deg;
 
         if (tmp_deg < curr_deg_num) {
-          for (auto & tmp_sub : sub_num[tmp_deg]) {
+          for (auto & tmp_sub : sub_num[(uint32_t)tmp_deg]) {
             tmp_sub += PolynomialFF(n, {{el.first, el.second}});
           }
         }
@@ -2138,11 +2138,11 @@ namespace firefly {
     PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
 
-    for (uint32_t i = 0; i < curr_deg_den; i++) {
-      if (sub_den[i].size() == 0)
-        sub_den[i] = {zero_poly};
+    for (int i = 0; i < curr_deg_den; i++) {
+      if (sub_den[(uint32_t)i].size() == 0)
+        sub_den[(uint32_t)i] = {zero_poly};
       else
-        sub_den[i].emplace_back(zero_poly);
+        sub_den[(uint32_t)i].emplace_back(zero_poly);
     }
 
     if (curr_deg_den > 0) {
@@ -2155,12 +2155,12 @@ namespace firefly {
       sub_pol -= solved_degs_den[key];
 
       for (auto & el : sub_pol.coefs) {
-        uint32_t tmp_deg = 0;
+        int tmp_deg = 0;
 
         for (const auto & deg : el.first) tmp_deg += deg;
 
         if (tmp_deg < curr_deg_den) {
-          for (auto & tmp_sub : sub_den[tmp_deg]) {
+          for (auto & tmp_sub : sub_den[(uint32_t)tmp_deg]) {
             tmp_sub += PolynomialFF(n, {{el.first, el.second}});
           }
         }
