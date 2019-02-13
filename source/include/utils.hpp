@@ -25,7 +25,9 @@ namespace firefly {
   RationalNumber get_rational_coef(const mpz_class& a, const mpz_class& p);
 
   /**
-   *    Applies the rational reconstruction algorithm MQRR by Monagan
+   *    Applies the rational reconstruction algorithm MQRR from
+   *    Maximal Quotient Rational Reconstruction: An Almost Optimal Algorithm for Rational Reconstruction
+   *    by M. Monagan
    *    @param a a number over a finite field
    *    @param p a prime number defining the finite field
    *    @return a RationalNumber which has been reconstruction using the
