@@ -8,7 +8,7 @@
 #include "PolynomialFF.hpp"
 
 namespace firefly {
-  typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
+  typedef std::unordered_map<std::vector<uint32_t>, RationalNumber, UintHasher> rn_map;
 
   class Polynomial {
   public:
@@ -28,7 +28,7 @@ namespace firefly {
 
     std::vector<Monomial> coefs;
   private:
-    uint n;
+    uint32_t n;
     //std::vector<Monomial> coefs;  /**< The vector which holds all coefficients*/
   };
 

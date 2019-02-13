@@ -9,7 +9,7 @@ namespace firefly {
 
   FFInt::FFInt(const FFInt& ffint) : n(ffint.n) {}
 
-  FFInt::FFInt(mpz_class& in) {
+  FFInt::FFInt(mpz_class in) {
     in = in % p;
 
     if (in < 0) in = p + in;

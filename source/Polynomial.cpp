@@ -40,7 +40,7 @@ namespace firefly {
     for (const auto & mono : coefs) {
       str += mono.coef.string() + "*";
 
-      for (uint i = 0; i < mono.powers.size(); i++) {
+      for (uint32_t i = 0; i < mono.powers.size(); i++) {
         if (mono.powers[i] > 1) {
           str += symbols[i] + "^" + std::to_string(mono.powers[i]) + "*";
         } else if (mono.powers[i] == 1) {
@@ -90,7 +90,7 @@ namespace firefly {
 
   PolynomialFF Polynomial::convert_to_PolynomialFF() {
     ff_map coefs_ff;
-    uint n = coefs[0].powers.size();
+    uint32_t n = coefs[0].powers.size();
 
     for (auto & coef : coefs) {
       mpz_class numerator = coef.coef.numerator % FFInt::p;

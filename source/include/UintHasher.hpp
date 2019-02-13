@@ -5,7 +5,7 @@
 namespace firefly {
   class UintHasher {
   public:
-    std::size_t operator()(std::vector<uint> const& vec) const {
+    std::size_t operator()(std::vector<uint32_t> const& vec) const {
       std::size_t seed = vec.size();
 
       for (auto & i : vec) {
@@ -18,7 +18,7 @@ namespace firefly {
 
   class UintPairHasher {
   public:
-    std::size_t operator()(std::pair<uint, uint> const& pair) const {
+    std::size_t operator()(std::pair<uint32_t, uint32_t> const& pair) const {
       std::size_t seed = 2;
 
       seed ^= pair.first + 0x9e3779b9 + (seed << 6) + (seed >> 2);

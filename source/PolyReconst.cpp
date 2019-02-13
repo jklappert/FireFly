@@ -14,18 +14,18 @@ namespace firefly {
   ff_pair_map PolyReconst::rand_zi;
   std::mutex PolyReconst::mutex_statics;
 
-  PolyReconst::PolyReconst(uint n_, const int deg_inp, const bool with_rat_reconst_inp) {
+  PolyReconst::PolyReconst(uint32_t n_, const int deg_inp, const bool with_rat_reconst_inp) {
     std::unique_lock<std::mutex> lock_status(mutex_status);
 
     type = POLY;
     n = n_;
     combined_prime = FFInt::p;
-    curr_zi_order = std::vector<uint>(n, 1);
+    curr_zi_order = std::vector<uint32_t>(n, 1);
 
     deg = deg_inp;
     with_rat_reconst = with_rat_reconst_inp;
 
-    for (uint i = 1; i <= n; i++) {
+    for (uint32_t i = 1; i <= n; i++) {
       std::vector<FFInt> yi;
       std::vector<PolynomialFF> ai;
       ais.emplace(std::make_pair(i, std::move(ai)));
@@ -41,14 +41,14 @@ namespace firefly {
     if (rand_zi.empty() || force) {
       rand_zi.clear();
 
-      for (uint i = 1; i <= n; i ++) {
+      for (uint32_t i = 1; i <= n; i ++) {
         rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
         rand_zi.emplace(std::make_pair(std::make_pair(i, 1), anchor_points[i - 1]));
       }
     }
   }
 
-  void PolyReconst::feed(const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime) {
+  void PolyReconst::feed(const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t& fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
 
     if (fed_prime == prime_number)
@@ -60,7 +60,7 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-      for (uint j = 0; j < n; j++) {
+      for (uint32_t j = 0; j < n; j++) {
         rand_zi.emplace(std::make_pair(j + 1, curr_zi_order[j]), new_yis[j]);
       }
     }
@@ -87,7 +87,7 @@ namespace firefly {
     is_interpolating = false;
   }
 
-  void PolyReconst::interpolate(const FFInt& num, const std::vector<uint>& feed_zi_ord) {
+  void PolyReconst::interpolate(const FFInt& num, const std::vector<uint32_t>& feed_zi_ord) {
     if (feed_zi_ord == curr_zi_order) {
       if (!done) {
         if (new_prime && !with_rat_reconst) {
@@ -96,7 +96,7 @@ namespace firefly {
 
           solved_degs.clear();
 
-          for (uint i = 1; i <= n; i++) {
+          for (uint32_t i = 1; i <= n; i++) {
             ais[i].clear();
           }
 
@@ -138,17 +138,17 @@ namespace firefly {
           new_prime = false;
         }
 
-        uint i = curr_zi_order[zi - 1] - 1;
+        uint32_t i = curr_zi_order[zi - 1] - 1;
 
         // Univariate Newton interpolation for the lowest stage.
         if (zi == 1) {
           if (i == 0) {
-            std::vector<uint> zero_element(n);
+            std::vector<uint32_t> zero_element(n);
             ff_map zero_map;
             zero_map.emplace(std::make_pair(std::move(zero_element), num));
             ais[zi].emplace_back(PolynomialFF(n, zero_map));
           } else {
-            std::vector<uint> zero_element(n);
+            std::vector<uint32_t> zero_element(n);
             ff_map zero_map;
             zero_map.emplace(std::make_pair(std::move(zero_element), num));
             ais[zi].emplace_back(comp_ai(zi, i, i, PolynomialFF(n, zero_map), ais[zi]));
@@ -161,10 +161,10 @@ namespace firefly {
           FFInt res = num;
 
           for (const auto & el : solved_degs) {
-            std::vector<uint> deg_vec = el.first;
+            std::vector<uint32_t> deg_vec = el.first;
             FFInt coef_num = el.second;
 
-            for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+            for (uint32_t tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
               // curr_zi_ord starts at 1, thus we need to subtract 1 entry
               std::unique_lock<std::mutex> lock_statics(mutex_statics);
               coef_num *= rand_zi[std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1])].pow(deg_vec[tmp_zi - 1]);
@@ -179,10 +179,10 @@ namespace firefly {
           // to subtract them)
           // Solve Vandermonde system and calculate the next a_i
           if (nums.size() == rec_degs.size()) {
-            const uint order_save = curr_zi_order[zi - 1];
+            const uint32_t order_save = curr_zi_order[zi - 1];
             {
               std::unique_lock<std::mutex> lock(mutex_status);
-              curr_zi_order = std::vector<uint> (n, 1);
+              curr_zi_order = std::vector<uint32_t> (n, 1);
               curr_zi_order[zi - 1] = order_save + 1;
             }
             ais[zi].emplace_back(comp_ai(zi, i, i, solve_transposed_vandermonde(), ais[zi]));
@@ -190,7 +190,7 @@ namespace firefly {
             // increase all zi order of the lower stages by one
             std::unique_lock<std::mutex> lock(mutex_status);
 
-            for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+            for (uint32_t tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
               curr_zi_order[tmp_zi - 1] ++;
             }
           }
@@ -198,7 +198,7 @@ namespace firefly {
 
         // if the lowest stage ai is zero, combine them into an ai for a higher stage
         // and check if we are done
-        if (ais[zi].back().zero() || (deg != -1 && ais[zi].size() - 1 == (uint) deg)) {
+        if (ais[zi].back().zero() || (deg != -1 && ais[zi].size() - 1 == (uint32_t) deg)) {
           if (deg == -1 || ais[zi].back().zero())
             ais[zi].pop_back();
 
@@ -232,7 +232,7 @@ namespace firefly {
             nums.reserve(rec_degs.size());
 
             if (rec_degs.size() == 0 && zi != n) {
-              for (uint tmp_zi = zi + 1; tmp_zi <= n; tmp_zi++) {
+              for (uint32_t tmp_zi = zi + 1; tmp_zi <= n; tmp_zi++) {
                 ais[tmp_zi].emplace_back(PolynomialFF(n, pol_ff));
               }
 
@@ -247,7 +247,7 @@ namespace firefly {
               // current stage
               ais[zi].emplace_back(comp_ai(zi, 0, 0, PolynomialFF(n, pol_ff), ais[zi]));
               // reset zi order
-              curr_zi_order = std::vector<uint> (n, 1);
+              curr_zi_order = std::vector<uint32_t> (n, 1);
               curr_zi_order[zi - 1] = 2;
             } else
               check = true;
@@ -258,7 +258,7 @@ namespace firefly {
             if (!with_rat_reconst) {
               {
                 std::unique_lock<std::mutex> lock(mutex_status);
-                curr_zi_order = std::vector<uint> (n, 1);
+                curr_zi_order = std::vector<uint32_t> (n, 1);
               }
               ff_map tmp_pol_ff = construct_canonical(zi, ais[zi]);
               tmp_pol_ff.insert(solved_degs.begin(), solved_degs.end());
@@ -296,7 +296,7 @@ namespace firefly {
       }
 
       if (!with_rat_reconst) {
-        for (uint tmp_zi = 1; tmp_zi <= n; tmp_zi ++) {
+        for (uint32_t tmp_zi = 1; tmp_zi <= n; tmp_zi ++) {
           auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1]);
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
@@ -345,7 +345,7 @@ namespace firefly {
     return result_ff;
   }
 
-  PolynomialFF PolyReconst::comp_ai(const uint tmp_zi, int i, int ip,
+  PolynomialFF PolyReconst::comp_ai(const uint32_t tmp_zi, int i, int ip,
                                     const PolynomialFF& num, std::vector<PolynomialFF>& ai) {
     if (ip == 0) return num;
 
@@ -360,13 +360,13 @@ namespace firefly {
     return (comp_ai(tmp_zi, i, ip - 1, num, ai) - ai[ip - 1]) / (yi_i_p_1 - yi_ip); //yi[i + 1] - yi[ip - 1 + 1] the +1 in the first and the +1 in the second is due to the 0th element in the vector
   }
 
-  ff_map PolyReconst::construct_canonical(const uint tmp_zi, std::vector<PolynomialFF>& ai) {
+  ff_map PolyReconst::construct_canonical(const uint32_t tmp_zi, std::vector<PolynomialFF>& ai) {
     if (ai.size() == 1) return ai[0].coefs;
 
     return (ai[0] + iterate_canonical(tmp_zi, 1, ai)).coefs;
   }
 
-  PolynomialFF PolyReconst::iterate_canonical(const uint tmp_zi, uint i, std::vector<PolynomialFF>& ai) {
+  PolynomialFF PolyReconst::iterate_canonical(const uint32_t tmp_zi, uint32_t i, std::vector<PolynomialFF>& ai) {
     FFInt yi;
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
@@ -386,7 +386,7 @@ namespace firefly {
     PolynomialFF gy(n, gi_ffi);
     std::vector<FFInt> chosen_yi(n);
 
-    for (uint i = 1; i <= n; i++) {
+    for (uint32_t i = 1; i <= n; i++) {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
       chosen_yi[i - 1] = rand_zi[std::make_pair(i, 1)];
@@ -400,14 +400,14 @@ namespace firefly {
   // value of the function which should be interpolated for a given numerical
   // input
   PolynomialFF PolyReconst::solve_transposed_vandermonde() {
-    uint num_eqn = rec_degs.size();
+    uint32_t num_eqn = rec_degs.size();
     std::vector<FFInt> result(num_eqn);
 
     if (num_eqn == 1) {
       FFInt vi = 1;
 
       for (const auto & el : rec_degs) {
-        for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+        for (uint32_t tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
           // curr_zi_ord starts at 1, thus we need to subtract 1 entry
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
           vi *= rand_zi.at(std::make_pair(tmp_zi, el[tmp_zi - 1]));
@@ -423,7 +423,7 @@ namespace firefly {
       for (const auto & el : rec_degs) {
         FFInt vi = 1;
 
-        for (uint tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+        for (uint32_t tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
           // curr_zi_ord starts at 1, thus we need to subtract 1 entry
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
           vi *= rand_zi.at(std::make_pair(tmp_zi, el[tmp_zi - 1]));
@@ -441,8 +441,8 @@ namespace firefly {
       //      =  c_0 + c_1*Z + ... + Z^n
       cis[num_eqn - 1] = -vis[0];
 
-      for (uint i = 1; i < num_eqn; i++) {
-        for (uint j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
+      for (uint32_t i = 1; i < num_eqn; i++) {
+        for (uint32_t j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
           cis[j] -= vis[i] * cis[j + 1];
         }
 
@@ -454,7 +454,7 @@ namespace firefly {
       // and supplied with a denominator (since all vi should be different,
       // there is no additional check if a coefficient in synthetical division
       // leads to a vanishing denominator)
-      for (uint i = 0; i < num_eqn; i++) {
+      for (uint32_t i = 0; i < num_eqn; i++) {
         FFInt t = 1;
         FFInt b = 1;
         FFInt s = nums[num_eqn - 1];
@@ -472,7 +472,7 @@ namespace firefly {
     // Bring result in canonical form
     ff_map poly;
 
-    for (uint i = 0; i < num_eqn; i ++) {
+    for (uint32_t i = 0; i < num_eqn; i ++) {
       poly.emplace(std::make_pair(rec_degs[i], result[i]));
     }
 
@@ -485,21 +485,21 @@ namespace firefly {
 
     rand_zi.clear();
 
-    for (uint tmp_zi = 1; tmp_zi <= n; tmp_zi ++) {
+    for (uint32_t tmp_zi = 1; tmp_zi <= n; tmp_zi ++) {
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), get_rand()));
     }
   }
 
-  FFInt PolyReconst::get_rand_zi(uint zi, uint order) {
+  FFInt PolyReconst::get_rand_zi(uint32_t zi, uint32_t order) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return rand_zi.at(std::make_pair(zi, order));
   }
 
-  std::vector<FFInt> PolyReconst::get_rand_zi_vec(std::vector<uint> orders) {
+  std::vector<FFInt> PolyReconst::get_rand_zi_vec(std::vector<uint32_t> orders) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> yis {};
-    for(uint i = 0; i < n; i++){
+    for(uint32_t i = 0; i < n; i++){
       yis.emplace_back(rand_zi.at(std::make_pair(i + 1, orders[i])));
     }
     return yis;
@@ -510,3 +510,4 @@ namespace firefly {
     return rand_zi.empty();
   }
 }
+

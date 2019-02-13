@@ -3,7 +3,7 @@
 
 namespace firefly {
 
-  PolynomialFF::PolynomialFF(uint n_, ff_map coefs_) : n(n_), coefs(coefs_) {}
+  PolynomialFF::PolynomialFF(uint32_t n_, ff_map coefs_) : n(n_), coefs(coefs_) {}
 
   PolynomialFF::PolynomialFF() {}
 
@@ -13,7 +13,7 @@ namespace firefly {
     for (const auto & term : coefs) {
       FFInt product(1);
 
-      for (uint i = 0; i < n; i++) {
+      for (uint32_t i = 0; i < n; i++) {
         product *= x[i].pow(term.first[i]);
       }
 
@@ -109,11 +109,11 @@ namespace firefly {
     return out;
   }
 
-  PolynomialFF PolynomialFF::mul(const uint zi) {
+  PolynomialFF PolynomialFF::mul(const uint32_t zi) {
     ff_map new_coefs;
 
     for (auto coef_ : coefs) {
-      std::vector<uint> new_element = coef_.first;
+      std::vector<uint32_t> new_element = coef_.first;
       new_element.at(zi - 1) ++;
       new_coefs.insert(std::make_pair(new_element, coef_.second));
     }
@@ -121,15 +121,15 @@ namespace firefly {
     return PolynomialFF(n, new_coefs);
   }
 
-  PolynomialFF PolynomialFF::homogenize(uint degree) {
+  PolynomialFF PolynomialFF::homogenize(uint32_t degree) {
     ff_map tmp_coef = coefs;
     coefs.clear();
 
     for (auto & mon : tmp_coef) {
-      uint old_degree = 0;
+      uint32_t old_degree = 0;
 
-      std::vector<uint> old_powers = mon.first;
-      std::vector<uint> new_powers = old_powers;
+      std::vector<uint32_t> old_powers = mon.first;
+      std::vector<uint32_t> new_powers = old_powers;
 
       for (auto & power : old_powers) old_degree += power;
 
@@ -148,7 +148,7 @@ namespace firefly {
     return false;
   }
 
-  std::vector<uint> PolynomialFF::max_deg() {
+  std::vector<uint32_t> PolynomialFF::max_deg() {
     if (max_degree.empty()) {
       int tmp_max;
       int tmp_min;
@@ -177,7 +177,7 @@ namespace firefly {
     return max_degree;
   }
 
-  std::vector<uint> PolynomialFF::min_deg() {
+  std::vector<uint32_t> PolynomialFF::min_deg() {
     max_deg();
     return min_degree;
   }
@@ -215,10 +215,10 @@ namespace firefly {
         FFInt new_coef = coef_a.second * coef_b.second;
 
         if (new_coef != 0) {
-          std::vector<uint> new_deg(n);
+          std::vector<uint32_t> new_deg(n);
           std::transform(coef_a.first.begin(), coef_a.first.end(),
                          coef_b.first.begin(), new_deg.begin(),
-                         std::plus<uint>());
+                         std::plus<uint32_t>());
 
           if (new_monomials.find(new_deg) == new_monomials.end()) {
             new_monomials.emplace(std::make_pair(new_deg, new_coef));
@@ -236,21 +236,21 @@ namespace firefly {
     if (shift.size() != coefs.begin()->first.size())
       throw std::runtime_error("Mismatch in sizes of the shift and variables!");
 
-    uint n = shift.size();
-    std::vector<uint> zero_deg(n);
+    uint32_t n = shift.size();
+    std::vector<uint32_t> zero_deg(n);
 
     PolynomialFF res;
     res.n = n;
 
     for (auto & mon : coefs) {
       PolynomialFF pow_poly;
-      std::vector<uint> powers = mon.first;
-      std::vector<uint> decr_power = powers;
+      std::vector<uint32_t> powers = mon.first;
+      std::vector<uint32_t> decr_power = powers;
 
 //      std::clock_t begin = clock();
 
-      for (uint j = 0; j < n; j++) {
-        uint deg = powers[j];
+      for (uint32_t j = 0; j < n; j++) {
+        uint32_t deg = powers[j];
 
         // Calculate all terms originating from (x - a)^deg
         // by determining the binomial coefficients and adding
@@ -258,9 +258,9 @@ namespace firefly {
         if (deg > 0) {
           ff_map tmp_pow_poly;
           decr_power[j] = 0;
-          std::vector<std::vector<uint>> tmp_powers(deg + 1, std::vector<uint> (n));
+          std::vector<std::vector<uint32_t>> tmp_powers(deg + 1, std::vector<uint32_t> (n));
 
-          for (uint jj = 0; jj <= deg; jj++) {
+          for (uint32_t jj = 0; jj <= deg; jj++) {
             tmp_powers[jj][j] = deg - jj;
 
             if (jj == 0) {
@@ -297,7 +297,7 @@ namespace firefly {
     return res;
   }
 
-  FFInt PolynomialFF::bin_coef(uint n, uint k) {
+  FFInt PolynomialFF::bin_coef(uint32_t n, uint32_t k) {
     FFInt res = 1;
 
     // Since C(n, k) = C(n, n-k)
@@ -305,7 +305,7 @@ namespace firefly {
       k = n - k;
 
     // Calculate value of [n * (n-1) *---* (n-k+1)] / [k * (k-1) *----* 1]
-    for (uint i = 0; i < k; ++i) {
+    for (uint32_t i = 0; i < k; ++i) {
       res *= (FFInt(n) - FFInt(i));
       res /= (FFInt(i) + FFInt(1));
     }

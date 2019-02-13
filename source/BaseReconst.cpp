@@ -91,12 +91,12 @@ namespace firefly {
     return *this;
   }
 
-  uint BaseReconst::get_num_eqn() {
+  uint32_t BaseReconst::get_num_eqn() {
     std::unique_lock<std::mutex> lock(mutex_status);
     return num_eqn;
   }
 
-  uint BaseReconst::get_prime() {
+  uint32_t BaseReconst::get_prime() {
     std::unique_lock<std::mutex> lock(mutex_status);
     return prime_number;
   }
@@ -106,14 +106,14 @@ namespace firefly {
     return FFInt(pcg32()) + FFInt(1);
   }
 
-  uint BaseReconst::get_zi() {
+  uint32_t BaseReconst::get_zi() {
     std::unique_lock<std::mutex> lock(mutex_status);
     return zi;
   }
 
-  std::vector<uint> BaseReconst::get_zi_order() {
+  std::vector<uint32_t> BaseReconst::get_zi_order() {
     std::unique_lock<std::mutex> lock(mutex_status);
-    return std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end());
+    return std::vector<uint32_t>(curr_zi_order.begin(), curr_zi_order.end());
   }
 
   bool BaseReconst::is_done() {
@@ -156,7 +156,7 @@ namespace firefly {
     return gi_ffi;
   }
 
-  uint32_t BaseReconst::rotr32(uint32_t x, uint r) {
+  uint32_t BaseReconst::rotr32(uint32_t x, uint32_t r) {
     return x >> r | x << (-r & 31);
   }
 
@@ -167,7 +167,7 @@ namespace firefly {
 
   uint32_t BaseReconst::pcg32() {
     uint64_t x = state;
-    uint count = (uint)(x >> 59);
+    uint32_t count = (uint32_t)(x >> 59);
 
     {
       std::unique_lock<std::mutex> lock_statics(mutex_state);

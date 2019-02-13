@@ -2,13 +2,13 @@
 
 namespace firefly {
 
-  Monomial::Monomial(const std::vector<uint>& powers_, const RationalNumber& coef_) : powers(powers_), coef(coef_) {}
+  Monomial::Monomial(const std::vector<uint32_t>& powers_, const RationalNumber& coef_) : powers(powers_), coef(coef_) {}
 
   bool Monomial::operator<(const Monomial& m2) {
-    uint deg1 = 0;
-    uint deg2 = 0;
+    uint32_t deg1 = 0;
+    uint32_t deg2 = 0;
 
-    for (uint i = 0; i < powers.size(); i++) {
+    for (uint32_t i = 0; i < powers.size(); i++) {
       deg1 += powers[i];
       deg2 += m2.powers[i];
     }
@@ -22,10 +22,10 @@ namespace firefly {
   }
 
   bool Monomial::operator>(const Monomial& m2) {
-    uint deg1 = 0;
-    uint deg2 = 0;
+    uint32_t deg1 = 0;
+    uint32_t deg2 = 0;
 
-    for (uint i = 0; i < (uint) powers.size(); i++) {
+    for (uint32_t i = 0; i < (uint32_t) powers.size(); i++) {
       deg1 += powers[i];
       deg2 += m2.powers[i];
     }
@@ -41,7 +41,7 @@ namespace firefly {
   Monomial Monomial::operator*(const Monomial& b) {
     Monomial a = *this;
     a.coef = a.coef*b.coef;
-    for(uint i = 0; i < (uint) powers.size(); i++){
+    for(uint32_t i = 0; i < (uint32_t) powers.size(); i++){
       a.powers[i] += b.powers[i];
     }
     return a;

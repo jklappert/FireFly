@@ -106,16 +106,16 @@ namespace firefly {
     return RationalNumber(n, d);
   }
 
-  std::vector<FFInt> solve_gauss_system(uint num_eqn,
+  std::vector<FFInt> solve_gauss_system(uint32_t num_eqn,
                                         std::vector<std::vector<FFInt>>& coef_mat) {
 
     // Transform the matrix in upper triangular form
-    for (uint i = 0; i < num_eqn; i++) {
+    for (uint32_t i = 0; i < num_eqn; i++) {
       // search for maximum in this column
       FFInt max_el = coef_mat[i][i];
-      uint max_row = i;
+      uint32_t max_row = i;
 
-      for (uint k = i + 1; k < num_eqn; k++) {
+      for (uint32_t k = i + 1; k < num_eqn; k++) {
         FFInt tmp = coef_mat[k][i];
 
         if (tmp.n > max_el.n) {
@@ -125,17 +125,17 @@ namespace firefly {
       }
 
       // swap maximum row with current row (column by column)
-      for (uint k = i; k < num_eqn + 1; k++) {
+      for (uint32_t k = i; k < num_eqn + 1; k++) {
         FFInt tmp = coef_mat[max_row][k];
         coef_mat[max_row][k] = coef_mat[i][k];
         coef_mat[i][k] = tmp;
       }
 
       // Make all rows below this one zero in the current column
-      for (uint k = i + 1; k < num_eqn; k++) {
+      for (uint32_t k = i + 1; k < num_eqn; k++) {
         FFInt c = -coef_mat[k][i] / coef_mat[i][i];
 
-        for (uint j = i; j < num_eqn + 1; j++) {
+        for (uint32_t j = i; j < num_eqn + 1; j++) {
           if (i == j) coef_mat[k][j] = FFInt(0);
           else coef_mat[k][j] += c * coef_mat[i][j];
         }

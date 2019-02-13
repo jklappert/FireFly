@@ -12,7 +12,7 @@ namespace firefly {
      *    A constructor
      *    @param n_ The number of parameters as an integer
      */
-    PolyReconst(uint n_, const int deg_inp = -1, const bool with_rat_reconst_inp = false);
+    PolyReconst(uint32_t n_, const int deg_inp = -1, const bool with_rat_reconst_inp = false);
     /**
      *    Default constructor. Should not be used explicitly.
      */
@@ -24,17 +24,17 @@ namespace firefly {
      *    rational coefficients
      */
     void feed(const std::vector<FFInt>& yis, const FFInt& num);
-    void feed(const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime);
+    void feed(const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t& fed_prime);
     void interpolate();
-    FFInt get_rand_zi(uint zi, uint order);
-    std::vector<FFInt> get_rand_zi_vec(std::vector<uint> orders);
+    FFInt get_rand_zi(uint32_t zi, uint32_t order);
+    std::vector<FFInt> get_rand_zi_vec(std::vector<uint32_t> orders);
     bool is_rand_zi_empty();
     Polynomial get_result();
     PolynomialFF get_result_ff();
     void generate_anchor_points();
     void set_anchor_points(const std::vector<FFInt> &anchor_points, bool force = false);
   private:
-    void interpolate(const FFInt& num, const std::vector<uint>& zi_ord);
+    void interpolate(const FFInt& num, const std::vector<uint32_t>& zi_ord);
     /**
      *    Computes the coefficient a(i) = ai.at(i) recursively using eq. (3.11) of
      *    arXiv:1608.01902
@@ -45,7 +45,7 @@ namespace firefly {
      *    @param ip Recursion order
      *    @return a(i)
      */
-    PolynomialFF comp_ai(const uint tmp_zi, int i, int ip, const PolynomialFF& num, std::vector<PolynomialFF>& ai);
+    PolynomialFF comp_ai(const uint32_t tmp_zi, int i, int ip, const PolynomialFF& num, std::vector<PolynomialFF>& ai);
     /**
      *    Convert the reconstructed polynomial to the canonical form
      *    @param tmp_zi the integer i to a zi
@@ -53,7 +53,7 @@ namespace firefly {
      *    @param prime The prime number of the finite field
      *    @return The vector of coefficients of the canonical form
      */
-    ff_map construct_canonical(const uint tmp_zi, std::vector<PolynomialFF>& ai);
+    ff_map construct_canonical(const uint32_t tmp_zi, std::vector<PolynomialFF>& ai);
     /**
      *    Iterative construction of the canonical form
      *    @param tmp_zi the integer i to a z
@@ -62,7 +62,7 @@ namespace firefly {
      *    @param i The iteration step; stops at ai.size()
      *    @return One iteration step of the canonical polynomial
      */
-    PolynomialFF iterate_canonical(const uint tmp_zi, uint i, std::vector<PolynomialFF>& ai);
+    PolynomialFF iterate_canonical(const uint32_t tmp_zi, uint32_t i, std::vector<PolynomialFF>& ai);
     /**
      *    Test if the guess yields the same answer for the function in the finite
      *    field of prime
@@ -74,18 +74,18 @@ namespace firefly {
      * 
      */
     PolynomialFF solve_transposed_vandermonde();
-    std::list<std::tuple<FFInt, std::vector<uint>>> queue;
+    std::list<std::tuple<FFInt, std::vector<uint32_t>>> queue;
     int deg = -1;
     bool with_rat_reconst = false;
     Polynomial result;
     PolynomialFF result_ff;
-    std::vector<std::vector<uint>> rec_degs {};
+    std::vector<std::vector<uint32_t>> rec_degs {};
     ff_map solved_degs {};
     std::vector<FFInt> nums {};
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */
-    std::unordered_map<uint, std::vector<PolynomialFF>> ais {};
-    std::unordered_map<uint, int> max_deg {};
+    std::unordered_map<uint32_t, std::vector<PolynomialFF>> ais {};
+    std::unordered_map<uint32_t, int> max_deg {};
     static std::mutex mutex_statics;
     static ff_pair_map rand_zi;
   };

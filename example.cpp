@@ -11,8 +11,7 @@ using namespace firefly;
 int main() {
   // Example for the reconstruction of a rational function
   uint n = 4;
-  uint64_t prime = primes()[0];
-  FFInt::set_new_prime(prime);
+  FFInt::set_new_prime(primes()[0]);
   RatReconst rec(n);
   //rec.set_tag("gghh");
   //rec.start_from_saved_file("ff_save/gghh_3.txt");
@@ -47,8 +46,7 @@ int main() {
 
       std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
       primes_used = std::max(primes_used, rec.get_prime());
-      prime = primes()[rec.get_prime()];
-      FFInt::set_new_prime(prime);
+      FFInt::set_new_prime(primes()[rec.get_prime()]);
       rec.generate_anchor_points();
       kk = 0;
     }
@@ -88,8 +86,7 @@ int main() {
   std::cout << "--------------------------------------------------------------\n";
 
   // Example for the reconstruction of a polynomial
-  prime = primes()[0];
-  FFInt::set_new_prime(prime);
+  FFInt::set_new_prime(primes()[0]);
   n = 3;
   PolyReconst rec_poly(n, 5);
 
@@ -111,8 +108,7 @@ int main() {
       std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
       primes_used = std::max(primes_used, rec_poly.get_prime());
 
-      prime = primes()[rec_poly.get_prime()];
-      FFInt::set_new_prime(prime);
+      FFInt::set_new_prime(primes()[rec_poly.get_prime()]);
       rec_poly.generate_anchor_points();
       kk = 0;
     }

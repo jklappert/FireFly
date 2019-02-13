@@ -8,13 +8,13 @@
 
 namespace firefly {
 
-  typedef std::unordered_map<std::vector<uint>, FFInt, UintHasher> ff_map;
-  typedef std::unordered_map<std::vector<uint>, RationalNumber, UintHasher> rn_map;
+  typedef std::unordered_map<std::vector<uint32_t>, FFInt, UintHasher> ff_map;
+  typedef std::unordered_map<std::vector<uint32_t>, RationalNumber, UintHasher> rn_map;
 
   class PolynomialFF {
   public:
     PolynomialFF();
-    PolynomialFF(uint n_, ff_map coefs_);
+    PolynomialFF(uint32_t n_, ff_map coefs_);
     PolynomialFF operator+(const PolynomialFF&);
     PolynomialFF operator-(const PolynomialFF&);
     PolynomialFF& operator=(const PolynomialFF&) = default;
@@ -23,19 +23,19 @@ namespace firefly {
     PolynomialFF operator*(const PolynomialFF&);
     PolynomialFF operator*(const FFInt&);
     PolynomialFF operator/(const FFInt&);
-    uint n = 0;
+    uint32_t n = 0;
     FFInt calc(std::vector<FFInt> x);
     ff_map coefs {};
     bool zero();
-    PolynomialFF homogenize(uint degree);
-    PolynomialFF mul(const uint zi);
-    std::vector<uint> min_deg();
-    std::vector<uint> max_deg();
+    PolynomialFF homogenize(uint32_t degree);
+    PolynomialFF mul(const uint32_t zi);
+    std::vector<uint32_t> min_deg();
+    std::vector<uint32_t> max_deg();
     PolynomialFF add_shift(const std::vector<FFInt>& shift);
   private:
-    std::vector<uint> min_degree {};
-    std::vector<uint> max_degree {};
-    FFInt bin_coef(uint n, uint k);
+    std::vector<uint32_t> min_degree {};
+    std::vector<uint32_t> max_degree {};
+    FFInt bin_coef(uint32_t n, uint32_t k);
   };
 
   std::ostream& operator<<(std::ostream& out, const PolynomialFF& a);

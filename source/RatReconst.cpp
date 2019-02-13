@@ -15,7 +15,7 @@ namespace firefly {
   ff_pair_map RatReconst::rand_zi;
   std::mutex RatReconst::mutex_statics;
 
-  RatReconst::RatReconst(uint n_) {
+  RatReconst::RatReconst(uint32_t n_) {
     n = n_;
     type = RAT;
     std::unique_lock<std::mutex> lock_status(mutex_status);
@@ -32,18 +32,18 @@ namespace firefly {
         if (n > 1) {
           for (auto & el : shift) el = get_rand();
 
-          curr_zi_order_num = std::vector<uint> (n - 1, 1);
-          curr_zi_order_den = std::vector<uint> (n - 1, 1);
+          curr_zi_order_num = std::vector<uint32_t> (n - 1, 1);
+          curr_zi_order_den = std::vector<uint32_t> (n - 1, 1);
         }
       }
     }
 
     if (n > 1) {
-      curr_zi_order = std::vector<uint> (n - 1, 1);
+      curr_zi_order = std::vector<uint32_t> (n - 1, 1);
       lock_status.unlock();
       // add a zero to both polynomials to do arithmetic
       ff_map zero_deg {};
-      zero_deg.emplace(std::make_pair(std::vector<uint> (n), 0));
+      zero_deg.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
       solved_num = PolynomialFF(n, zero_deg);
       solved_den = PolynomialFF(n, zero_deg);
 
@@ -58,7 +58,7 @@ namespace firefly {
     }
   }
 
-  void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord, const uint& fed_prime) {
+  void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t& fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
 
     if (!done && fed_prime == prime_number)
@@ -96,7 +96,7 @@ namespace firefly {
     is_interpolating = false;
   }
 
-  void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint>& feed_zi_ord) {
+  void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord) {
     if (!done) {
 
       // Compare if the food is the expected food; if not, store it for later use
@@ -129,8 +129,8 @@ namespace firefly {
               new_prime = false;
               solved_den = PolynomialFF();
               solved_num = PolynomialFF();
-              coef_mat_num = std::unordered_map<uint, std::vector<std::pair<FFInt, uint>>> ();
-              coef_mat_den = std::unordered_map<uint, std::vector<std::pair<FFInt, uint>>> ();
+              coef_mat_num = std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> ();
+              coef_mat_den = std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> ();
               curr_zi_order.clear();
               use_chinese_remainder = false;
               return;
@@ -152,6 +152,26 @@ namespace firefly {
             new_prime = false;
           }
           ti.pop_back();
+
+          if (!is_singular_system) {
+            ff_map tmp_num {};
+            tmp_num.reserve(g_ni.size() + 1);
+            ff_map tmp_den {};
+            tmp_den.reserve(g_di.size() + 1);
+            tmp_num.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
+            tmp_den.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
+
+            for (const auto & el : g_ni) {
+              tmp_num.emplace(std::make_pair(el.first, FFInt(el.second.numerator) / FFInt(el.second.denominator)));
+            }
+
+            for (const auto & el : g_di) {
+              tmp_den.emplace(std::make_pair(el.first, FFInt(el.second.numerator) / FFInt(el.second.denominator)));
+            }
+
+            solved_num = PolynomialFF(n, tmp_num);
+            solved_den = PolynomialFF(n, tmp_den);
+          }
         }
 
         // basic reconstruction algorithm, check if reconstructed function is equal
@@ -165,7 +185,7 @@ namespace firefly {
 
         if (max_deg_num == -1) {
           ti.emplace_back(new_ti);
-          const uint i = ti.size() - 1;
+          const uint32_t i = ti.size() - 1;
 
           if (i == 0) {
             ai.emplace_back(num);
@@ -237,7 +257,7 @@ namespace firefly {
             if (n > 1 && denominator.min_deg()[0] > 0) {
               INFO_MSG("No constant term in denominator! Trying again with new paramter shift...");
 
-              for (uint j = 0; j < n; j++) {
+              for (uint32_t j = 0; j < n; j++) {
                 shift[j] = get_rand();
               }
 
@@ -300,7 +320,7 @@ namespace firefly {
 
             ff_map num_coef = canonical.first;
             ff_map den_coef = canonical.second;
-            std::vector<uint> zero_deg(n);
+            std::vector<uint32_t> zero_deg(n);
             ff_map zero_mon = {{zero_deg, 0}};
 
             // save the current results to the map to access them later
@@ -308,19 +328,19 @@ namespace firefly {
               if (first_run) {
                 {
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  PolyReconst rec(n - 1, (uint) i, true);
+                  PolyReconst rec(n - 1, (uint32_t) i, true);
 
                   if (rec.is_rand_zi_empty()) {
                     std::vector<FFInt> anchor_points {};
 
-                    for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
+                    for (uint32_t tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
                       anchor_points.emplace_back(rand_zi[std::make_pair(tmp_zi, 1)]);
                     }
 
                     rec.set_anchor_points(anchor_points);
                   }
 
-                  coef_n.emplace(std::make_pair((uint) i, std::move(rec)));
+                  coef_n.emplace(std::make_pair((uint32_t) i, std::move(rec)));
                 }
               }
 
@@ -328,20 +348,20 @@ namespace firefly {
                 // this saves some memory since we only need one numerical value
                 // for the constant coefficient
                 if (i == 0 && first_run) {
-                  std::vector<uint> key = {(uint) i, zi};
-                  uint sub_count = sub_num[i].size();
-                  saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint) i}], sub_count);
+                  std::vector<uint32_t> key = {(uint32_t) i, zi};
+                  uint32_t sub_count = sub_num[i].size();
+                  saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint32_t) i}], sub_count);
                 } else {
-                  if (curr_zi_order[zi - 2] < (uint) i + 3) {
-                    uint sub_count = sub_num[i].size();
-                    std::vector<uint> key = {(uint) i, zi};
-                    saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint) i}], sub_count);
+                  if (curr_zi_order[zi - 2] < (uint32_t) i + 3) {
+                    uint32_t sub_count = sub_num[i].size();
+                    std::vector<uint32_t> key = {(uint32_t) i, zi};
+                    saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint32_t) i}], sub_count);
                   }
                 }
               }
             }
 
-            for (uint i = 1; i <= max_deg_den - tmp_solved_coefs_den; i++) {
+            for (uint32_t i = 1; i <= max_deg_den - tmp_solved_coefs_den; i++) {
               if (first_run) {
                 {
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
@@ -350,7 +370,7 @@ namespace firefly {
                   if (rec.is_rand_zi_empty()) {
                     std::vector<FFInt> anchor_points {};
 
-                    for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++)
+                    for (uint32_t tmp_zi = 2; tmp_zi <= n; tmp_zi ++)
                       anchor_points.emplace_back(rand_zi[std::make_pair(tmp_zi, 1)]);
 
                     rec.set_anchor_points(anchor_points);
@@ -361,9 +381,9 @@ namespace firefly {
               }
 
               if ((int) i <= curr_deg_den) {
-                if (curr_zi_order[zi - 2] < (uint) i + 3) {
-                  uint sub_count = sub_den[i].size();
-                  std::vector<uint> key = {i, zi};
+                if (curr_zi_order[zi - 2] < (uint32_t) i + 3) {
+                  uint32_t sub_count = sub_den[i].size();
+                  std::vector<uint32_t> key = {i, zi};
                   saved_num_den[curr_zi_order][key] = std::make_pair(den_coef[ {i}], sub_count);
                 }
               }
@@ -371,11 +391,11 @@ namespace firefly {
 
             if (first_run) first_run = false;
 
-            uint zi_num = 0;
+            uint32_t zi_num = 0;
 
             if (curr_deg_num > 0) zi_num = coef_n[curr_deg_num].get_zi() + 1;
 
-            uint zi_den = 0;
+            uint32_t zi_den = 0;
 
             if (curr_deg_den > 0) zi_den = coef_d[curr_deg_den].get_zi() + 1;
 
@@ -383,7 +403,7 @@ namespace firefly {
             if (curr_deg_num >= 0) {
               PolyReconst rec = coef_n[curr_deg_num];
 
-              if (rec.get_zi_order() == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
+              if (rec.get_zi_order() == std::vector<uint32_t>(curr_zi_order.begin(), curr_zi_order.end())) {
                 auto res = feed_poly(curr_deg_num, max_deg_num, coef_n, rec,
                                      saved_num_num, sub_num, true);
                 curr_deg_num = std::get<0>(res);
@@ -405,7 +425,7 @@ namespace firefly {
                 zi = curr_zi;
               }
 
-              if (rec.get_zi_order() == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
+              if (rec.get_zi_order() == std::vector<uint32_t>(curr_zi_order.begin(), curr_zi_order.end())) {
                 auto res = feed_poly(curr_deg_den, max_deg_den, coef_d, rec,
                                      saved_num_den, sub_den, false);
                 curr_deg_den = std::get<0>(res);
@@ -422,7 +442,7 @@ namespace firefly {
                     zi = curr_zi;
                   }
 
-                  if (rec_new.get_zi_order() == std::vector<uint>(curr_zi_order.begin(), curr_zi_order.end())) {
+                  if (rec_new.get_zi_order() == std::vector<uint32_t>(curr_zi_order.begin(), curr_zi_order.end())) {
                     auto res_new = feed_poly(curr_deg_num, max_deg_num, coef_n, rec_new,
                                              saved_num_num, sub_num, true);
                     curr_deg_num = std::get<0>(res_new);
@@ -437,9 +457,9 @@ namespace firefly {
             // it is promising that feeding a PolyReconst with a higher
             // zi degree will be finished next leading to less numerical runs
             if (curr_deg_den >= 0 && curr_deg_num >= 0) {
-              std::vector<uint> zi_order_num_rev = curr_zi_order_num;
+              std::vector<uint32_t> zi_order_num_rev = curr_zi_order_num;
               std::reverse(zi_order_num_rev.begin(), zi_order_num_rev.end());
-              std::vector<uint> zi_order_den_rev = curr_zi_order_den;
+              std::vector<uint32_t> zi_order_den_rev = curr_zi_order_den;
               std::reverse(zi_order_den_rev.begin(), zi_order_den_rev.end());
 
               if (zi_order_num_rev > zi_order_den_rev) {
@@ -500,13 +520,13 @@ namespace firefly {
               if (const_den != 1) {
                 ff_map dummy_map {};
                 terminator = FFInt(1) - const_den;
-                dummy_map.emplace(std::make_pair(std::vector<uint> (n, 0), terminator));
+                dummy_map.emplace(std::make_pair(std::vector<uint32_t> (n, 0), terminator));
                 denominator = denominator + PolynomialFF(n, dummy_map);
-              } else if (numerator.coefs.find(std::vector<uint> (n, 0)) != numerator.coefs.end()) {
-                terminator = numerator.coefs[std::vector<uint> (n, 0)];
+              } else if (numerator.coefs.find(std::vector<uint32_t> (n, 0)) != numerator.coefs.end()) {
+                terminator = numerator.coefs[std::vector<uint32_t> (n, 0)];
               } else {
                 for (const auto & el : denominator.coefs) {
-                  std::vector<uint> degs_reverse = el.first;
+                  std::vector<uint32_t> degs_reverse = el.first;
                   std::reverse(degs_reverse.begin(), degs_reverse.end());
 
                   add_non_solved_den(el.first);
@@ -580,7 +600,7 @@ namespace firefly {
               new_prime = true;
             } else if (zi > 0) {
               // set new random
-              for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
+              for (uint32_t tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
                 auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
                 rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
@@ -592,7 +612,7 @@ namespace firefly {
             // build multivariate Vandermonde systems and evaluate them if possible
             if (!is_singular_system) {
               for (const auto & sol : canonical.first) {
-                uint key = sol.first[0];
+                uint32_t key = sol.first[0];
 
                 if (coef_mat_num[key].size() < non_solved_degs_num[key].size())
                   coef_mat_num[key].emplace_back(std::make_pair(sol.second, 0));
@@ -607,7 +627,7 @@ namespace firefly {
               }
 
               for (const auto & sol : canonical.second) {
-                uint key = sol.first[0];
+                uint32_t key = sol.first[0];
 
                 if (coef_mat_den[key].size() < non_solved_degs_den[key].size())
                   coef_mat_den[key].emplace_back(std::make_pair(sol.second, 0));
@@ -619,13 +639,13 @@ namespace firefly {
                 }
               }
             } else {
-              uint tmp_deg = curr_deg_num;
+              uint32_t tmp_deg = curr_deg_num;
 
               if (curr_deg_num > -1) {
-                for (uint i = 0; i <= tmp_deg; i++) {
+                for (uint32_t i = 0; i <= tmp_deg; i++) {
                   if (coef_mat_num.find(i) != coef_mat_num.end()) {
                     if (coef_mat_num[i].size() < non_solved_degs_num[i].size()) {
-                      uint sub_count = sub_num[i].size();
+                      uint32_t sub_count = sub_num[i].size();
                       coef_mat_num[i].emplace_back(std::make_pair(canonical.first[ {i}], sub_count));
                     }
 
@@ -634,10 +654,10 @@ namespace firefly {
                       bool cannot_solve = false;
 
                       while (!cannot_solve) {
-                        std::vector<uint> deleted_degs {};
+                        std::vector<uint32_t> deleted_degs {};
 
                         for (const auto & mat : coef_mat_num) {
-                          uint tmp_key = mat.first;
+                          uint32_t tmp_key = mat.first;
 
                           if (tmp_key == curr_deg_num && mat.second.size() == non_solved_degs_num[tmp_key].size()) {
                             set_new_curr_deg_num_singular(tmp_key);
@@ -661,10 +681,10 @@ namespace firefly {
               if (curr_deg_den > 0) {
                 tmp_deg = curr_deg_den;
 
-                for (uint i = 1; i <= tmp_deg; i++) {
+                for (uint32_t i = 1; i <= tmp_deg; i++) {
                   if (coef_mat_den.find(i) != coef_mat_den.end()) {
                     if (coef_mat_den[i].size() < non_solved_degs_den[i].size()) {
-                      uint sub_count = sub_den[i].size();
+                      uint32_t sub_count = sub_den[i].size();
                       coef_mat_den[i].emplace_back(std::make_pair(canonical.second[ {i}], sub_count));
                     }
 
@@ -673,10 +693,10 @@ namespace firefly {
                       bool cannot_solve = false;
 
                       while (!cannot_solve) {
-                        std::vector<uint> deleted_degs {};
+                        std::vector<uint32_t> deleted_degs {};
 
                         for (const auto & mat : coef_mat_den) {
-                          uint tmp_key = mat.first;
+                          uint32_t tmp_key = mat.first;
 
                           if (tmp_key == curr_deg_den && mat.second.size() == non_solved_degs_den[tmp_key].size()) {
                             set_new_curr_deg_den_singular(tmp_key);
@@ -721,8 +741,8 @@ namespace firefly {
                 solved_den = solved_den * equializer;
               }
 
-              solved_num.coefs.erase(std::vector<uint> (n, 0));
-              solved_den.coefs.erase(std::vector<uint> (n, 0));
+              solved_num.coefs.erase(std::vector<uint32_t> (n, 0));
+              solved_den.coefs.erase(std::vector<uint32_t> (n, 0));
 
               std::pair<mpz_map, mpz_map> tmp;
               tmp.first = convert_to_mpz(solved_num.coefs);
@@ -738,7 +758,7 @@ namespace firefly {
               }
               // reset solved coefficients
               ff_map zero_deg {};
-              zero_deg.emplace(std::make_pair(std::vector<uint> (n), 0));
+              zero_deg.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
               solved_degs_num = polff_map();
               solved_degs_den = polff_map();
               solved_num.coefs = zero_deg;
@@ -748,9 +768,9 @@ namespace firefly {
               {
                 std::unique_lock<std::mutex> lock(mutex_status);
                 std::transform(curr_zi_order.begin(), curr_zi_order.end(),
-                curr_zi_order.begin(), [](uint x) {return x + 1;});
+                curr_zi_order.begin(), [](uint32_t x) {return x + 1;});
 
-                for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
+                for (uint32_t tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
                   auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
                   rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
@@ -777,18 +797,18 @@ namespace firefly {
     }
   }
 
-  std::tuple<int, uint, std::vector<uint>> RatReconst::feed_poly(int curr_deg,
-                                                                 uint max_deg, std::unordered_map<uint, PolyReconst>& coef,
+  std::tuple<int, uint32_t, std::vector<uint32_t>> RatReconst::feed_poly(int curr_deg,
+                                                                 uint32_t max_deg, std::unordered_map<uint32_t, PolyReconst>& coef,
   PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num) {
-    uint tmp_zi = rec.get_zi() + 1;
-    std::vector<uint> tmp_zi_ord = curr_zi_order;
+    uint32_t tmp_zi = rec.get_zi() + 1;
+    std::vector<uint32_t> tmp_zi_ord = curr_zi_order;
 
     while (!rec.is_new_prime()) {
       try {
-        std::vector<uint> key = {(uint) curr_deg, tmp_zi};
+        std::vector<uint32_t> key = {(uint32_t) curr_deg, tmp_zi};
         auto food_pair = saved_num.at(tmp_zi_ord).at(key);
         FFInt food = food_pair.first;
-        uint sub_count = food_pair.second;
+        uint32_t sub_count = food_pair.second;
         // delete unused saved data
         saved_num[tmp_zi_ord].erase(key);
         // set random values for the yis
@@ -834,10 +854,10 @@ namespace firefly {
         coef[curr_deg] = rec;
 
         if (curr_deg > 0) {
-          std::vector<uint> zero_deg(n);
+          std::vector<uint32_t> zero_deg(n);
           PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
-          for (uint i = 0; i < curr_deg; i++) {
+          for (uint32_t i = 0; i < curr_deg; i++) {
             if (sub_save[i].size() == 0)
               sub_save[i] = {zero_poly};
             else
@@ -858,7 +878,7 @@ namespace firefly {
             sub_pol -= rec.get_result_ff();
 
             for (auto & el : sub_pol.coefs) {
-              uint tmp_deg = 0;
+              uint32_t tmp_deg = 0;
 
               for (const auto & deg : el.first) tmp_deg += deg;
 
@@ -877,13 +897,13 @@ namespace firefly {
             const_den += sub_save[0].back().calc(tmp_yis);
           }
 
-          /*std::vector<std::pair<std::vector<uint>, std::vector<uint>>> delete_keys {};
+          /*std::vector<std::pair<std::vector<uint32_t>, std::vector<uint32_t>>> delete_keys {};
 
           for (auto & el1 : saved_num) {
-            std::vector<uint> key_1 = el1.first;
+            std::vector<uint32_t> key_1 = el1.first;
 
             for (auto & el2 : el1.second) {
-              uint tmp_deg = el2.first[0];
+              uint32_t tmp_deg = el2.first[0];
 
               if (tmp_deg < curr_deg) {
                 std::vector<FFInt> tmp_yis = get_rand_zi_vec(key_1);
@@ -934,8 +954,8 @@ namespace firefly {
   }
 
   void RatReconst::combine_primes(std::pair<mpz_map, mpz_map>& tmp) {
-    std::vector<uint> tmp_deg_num {};
-    std::vector<uint> tmp_deg_den {};
+    std::vector<uint32_t> tmp_deg_num {};
+    std::vector<uint32_t> tmp_deg_den {};
 
     if (is_singular_system) {
       for (const auto & el : non_solved_degs_num) {
@@ -955,8 +975,8 @@ namespace firefly {
     if (!use_chinese_remainder) {
       saved_num_num = ff_map_map();
       saved_num_den = ff_map_map();
-      coef_d = std::unordered_map<uint, PolyReconst>();
-      coef_n = std::unordered_map<uint, PolyReconst>();
+      coef_d = std::unordered_map<uint32_t, PolyReconst>();
+      coef_n = std::unordered_map<uint32_t, PolyReconst>();
       combined_ni = tmp.first;
       combined_di = tmp.second;
 
@@ -986,10 +1006,10 @@ namespace firefly {
           monagan = false;
         }
 
-        if (wang && monagan && rn_wang == rn_monagan) {
+        /*if (wang && monagan && rn_wang == rn_monagan) {
           remove_ni(c_ni.first, rn_wang);
           continue;
-        }
+        }*/
 
         if (wang && rn_wang.numerator == c_ni.second && rn_wang.denominator == 1) {
           remove_ni(c_ni.first, rn_wang);
@@ -998,16 +1018,16 @@ namespace firefly {
 
         add_non_solved_num(c_ni.first);
 
-/*        try {
-          RationalNumber rn = get_rational_coef(c_ni.second, combined_prime);
+        /*        try {
+                  RationalNumber rn = get_rational_coef(c_ni.second, combined_prime);
 
-          if (rn.numerator == c_ni.second && rn.denominator == 1)
-            remove_ni(c_ni.first, rn);
-          else
-            add_non_solved_num(c_ni.first);
-        } catch (std::exception& e) {
-          add_non_solved_num(c_ni.first);
-        }*/
+                  if (rn.numerator == c_ni.second && rn.denominator == 1)
+                    remove_ni(c_ni.first, rn);
+                  else
+                    add_non_solved_num(c_ni.first);
+                } catch (std::exception& e) {
+                  add_non_solved_num(c_ni.first);
+                }*/
       }
 
       mpz_map combined_di_back = combined_di;
@@ -1033,10 +1053,10 @@ namespace firefly {
           monagan = false;
         }
 
-        if (wang && monagan && rn_wang == rn_monagan) {
+        /*if (wang && monagan && rn_wang == rn_monagan) {
           remove_di(c_di.first, rn_wang);
           continue;
-        }
+        }*/
 
         if (wang && rn_wang.numerator == c_di.second && rn_wang.denominator == 1) {
           remove_di(c_di.first, rn_wang);
@@ -1045,16 +1065,16 @@ namespace firefly {
 
         add_non_solved_den(c_di.first);
 
-/*        try {
-          RationalNumber rn = get_rational_coef(c_di.second, combined_prime);
+        /*        try {
+                  RationalNumber rn = get_rational_coef(c_di.second, combined_prime);
 
-          if (rn.numerator == c_di.second && rn.denominator == 1)
-            remove_di(c_di.first, rn);
-          else
-            add_non_solved_den(c_di.first);
-        } catch (std::exception& e) {
-          add_non_solved_den(c_di.first);
-        }*/
+                  if (rn.numerator == c_di.second && rn.denominator == 1)
+                    remove_di(c_di.first, rn);
+                  else
+                    add_non_solved_den(c_di.first);
+                } catch (std::exception& e) {
+                  add_non_solved_den(c_di.first);
+                }*/
       }
 
       if (is_singular_system) {
@@ -1145,10 +1165,10 @@ namespace firefly {
             continue;
           }
 
-          if (curr_wang && curr_monagan && curr_rn_wang == curr_rn_monagan) {
+          /*if (curr_wang && curr_monagan && curr_rn_wang == curr_rn_monagan) {
             remove_ni(c_ni.first, curr_rn_wang);
             continue;
-          }
+          }*/
 
           if (c_ni.second == combined_ni[c_ni.first]) {
             RationalNumber rn = RationalNumber(c_ni.second, 1);
@@ -1156,22 +1176,22 @@ namespace firefly {
           } else
             add_non_solved_num(c_ni.first);
 
-/*          try {
-            RationalNumber last_rn = get_rational_coef(c_ni.second, combined_prime_back);
-            RationalNumber curr_rn = get_rational_coef(combined_ni[c_ni.first], combined_prime);
+          /*          try {
+                      RationalNumber last_rn = get_rational_coef(c_ni.second, combined_prime_back);
+                      RationalNumber curr_rn = get_rational_coef(combined_ni[c_ni.first], combined_prime);
 
-            if (last_rn == curr_rn)
-              remove_ni(c_ni.first, curr_rn);
-            else
-              add_non_solved_num(c_ni.first);
-          } catch (std::exception& e) {
+                      if (last_rn == curr_rn)
+                        remove_ni(c_ni.first, curr_rn);
+                      else
+                        add_non_solved_num(c_ni.first);
+                    } catch (std::exception& e) {
 
-            if (c_ni.second == combined_ni[c_ni.first]) {
-              RationalNumber rn = RationalNumber(c_ni.second, 1);
-              remove_ni(c_ni.first, rn);
-            } else
-              add_non_solved_num(c_ni.first);
-          }*/
+                      if (c_ni.second == combined_ni[c_ni.first]) {
+                        RationalNumber rn = RationalNumber(c_ni.second, 1);
+                        remove_ni(c_ni.first, rn);
+                      } else
+                        add_non_solved_num(c_ni.first);
+                    }*/
         }
       }
 
@@ -1225,10 +1245,10 @@ namespace firefly {
             continue;
           }
 
-          if (curr_wang && curr_monagan && curr_rn_wang == curr_rn_monagan) {
+          /*if (curr_wang && curr_monagan && curr_rn_wang == curr_rn_monagan) {
             remove_di(c_di.first, curr_rn_wang);
             continue;
-          }
+          }*/
 
           if (c_di.second == combined_di[c_di.first]) {
             RationalNumber rn = RationalNumber(c_di.second, 1);
@@ -1236,23 +1256,23 @@ namespace firefly {
           } else
             add_non_solved_den(c_di.first);
 
-/*          try {
-            RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
-            RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
+          /*          try {
+                      RationalNumber last_rn = get_rational_coef(c_di.second, combined_prime_back);
+                      RationalNumber curr_rn = get_rational_coef(combined_di[c_di.first], combined_prime);
 
-            if (last_rn == curr_rn)
-              remove_di(c_di.first, curr_rn);
-            else
-              add_non_solved_den(c_di.first);
-          } catch (std::exception& e) {
+                      if (last_rn == curr_rn)
+                        remove_di(c_di.first, curr_rn);
+                      else
+                        add_non_solved_den(c_di.first);
+                    } catch (std::exception& e) {
 
-            if (c_di.second == combined_di[c_di.first]) {
-              RationalNumber rn = RationalNumber(c_di.second, 1);
+                      if (c_di.second == combined_di[c_di.first]) {
+                        RationalNumber rn = RationalNumber(c_di.second, 1);
 
-              remove_di(c_di.first, rn);
-            } else
-              add_non_solved_den(c_di.first);
-          }*/
+                        remove_di(c_di.first, rn);
+                      } else
+                        add_non_solved_den(c_di.first);
+                    }*/
         }
       }
 
@@ -1292,9 +1312,9 @@ namespace firefly {
       num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
     }
 
-    for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint>> {};
+    for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
 
-    for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint>> {};
+    for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
 
     // Check if the state should be written out after this prime
     if (tag.size() > 0) {
@@ -1401,8 +1421,8 @@ namespace firefly {
 
   bool RatReconst::rec_rat_coef() {
     bool run_test = true;
-    std::vector<const std::vector<uint>*> promoted_n;
-    std::vector<const std::vector<uint>*> promoted_d;
+    std::vector<const std::vector<uint32_t>*> promoted_n;
+    std::vector<const std::vector<uint32_t>*> promoted_d;
 
     for (const auto & ci : combined_ni) {
       mpz_class a = ci.second;
@@ -1458,7 +1478,7 @@ namespace firefly {
     }
   }
 
-  FFInt RatReconst::comp_fyi(uint i, uint ip, const FFInt& y) {
+  FFInt RatReconst::comp_fyi(uint32_t i, uint32_t ip, const FFInt& y) {
     if (ip == 0) {
       return ai[i];
     } else {
@@ -1474,7 +1494,7 @@ namespace firefly {
     ff_map numerator;
     ff_map denominator;
 
-    const std::vector<uint> min_power = {0};
+    const std::vector<uint32_t> min_power = {0};
     denominator.emplace(std::make_pair(std::move(min_power), FFInt(1)));
 
     int terms_num = max_deg_num - tmp_solved_coefs_num;
@@ -1483,13 +1503,13 @@ namespace firefly {
       numerator.emplace(std::make_pair(std::move(min_power), FFInt(1)));
     } else {
       for (int i = 0; i <= terms_num; i ++) {
-        std::vector<uint> power = { (uint) i};
+        std::vector<uint32_t> power = { (uint32_t) i};
         numerator.emplace(std::make_pair(std::move(power), results[i]));
       }
     }
 
-    for (uint i = 1; i <= max_deg_den - tmp_solved_coefs_den; i ++) {
-      std::vector<uint> power = {i};
+    for (uint32_t i = 1; i <= max_deg_den - tmp_solved_coefs_den; i ++) {
+      std::vector<uint32_t> power = {i};
       denominator.emplace(std::make_pair(std::move(power), results[i + terms_num]));
     }
 
@@ -1504,17 +1524,17 @@ namespace firefly {
     ff_map numerator;
     ff_map denominator;
 
-    uint counter = 0;
+    uint32_t counter = 0;
 
     if (!is_singular_system) {
       for (const auto & el : non_solved_degs_num) {
-        std::vector<uint> power = {el.first};
+        std::vector<uint32_t> power = {el.first};
         numerator.emplace(std::make_pair(std::move(power), results[counter]));
         counter ++;
       }
 
       for (const auto & el : non_solved_degs_den) {
-        std::vector<uint> power = {el.first};
+        std::vector<uint32_t> power = {el.first};
         denominator.emplace(std::make_pair(std::move(power), results[counter]));
         counter ++;
       }
@@ -1522,9 +1542,9 @@ namespace firefly {
       int terms_num = max_deg_num - tmp_solved_coefs_num;
 
       if (terms_num > 0) {
-        for (uint i = 0; i <= terms_num; i++) {
+        for (uint32_t i = 0; i <= terms_num; i++) {
           if (non_solved_degs_num.find(i) != non_solved_degs_num.end()) {
-            std::vector<uint> power = {i};
+            std::vector<uint32_t> power = {i};
             numerator.emplace(std::make_pair(std::move(power), results[counter]));
           }
 
@@ -1532,9 +1552,9 @@ namespace firefly {
         }
       }
 
-      for (uint i = 1; i <= max_deg_den - tmp_solved_coefs_den; i++) {
+      for (uint32_t i = 1; i <= max_deg_den - tmp_solved_coefs_den; i++) {
         if (non_solved_degs_den.find(i) != non_solved_degs_den.end()) {
-          std::vector<uint> power = {i};
+          std::vector<uint32_t> power = {i};
           denominator.emplace(std::make_pair(std::move(power), results[counter]));
         }
 
@@ -1548,7 +1568,7 @@ namespace firefly {
   std::pair<ff_map, ff_map> RatReconst::construct_canonical() {
     if (ai.size() == 1) {
       ff_map numerator_ff;
-      std::vector<uint> zero_deg = {0};
+      std::vector<uint32_t> zero_deg = {0};
       numerator_ff.emplace(std::make_pair(zero_deg, ai[0]));
       ff_map denominator_ff;
       denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1)));
@@ -1561,7 +1581,7 @@ namespace firefly {
     }
   }
 
-  std::pair<PolynomialFF, PolynomialFF> RatReconst::iterate_canonical(uint i) {
+  std::pair<PolynomialFF, PolynomialFF> RatReconst::iterate_canonical(uint32_t i) {
     if (i < ai.size() - 1) {
       std::pair<PolynomialFF, PolynomialFF> fnp1 = iterate_canonical(i + 1);
       FFInt mti = -ti[i];
@@ -1569,7 +1589,7 @@ namespace firefly {
                                                     fnp1.first);
     } else {
       ff_map numerator_ff;
-      std::vector<uint> zero_deg = {0};
+      std::vector<uint32_t> zero_deg = {0};
       numerator_ff.emplace(std::make_pair(zero_deg, ai[i]));
       ff_map denominator_ff;
       denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1)));
@@ -1596,7 +1616,7 @@ namespace firefly {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
       yis[0] = ti[0] + shift[0];
 
-      for (uint i = 1; i < n; i++) {
+      for (uint32_t i = 1; i < n; i++) {
         yis[i] = ti[0] * rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])] + shift[i];
       }
     }
@@ -1604,12 +1624,12 @@ namespace firefly {
     return (g_ny.calc(yis) / g_dy.calc(yis)) == num;
   }
 
-  void RatReconst::remove_ni(const std::vector<uint>& deg_vec, RationalNumber& rn) {
+  void RatReconst::remove_ni(const std::vector<uint32_t>& deg_vec, RationalNumber& rn) {
     g_ni[deg_vec] =  rn;
     combined_ni.erase(deg_vec);
   }
 
-  void RatReconst::remove_di(const std::vector<uint>& deg_vec, RationalNumber& rn) {
+  void RatReconst::remove_di(const std::vector<uint32_t>& deg_vec, RationalNumber& rn) {
     g_di[deg_vec] =  rn;
     combined_di.erase(deg_vec);
   }
@@ -1867,7 +1887,7 @@ namespace firefly {
     eq.reserve(num_eqn + 1);
     FFInt res = (1 - const_den) * tmp_num;
 
-    for (uint i = 0; i < n; i++) {
+    for (uint32_t i = 0; i < n; i++) {
       {
         std::unique_lock<std::mutex> lock_statics(mutex_statics);
         yis[i] = yis[i] * tmp_ti + shift[i];
@@ -1900,7 +1920,7 @@ namespace firefly {
       std::vector<FFInt> eq;
       eq.reserve(num_eqn + 1);
 
-      for (uint i = 0; i < n; i++) {
+      for (uint32_t i = 0; i < n; i++) {
         yis[i] = yis[i] * tmp_ti + shift[i];
       }
 
@@ -1917,46 +1937,9 @@ namespace firefly {
       // been solved
       eq.emplace_back(0);
 
-      for (const auto & el : g_ni) {
-        mpz_class tmp_1 = el.second.numerator % FFInt::p;
-        mpz_class tmp_2 = el.second.denominator % FFInt::p;
 
-        if (tmp_1 < 0) tmp_1 = FFInt::p + tmp_1;
-
-        FFInt coef = FFInt(std::stoull(tmp_1.get_str())) / FFInt(std::stoull(tmp_2.get_str()));
-
-        for (uint i = 0; i < n; i++) {
-          coef *= yis[i].pow(el.first[i]);
-        }
-
-        eq.back() -= coef;
-      }
-
-      FFInt sol_den = 0;
-
-      for (const auto & el : g_di) {
-        mpz_class tmp_1 = el.second.numerator % FFInt::p;
-        mpz_class tmp_2 = el.second.denominator % FFInt::p;
-
-        if (tmp_1 < 0) tmp_1 = FFInt::p + tmp_1;
-
-        FFInt tmp_coef = FFInt(std::stoull(tmp_1.get_str())) / FFInt(std::stoull(tmp_2.get_str()));
-
-        for (uint i = 0; i < n; i++) {
-          tmp_coef *= yis[i].pow(el.first[i]);
-        }
-
-        sol_den += tmp_coef;
-      }
-
-      if (n > 1) {
-        sol_den += solved_den.calc(yis);
-        eq.back() -= solved_num.calc(yis);
-      }
-
-      sol_den *= tmp_num;
-
-      eq.back() += sol_den;
+      eq.back() += solved_den.calc(yis) * tmp_num;
+      eq.back() -= solved_num.calc(yis);
 
       coef_mat.emplace_back(std::move(eq));
     } else {
@@ -1964,7 +1947,7 @@ namespace firefly {
       eq.reserve(num_eqn + 1);
       FFInt res = (1 - const_den) * tmp_num;
 
-      for (uint i = 0; i < n; i++) {
+      for (uint32_t i = 0; i < n; i++) {
         {
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
           yis[i] = yis[i] * tmp_ti + shift[i];
@@ -2000,29 +1983,29 @@ namespace firefly {
 
     rand_zi.clear();
 
-    for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
+    for (uint32_t tmp_zi = 2; tmp_zi <= n; tmp_zi ++) {
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), get_rand()));
     }
   }
 
-  void RatReconst::add_non_solved_num(const std::vector<uint>& deg) {
-    uint degree = 0;
+  void RatReconst::add_non_solved_num(const std::vector<uint32_t>& deg) {
+    uint32_t degree = 0;
 
     for (const auto & el : deg) degree += el;
 
     non_solved_degs_num[degree].emplace_back(deg);
   }
 
-  void RatReconst::add_non_solved_den(const std::vector<uint>& deg) {
-    uint degree = 0;
+  void RatReconst::add_non_solved_den(const std::vector<uint32_t>& deg) {
+    uint32_t degree = 0;
 
     for (const auto & el : deg) degree += el;
 
     non_solved_degs_den[degree].emplace_back(deg);
   }
 
-  void RatReconst::check_for_solved_degs(std::vector<uint>& uni_degs, const bool is_num) {
+  void RatReconst::check_for_solved_degs(std::vector<uint32_t>& uni_degs, const bool is_num) {
     for (const auto & el : uni_degs) {
       if (is_num) {
         if (non_solved_degs_num.find(el) == non_solved_degs_num.end()) {
@@ -2038,34 +2021,35 @@ namespace firefly {
     }
   }
 
-  PolynomialFF RatReconst::solve_transposed_vandermonde(std::vector<std::vector<uint>>& degs,
-  const std::vector<std::pair<FFInt, uint>>& nums) {
-    uint num_eqn = degs.size();
+  PolynomialFF RatReconst::solve_transposed_vandermonde(std::vector<std::vector<uint32_t>>& degs,
+  const std::vector<std::pair<FFInt, uint32_t>>& nums) {
+    uint32_t num_eqn = degs.size();
     std::vector<FFInt> result(num_eqn);
 
     if (num_eqn == 1) {
       FFInt vi = 1;
 
       for (const auto & el : degs) {
-        for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi++) {
+        for (uint32_t tmp_zi = 2; tmp_zi <= n; tmp_zi++) {
           // curr_zi_ord starts at 1, thus we need to subtract 1 entry
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
           vi *= rand_zi[std::make_pair(tmp_zi, 1)].pow(el[tmp_zi - 1]);
         }
       }
 
+//TODO this two loops can be unreveld
       result[0] = nums[0].first / vi;
     } else {
       // calculate base entries of Vandermonde matrix
       std::vector<FFInt> vis;
       vis.reserve(num_eqn);
-      std::sort(degs.begin(), degs.end(), std::greater<std::vector<uint>>());
+      std::sort(degs.begin(), degs.end(), std::greater<std::vector<uint32_t>>());
 
       for (const auto & el : degs) {
         FFInt vi = 1;
 
         // z_1 is always = 1 which does not matter while determining the coefficient
-        for (uint tmp_zi = 2; tmp_zi <= n; tmp_zi++) {
+        for (uint32_t tmp_zi = 2; tmp_zi <= n; tmp_zi++) {
           // curr_zi_ord starts at 1, thus we need to subtract 1 entry
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
           vi *= rand_zi[std::make_pair(tmp_zi, 1)].pow(el[tmp_zi - 1]);
@@ -2083,8 +2067,8 @@ namespace firefly {
       //      =  c_0 + c_1*Z + ... + Z^n
       cis[num_eqn - 1] = -vis[0];
 
-      for (uint i = 1; i < num_eqn; i++) {
-        for (uint j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
+      for (uint32_t i = 1; i < num_eqn; i++) {
+        for (uint32_t j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
           cis[j] -= vis[i] * cis[j + 1];
         }
 
@@ -2096,7 +2080,7 @@ namespace firefly {
       // and supplied with a denominator (since all vi should be different,
       // there is no additional check if a coefficient in synthetical division
       // leads to a vanishing denominator)
-      for (uint i = 0; i < num_eqn; i++) {
+      for (uint32_t i = 0; i < num_eqn; i++) {
         FFInt t = 1;
         FFInt b = 1;
         FFInt s = nums[num_eqn - 1].first;
@@ -2114,30 +2098,30 @@ namespace firefly {
     // Bring result in canonical form
     ff_map poly;
 
-    for (uint i = 0; i < num_eqn; i ++) {
+    for (uint32_t i = 0; i < num_eqn; i ++) {
       poly.emplace(std::make_pair(degs[i], result[i]));
     }
 
     return PolynomialFF(n, poly);
   }
 
-  FFInt RatReconst::get_rand_zi(uint zi, uint order) {
+  FFInt RatReconst::get_rand_zi(uint32_t zi, uint32_t order) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return rand_zi.at(std::make_pair(zi, order));
   }
 
-  std::vector<FFInt> RatReconst::get_rand_zi_vec(std::vector<uint> order) {
+  std::vector<FFInt> RatReconst::get_rand_zi_vec(std::vector<uint32_t> order) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> res {};
 
-    for (uint i = 2; i <= n; i++) {
+    for (uint32_t i = 2; i <= n; i++) {
       res.emplace_back(rand_zi.at(std::make_pair(i, order[i - 2])));
     }
 
     return res;
   }
 
-  FFInt RatReconst::get_zi_shift(uint zi) {
+  FFInt RatReconst::get_zi_shift(uint32_t zi) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return shift[zi - 1];
   }
@@ -2155,13 +2139,13 @@ namespace firefly {
     return tmp;
   }
 
-  void RatReconst::set_new_curr_deg_num_singular(uint key) {
+  void RatReconst::set_new_curr_deg_num_singular(uint32_t key) {
     if (curr_deg_num < max_deg_num) {
-      for (uint i = 0; i < coef_mat_num[key].size(); i++) {
+      for (uint32_t i = 0; i < coef_mat_num[key].size(); i++) {
         auto tmp_pair = coef_mat_num[key][i];
 
         if (tmp_pair.second < sub_num[curr_deg_num].size()) {
-          std::vector<uint> tmp_zi_ord(n - 1, i + 1);
+          std::vector<uint32_t> tmp_zi_ord(n - 1, i + 1);
           std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
           yis.insert(yis.begin(), 1);
           tmp_pair.first -= sub_num[key][tmp_pair.second].calc(yis);
@@ -2172,11 +2156,11 @@ namespace firefly {
 
     solved_degs_num[key] = solve_transposed_vandermonde(non_solved_degs_num[key], coef_mat_num[key]);
 
-    std::vector<uint> zero_deg(n);
+    std::vector<uint32_t> zero_deg(n);
     PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
 
-    for (uint i = 0; i < curr_deg_num; i++) {
+    for (uint32_t i = 0; i < curr_deg_num; i++) {
       if (sub_num[i].size() == 0)
         sub_num[i] = {zero_poly};
       else
@@ -2193,7 +2177,7 @@ namespace firefly {
       sub_pol -= solved_degs_num[key];
 
       for (auto & el : sub_pol.coefs) {
-        uint tmp_deg = 0;
+        uint32_t tmp_deg = 0;
 
         for (const auto & deg : el.first) tmp_deg += deg;
 
@@ -2206,7 +2190,7 @@ namespace firefly {
     }
 
     bool found = false;
-    uint solved_degs = 1;
+    uint32_t solved_degs = 1;
     curr_deg_num --;
 
     if (curr_deg_num > -1) {
@@ -2230,13 +2214,13 @@ namespace firefly {
     }
   }
 
-  void RatReconst::set_new_curr_deg_den_singular(uint key) {
+  void RatReconst::set_new_curr_deg_den_singular(uint32_t key) {
     if (curr_deg_den < max_deg_den) {
-      for (uint i = 0; i < coef_mat_den[key].size(); i++) {
+      for (uint32_t i = 0; i < coef_mat_den[key].size(); i++) {
         auto tmp_pair = coef_mat_den[key][i];
 
         if (tmp_pair.second < sub_den[curr_deg_den].size()) {
-          std::vector<uint> tmp_zi_ord(n - 1, i + 1);
+          std::vector<uint32_t> tmp_zi_ord(n - 1, i + 1);
           std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
           yis.insert(yis.begin(), 1);
           tmp_pair.first -= sub_den[key][tmp_pair.second].calc(yis);
@@ -2247,11 +2231,11 @@ namespace firefly {
 
     solved_degs_den[key] = solve_transposed_vandermonde(non_solved_degs_den[key], coef_mat_den[key]);
 
-    std::vector<uint> zero_deg(n);
+    std::vector<uint32_t> zero_deg(n);
     PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
 
-    for (uint i = 0; i < curr_deg_den; i++) {
+    for (uint32_t i = 0; i < curr_deg_den; i++) {
       if (sub_den[i].size() == 0)
         sub_den[i] = {zero_poly};
       else
@@ -2268,7 +2252,7 @@ namespace firefly {
       sub_pol -= solved_degs_den[key];
 
       for (auto & el : sub_pol.coefs) {
-        uint tmp_deg = 0;
+        uint32_t tmp_deg = 0;
 
         for (const auto & deg : el.first) tmp_deg += deg;
 
@@ -2284,7 +2268,7 @@ namespace firefly {
     const_den += sub_den[0].back().calc(tmp_yis);
 
     bool found = false;
-    uint solved_degs = 1;
+    uint32_t solved_degs = 1;
     curr_deg_den --;
 
     if (curr_deg_den > 0) {
@@ -2397,7 +2381,7 @@ namespace firefly {
                   std::exit(-1);
                 }
 
-                std::vector<uint> tmp_vec = parse_vector(line, n);
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
                 std::vector<mpz_class> tmp_rn = parse_rational_number(line);
 
                 g_ni.emplace(std::make_pair(tmp_vec, RationalNumber(tmp_rn[0], tmp_rn[1])));
@@ -2411,7 +2395,7 @@ namespace firefly {
                   std::exit(-1);
                 }
 
-                std::vector<uint> tmp_vec = parse_vector(line, n);
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
                 std::vector<mpz_class> tmp_rn = parse_rational_number(line);
 
                 g_di.emplace(std::make_pair(tmp_vec, RationalNumber(tmp_rn[0], tmp_rn[1])));
@@ -2425,7 +2409,7 @@ namespace firefly {
                   std::exit(-1);
                 }
 
-                std::vector<uint> tmp_vec = parse_vector(line, n);
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
                 combined_ni.emplace(std::make_pair(tmp_vec, mpz_class(line)));
 
                 break;
@@ -2437,7 +2421,7 @@ namespace firefly {
                   std::exit(-1);
                 }
 
-                std::vector<uint> tmp_vec = parse_vector(line, n);
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
                 combined_di.emplace(std::make_pair(tmp_vec, mpz_class(line)));
 
                 break;
@@ -2490,20 +2474,20 @@ namespace firefly {
         num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
       }
 
-      for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint>> {};
+      for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
 
-      for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint>> {};
+      for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
     } else {
       ERROR_MSG(std::string("The file '") + file_name + std::string("' could not be found!"));
       std::exit(-1);
     }
   }
 
-  std::vector<uint> RatReconst::parse_vector(std::string& line, int number_of_parameters) {
+  std::vector<uint32_t> RatReconst::parse_vector(std::string& line, int number_of_parameters) {
     size_t pos = 0;
     int i = 0;
     std::string delimiter = " ";
-    std::vector<uint> tmp {};
+    std::vector<uint32_t> tmp {};
 
     if (number_of_parameters > 0)
       tmp.reserve(number_of_parameters);
@@ -2551,8 +2535,9 @@ namespace firefly {
     std::unique_lock<std::mutex> lock(mutex_status);
     num_eqn = max_deg_den + max_deg_num + 1;
 
-    for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint>> {};
+    for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
 
-    for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint>> {};
+    for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
   }
 }
+
