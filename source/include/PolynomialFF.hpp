@@ -18,9 +18,8 @@ namespace firefly {
     PolynomialFF& operator=(const PolynomialFF&) = default;
     PolynomialFF& operator-=(const PolynomialFF&);
     PolynomialFF& operator+=(const PolynomialFF&);
-    PolynomialFF operator*(const PolynomialFF&);
-    PolynomialFF operator*(const FFInt&);
-    PolynomialFF operator/(const FFInt&);
+    PolynomialFF& operator*=(const FFInt&);
+    PolynomialFF& operator/=(const FFInt&);
     uint32_t n = 0;
     FFInt calc(std::vector<FFInt> x);
     ff_map coefs {};
@@ -35,8 +34,10 @@ namespace firefly {
     std::vector<uint32_t> max_degree {};
     FFInt bin_coef(uint32_t n, uint32_t k);
   };
-    PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b);
-    PolynomialFF operator-(const PolynomialFF& a, const PolynomialFF& b);
-
+  PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b);
+  PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b);
+  PolynomialFF operator-(const PolynomialFF& a, const PolynomialFF& b);
+  PolynomialFF operator*(const PolynomialFF& a, const FFInt&);
+  PolynomialFF operator/(const PolynomialFF& a, const FFInt&);
   std::ostream& operator<<(std::ostream& out, const PolynomialFF& a);
 }

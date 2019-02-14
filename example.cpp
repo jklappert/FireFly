@@ -45,6 +45,7 @@ int main() {
 
       std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
       primes_used = std::max(primes_used, rec.get_prime());
+      if(primes_used > 6) std::exit(-1);
       FFInt::set_new_prime(primes()[rec.get_prime()]);
       rec.generate_anchor_points();
       kk = 0;
@@ -71,6 +72,7 @@ int main() {
     //FFInt num = n_eq_1(z1); // example for n = 1
     //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
     FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+    //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
     kk++;
     count++;

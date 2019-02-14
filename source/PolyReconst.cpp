@@ -228,7 +228,7 @@ namespace firefly {
             // The monomials which have to be reconstructed have to
             // ordered in a monotonical way to utilize the Vandermonde
             // system solver
-            std::sort(rec_degs.begin(), rec_degs.end());
+            std::sort(rec_degs.begin(), rec_degs.end(), std::greater<std::vector<uint32_t>>());
 
             nums.reserve(rec_degs.size());
 

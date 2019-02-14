@@ -62,7 +62,6 @@ namespace firefly {
    * by M. Monagan
    */
   std::pair<bool, RationalNumber> get_rational_coef_mqrr(const mpz_class& u, const mpz_class& p) {
-//    throw std::runtime_error("Rational reconstruction failed!");
     // set to T so that less than one percent will be false positive results
     mpz_class T = 1024 * mpz_sizeinbase(p.get_mpz_t(), 2);
     bool not_failed = true;

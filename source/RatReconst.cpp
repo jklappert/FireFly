@@ -162,11 +162,11 @@ namespace firefly {
             tmp_den.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
 
             for (const auto & el : g_ni) {
-              tmp_num.emplace(std::make_pair(el.first, FFInt(el.second.numerator) / FFInt(el.second.denominator)));
+              tmp_num[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
             }
 
             for (const auto & el : g_di) {
-              tmp_den.emplace(std::make_pair(el.first, FFInt(el.second.numerator) / FFInt(el.second.denominator)));
+              tmp_den[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
             }
 
             solved_num = PolynomialFF(n, tmp_num);
@@ -566,8 +566,8 @@ namespace firefly {
               // normalize
               FFInt equializer = FFInt(1) / terminator;
 
-              numerator = numerator * equializer;
-              denominator = denominator * equializer;
+              numerator *= equializer;
+              denominator *= equializer;
 
               std::pair<mpz_map, mpz_map> tmp;
               tmp.first = convert_to_mpz(numerator.coefs);
@@ -953,7 +953,7 @@ namespace firefly {
         auto res = get_rational_coef(c_ni.second, combined_prime);
         wang = res.first;
 
-        if (res.first)
+        if (wang)
           rn_wang = res.second;
 
         if (wang && rn_wang.numerator == c_ni.second && rn_wang.denominator == 1) {
@@ -975,7 +975,6 @@ namespace firefly {
 
         if (wang)
           rn_wang = res.second;
-
 
         if (wang && rn_wang.numerator == c_di.second && rn_wang.denominator == 1) {
           remove_di(c_di.first, rn_wang);
@@ -1030,14 +1029,12 @@ namespace firefly {
           bool last_wang;
           bool curr_wang;
           auto res = get_rational_coef(c_ni.second, combined_prime_back);
-
           last_wang = res.first;
 
           if (last_wang)
             last_rn_wang = res.second;
 
           res = get_rational_coef(combined_ni[c_ni.first], combined_prime);
-
           curr_wang = res.first;
 
           if (curr_wang)
@@ -1087,14 +1084,12 @@ namespace firefly {
           bool last_wang;
           bool curr_wang;
           auto res = get_rational_coef(c_di.second, combined_prime_back);
-
           last_wang = res.first;
 
           if (last_wang)
             last_rn_wang = res.second;
 
           res = get_rational_coef(combined_di[c_di.first], combined_prime);
-
           curr_wang = res.first;
 
           if (curr_wang)
@@ -1468,8 +1463,8 @@ namespace firefly {
     RationalNumber equializer = rf.denominator.coefs[0].coef;
     RationalNumber terminator(equializer.denominator, equializer.numerator);
 
-    rf.numerator = rf.numerator * terminator;
-    rf.denominator = rf.denominator * terminator;
+    rf.numerator *=  terminator;
+    rf.denominator *= terminator;
     return rf;
   }
 
@@ -1803,7 +1798,6 @@ namespace firefly {
       // Build result vector including subtracted coefficients which have already
       // been solved
       eq.emplace_back(0);
-
 
       eq.back() += solved_den.calc(yis) * tmp_num;
       eq.back() -= solved_num.calc(yis);
