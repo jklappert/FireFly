@@ -20,7 +20,7 @@ namespace firefly {
     Polynomial(const rn_map& coef);
     Polynomial(const Monomial& coef);
     Polynomial();
-    Polynomial operator*(const RationalNumber&);
+    Polynomial& operator*=(const RationalNumber&);
     PolynomialFF convert_to_PolynomialFF();
     void sort();
     void clear();

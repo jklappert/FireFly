@@ -104,25 +104,44 @@ namespace firefly {
     return *this;
   }
 
-  PolynomialFF PolynomialFF::operator*(const FFInt& ffint) {
-    ff_map new_coefs;
+  PolynomialFF operator*(const PolynomialFF& a, const FFInt& ffint) {
+    ff_map new_coefs = a.coefs;
 
-    for (auto el : coefs) {
-      new_coefs.emplace(std::make_pair(el.first, el.second * ffint));
+    for (auto& el : new_coefs) {
+      el.second *= ffint;
     }
 
-    return PolynomialFF(n, new_coefs);
+    return PolynomialFF(a.n, new_coefs);
   }
 
-  PolynomialFF PolynomialFF::operator/(const FFInt& ffint) {
-    ff_map new_coefs;
+
+  PolynomialFF operator/(const PolynomialFF& a, const FFInt& ffint) {
+    ff_map new_coefs = a.coefs;
     FFInt inv = 1 / ffint;
 
-    for (auto el : coefs) {
-      new_coefs.emplace(std::make_pair(el.first, el.second * inv));
+    for (auto& el : new_coefs) {
+      el.second *= inv;
     }
 
-    return PolynomialFF(n, new_coefs);
+    return PolynomialFF(a.n, new_coefs);
+  }
+
+  PolynomialFF& PolynomialFF::operator*=(const FFInt& ffint) {
+    for (auto& el : coefs) {
+      el.second *= ffint;
+    }
+
+    return *this;
+  }
+
+  PolynomialFF& PolynomialFF::operator/=(const FFInt& ffint) {
+    FFInt inv = 1 / ffint;
+
+    for (auto& el : coefs) {
+      el.second *= inv;
+    }
+
+    return *this;
   }
 
   std::ostream& operator<<(std::ostream& out, const PolynomialFF& a) {
@@ -212,37 +231,38 @@ namespace firefly {
     return min_degree;
   }
 
-  PolynomialFF PolynomialFF::operator*(const PolynomialFF& b) {
+  PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b) {
     ff_map new_monomials;
-    new_monomials.reserve(coefs.size());
+    new_monomials.reserve(a.coefs.size() + b.coefs.size());
 
-    for (auto & coef_a : coefs) {
-      for (auto & coef_b : b.coefs) {
+    for (const auto & coef_a : a.coefs) {
+      for (const auto & coef_b : b.coefs) {
 
         FFInt new_coef = coef_a.second * coef_b.second;
 
         if (new_coef != 0) {
-          std::vector<uint32_t> new_deg(n);
+          std::vector<uint32_t> new_deg(a.n);
           std::transform(coef_a.first.begin(), coef_a.first.end(),
                          coef_b.first.begin(), new_deg.begin(),
                          std::plus<uint32_t>());
 
-          if (new_monomials.find(new_deg) == new_monomials.end()) {
+          if (new_monomials.find(new_deg) == new_monomials.end())
             new_monomials.emplace(std::make_pair(new_deg, new_coef));
-          } else {
+          else
             new_monomials[new_deg] += new_coef;
-          }
         }
       }
     }
 
-    return PolynomialFF(n, new_monomials);
+    return PolynomialFF(a.n, new_monomials);
   }
+
 
   PolynomialFF PolynomialFF::add_shift(const std::vector<FFInt>& shift) {
     if (shift.size() != n)
       throw std::runtime_error("Mismatch in sizes of the shift and variables!");
 
+    //std::clock_t begin = clock();
     PolynomialFF res;
     res.n = n;
 
@@ -274,22 +294,18 @@ namespace firefly {
             }
           }
 
-          if (pow_poly.coefs.empty()) pow_poly = PolynomialFF(n, tmp_pow_poly);
-          else pow_poly = pow_poly * PolynomialFF(n, tmp_pow_poly);
+          if (pow_poly.coefs.empty())
+            pow_poly = PolynomialFF(n, tmp_pow_poly);
+          else 
+            pow_poly = pow_poly * PolynomialFF(n, tmp_pow_poly);
         }
       }
 
       // since always all variables are shifted decr_power := zero_deg
-      if (!pow_poly.coefs.empty()) {
-        ff_map monomial = {{decr_power, mon.second}};
-        //pow_poly = pow_poly * PolynomialFF(n, monomial);
-        //std::cout << " polynomial * monomial took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
-        //begin = clock();
-        res += pow_poly * PolynomialFF(n, monomial);//* Monomial(decr_power, mon.second);
-        //std::cout << " Poly + Poly took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
-      }
+      if (!pow_poly.coefs.empty())
+        res += pow_poly * PolynomialFF(n, {{decr_power, mon.second}});
     }
-
+    //std::cout << " Shift took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
     return res;
   }
 

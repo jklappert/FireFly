@@ -107,7 +107,7 @@ namespace firefly {
     return PolynomialFF(n, coefs_ff);
   }
 
-  Polynomial Polynomial::operator*(const RationalNumber& rn) {
+  Polynomial& Polynomial::operator*=(const RationalNumber& rn) {
     for (auto & mon : coefs) {
       mon.coef *= rn;
     }

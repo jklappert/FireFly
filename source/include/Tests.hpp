@@ -9,4 +9,5 @@ namespace firefly{
   FFInt n_eq_4(std::vector<FFInt> yis);
   FFInt gghh(std::vector<FFInt> yis);
   FFInt pol_n_eq_3(std::vector<FFInt> yis);
+  FFInt ggh(std::vector<FFInt> yis);
 }
