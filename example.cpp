@@ -127,14 +127,11 @@ int main() {
   std::cout << rec_poly.get_result();
   std::cout << "--------------------------------------------------------------\n";
 
-/*  std::mt19937_64 gen (std::random_device{}());
-  FFInt::set_new_prime(primes()[0]);
+/*  FFInt::set_new_prime(primes()[0]);
 
   mpz_class p = primes()[0];
-  uint64_t rand = gen() % 1125899906842624;
-  FFInt a = 5116383104822622985;
-  rand = gen() % 4294967296;
-  FFInt b = 1;
+  FFInt a = -9;
+  FFInt b = 1381219840000;
 
   mpz_class a_mpz = a.n;
   mpz_class b_mpz = b.n;
@@ -145,17 +142,17 @@ int main() {
   std::cout << a << " / " << b << "\n";
   std::cout << a_mpz.get_str() << " / " << b_mpz.get_str() << "\n";
 
-  try {
-    RationalNumber wang = get_rational_coef((a/b).n, p);
-    std::cout << "Wang: " << wang << "\n";
-  } catch (std::runtime_error& e) {
+  std::pair<bool, RationalNumber> tmp = get_rational_coef((a/b).n, p);
+  if (tmp.first) {
+    std::cout << "Wang: " << tmp.second << "\n";
+  } else {
     std::cout << "Wang failed\n";
   }
 
-  try {
-    RationalNumber monagan = get_rational_coef_mqrr((a/b).n, p);
-    std::cout << "Monagan: " << monagan << "\n";
-  } catch (std::runtime_error& e) {
+  tmp = get_rational_coef_mqrr((a/b).n, p);
+  if (tmp.first) {
+    std::cout << "Monagan: " << tmp.second << "\n";
+  } else {
     std::cout << "Monagan failed\n";
   }*/
 
