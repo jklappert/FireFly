@@ -726,9 +726,6 @@ namespace firefly {
                 solved_den = solved_den * equializer;
               }
 
-              solved_num.coefs.erase(std::vector<uint32_t> (n, 0));
-              solved_den.coefs.erase(std::vector<uint32_t> (n, 0));
-
               std::pair<mpz_map, mpz_map> tmp;
               tmp.first = convert_to_mpz(solved_num.coefs);
               tmp.second = convert_to_mpz(solved_den.coefs);
@@ -818,9 +815,11 @@ namespace firefly {
           FFInt sub_num = 0;
 
           if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size()) {
+            //std::clock_t begin = clock();
             yis.emplace(yis.begin(), 1);
             sub_num = sub_save[curr_deg][sub_count].calc(yis);
             yis.erase(yis.begin());
+            //std::cout << "deg " << curr_deg << " sub count " << sub_count << " eval shift took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
           }
 
           rec.feed(yis, food - sub_num);
@@ -874,6 +873,8 @@ namespace firefly {
               }
             }
           }
+
+          //calculate_shift(rec.get_result_ff(), {1,1,1}, curr_deg);
 
           if (!is_num) {
             std::vector<FFInt> tmp_yis(n, 0);
@@ -2384,5 +2385,38 @@ namespace firefly {
     for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
 
     for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
+  }
+
+  void RatReconst::calculate_shift(const PolynomialFF& poly, const std::vector<uint32_t>& zi_order, int deg) {
+    std::clock_t begin = clock();
+    std::vector<std::pair<FFInt, uint32_t>> nums;
+    nums.reserve(deg + 1);
+    std::vector<std::vector<uint32_t>> tmp_degs;
+    tmp_degs.reserve(deg + 1);
+
+    for(uint32_t i = 0; i <= deg; i++){
+      std::vector<uint32_t> tmp_deg = {i};
+      tmp_degs.emplace_back(std::move(tmp_deg));
+    }
+
+    std::vector<FFInt> yis = get_rand_zi_vec(zi_order);
+    yis.emplace(yis.begin(), 1);
+
+    for(int i = 0; i <= deg; i++){
+      FFInt tmp_t = get_rand();
+      std::vector<FFInt> tmp_yis (n);
+      {
+        std::unique_lock<std::mutex> lock(mutex_statics);
+        for(int j = 0; j < n; j++){
+          tmp_yis[j] = yis[j]*tmp_t + shift[j];
+        }
+      }
+      nums.emplace_back(std::make_pair(poly.calc(tmp_yis), 0));
+    }
+
+    for (const auto& el : solve_transposed_vandermonde(tmp_degs, nums).coefs){
+      saved_shifts[zi_order][(uint32_t) deg][el.first[0]] = el.second;
+    }
+    std::cout << " numeircal shift took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
   }
 }

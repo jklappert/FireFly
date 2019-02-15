@@ -3,7 +3,7 @@
 #include "Tests.hpp"
 #include "Logger.hpp"
 
-//#include "utils.hpp"
+#include "utils.hpp"
 
 using namespace firefly;
 
@@ -45,7 +45,7 @@ int main() {
 
       std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
       primes_used = std::max(primes_used, rec.get_prime());
-      if(primes_used > 6) std::exit(-1);
+      if(primes_used > 4) std::exit(-1);
       FFInt::set_new_prime(primes()[rec.get_prime()]);
       rec.generate_anchor_points();
       kk = 0;
@@ -77,6 +77,7 @@ int main() {
     kk++;
     count++;
 
+    //FFInt num = yis[0].pow(30)*yis[1].pow(30)*yis[2].pow(30)*yis[3].pow(30) + yis[0].pow(25)*yis[1].pow(25)*yis[2].pow(25)*yis[3].pow(25);
     // Feed the algorithm with the current zi_order
     rec.feed(t, num, rec.get_zi_order(), primes_used);
     rec.interpolate();

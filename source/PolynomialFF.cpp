@@ -7,7 +7,7 @@ namespace firefly {
 
   PolynomialFF::PolynomialFF() {}
 
-  FFInt PolynomialFF::calc(std::vector<FFInt> x) {
+  FFInt PolynomialFF::calc(std::vector<FFInt> x) const {
     FFInt res(0);
 
     for (const auto & term : coefs) {

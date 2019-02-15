@@ -21,7 +21,7 @@ namespace firefly {
     PolynomialFF& operator*=(const FFInt&);
     PolynomialFF& operator/=(const FFInt&);
     uint32_t n = 0;
-    FFInt calc(std::vector<FFInt> x);
+    FFInt calc(std::vector<FFInt> x) const;
     ff_map coefs {};
     bool zero();
     PolynomialFF homogenize(uint32_t degree);
