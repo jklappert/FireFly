@@ -834,9 +834,6 @@ namespace firefly {
 
             PolynomialFF res = rec.get_result_ff();
 
-            // check if the polynomial is zero which we then can omit for further
-            // calculations
-            if (!(res.coefs.size() == 1 && res.coefs.begin()->second == 0)) {
               std::vector<FFInt> tmp_shift;
               {
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
@@ -855,7 +852,6 @@ namespace firefly {
                   }
                 }
               }
-            }
 
             if (!is_num) {
               sub_count_den ++;
@@ -864,11 +860,6 @@ namespace firefly {
             } else {
               sub_count_num ++;
             }
-          } else {
-            if (is_num)
-              sub_count_num ++;
-            else
-              sub_count_den ++;
           }
         }
 
@@ -2032,11 +2023,11 @@ namespace firefly {
   }
 
   void RatReconst::set_new_curr_deg_num_singular(uint32_t key) {
-    if (curr_deg_num < max_deg_num) {
+    if (key < max_deg_num) {
       for (uint32_t i = 0; i < coef_mat_num[key].size(); i++) {
         auto tmp_pair = coef_mat_num[key][i];
 
-        if (tmp_pair.second < sub_num[curr_deg_num].size()) {
+        if (tmp_pair.second < sub_num[key].size()) {
           std::vector<uint32_t> tmp_zi_ord(n - 1, i + 1);
           std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
           yis.emplace(yis.begin(), 1);
@@ -2052,14 +2043,14 @@ namespace firefly {
     PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
 
-    for (int i = 0; i < curr_deg_num; i++) {
+    for (int i = 0; i < key; i++) {
       if (sub_num[(uint32_t)i].size() == 0)
         sub_num[(uint32_t)i] = {zero_poly};
       else
         sub_num[(uint32_t)i].emplace_back(zero_poly);
     }
 
-    if (curr_deg_num > 0) {
+    if (key > 0) {
       std::vector<FFInt> tmp_shift;
       {
         std::unique_lock<std::mutex> lock_statics(mutex_statics);
@@ -2108,11 +2099,11 @@ namespace firefly {
   }
 
   void RatReconst::set_new_curr_deg_den_singular(uint32_t key) {
-    if (curr_deg_den < max_deg_den) {
+    if (key < max_deg_den) {
       for (uint32_t i = 0; i < coef_mat_den[key].size(); i++) {
         auto tmp_pair = coef_mat_den[key][i];
 
-        if (tmp_pair.second < sub_den[curr_deg_den].size()) {
+        if (tmp_pair.second < sub_den[key].size()) {
           std::vector<uint32_t> tmp_zi_ord(n - 1, i + 1);
           std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
           yis.emplace(yis.begin(), 1);

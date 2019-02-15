@@ -2,7 +2,6 @@
 
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
-#include <unordered_set>
 
 namespace firefly {
 

@@ -270,7 +270,6 @@ namespace firefly {
     for (auto & mon : coefs) {
       PolynomialFF pow_poly;
       std::vector<uint32_t> powers = mon.first;
-      std::vector<uint32_t> decr_power = powers;
 
       for (uint32_t j = 0; j < n; j++) {
         uint32_t deg = powers[j];
@@ -280,7 +279,6 @@ namespace firefly {
         // proper powers
         if (deg > 0) {
           ff_map tmp_pow_poly;
-          decr_power[j] = 0;
           std::vector<std::vector<uint32_t>> tmp_powers(deg + 1, std::vector<uint32_t> (n));
 
           for (uint32_t k = 0; k <= deg; k++) {
