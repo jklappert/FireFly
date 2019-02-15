@@ -81,7 +81,7 @@ namespace firefly {
     std::tuple<int, uint32_t, std::vector<uint32_t>> feed_poly(int curr_deg,
                                                        uint32_t max_deg, std::unordered_map<uint32_t, PolyReconst>& coef,
                                                        PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num);
-    void combine_primes(std::pair<mpz_map, mpz_map>& tmp);
+    void combine_primes(ff_map& numerator, ff_map& denominator);
     void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
     void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
     bool first_run = true;
@@ -140,16 +140,18 @@ namespace firefly {
     void set_singular_system_vars();
     std::vector<bool> parsed_variables {std::vector<bool>(9, false)};
     int curr_parsed_variable = -1;//new
+    uint32_t sub_count_num = 0;//new
+    uint32_t sub_count_den = 0;//new
     std::vector<uint32_t> parse_vector(std::string& line, int number_of_parameters = -1);
     std::vector<mpz_class> parse_rational_number(std::string& line);
     void parse_prime_number(std::string& file_name);
-    shift_map saved_shifts_num {}; //new
+    /*shift_map saved_shifts_num {}; //new
     shift_map saved_shifts_den {}; //new
     std::unordered_set<uint32_t> zero_degs_num {}; //new
     std::unordered_set<uint32_t> zero_degs_den {}; //new
     uint32_t sub_count_num = 0;//new
-    uint32_t sub_count_den = 0;//new
-    FFInt get_particular_shift(const std::vector<uint32_t>& zi_order, int deg, bool is_num, uint32_t sub_count);
+    uint32_t sub_count_den = 0;//new*/
+    //FFInt get_particular_shift(const std::vector<uint32_t>& zi_order, int deg, bool is_num, uint32_t sub_count);
     void calculate_shift(const PolynomialFF& poly, const std::vector<uint32_t>& zi_order, int deg, bool is_num);
     enum save_variables {COMBINED_PRIME, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
     MIN_DEG_DEN_VEC, G_NI, G_DI, COMBINED_NI, COMBINED_DI};
