@@ -84,7 +84,7 @@ int main() {
   }
 
   std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
-  std::cout << rec.get_result();
+  //std::cout << rec.get_result();
   std::cout << "--------------------------------------------------------------\n";
 
   // Example for the reconstruction of a polynomial
@@ -127,7 +127,7 @@ int main() {
   }
 
   std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
-  std::cout << rec_poly.get_result();
+  //std::cout << rec_poly.get_result();
   std::cout << "--------------------------------------------------------------\n";
 
 /*  FFInt::set_new_prime(primes()[0]);

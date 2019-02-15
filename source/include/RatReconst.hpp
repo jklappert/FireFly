@@ -80,7 +80,7 @@ namespace firefly {
     std::tuple<int, uint32_t, std::vector<uint32_t>> feed_poly(int curr_deg,
                                                        uint32_t max_deg, std::unordered_map<uint32_t, PolyReconst>& coef,
                                                        PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num);
-    void combine_primes(std::pair<mpz_map, mpz_map>& tmp);
+    void combine_primes(ff_map& numerator, ff_map& denominator);
     void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
     void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
     bool first_run = true;
@@ -138,6 +138,8 @@ namespace firefly {
     void set_singular_system_vars();
     std::vector<bool> parsed_variables {std::vector<bool>(9, false)};//new
     int curr_parsed_variable = -1;//new
+    uint32_t sub_count_num = 0;//new
+    uint32_t sub_count_den = 0;//new
     std::vector<uint32_t> parse_vector(std::string& line, int number_of_parameters = -1);
     std::vector<mpz_class> parse_rational_number(std::string& line);
     void parse_prime_number(std::string& file_name);

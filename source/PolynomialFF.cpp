@@ -192,8 +192,7 @@ namespace firefly {
 
   bool PolynomialFF::zero() {
     if (coefs.empty()) return true;
-
-    //if(coef.size() == 1 && coef.begin()->second.n == 0) return true;
+    else if(coefs.size() == 1 && coefs.begin()->second.n == 0) return true;
     return false;
   }
 
@@ -296,14 +295,16 @@ namespace firefly {
 
           if (pow_poly.coefs.empty())
             pow_poly = PolynomialFF(n, tmp_pow_poly);
-          else 
+          else
             pow_poly = pow_poly * PolynomialFF(n, tmp_pow_poly);
         }
       }
 
       // since always all variables are shifted decr_power := zero_deg
-      if (!pow_poly.coefs.empty())
-        res += pow_poly * PolynomialFF(n, {{decr_power, mon.second}});
+      if (!pow_poly.coefs.empty()){
+        pow_poly *= mon.second;
+        res += pow_poly;
+      }
     }
     //std::cout << " Shift took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
     return res;
