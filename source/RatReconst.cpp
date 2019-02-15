@@ -349,13 +349,11 @@ namespace firefly {
                 // for the constant coefficient
                 if (i == 0 && first_run) {
                   std::vector<uint32_t> key = {(uint32_t) i, zi};
-                  uint32_t sub_count = sub_num[i].size();
-                  saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint32_t) i}], sub_count);
+                  saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint32_t) i}], sub_count_num);
                 } else {
                   if (curr_zi_order[zi - 2] < (uint32_t) i + 3) {
-                    uint32_t sub_count = sub_num[i].size();
                     std::vector<uint32_t> key = {(uint32_t) i, zi};
-                    saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint32_t) i}], sub_count);
+                    saved_num_num[curr_zi_order][key] = std::make_pair(num_coef[ {(uint32_t) i}], sub_count_num);
                   }
                 }
               }
@@ -382,9 +380,8 @@ namespace firefly {
 
               if ((int) i <= curr_deg_den) {
                 if (curr_zi_order[zi - 2] < (uint32_t) i + 3) {
-                  uint32_t sub_count = sub_den[i].size();
                   std::vector<uint32_t> key = {i, zi};
-                  saved_num_den[curr_zi_order][key] = std::make_pair(den_coef[ {i}], sub_count);
+                  saved_num_den[curr_zi_order][key] = std::make_pair(den_coef[ {i}], sub_count_den);
                 }
               }
             }
@@ -525,7 +522,7 @@ namespace firefly {
 
                   if (min_deg_den_vec.empty())
                     min_deg_den_vec = el.first;
-                  else if(a_grt_b(min_deg_den_vec, el.first))
+                  else if (a_grt_b(min_deg_den_vec, el.first))
                     min_deg_den_vec = el.first;
                 }
 
@@ -801,28 +798,20 @@ namespace firefly {
         // numerical values to reconstruct the coefficient
         if (curr_deg == 0) {
           while (!rec.is_new_prime()) {
-            FFInt sub_num = 0;
+            FFInt sub = 0;
 
-            if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size()) {
-              yis.emplace(yis.begin(), 1);
-              sub_num = sub_save[curr_deg][sub_count].calc(yis);
-              yis.erase(yis.begin());
-            }
+            if (curr_deg != (int)max_deg /*&& sub_count < sub_save[curr_deg].size()*/)
+              sub = get_particular_shift(tmp_zi_ord, curr_deg, is_num, sub_count);
 
-            rec.feed(yis, food - sub_num);
+            rec.feed(yis, food - sub);
           }
         } else {
-          FFInt sub_num = 0;
+          FFInt sub = 0;
 
-          if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size()) {
-            //std::clock_t begin = clock();
-            yis.emplace(yis.begin(), 1);
-            sub_num = sub_save[curr_deg][sub_count].calc(yis);
-            yis.erase(yis.begin());
-            //std::cout << "deg " << curr_deg << " sub count " << sub_count << " eval shift took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
-          }
+          if (curr_deg != (int)max_deg /*&& sub_count < sub_save[curr_deg].size()*/)
+            sub = get_particular_shift(tmp_zi_ord, curr_deg, is_num, sub_count);
 
-          rec.feed(yis, food - sub_num);
+          rec.feed(yis, food - sub);
           tmp_zi = rec.get_zi() + 1;
           tmp_zi_ord = rec.get_zi_order();
         }
@@ -838,7 +827,7 @@ namespace firefly {
         coef[curr_deg] = rec;
 
         if (curr_deg > 0) {
-          std::vector<uint32_t> zero_deg(n);
+          /*std::vector<uint32_t> zero_deg(n);
           PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
           for (int i = 0; i < curr_deg; i++) {
@@ -846,39 +835,52 @@ namespace firefly {
               sub_save[(uint32_t)i] = {zero_poly};
             else
               sub_save[(uint32_t)i].emplace_back(zero_poly);
-          }
+          }*/
 
           PolynomialFF res = rec.get_result_ff();
 
-          // check if the polynomial is zero which we then can omit for further
-          // calculations
-          if (!(res.coefs.size() == 1 && res.coefs.begin()->second == 0)) {
-            std::vector<FFInt> tmp_shift;
-            {
-              std::unique_lock<std::mutex> lock_statics(mutex_statics);
-              tmp_shift = shift;
-            }
-            PolynomialFF sub_pol = rec.get_result_ff().add_shift(tmp_shift);
-            sub_pol -= rec.get_result_ff();
+          if (!res.zero()) {
 
-            for (auto & el : sub_pol.coefs) {
-              int tmp_deg = 0;
+            // check if the polynomial is zero which we then can omit for further
+            // calculations
+            /*if (!(res.coefs.size() == 1 && res.coefs.begin()->second == 0)) {
+              std::vector<FFInt> tmp_shift;
+              {
+                std::unique_lock<std::mutex> lock_statics(mutex_statics);
+                tmp_shift = shift;
+              }
+              PolynomialFF sub_pol = rec.get_result_ff().add_shift(tmp_shift);
+              sub_pol -= rec.get_result_ff();
 
-              for (const auto & deg : el.first) tmp_deg += deg;
+              for (auto & el : sub_pol.coefs) {
+                int tmp_deg = 0;
 
-              if (tmp_deg < curr_deg) {
-                for (auto & tmp_sub : sub_save[(uint32_t)tmp_deg]) {
-                  tmp_sub += PolynomialFF(n, {{el.first, el.second}});
+                for (const auto & deg : el.first) tmp_deg += deg;
+
+                if (tmp_deg < curr_deg) {
+                  for (auto & tmp_sub : sub_save[(uint32_t)tmp_deg]) {
+                    tmp_sub += PolynomialFF(n, {{el.first, el.second}});
+                  }
                 }
               }
+            }*/
+
+            if (!is_num) {
+              sub_count_den++;
+              std::vector<uint32_t> start_order(n, 1);
+              calculate_shift(res, start_order, curr_deg, is_num);
+              const_den += saved_shifts_den[start_order][curr_deg][0];
+            } else
+              sub_count_num++;
+          } else {
+            if (is_num){
+              zero_degs_num.emplace((uint32_t)curr_deg);
+              sub_count_num++;
             }
-          }
-
-          //calculate_shift(rec.get_result_ff(), {1,1,1}, curr_deg);
-
-          if (!is_num) {
-            std::vector<FFInt> tmp_yis(n, 0);
-            const_den += sub_save[0].back().calc(tmp_yis);
+            else{
+              zero_degs_den.emplace((uint32_t)curr_deg);
+              sub_count_den++;
+            }
           }
         }
 
@@ -1542,6 +1544,12 @@ namespace firefly {
     sub_den = other.sub_den;
     parsed_variables = other.parsed_variables;
     curr_parsed_variable = other.curr_parsed_variable;
+    saved_shifts_num = other.saved_shifts_num;
+    saved_shifts_den = other.saved_shifts_den;
+    zero_degs_num = other.zero_degs_num;
+    zero_degs_den = other.zero_degs_den;
+    sub_count_num = other.sub_count_num;
+    sub_count_den = other.sub_count_den;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -1601,6 +1609,12 @@ namespace firefly {
     sub_den = std::move(other.sub_den);
     parsed_variables = std::move(other.parsed_variables);
     curr_parsed_variable = std::move(other.curr_parsed_variable);
+    saved_shifts_num = std::move(other.saved_shifts_num);
+    saved_shifts_den = std::move(other.saved_shifts_den);
+    zero_degs_num = std::move(other.zero_degs_num);
+    zero_degs_den = std::move(other.zero_degs_den);
+    sub_count_num = std::move(other.sub_count_num);
+    sub_count_den = std::move(other.sub_count_den);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -1661,6 +1675,12 @@ namespace firefly {
       sub_den = other.sub_den;
       parsed_variables = other.parsed_variables;
       curr_parsed_variable = other.curr_parsed_variable;
+    saved_shifts_num = other.saved_shifts_num;
+    saved_shifts_den = other.saved_shifts_den;
+    zero_degs_num = other.zero_degs_num;
+    zero_degs_den = other.zero_degs_den;
+    sub_count_num = other.sub_count_num;
+    sub_count_den = other.sub_count_den;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -1724,6 +1744,12 @@ namespace firefly {
       sub_den = std::move(other.sub_den);
       parsed_variables = std::move(other.parsed_variables);
       curr_parsed_variable = std::move(other.curr_parsed_variable);
+    saved_shifts_num = std::move(other.saved_shifts_num);
+    saved_shifts_den = std::move(other.saved_shifts_den);
+    zero_degs_num = std::move(other.zero_degs_num);
+    zero_degs_den = std::move(other.zero_degs_den);
+    sub_count_num = std::move(other.sub_count_num);
+    sub_count_den = std::move(other.sub_count_den);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);
@@ -1950,6 +1976,48 @@ namespace firefly {
     }
 
     return PolynomialFF(n, poly);
+  }
+
+  std::vector<FFInt> RatReconst::solve_uni_transposed_vandermonde(const std::vector<FFInt>& nums) {
+    uint32_t num_eqn = nums.size();
+    std::vector<FFInt> result(num_eqn);
+
+    // calculate base entries of Vandermonde matrix
+    std::vector<FFInt> vis;
+    vis.reserve(num_eqn);
+
+    for (uint32_t i = 0; i < num_eqn; i++) {
+      vis.emplace_back(FFInt(2).pow(i));
+    }
+
+    // Initialize the coefficient vector of the master polynomial
+    std::vector<FFInt> cis(num_eqn);
+
+    cis[num_eqn - 1] = -vis[0];
+
+    for (uint32_t i = 1; i < num_eqn; i++) {
+      for (uint32_t j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
+        cis[j] -= vis[i] * cis[j + 1];
+      }
+
+      cis[num_eqn - 1] -= vis[i];
+    }
+
+    for (uint32_t i = 0; i < num_eqn; i++) {
+      FFInt t = 1;
+      FFInt b = 1;
+      FFInt s = nums[num_eqn - 1];
+
+      for (int j = num_eqn - 1; j > 0; j--) {
+        b = cis[j] + vis[i] * b;
+        s += nums[j - 1] * b;
+        t = vis[i] * t + b;
+      }
+
+      result[i] = s / t / vis[i];
+    }
+
+    return result;
   }
 
   FFInt RatReconst::get_rand_zi(uint32_t zi, uint32_t order) {
@@ -2387,36 +2455,83 @@ namespace firefly {
     for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
   }
 
-  void RatReconst::calculate_shift(const PolynomialFF& poly, const std::vector<uint32_t>& zi_order, int deg) {
-    std::clock_t begin = clock();
-    std::vector<std::pair<FFInt, uint32_t>> nums;
+  void RatReconst::calculate_shift(const PolynomialFF& poly, const std::vector<uint32_t>& zi_order, int deg, bool is_num) {
+    //std::clock_t begin = clock();
+    std::vector<FFInt> nums;
     nums.reserve(deg + 1);
-    std::vector<std::vector<uint32_t>> tmp_degs;
-    tmp_degs.reserve(deg + 1);
-
-    for(uint32_t i = 0; i <= deg; i++){
-      std::vector<uint32_t> tmp_deg = {i};
-      tmp_degs.emplace_back(std::move(tmp_deg));
-    }
-
+    std::vector<std::vector<FFInt>> tmp_coef_mat {};
     std::vector<FFInt> yis = get_rand_zi_vec(zi_order);
     yis.emplace(yis.begin(), 1);
 
-    for(int i = 0; i <= deg; i++){
-      FFInt tmp_t = get_rand();
-      std::vector<FFInt> tmp_yis (n);
+    for (uint32_t i = 0; i <= deg; i++) {
+      FFInt tmp_t = FFInt(2).pow(i + 1);
+      std::vector<FFInt> tmp_yis(n);
       {
         std::unique_lock<std::mutex> lock(mutex_statics);
-        for(int j = 0; j < n; j++){
-          tmp_yis[j] = yis[j]*tmp_t + shift[j];
+
+        for (int j = 0; j < n; j++) {
+          tmp_yis[j] = yis[j] * tmp_t + shift[j];
         }
       }
-      nums.emplace_back(std::make_pair(poly.calc(tmp_yis), 0));
+
+      nums.emplace_back(poly.calc(tmp_yis));
     }
 
-    for (const auto& el : solve_transposed_vandermonde(tmp_degs, nums).coefs){
-      saved_shifts[zi_order][(uint32_t) deg][el.first[0]] = el.second;
+    std::vector<FFInt> res = solve_uni_transposed_vandermonde(nums);
+
+    for (uint32_t i = 0; i < deg; i++) {
+      if (is_num)
+        saved_shifts_num[zi_order][(uint32_t) deg][i] = res[i];
+      else
+        saved_shifts_den[zi_order][(uint32_t) deg][i] = res[i];
     }
-    std::cout << " numeircal shift took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+
+    //std::cout << " numeircal shift took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+  }
+
+  FFInt RatReconst::get_particular_shift(const std::vector<uint32_t>& zi_order, int deg, bool is_num, uint32_t sub_count) {
+    FFInt sub = 0;
+
+    if (is_num) {
+      if (saved_shifts_num.find(zi_order) != saved_shifts_num.end()) {
+        for (int i = deg + 1; i <= max_deg_num - sub_count; i++) {
+          if (zero_degs_num.find((uint32_t)i) == zero_degs_num.end()) {
+            if (saved_shifts_num[zi_order].find((uint32_t)i) == saved_shifts_num[zi_order].end())
+              calculate_shift(coef_n[i].get_result_ff(), zi_order, i, is_num);
+
+            sub += saved_shifts_num[zi_order][i][deg];
+          }
+        }
+      } else {
+        for (int i = deg + 1; i <= max_deg_num - sub_count; i++) {
+          if (zero_degs_num.find((uint32_t)i) == zero_degs_num.end()) {
+            calculate_shift(coef_n[i].get_result_ff(), zi_order, i, is_num);
+
+            sub += saved_shifts_num[zi_order][i][deg];
+          }
+        }
+      }
+    } else {
+      if (saved_shifts_den.find(zi_order) != saved_shifts_den.end()) {
+        for (int i = deg + 1; i <= max_deg_den - sub_count; i++) {
+          if (zero_degs_den.find((uint32_t)i) == zero_degs_den.end()) {
+            if (saved_shifts_den[zi_order].find((uint32_t)i) == saved_shifts_den[zi_order].end())
+              calculate_shift(coef_d[i].get_result_ff(), zi_order, i, is_num);
+
+            sub += saved_shifts_den[zi_order][i][deg];
+          }
+        }
+      } else {
+        for (int i = deg + 1; i <= max_deg_den - sub_count; i++) {
+          if (zero_degs_den.find((uint32_t)i) == zero_degs_den.end()) {
+            calculate_shift(coef_d[i].get_result_ff(), zi_order, i, is_num);
+
+            sub += saved_shifts_den[zi_order][i][deg];
+          }
+        }
+      }
+    }
+
+    return sub;
   }
 }

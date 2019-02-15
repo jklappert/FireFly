@@ -365,6 +365,7 @@ namespace firefly {
 
   ff_map PolyReconst::construct_canonical(const uint32_t tmp_zi, std::vector<PolynomialFF>& ai) {
     if (ai.size() == 1) return ai[0].coefs;
+    if (ai.size() == 0) return {{std::vector<uint32_t> (n,0), 0}};
 
     return (ai[0] + iterate_canonical(tmp_zi, 1, ai)).coefs;
   }

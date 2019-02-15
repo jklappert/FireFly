@@ -77,14 +77,14 @@ int main() {
     kk++;
     count++;
 
-    //FFInt num = yis[0].pow(30)*yis[1].pow(30)*yis[2].pow(30)*yis[3].pow(30) + yis[0].pow(25)*yis[1].pow(25)*yis[2].pow(25)*yis[3].pow(25);
+    //FFInt num = yis[0].pow(25)*yis[1].pow(25)*yis[2].pow(25)*yis[3].pow(25) + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
     // Feed the algorithm with the current zi_order
     rec.feed(t, num, rec.get_zi_order(), primes_used);
     rec.interpolate();
   }
 
   std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
-  std::cout << rec.get_result();
+  //std::cout << rec.get_result();
   std::cout << "--------------------------------------------------------------\n";
 
   // Example for the reconstruction of a polynomial

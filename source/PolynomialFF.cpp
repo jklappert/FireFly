@@ -191,9 +191,10 @@ namespace firefly {
   }
 
   bool PolynomialFF::zero() {
-    if (coefs.empty()) return true;
-
-    //if(coef.size() == 1 && coef.begin()->second.n == 0) return true;
+    if (coefs.empty())
+      return true;
+    else if(coefs.size() == 1 && coefs.begin()->second == 0)
+      return true;
     return false;
   }
 

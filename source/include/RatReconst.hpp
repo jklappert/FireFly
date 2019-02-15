@@ -2,6 +2,7 @@
 
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
+#include <unordered_set>
 
 namespace firefly {
 
@@ -123,6 +124,7 @@ namespace firefly {
     void check_for_solved_degs(std::vector<uint32_t>& uni_degs, const bool is_num);
     PolynomialFF solve_transposed_vandermonde(std::vector<std::vector<uint32_t>>& degs,
                                               const std::vector<std::pair<FFInt, uint32_t>>& nums);
+    std::vector<FFInt> solve_uni_transposed_vandermonde(const std::vector<FFInt>& nums);
     void set_new_curr_deg_num_singular(uint32_t key);
     void set_new_curr_deg_den_singular(uint32_t key);
     polff_map solved_degs_num {};
@@ -136,13 +138,19 @@ namespace firefly {
     static bool need_prime_shift;
     static bool set_singular_system;
     void set_singular_system_vars();
-    std::vector<bool> parsed_variables {std::vector<bool>(9, false)};//new
+    std::vector<bool> parsed_variables {std::vector<bool>(9, false)};
     int curr_parsed_variable = -1;//new
     std::vector<uint32_t> parse_vector(std::string& line, int number_of_parameters = -1);
     std::vector<mpz_class> parse_rational_number(std::string& line);
     void parse_prime_number(std::string& file_name);
-    shift_map saved_shifts {};
-    void calculate_shift(const PolynomialFF& poly, const std::vector<uint32_t>& zi_order, int deg);
+    shift_map saved_shifts_num {}; //new
+    shift_map saved_shifts_den {}; //new
+    std::unordered_set<uint32_t> zero_degs_num {}; //new
+    std::unordered_set<uint32_t> zero_degs_den {}; //new
+    uint32_t sub_count_num = 0;//new
+    uint32_t sub_count_den = 0;//new
+    FFInt get_particular_shift(const std::vector<uint32_t>& zi_order, int deg, bool is_num, uint32_t sub_count);
+    void calculate_shift(const PolynomialFF& poly, const std::vector<uint32_t>& zi_order, int deg, bool is_num);
     enum save_variables {COMBINED_PRIME, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
     MIN_DEG_DEN_VEC, G_NI, G_DI, COMBINED_NI, COMBINED_DI};
   };

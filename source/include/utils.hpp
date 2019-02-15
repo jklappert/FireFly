@@ -40,7 +40,7 @@ namespace firefly {
    *
    */
   std::vector<FFInt> solve_gauss_system(uint32_t num_eqn,
-                                 std::vector<std::vector<FFInt>>& coef_mat);
+                                        std::vector<std::vector<FFInt>>& coef_mat);
 
   bool a_grt_b(const std::vector<uint>& a, const std::vector<uint>& b);
 }
