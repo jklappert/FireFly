@@ -834,6 +834,7 @@ namespace firefly {
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
                 tmp_shift = shift;
               }
+
               PolynomialFF sub_pol = rec.get_result_ff().add_shift(tmp_shift);
 
               for (auto & el : sub_pol.coefs) {

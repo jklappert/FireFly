@@ -34,6 +34,7 @@ namespace firefly {
     std::vector<uint32_t> min_degree {};
     std::vector<uint32_t> max_degree {};
     FFInt bin_coef(uint32_t n, uint32_t k);
+    PolynomialFF mul_shift(const ff_map& a, const ff_map& b, uint32_t curr_deg);
   };
   PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b);
   PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b);

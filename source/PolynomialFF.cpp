@@ -251,7 +251,7 @@ namespace firefly {
 
   PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b) {
     ff_map new_monomials;
-    new_monomials.reserve(a.coefs.size() + b.coefs.size());
+    new_monomials.reserve(a.coefs.size()*b.coefs.size() + 1);
 
     for (const auto & coef_a : a.coefs) {
       for (const auto & coef_b : b.coefs) {
@@ -264,10 +264,7 @@ namespace firefly {
                          coef_b.first.begin(), new_deg.begin(),
                          std::plus<uint32_t>());
 
-          if (new_monomials.find(new_deg) == new_monomials.end())
-            new_monomials.emplace(std::make_pair(new_deg, new_coef));
-          else
-            new_monomials[new_deg] += new_coef;
+          new_monomials.emplace(std::make_pair(new_deg, new_coef));
         }
       }
     }
@@ -275,6 +272,26 @@ namespace firefly {
     return PolynomialFF(a.n, new_monomials);
   }
 
+  PolynomialFF PolynomialFF::mul_shift(const ff_map& a, const ff_map& b, uint32_t curr_deg) {
+    ff_map new_monomials;
+    new_monomials.reserve(a.size()*b.size() + 1);
+
+    for (const auto & coef_a : a) {
+      for (const auto & coef_b : b) {
+
+        FFInt new_coef = coef_a.second * coef_b.second;
+
+        if (new_coef != 0) {
+          std::vector<uint32_t> new_deg  = coef_a.first;
+          new_deg[curr_deg] = coef_b.first[curr_deg];
+
+          new_monomials.emplace(std::make_pair(new_deg, new_coef));
+        }
+      }
+    }
+
+    return PolynomialFF(n, new_monomials);
+  }
 
   PolynomialFF PolynomialFF::add_shift(const std::vector<FFInt>& shift) {
     if (shift.size() != n)
@@ -282,10 +299,10 @@ namespace firefly {
 
     PolynomialFF res;
     res.n = n;
-            //std::clock_t begin1 = clock();
 
     for (auto & mon : coefs) {
       PolynomialFF pow_poly;
+      pow_poly.n = n;
       std::vector<uint32_t> powers = mon.first;
 
       for (uint32_t j = 0; j < n; ++j) {
@@ -313,22 +330,20 @@ namespace firefly {
           if (pow_poly.coefs.empty()) {
             pow_poly = PolynomialFF(n, tmp_pow_poly);
             pow_poly *= mon.second;
-          } else{
-            //std::clock_t begin2 = clock();
-            pow_poly = pow_poly * PolynomialFF(n, tmp_pow_poly);
-            //std::cout << " mult took : " << float(clock() - begin2) / CLOCKS_PER_SEC << "\n";
-          }
+          } else
+            pow_poly = mul_shift(pow_poly.coefs, tmp_pow_poly, j);
         }
       }
 
       // since always all variables are shifted decr_power := zero_deg
       if (!pow_poly.coefs.empty()) {
-        res += pow_poly;
+        //std::clock_t begin3 = clock();
+        if(res.coefs.empty())
+          res.coefs = pow_poly.coefs;
+        else
+          res += pow_poly;
       }
     }
-            //std::cout << " shift took : " << float(clock() - begin1) / CLOCKS_PER_SEC << "\n";
-//std::exit(-1);
-    //std::cout << " shift took : " << float(clock() - begin2) / CLOCKS_PER_SEC << "\n";
 
     return res;
   }
