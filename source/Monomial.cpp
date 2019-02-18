@@ -25,7 +25,7 @@ namespace firefly {
     uint32_t deg1 = 0;
     uint32_t deg2 = 0;
 
-    for (uint32_t i = 0; i < (uint32_t) powers.size(); i++) {
+    for (uint32_t i = 0; i < powers.size(); ++i) {
       deg1 += powers[i];
       deg2 += m2.powers[i];
     }
@@ -41,7 +41,7 @@ namespace firefly {
   Monomial Monomial::operator*(const Monomial& b) {
     Monomial a = *this;
     a.coef = a.coef*b.coef;
-    for(uint32_t i = 0; i < (uint32_t) powers.size(); i++){
+    for(uint32_t i = 0; i < powers.size(); ++i){
       a.powers[i] += b.powers[i];
     }
     return a;

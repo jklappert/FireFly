@@ -25,7 +25,7 @@ namespace firefly {
     deg = deg_inp;
     with_rat_reconst = with_rat_reconst_inp;
 
-    for (uint32_t i = 1; i <= n; i++) {
+    for (uint32_t i = 1; i <= n; ++i) {
       std::vector<FFInt> yi;
       std::vector<PolynomialFF> ai;
       ais.emplace(std::make_pair(i, std::move(ai)));
@@ -41,7 +41,7 @@ namespace firefly {
     if (rand_zi.empty() || force) {
       rand_zi.clear();
 
-      for (uint32_t i = 1; i <= n; i ++) {
+      for (uint32_t i = 1; i <= n; ++i) {
         rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
         rand_zi.emplace(std::make_pair(std::make_pair(i, 1), anchor_points[i - 1]));
       }
@@ -60,7 +60,7 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-      for (uint32_t j = 0; j < n; j++) {
+      for (uint32_t j = 0; j < n; ++j) {
         rand_zi.emplace(std::make_pair(j + 1, curr_zi_order[j]), new_yis[j]);
       }
     }
@@ -96,7 +96,7 @@ namespace firefly {
 
           solved_degs.clear();
 
-          for (uint32_t i = 1; i <= n; i++) {
+          for (uint32_t i = 1; i <= n; ++i) {
             ais[i].clear();
           }
 
@@ -166,7 +166,7 @@ namespace firefly {
             std::vector<uint32_t> deg_vec = el.first;
             FFInt coef_num = el.second;
 
-            for (uint32_t tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+            for (uint32_t tmp_zi = 1; tmp_zi < zi; ++tmp_zi) {
               // curr_zi_ord starts at 1, thus we need to subtract 1 entry
               std::unique_lock<std::mutex> lock_statics(mutex_statics);
               coef_num *= rand_zi[std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1])].pow(deg_vec[tmp_zi - 1]);
@@ -192,7 +192,7 @@ namespace firefly {
             // increase all zi order of the lower stages by one
             std::unique_lock<std::mutex> lock(mutex_status);
 
-            for (uint32_t tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+            for (uint32_t tmp_zi = 1; tmp_zi < zi; ++tmp_zi) {
               curr_zi_order[tmp_zi - 1] ++;
             }
           }
@@ -234,7 +234,7 @@ namespace firefly {
             nums.reserve(rec_degs.size());
 
             if (rec_degs.size() == 0 && zi != n) {
-              for (uint32_t tmp_zi = zi + 1; tmp_zi <= n; tmp_zi++) {
+              for (uint32_t tmp_zi = zi + 1; tmp_zi <= n; ++tmp_zi) {
                 ais[tmp_zi].emplace_back(PolynomialFF(n, pol_ff));
               }
 
@@ -298,7 +298,7 @@ namespace firefly {
       }
 
       if (!with_rat_reconst) {
-        for (uint32_t tmp_zi = 1; tmp_zi <= n; tmp_zi ++) {
+        for (uint32_t tmp_zi = 1; tmp_zi <= n; ++tmp_zi) {
           auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1]);
           std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
@@ -393,7 +393,7 @@ namespace firefly {
     PolynomialFF gy(n, gi_ffi);
     std::vector<FFInt> chosen_yi(n);
 
-    for (uint32_t i = 1; i <= n; i++) {
+    for (uint32_t i = 1; i <= n; ++i) {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
       chosen_yi[i - 1] = rand_zi[std::make_pair(i, 1)];
@@ -417,7 +417,7 @@ namespace firefly {
     for (const auto & el : rec_degs) {
       FFInt vi = 1;
 
-      for (uint32_t tmp_zi = 1; tmp_zi < zi; tmp_zi++) {
+      for (uint32_t tmp_zi = 1; tmp_zi < zi; ++tmp_zi) {
         // curr_zi_ord starts at 1, thus we need to subtract 1 entry
         std::unique_lock<std::mutex> lock_statics(mutex_statics);
         vi *= rand_zi.at(std::make_pair(tmp_zi, el[tmp_zi - 1]));
@@ -435,8 +435,8 @@ namespace firefly {
     //      =  c_0 + c_1*Z + ... + Z^n
     cis[num_eqn - 1] = -vis[0];
 
-    for (uint32_t i = 1; i < num_eqn; i++) {
-      for (uint32_t j = num_eqn - 1 - i; j < num_eqn - 1; j++) {
+    for (uint32_t i = 1; i < num_eqn; ++i) {
+      for (uint32_t j = num_eqn - 1 - i; j < num_eqn - 1; ++j) {
         cis[j] -= vis[i] * cis[j + 1];
       }
 
@@ -448,7 +448,7 @@ namespace firefly {
     // and supplied with a denominator (since all vi should be different,
     // there is no additional check if a coefficient in synthetical division
     // leads to a vanishing denominator)
-    for (uint32_t i = 0; i < num_eqn; i++) {
+    for (uint32_t i = 0; i < num_eqn; ++i) {
       FFInt t = 1;
       FFInt b = 1;
       FFInt s = nums[num_eqn - 1];
@@ -465,7 +465,7 @@ namespace firefly {
     // Bring result in canonical form
     ff_map poly;
 
-    for (uint32_t i = 0; i < num_eqn; i ++) {
+    for (uint32_t i = 0; i < num_eqn; ++i) {
       poly.emplace(std::make_pair(rec_degs[i], result[i]));
     }
 
@@ -478,7 +478,7 @@ namespace firefly {
 
     rand_zi.clear();
 
-    for (uint32_t tmp_zi = 1; tmp_zi <= n; tmp_zi ++) {
+    for (uint32_t tmp_zi = 1; tmp_zi <= n; ++tmp_zi) {
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), get_rand()));
     }
@@ -493,7 +493,7 @@ namespace firefly {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> yis {};
 
-    for (uint32_t i = 0; i < n; i++) {
+    for (uint32_t i = 0; i < n; ++i) {
       yis.emplace_back(rand_zi.at(std::make_pair(i + 1, orders[i])));
     }
 

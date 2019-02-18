@@ -13,7 +13,7 @@ namespace firefly {
     for (const auto & term : coefs) {
       FFInt product(1);
 
-      for (uint32_t i = 0; i < n; i++) {
+      for (uint32_t i = 0; i < n; ++i) {
         product *= x[i].pow(term.first[i]);
       }
 
@@ -30,7 +30,7 @@ namespace firefly {
     for (const auto & term : coefs) {
       FFInt product(1);
 
-      for (uint32_t i = 0; i < n_m_1; i++) {
+      for (uint32_t i = 0; i < n_m_1; ++i) {
         product *= x[i].pow(term.first[i + 1]);
       }
 
@@ -109,7 +109,6 @@ namespace firefly {
     return *this;
   }
 
-  //todo can be optimized using an unordered_map
   PolynomialFF& PolynomialFF::operator+=(const PolynomialFF& b) {
     for (const auto & coef_b : b.coefs) {
       if (coefs.find(coef_b.first) == coefs.end())
@@ -181,7 +180,7 @@ namespace firefly {
 
     for (const auto& coef_ : coefs) {
       std::vector<uint32_t> new_element = coef_.first;
-      new_element[zi - 1] ++;
+      ++new_element[zi - 1];
       new_coefs.emplace(std::make_pair(new_element, coef_.second));
     }
 
@@ -280,15 +279,15 @@ namespace firefly {
     if (shift.size() != n)
       throw std::runtime_error("Mismatch in sizes of the shift and variables!");
 
-    //std::clock_t begin = clock();
     PolynomialFF res;
     res.n = n;
+    //std::clock_t begin2 = clock();
 
     for (auto & mon : coefs) {
       PolynomialFF pow_poly;
       std::vector<uint32_t> powers = mon.first;
 
-      for (uint32_t j = 0; j < n; j++) {
+      for (uint32_t j = 0; j < n; ++j) {
         uint32_t deg = powers[j];
 
         // Calculate all terms originating from (x - a)^deg
@@ -298,7 +297,7 @@ namespace firefly {
           ff_map tmp_pow_poly;
           std::vector<std::vector<uint32_t>> tmp_powers(deg + 1, std::vector<uint32_t> (n));
 
-          for (uint32_t k = 0; k <= deg; k++) {
+          for (uint32_t k = 0; k <= deg; ++k) {
             tmp_powers[k][j] = deg - k;
 
             if (k == 0) {
@@ -323,7 +322,8 @@ namespace firefly {
         res += pow_poly;
       }
     }
-    //std::cout << " Shift took : " << float(clock() - begin) / CLOCKS_PER_SEC << "\n";
+        //std::cout << " shift took : " << float(clock() - begin2) / CLOCKS_PER_SEC << "\n";
+
     return res;
   }
 

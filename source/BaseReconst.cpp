@@ -140,16 +140,8 @@ namespace firefly {
     ff_map gi_ffi;
 
     for (const auto & g_i : ri) {
-      mpz_class tmp(g_i.second.numerator % FFInt::p);
-
-      if (tmp < 0) tmp = tmp + FFInt::p;
-
-      FFInt n(std::stoull(tmp.get_str()));
-
-      tmp = g_i.second.denominator % FFInt::p;
-
-      FFInt d(std::stoull(tmp.get_str()));
-
+      FFInt n(g_i.second.numerator);
+      FFInt d(g_i.second.denominator);
       gi_ffi.emplace(std::make_pair(g_i.first, n / d));
     }
 

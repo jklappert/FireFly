@@ -57,14 +57,14 @@ int main() {
     // Add the shift to the scaling variable
     FFInt z1 = t + shift[0];
 
-    for (uint j = 2; j <= n; j++) {
+    for (uint j = 2; j <= n; ++j) {
       t_yis[j - 2] = t * rec.get_rand_zi(j, rec.get_zi_order()[j - 2]) + shift[j - 1];
     }
 
     std::vector<FFInt> yis(n);
     yis[0] = z1;
 
-    for (uint j = 1; j < n; j++) {
+    for (uint j = 1; j < n; ++j) {
       yis[j] = t_yis[j - 1];
     }
 
@@ -74,10 +74,10 @@ int main() {
     FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
     //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
-    kk++;
-    count++;
+    ++kk;
+    ++count;
 
-    //FFInt num = yis[0].pow(25)*yis[1].pow(25)*yis[2].pow(25)*yis[3].pow(25) + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
+    //FFInt num = yis[0].pow(25)*yis[1].pow(25)*yis[2].pow(25)*yis[3].pow(25);// + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
     // Feed the algorithm with the current zi_order
     rec.feed(t, num, rec.get_zi_order(), primes_used);
     rec.interpolate();
@@ -119,8 +119,8 @@ int main() {
 
     FFInt num = pol_n_eq_3(yis);
 
-    kk++;
-    count++;
+    ++kk;
+    ++count;
 
     rec_poly.feed(num, rec_poly.get_zi_order(), primes_used);
     rec_poly.interpolate();

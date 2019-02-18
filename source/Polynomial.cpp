@@ -40,7 +40,7 @@ namespace firefly {
     for (const auto & mono : coefs) {
       str += mono.coef.string() + "*";
 
-      for (uint32_t i = 0; i < mono.powers.size(); i++) {
+      for (uint32_t i = 0; i < mono.powers.size(); ++i) {
         if (mono.powers[i] > 1) {
           str += symbols[i] + "^" + std::to_string(mono.powers[i]) + "*";
         } else if (mono.powers[i] == 1) {
@@ -93,12 +93,7 @@ namespace firefly {
     uint32_t n = coefs[0].powers.size();
 
     for (auto & coef : coefs) {
-      mpz_class numerator = coef.coef.numerator % FFInt::p;
-
-      if (numerator < 0) numerator += FFInt::p;
-
-      mpz_class denominator = coef.coef.denominator % FFInt::p;
-      FFInt coef_ff = FFInt(std::stoull(numerator.get_str())) / FFInt(std::stoull(denominator.get_str()));
+      FFInt coef_ff = FFInt(coef.coef.numerator) / FFInt(coef.coef.denominator);
 
       if (coef_ff.n > 0)
         coefs_ff.emplace(std::make_pair(coef.powers, coef_ff));
