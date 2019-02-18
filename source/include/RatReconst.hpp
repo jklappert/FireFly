@@ -18,7 +18,7 @@ namespace firefly {
     RatReconst(RatReconst && other);
     RatReconst& operator=(const RatReconst& other);
     RatReconst& operator=(RatReconst && other);
-    void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t& fed_prime);
+    void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime);
     RationalFunction get_result();
     void interpolate();
     void disable_shift();
@@ -138,9 +138,9 @@ namespace firefly {
     static bool set_singular_system;
     void set_singular_system_vars();
     std::vector<bool> parsed_variables {std::vector<bool>(9, false)};
-    int curr_parsed_variable = -1;//new
-    uint32_t sub_count_num = 0;//new
-    uint32_t sub_count_den = 0;//new
+    int curr_parsed_variable = -1;
+    uint32_t sub_count_num = 0;
+    uint32_t sub_count_den = 0;
     std::vector<uint32_t> parse_vector(std::string& line, int number_of_parameters = -1);
     std::vector<mpz_class> parse_rational_number(std::string& line);
     void parse_prime_number(std::string& file_name);

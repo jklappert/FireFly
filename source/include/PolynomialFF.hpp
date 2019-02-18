@@ -25,7 +25,7 @@ namespace firefly {
     FFInt calc_n_m_1(std::vector<FFInt> x) const;
     ff_map coefs {};
     bool zero();
-    PolynomialFF homogenize(uint32_t degree);
+    PolynomialFF homogenize(const uint32_t degree);
     PolynomialFF mul(const uint32_t zi);
     std::vector<uint32_t> min_deg();
     std::vector<uint32_t> max_deg();

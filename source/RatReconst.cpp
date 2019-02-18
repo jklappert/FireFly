@@ -22,7 +22,6 @@ namespace firefly {
 
     combined_prime = FFInt::p;
 
-    //std::srand(std::time(nullptr));
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
@@ -41,7 +40,7 @@ namespace firefly {
     if (n > 1) {
       curr_zi_order = std::vector<uint32_t> (n - 1, 1);
       lock_status.unlock();
-      // add a zero to both polynomials to do arithmetic
+      // add a zero to both polynomials to do arithmetics
       ff_map zero_deg {};
       zero_deg.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
       solved_num = PolynomialFF(n, zero_deg);
@@ -58,7 +57,7 @@ namespace firefly {
     }
   }
 
-  void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t& fed_prime) {
+  void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
 
     if (!done && fed_prime == prime_number)

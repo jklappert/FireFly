@@ -123,7 +123,7 @@ namespace firefly {
   PolynomialFF operator*(const PolynomialFF& a, const FFInt& ffint) {
     ff_map new_coefs = a.coefs;
 
-    for (auto& el : new_coefs) {
+    for (auto & el : new_coefs) {
       el.second *= ffint;
     }
 
@@ -135,7 +135,7 @@ namespace firefly {
     ff_map new_coefs = a.coefs;
     FFInt inv = 1 / ffint;
 
-    for (auto& el : new_coefs) {
+    for (auto & el : new_coefs) {
       el.second *= inv;
     }
 
@@ -143,7 +143,7 @@ namespace firefly {
   }
 
   PolynomialFF& PolynomialFF::operator*=(const FFInt& ffint) {
-    for (auto& el : coefs) {
+    for (auto & el : coefs) {
       el.second *= ffint;
     }
 
@@ -153,7 +153,7 @@ namespace firefly {
   PolynomialFF& PolynomialFF::operator/=(const FFInt& ffint) {
     FFInt inv = 1 / ffint;
 
-    for (auto& el : coefs) {
+    for (auto & el : coefs) {
       el.second *= inv;
     }
 
@@ -178,7 +178,7 @@ namespace firefly {
   PolynomialFF PolynomialFF::mul(const uint32_t zi) {
     ff_map new_coefs {};
 
-    for (const auto& coef_ : coefs) {
+    for (const auto & coef_ : coefs) {
       std::vector<uint32_t> new_element = coef_.first;
       ++new_element[zi - 1];
       new_coefs.emplace(std::make_pair(new_element, coef_.second));
@@ -209,8 +209,9 @@ namespace firefly {
   bool PolynomialFF::zero() {
     if (coefs.empty())
       return true;
-    else if(coefs.size() == 1 && coefs.begin()->second == 0)
+    else if (coefs.size() == 1 && coefs.begin()->second == 0)
       return true;
+
     return false;
   }
 
@@ -281,7 +282,7 @@ namespace firefly {
 
     PolynomialFF res;
     res.n = n;
-    //std::clock_t begin2 = clock();
+            //std::clock_t begin1 = clock();
 
     for (auto & mon : coefs) {
       PolynomialFF pow_poly;
@@ -309,20 +310,25 @@ namespace firefly {
             }
           }
 
-          if (pow_poly.coefs.empty())
+          if (pow_poly.coefs.empty()) {
             pow_poly = PolynomialFF(n, tmp_pow_poly);
-          else
+            pow_poly *= mon.second;
+          } else{
+            //std::clock_t begin2 = clock();
             pow_poly = pow_poly * PolynomialFF(n, tmp_pow_poly);
+            //std::cout << " mult took : " << float(clock() - begin2) / CLOCKS_PER_SEC << "\n";
+          }
         }
       }
 
       // since always all variables are shifted decr_power := zero_deg
-      if (!pow_poly.coefs.empty()){
-        pow_poly *= mon.second;
+      if (!pow_poly.coefs.empty()) {
         res += pow_poly;
       }
     }
-        //std::cout << " shift took : " << float(clock() - begin2) / CLOCKS_PER_SEC << "\n";
+            //std::cout << " shift took : " << float(clock() - begin1) / CLOCKS_PER_SEC << "\n";
+//std::exit(-1);
+    //std::cout << " shift took : " << float(clock() - begin2) / CLOCKS_PER_SEC << "\n";
 
     return res;
   }

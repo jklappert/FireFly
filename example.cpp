@@ -9,7 +9,7 @@ using namespace firefly;
 
 int main() {
   // Example for the reconstruction of a rational function
-  uint n = 4;
+  uint n = 5;
   FFInt::set_new_prime(primes()[0]);
   RatReconst rec(n);
   //rec.set_tag("gghh");
@@ -71,13 +71,13 @@ int main() {
     //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
     //FFInt num = n_eq_1(z1); // example for n = 1
     //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-    FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+    //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
     //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
     ++kk;
     ++count;
 
-    //FFInt num = yis[0].pow(25)*yis[1].pow(25)*yis[2].pow(25)*yis[3].pow(25);// + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
+    FFInt num = yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20)*yis[4].pow(20);// + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
     // Feed the algorithm with the current zi_order
     rec.feed(t, num, rec.get_zi_order(), primes_used);
     rec.interpolate();
