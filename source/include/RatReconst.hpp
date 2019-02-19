@@ -30,6 +30,7 @@ namespace firefly {
     bool need_shift();
     void set_tag(std::string tag_);
     void start_from_saved_file(std::string file_name);
+    void scan_for_sparsest_shift();
   private:
     void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord);
     FFInt comp_ai(int i, int ip, const FFInt& num);
