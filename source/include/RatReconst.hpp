@@ -34,6 +34,7 @@ namespace firefly {
     void scan_for_sparsest_shift();
     void set_zi_shift(const std::vector<uint32_t>& shifted_zis);
     bool is_shift_working();
+    void accept_shift();
   private:
     void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord);
     FFInt comp_ai(int i, int ip, const FFInt& num);
