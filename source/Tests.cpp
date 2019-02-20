@@ -1,16 +1,6 @@
 #include "Tests.hpp"
 
 namespace firefly {
-  void black_box(std::vector<FFInt>& result, std::vector<FFInt> values) {
-    result.clear();
-    result.emplace_back(singular_solver(values));
-    result.emplace_back(n_eq_1(values[0]));
-//    result.emplace_back(n_eq_4(values));
-//    result.emplace_back(gghh(values));
-//    result.emplace_back(pol_n_eq_3(values));
-//    result.emplace_back(ggh(values));
-  }
-
   //example for gg->HH large interpolation problem augmented with large coefficients
   FFInt gghh(std::vector<FFInt> yis) {
     FFInt z1 = yis[0];

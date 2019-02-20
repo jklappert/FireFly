@@ -18,6 +18,7 @@ namespace firefly {
     std::vector<RationalFunction> get_result_rf();
     std::vector<Polynomial> get_result_p();
     enum reconst_type {POLY, RAT};
+    void black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values);
   private:
     uint32_t n;
     uint32_t thr_n;

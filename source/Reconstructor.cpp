@@ -1,5 +1,4 @@
 #include "Reconstructor.hpp"
-#include "Tests.hpp"
 
 namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t mode_): n(n_), thr_n(thr_n_), tp(thr_n) {
@@ -30,7 +29,7 @@ namespace firefly {
         cond.wait(lock);
       }
 
-      for (auto it = probes.begin(); it != probes.end(); it++) {
+      for (auto it = probes.begin(); it != probes.end(); ++it) {
         if ((std::get<2>(*it)).wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
           t = std::get<0>(*it);
           zi_order = std::get<1>(*it);
