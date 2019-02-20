@@ -100,16 +100,16 @@ namespace firefly {
 
       // Compare if the food is the expected food; if not, store it for later use
       if (feed_zi_ord == curr_zi_order) {
-        {
-          std::unique_lock<std::mutex> lock_statics(mutex_statics);
-
-          if (!is_singular_system && set_singular_system)
-            set_singular_system_vars();
-        }
-
         // first check if we are done. If not start the reconstruction again using
         // the chinese remainder theorem in combining the previous results
         if (new_prime) {
+          {
+            std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
+            if (!is_singular_system && set_singular_system)
+              set_singular_system_vars();
+          }
+
           ti.emplace_back(new_ti);
 
           if (rec_rat_coef()) {
@@ -281,10 +281,10 @@ namespace firefly {
             if (max_deg_den > 0)
               curr_deg_den = max_deg_den;
 
-            FFInt equializer = FFInt(1) / denominator.coefs[denominator.min_deg()];
+            FFInt equalizer = FFInt(1) / denominator.coefs[denominator.min_deg()];
 
-            canonical.first = (numerator * equializer).coefs;
-            canonical.second = (denominator * equializer).coefs;
+            canonical.first = (numerator * equalizer).coefs;
+            canonical.second = (denominator * equalizer).coefs;
 
             // set number of equations needed for univariate rational function
             // reconstruction needed for multivariate polynomial feed
@@ -510,8 +510,16 @@ namespace firefly {
                 terminator = FFInt(1) - const_den;
                 dummy_map.emplace(std::make_pair(std::vector<uint32_t> (n, 0), terminator));
                 denominator = denominator + PolynomialFF(n, dummy_map);
+                min_deg_den_vec = std::vector<uint32_t> (n, 0);
               } else if (numerator.coefs.find(std::vector<uint32_t> (n, 0)) != numerator.coefs.end()) {
                 terminator = numerator.coefs[std::vector<uint32_t> (n, 0)];
+
+                for (const auto & el : denominator.coefs) {
+                  if (min_deg_den_vec.empty())
+                    min_deg_den_vec = el.first;
+                  else if (a_grt_b(min_deg_den_vec, el.first))
+                    min_deg_den_vec = el.first;
+                }
               } else {
                 for (const auto & el : denominator.coefs) {
                   add_non_solved_den(el.first);
@@ -557,10 +565,12 @@ namespace firefly {
               curr_zi_order_den.clear();
 
               // normalize
-              FFInt equializer = FFInt(1) / terminator;
+              FFInt equalizer = FFInt(1) / terminator;
 
-              numerator *= equializer;
-              denominator *= equializer;
+              numerator *= equalizer;
+              denominator *= equalizer;
+
+              std::cout << numerator << denominator;
 
               combine_primes(numerator.coefs, denominator.coefs);
 
@@ -697,7 +707,7 @@ namespace firefly {
 
                 // normalize
                 FFInt terminator = solved_den.coefs[min_deg_den_vec];
-                FFInt equializer = FFInt(1) / terminator;
+                FFInt equalizer = FFInt(1) / terminator;
 
                 for (const auto & el : g_ni) {
                   solved_num.coefs.erase(el.first);
@@ -707,9 +717,21 @@ namespace firefly {
                   solved_den.coefs.erase(el.first);
                 }
 
-                solved_num = solved_num * equializer;
-                solved_den = solved_den * equializer;
+                solved_num = solved_num * equalizer;
+                solved_den = solved_den * equalizer;
               }
+
+              std::cout << solved_num << solved_den;
+
+              // remove the constant if it is zero
+              if (solved_num.coefs.find(std::vector<uint32_t> (n, 0)) != solved_num.coefs.end() && solved_num.coefs[std::vector<uint32_t> (n, 0)] == 0) {
+                solved_num.coefs.erase(std::vector<uint32_t> (n, 0));
+              }
+              if (solved_den.coefs.find(std::vector<uint32_t> (n, 0)) != solved_den.coefs.end() && solved_den.coefs[std::vector<uint32_t> (n, 0)] == 0) {
+                solved_den.coefs.erase(std::vector<uint32_t> (n, 0));
+              }
+
+              std::cout << solved_num << solved_den;
 
               combine_primes(solved_num.coefs, solved_den.coefs);
               {
@@ -1443,8 +1465,8 @@ namespace firefly {
   }
 
   RationalFunction RatReconst::normalize(RationalFunction& rf) {
-    RationalNumber equializer = rf.denominator.coefs[0].coef;
-    RationalNumber terminator(equializer.denominator, equializer.numerator);
+    RationalNumber equalizer = rf.denominator.coefs[0].coef;
+    RationalNumber terminator(equalizer.denominator, equalizer.numerator);
 
     rf.numerator *=  terminator;
     rf.denominator *= terminator;
@@ -2412,8 +2434,10 @@ namespace firefly {
     curr_deg_num = max_deg_num;
     curr_deg_den = max_deg_den;
 
-    std::unique_lock<std::mutex> lock(mutex_status);
-    num_eqn = max_deg_den + max_deg_num + 1;
+    {
+      std::unique_lock<std::mutex> lock(mutex_status);
+      num_eqn = max_deg_den + max_deg_num + 1;
+    }
 
     for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
 

@@ -53,6 +53,7 @@ file(GLOB LIBSOURCES
   ${SOURCE_PATH}/RationalNumber.cpp
   ${SOURCE_PATH}/RatReconst.cpp
   ${SOURCE_PATH}/ReconstHelper.cpp
+  ${SOURCE_PATH}/Reconstructor.cpp
   ${SOURCE_PATH}/Tests.cpp
   ${SOURCE_PATH}/utils.cpp)
 
@@ -67,6 +68,7 @@ file(GLOB LIBSOURCES_SHRD
   ${SOURCE_PATH}/RationalNumber.cpp
   ${SOURCE_PATH}/RatReconst.cpp
   ${SOURCE_PATH}/ReconstHelper.cpp
+  ${SOURCE_PATH}/Reconstructor.cpp
   ${SOURCE_PATH}/utils.cpp)
 
 set(EXEC_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
@@ -75,15 +77,15 @@ set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
 add_library(FireFly_static STATIC ${LIBSOURCES})
 set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
-#add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
-#set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
+add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
+set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 
 add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp)
 target_link_libraries(example FireFly_static gmp flint)
 
 # install libraries
 install(
-  TARGETS FireFly_static# FireFly_shared
+  TARGETS FireFly_static FireFly_shared
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
@@ -101,6 +103,8 @@ install(FILES
   "${INCLUDE_PATH}/RationalNumber.hpp"
   "${INCLUDE_PATH}/RatReconst.hpp"
   "${INCLUDE_PATH}/ReconstHelper.hpp"
+  "${INCLUDE_PATH}/Reconstructor.hpp"
+  "${INCLUDE_PATH}/ThreadPool.hpp"
   "${INCLUDE_PATH}/UintHasher.hpp"
   "${INCLUDE_PATH}/utils.hpp"
   DESTINATION "${INCLUDE_INSTALL_DIR}")

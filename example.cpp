@@ -7,7 +7,13 @@
 using namespace firefly;
 
 int main() {
-  // Example for the reconstruction of a rational function
+  Reconstructor reconst(4, 1, Reconstructor::RAT);
+  reconst.reconstruct();
+  std::vector<RationalFunction> results = reconst.get_result_rf();
+  for (auto& res : results) {
+    std::cout << res << "\n";
+  }
+/*  // Example for the reconstruction of a rational function
   uint n = 4;
   FFInt::set_new_prime(primes()[0]);
   RatReconst rec(n);
@@ -127,7 +133,7 @@ int main() {
 
   std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
   //std::cout << rec_poly.get_result();
-  std::cout << "--------------------------------------------------------------\n";
+  std::cout << "--------------------------------------------------------------\n";*/
 
 /*  FFInt::set_new_prime(primes()[0]);
 

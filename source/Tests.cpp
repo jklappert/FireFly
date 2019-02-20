@@ -1,6 +1,16 @@
 #include "Tests.hpp"
 
 namespace firefly {
+  void black_box(std::vector<FFInt>& result, std::vector<FFInt> values) {
+    result.clear();
+    result.emplace_back(singular_solver(values));
+    result.emplace_back(n_eq_1(values[0]));
+//    result.emplace_back(n_eq_4(values));
+//    result.emplace_back(gghh(values));
+//    result.emplace_back(pol_n_eq_3(values));
+//    result.emplace_back(ggh(values));
+  }
+
   //example for gg->HH large interpolation problem augmented with large coefficients
   FFInt gghh(std::vector<FFInt> yis) {
     FFInt z1 = yis[0];
@@ -312,25 +322,27 @@ namespace firefly {
     mpz_class cr_1_mpz;
     cr_1_mpz = "123456789109898799879870980";
     FFInt cr_1(cr_1_mpz);
-    FFInt num = 17 * yis[0] + 7 * yis[1] + yis[2] + yis[0].pow(2) + yis[1].pow(2) + yis[2].pow(2) + yis[3].pow(2) + yis[0] * yis[3].pow(3) + yis[1].pow(4);
-    FFInt den = cr_1 * yis[1] - yis[3] + yis[0] * yis[1] + yis[1] * yis[2] + yis[0] * yis[3] + yis[0].pow(2) * yis[1].pow(2) + yis[2].pow(4);
+    FFInt num = 17 * yis[0] + 7 * yis[1];
+    FFInt den = cr_1 * yis[1] - yis[2];
+//    FFInt num = 17 * yis[0] + 7 * yis[1] + yis[2] + yis[0].pow(2) + yis[1].pow(2) + yis[2].pow(2) + yis[3].pow(2) + yis[0] * yis[3].pow(3) + yis[1].pow(4);
+//    FFInt den = cr_1 * yis[1] - yis[3] + yis[0] * yis[1] + yis[1] * yis[2] + yis[0] * yis[3] + yis[0].pow(2) * yis[1].pow(2) + yis[2].pow(4);
     return num / den;
   }
 
   // example for n = 1
   FFInt n_eq_1(FFInt z1) {
-    FFInt num = (576 * z1.pow(12) - 35145 * z1.pow(11)
+    FFInt num = (/*576 * z1.pow(12) - 35145 * z1.pow(11)
                  + 946716 * z1.pow(10) - 14842335 * z1.pow(9)
                  + 150236238 * z1.pow(8) - 1028892363 * z1.pow(7)
                  + 4853217576 * z1.pow(6) - 15724949577 * z1.pow(5)
-                 + 34208917206 * z1.pow(4) - 47506433412 * z1.pow(3)
-                 + 37933483608 * z1.pow(2) - 13296184128 * z1 + 71850240);
-    FFInt den = (16 * z1.pow(12) - 960 * z1.pow(11)
+                 + 34208917206 * z1.pow(4)*/ - 47506433412 * z1.pow(3)
+                 /*+ 37933483608 * z1.pow(2) - 13296184128 * z1*/ + 71850240);
+    FFInt den = (/*16 * z1.pow(12) - 960 * z1.pow(11)
                  + 25456 * z1.pow(10) - 393440 * z1.pow(9)
                  + 3934768 * z1.pow(8) - 26714240 * z1.pow(7)
                  + 125545488 * z1.pow(6) - 408157280 * z1.pow(5)
                  + 899198016 * z1.pow(4) - 1278172800 * z1.pow(3)
-                 + 1055033856 * z1.pow(2) - 383201280 * z1);
+                 + 1055033856 * z1.pow(2)*/ - 383201280 * z1);
     return num / den;
   }
 
