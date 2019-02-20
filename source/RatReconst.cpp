@@ -659,7 +659,7 @@ namespace firefly {
               numerator *= equalizer;
               denominator *= equalizer;
 
-              std::cout << numerator << denominator;
+              //std::cout << numerator << denominator;
 
               combine_primes(numerator.coefs, denominator.coefs);
 
@@ -823,7 +823,7 @@ namespace firefly {
                 solved_den.coefs.erase(std::vector<uint32_t> (n, 0));
               }
 
-              std::cout << solved_num << solved_den;
+              //std::cout << solved_num << solved_den;
 
               combine_primes(solved_num.coefs, solved_den.coefs);
               {

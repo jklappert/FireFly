@@ -1,7 +1,7 @@
 #include "Reconstructor.hpp"
 
 namespace firefly {
-  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t mode_): n(n_), thr_n(thr_n_), tp(thr_n) {
+  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t mode_, bool verbose_): n(n_), thr_n(thr_n_), tp(thr_n), verbose(verbose_) {
     mode = mode_;
   }
 
@@ -10,7 +10,9 @@ namespace firefly {
   }
 
   void Reconstructor::reconstruct() {
-    VERBOSE_MSG("New prime: 1");
+    if (verbose)
+      VERBOSE_MSG("New prime: 1");
+
     FFInt::set_new_prime(primes()[prime_it]);
     RatReconst tmp(n);
 
@@ -60,7 +62,9 @@ namespace firefly {
     }
 
     probe.clear();
-    VERBOSE_MSG("| Iteration: 1 | Done: 0 / " + std::to_string(items) + " | Want new prime: 0 / " + std::to_string(items) + " |");
+
+    if (verbose)
+      VERBOSE_MSG("| Iteration: 1 | Done: 0 / " + std::to_string(items) + " | Want new prime: 0 / " + std::to_string(items) + " |");
 
     start_probe_jobs(std::vector<uint32_t>(n - 1, 1), 1);
     ++started_probes.at(std::vector<uint32_t>(n - 1, 1));
@@ -75,18 +79,22 @@ namespace firefly {
       if (new_prime) {
         total_iterations += iteration;
         ++prime_it;
-        VERBOSE_MSG("New prime: " + std::to_string(prime_it + 1));
-        VERBOSE_MSG("Iterations for last prime: " + std::to_string(iteration));
-        VERBOSE_MSG("Iterations in total: " + std::to_string(total_iterations));
+
+        if (verbose) {
+          VERBOSE_MSG("New prime: " + std::to_string(prime_it + 1));
+          VERBOSE_MSG("Iterations for last prime: " + std::to_string(iteration));
+          VERBOSE_MSG("Iterations in total: " + std::to_string(total_iterations));
+        }
+
         iteration = 0;
 
-        if (prime_it == 4) {
+        /*if (prime_it == 4) {
           for (auto & el : reconst) {
             std::cout << el.is_done() << "\n";
           }
 
           exit(-1);
-        }
+        }*/
 
         tp.kill_all();
 
@@ -104,7 +112,9 @@ namespace firefly {
         }
 
         if (!tmp.need_shift()) {
-          VERBOSE_MSG("Disable shift.");
+          if (verbose)
+            VERBOSE_MSG("Disable shift.");
+
           tmp.disable_shift();
         }
 
@@ -112,11 +122,15 @@ namespace firefly {
 
         // start only coreNumber jobs first, because the reconstruction can be done after the first feed
         if (probes_for_next_prime > thr_n) {
-          VERBOSE_MSG("Starting " + std::to_string(thr_n) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - thr_n) + " jobs will be started later.");
+          if (verbose)
+            VERBOSE_MSG("Starting " + std::to_string(thr_n) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - thr_n) + " jobs will be started later.");
+
           start_probe_jobs(std::vector<uint32_t>(n - 1, 1), thr_n);
           started_probes.emplace(std::vector<uint32_t>(n - 1, 1), thr_n);
         } else {
-          VERBOSE_MSG("Starting " + std::to_string(probes_for_next_prime) + " jobs");
+          if (verbose)
+            VERBOSE_MSG("Starting " + std::to_string(probes_for_next_prime) + " jobs");
+
           start_probe_jobs(std::vector<uint32_t>(n - 1, 1), probes_for_next_prime);
           started_probes.emplace(std::vector<uint32_t>(n - 1, 1), probes_for_next_prime);
         }
@@ -186,8 +200,10 @@ namespace firefly {
       probe.clear();
 
       std::unique_lock<std::mutex> lock(mut);
-      VERBOSE_MSG("| Iteration: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items)
-                  + " | " + "Want new prime: " + std::to_string(items_new_prime) + " / " + std::to_string(items) + " |");
+
+      if (verbose)
+        VERBOSE_MSG("| Iteration: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items)
+                    + " | " + "Want new prime: " + std::to_string(items_new_prime) + " / " + std::to_string(items) + " |");
 
       if (items_done == items) {
         done = true;
@@ -234,10 +250,12 @@ namespace firefly {
     }
 
     total_iterations += iteration;
-    VERBOSE_MSG("Done.");
-    VERBOSE_MSG("Iterations for last prime: " + std::to_string(iteration));
-    VERBOSE_MSG("Primes used: " + std::to_string(prime_it + 1));
-    VERBOSE_MSG("Total iterations: " + std::to_string(total_iterations));
+
+    INFO_MSG("Done.");
+    if(verbose)
+      VERBOSE_MSG("Iterations for last prime: " + std::to_string(iteration));
+    INFO_MSG("Primes used: " + std::to_string(prime_it + 1));
+    INFO_MSG("Total iterations: " + std::to_string(total_iterations));
   }
 
   std::vector<RationalFunction> Reconstructor::get_result_rf() {
@@ -299,7 +317,10 @@ namespace firefly {
         if (prime_it == 0 && zi_order == std::vector<uint32_t>(n - 1, 1)) {
           if (started_probes.at(zi_order) - thr_n <= fed_ones - 1) {
             uint32_t start = fed_ones - started_probes.at(zi_order) + thr_n;
-            VERBOSE_MSG(std::to_string(i) + " Starting ones: " + std::to_string(start));
+
+            if (verbose)
+              VERBOSE_MSG(std::to_string(i) + " Starting ones: " + std::to_string(start));
+
             started_probes.at(zi_order) += start;
             lock.unlock();
             start_probe_jobs(zi_order, start);
@@ -311,29 +332,39 @@ namespace firefly {
 
           if (it != started_probes.end()) {
             if (required_probes > started_probes.at(zi_order)) {
-              std::string msg = std::to_string(i) + " Starting";
+              uint32_t start = required_probes - started_probes.at(zi_order);
 
-              for (const auto & ele : zi_order) {
-                msg += " " + std::to_string(ele);
+              if (verbose) {
+                std::string msg = std::to_string(i) + " Starting";
+
+                for (const auto & ele : zi_order) {
+                  msg += " " + std::to_string(ele);
+                }
+
+                msg += " -- " + std::to_string(start);
+
+                VERBOSE_MSG(msg);
               }
 
-              uint32_t start = required_probes - started_probes.at(zi_order);
-              msg += " -- " + std::to_string(start);
-              VERBOSE_MSG(msg);
               started_probes.at(zi_order) = required_probes;
               lock.unlock();
               start_probe_jobs(zi_order, start);
               lock.lock();
             }
           } else {
-            std::string msg = std::to_string(i) + " Starting";
+            if (verbose) {
+              std::string msg = std::to_string(i) + " Starting";
 
-            for (const auto & ele : zi_order) {
-              msg += " " + std::to_string(ele);
+              for (const auto & ele : zi_order) {
+                msg += " " + std::to_string(ele);
+              }
+
+              msg += " -- " + std::to_string(required_probes);
+
+              VERBOSE_MSG(msg);
+
             }
 
-            msg += " -- " + std::to_string(required_probes);
-            VERBOSE_MSG(msg);
             started_probes.emplace(zi_order, required_probes);
             lock.unlock();
             start_probe_jobs(zi_order, required_probes);

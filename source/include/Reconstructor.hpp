@@ -12,7 +12,7 @@ namespace firefly {
 
   class Reconstructor{
   public:
-    Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t mode_);
+    Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t mode_, bool verbose_ = true);
     void scan_for_sparsest_shift();
     void reconstruct();
     std::vector<RationalFunction> get_result_rf();
@@ -20,6 +20,7 @@ namespace firefly {
     enum reconst_type {POLY, RAT};
     void black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values);
   private:
+    bool verbose;
     uint32_t n;
     uint32_t thr_n;
     uint32_t mode;

@@ -8,16 +8,16 @@ using namespace firefly;
 
 void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
   result.clear();
-  result.emplace_back(singular_solver(values));
-  result.emplace_back(n_eq_1(values[0]));
-//    result.emplace_back(n_eq_4(values));
-//    result.emplace_back(gghh(values));
-//    result.emplace_back(pol_n_eq_3(values));
-//    result.emplace_back(ggh(values));
+  //result.emplace_back(singular_solver(values));
+  //result.emplace_back(n_eq_1(values[0]));
+  //result.emplace_back(n_eq_4(values));
+  result.emplace_back(gghh(values));
+  //result.emplace_back(pol_n_eq_3(values));
+  //result.emplace_back(ggh(values));
 }
 
 int main() {
-  Reconstructor reconst(4, 1, Reconstructor::RAT);
+  Reconstructor reconst(4, 1, Reconstructor::RAT, 0);
   reconst.reconstruct();
   std::vector<RationalFunction> results = reconst.get_result_rf();
   /*for (auto& res : results) {
