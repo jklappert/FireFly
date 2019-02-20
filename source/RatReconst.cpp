@@ -818,6 +818,7 @@ namespace firefly {
               if (solved_num.coefs.find(std::vector<uint32_t> (n, 0)) != solved_num.coefs.end() && solved_num.coefs[std::vector<uint32_t> (n, 0)] == 0) {
                 solved_num.coefs.erase(std::vector<uint32_t> (n, 0));
               }
+
               if (solved_den.coefs.find(std::vector<uint32_t> (n, 0)) != solved_den.coefs.end() && solved_den.coefs[std::vector<uint32_t> (n, 0)] == 0) {
                 solved_den.coefs.erase(std::vector<uint32_t> (n, 0));
               }
@@ -1425,10 +1426,6 @@ namespace firefly {
         denominator.sort();
 
         result = RationalFunction(numerator, denominator);
-
-        RationalNumber first_coef = result.denominator.coefs[0].coef;
-
-        if (first_coef.numerator != 1 || first_coef.denominator != 1) result = normalize(result);
       }
 
       return result;
@@ -1703,6 +1700,17 @@ namespace firefly {
     curr_parsed_variable = other.curr_parsed_variable;
     sub_count_num = other.sub_count_num;
     sub_count_den = other.sub_count_den;
+    scan = other.scan;
+    all_shift_max_degs = other.all_shift_max_degs;
+    shift_works = other.shift_works;
+    normalize_to_den = other.normalize_to_den;
+    start_deg_num = other.start_deg_num;
+    start_deg_den = other.start_deg_den;
+    shifted_max_num_eqn = other.shifted_max_num_eqn;
+    shifted_degs_num = other.shifted_degs_num;
+    shifted_degs_den = other.shifted_degs_den;
+    zero_degs_num = other.zero_degs_num;
+    zero_degs_den = other.zero_degs_den;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -1764,6 +1772,17 @@ namespace firefly {
     curr_parsed_variable = std::move(other.curr_parsed_variable);
     sub_count_num = std::move(other.sub_count_num);
     sub_count_den = std::move(other.sub_count_den);
+    scan = std::move(other.scan);
+    all_shift_max_degs = std::move(other.all_shift_max_degs);
+    shift_works = std::move(other.shift_works);
+    normalize_to_den = std::move(other.normalize_to_den);
+    start_deg_num = std::move(other.start_deg_num);
+    start_deg_den = std::move(other.start_deg_den);
+    shifted_max_num_eqn = std::move(other.shifted_max_num_eqn);
+    shifted_degs_num = std::move(other.shifted_degs_num);
+    shifted_degs_den = std::move(other.shifted_degs_den);
+    zero_degs_num = std::move(other.zero_degs_num);
+    zero_degs_den = std::move(other.zero_degs_den);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -1826,6 +1845,17 @@ namespace firefly {
       curr_parsed_variable = other.curr_parsed_variable;
       sub_count_num = other.sub_count_num;
       sub_count_den = other.sub_count_den;
+      scan = other.scan;
+      all_shift_max_degs = other.all_shift_max_degs;
+      shift_works = other.shift_works;
+      normalize_to_den = other.normalize_to_den;
+      start_deg_num = other.start_deg_num;
+      start_deg_den = other.start_deg_den;
+      shifted_max_num_eqn = other.shifted_max_num_eqn;
+      shifted_degs_num = other.shifted_degs_num;
+      shifted_degs_den = other.shifted_degs_den;
+      zero_degs_num = other.zero_degs_num;
+      zero_degs_den = other.zero_degs_den;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -1891,6 +1921,17 @@ namespace firefly {
       curr_parsed_variable = std::move(other.curr_parsed_variable);
       sub_count_num = std::move(other.sub_count_num);
       sub_count_den = std::move(other.sub_count_den);
+      scan = std::move(other.scan);
+      all_shift_max_degs = std::move(other.all_shift_max_degs);
+      shift_works = std::move(other.shift_works);
+      normalize_to_den = std::move(other.normalize_to_den);
+      start_deg_num = std::move(other.start_deg_num);
+      start_deg_den = std::move(other.start_deg_den);
+      shifted_max_num_eqn = std::move(other.shifted_max_num_eqn);
+      shifted_degs_num = std::move(other.shifted_degs_num);
+      shifted_degs_den = std::move(other.shifted_degs_den);
+      zero_degs_num = std::move(other.zero_degs_num);
+      zero_degs_den = std::move(other.zero_degs_den);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);
@@ -2586,7 +2627,7 @@ namespace firefly {
     return tmp;
   }
 
-  std::vector< mpz_class > RatReconst::parse_rational_number(std::string& line) {
+  std::vector<mpz_class> RatReconst::parse_rational_number(std::string& line) {
     size_t pos = line.find(" ");
     std::vector<mpz_class> tmp {};
     tmp.emplace_back(mpz_class(line.substr(0, pos)));

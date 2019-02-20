@@ -45,13 +45,13 @@ namespace firefly {
    */
   class ThreadPool {
   public:
-    explicit ThreadPool(std::size_t pool_size = std::thread::hardware_concurrency())
-    {
-      VERBOSE_MSG("launching " << pool_size << " threads ...");
+    explicit ThreadPool(std::size_t pool_size = std::thread::hardware_concurrency()) {
+      VERBOSE_MSG("Launching " << pool_size << " thread(s).");
+
       for (std::size_t i = 0; i < pool_size; ++i) {
         threads_idle.push_back(true);
         threads.emplace_back(
-        [this, i] () {
+        [this, i]() {
           for (;;) {
             std::function<void()> task;
 
@@ -59,10 +59,12 @@ namespace firefly {
               std::unique_lock<std::mutex> lock(mutex);
               threads_idle[i] = true;
               condition_wait.notify_one();
-              condition.wait(lock, [this]{ return stop || !tasks.empty(); });
+              condition.wait(lock, [this] { return stop || !tasks.empty(); });
               threads_idle[i] = false;
+
               if (stop && tasks.empty())
                 return;
+
               task = std::move(tasks.front());
               tasks.pop();
             }
@@ -74,9 +76,9 @@ namespace firefly {
     }
 
     ThreadPool(const ThreadPool&) = delete;
-    ThreadPool(ThreadPool&&) = delete;
+    ThreadPool(ThreadPool &&) = delete;
     ThreadPool& operator=(const ThreadPool&) = delete;
-    ThreadPool& operator=(ThreadPool&&) = delete;
+    ThreadPool& operator=(ThreadPool &&) = delete;
 
     // waits for all tasks to finish and closes threads
     ~ThreadPool() {
@@ -88,7 +90,7 @@ namespace firefly {
       condition.notify_all();
 
       try {
-        for (auto& t: threads)
+        for (auto & t : threads)
           t.join();
       } catch (const std::exception& e) {
         ERROR_MSG(e.what());
@@ -97,10 +99,10 @@ namespace firefly {
 
     // runs task and returns future
     template <typename Task>
-    auto run_packaged_task(Task&& task) -> std::future<decltype(task())> {
+    auto run_packaged_task(Task && task) -> std::future<decltype(task())> {
       using return_t = decltype(task());
 
-      auto ptask = std::make_shared<std::packaged_task<return_t()>>([task](){ return task(); });
+      auto ptask = std::make_shared<std::packaged_task<return_t()>>([task]() { return task(); });
 
       std::future<return_t> fut = ptask->get_future();
 
@@ -109,7 +111,7 @@ namespace firefly {
       } else {
         {
           std::unique_lock<std::mutex> lock(mutex);
-          tasks.emplace([ptask](){ (*ptask)(); });
+          tasks.emplace([ptask]() { (*ptask)(); });
         }
         condition.notify_one();
       }
@@ -119,7 +121,7 @@ namespace firefly {
 
     // runs task
     template <typename Task>
-    void run_task(Task&& task) {
+    void run_task(Task && task) {
       if (threads.empty()) {
         task();
       } else {
@@ -138,6 +140,7 @@ namespace firefly {
     // if some threads are working, waits until one finishes and returns true; if all threads are idle, returns false
     bool wait() {
       std::unique_lock<std::mutex> lock(mutex);
+
       if (!all_threads_idle(lock)) {
         condition_wait.wait(lock);
         return true;
@@ -149,20 +152,20 @@ namespace firefly {
     void kill_all() {
       {
         std::unique_lock<std::mutex> lock(mutex);
-        tasks = {};
+        tasks = std::queue<std::function<void()>>();
       }
 
-      while(wait());
+      while (wait());
     }
 
   private:
-    std::vector<std::thread> threads{};
-    std::queue<std::function<void()>> tasks{};
-    std::mutex mutex{};
-    std::condition_variable condition{};
-    bool stop{false};
-    std::vector<bool> threads_idle{};
-    std::condition_variable condition_wait{};
+    std::vector<std::thread> threads {};
+    std::queue<std::function<void()>> tasks {};
+    std::mutex mutex {};
+    std::condition_variable condition {};
+    bool stop {false};
+    std::vector<bool> threads_idle {};
+    std::condition_variable condition_wait {};
 
     bool all_threads_idle(std::unique_lock<std::mutex>& lock) {
       if (threads.empty()) {
@@ -177,6 +180,7 @@ namespace firefly {
             return false;
           }
         }
+
         return true;
       }
     }
