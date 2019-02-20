@@ -313,18 +313,25 @@ namespace firefly {
         // proper powers
         if (deg > 0) {
           ff_map tmp_pow_poly;
-          std::vector<std::vector<uint32_t>> tmp_powers(deg + 1, std::vector<uint32_t> (n));
 
-          for (uint32_t k = 0; k <= deg; ++k) {
-            tmp_powers[k][j] = deg - k;
+          if (shift[j] > 0) {
+            std::vector<std::vector<uint32_t>> tmp_powers(deg + 1, std::vector<uint32_t> (n));
 
-            if (k == 0) {
-              tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], 1));
-            } else if (k == deg) {
-              tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], shift[j].pow(deg)));
-            } else {
-              tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], bin_coef(deg, k)*shift[j].pow(k)));
+            for (uint32_t k = 0; k <= deg; ++k) {
+              tmp_powers[k][j] = deg - k;
+
+              if (k == 0) {
+                tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], 1));
+              } else if (k == deg) {
+                tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], shift[j].pow(deg)));
+              } else {
+                tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], bin_coef(deg, k)*shift[j].pow(k)));
+              }
             }
+          } else {
+            std::vector<uint32_t> tmp_powers(n);
+            tmp_powers[j] = deg;
+            tmp_pow_poly.emplace(std::make_pair(tmp_powers, 1));
           }
 
           if (pow_poly.coefs.empty()) {
@@ -338,7 +345,7 @@ namespace firefly {
       // since always all variables are shifted decr_power := zero_deg
       if (!pow_poly.coefs.empty()) {
         //std::clock_t begin3 = clock();
-        if(res.coefs.empty())
+        if (res.coefs.empty())
           res.coefs = pow_poly.coefs;
         else
           res += pow_poly;

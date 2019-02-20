@@ -2,6 +2,7 @@
 
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
+#include <unordered_set>
 
 namespace firefly {
 
@@ -31,6 +32,8 @@ namespace firefly {
     void set_tag(std::string tag_);
     void start_from_saved_file(std::string file_name);
     void scan_for_sparsest_shift();
+    void set_zi_shift(std::vector<uint32_t> shifted_zis);
+    bool is_shift_working();
   private:
     void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord);
     FFInt comp_ai(int i, int ip, const FFInt& num);
@@ -124,7 +127,7 @@ namespace firefly {
     void check_for_solved_degs(std::vector<uint32_t>& uni_degs, const bool is_num);
     PolynomialFF solve_transposed_vandermonde(std::vector<std::vector<uint32_t>>& degs,
                                               const std::vector<std::pair<FFInt, uint32_t>>& nums);
-    std::vector<FFInt> solve_uni_transposed_vandermonde(const std::vector<FFInt>& nums);
+    //std::vector<FFInt> solve_uni_transposed_vandermonde(const std::vector<FFInt>& nums);
     void set_new_curr_deg_num_singular(uint32_t key);
     void set_new_curr_deg_den_singular(uint32_t key);
     polff_map solved_degs_num {};
@@ -145,6 +148,19 @@ namespace firefly {
     std::vector<uint32_t> parse_vector(std::string& line, int number_of_parameters = -1);
     std::vector<mpz_class> parse_rational_number(std::string& line);
     void parse_prime_number(std::string& file_name);
+    bool scan = false;//new
+    std::vector<uint32_t> all_shift_max_degs {};//new
+    static std::vector<uint32_t> curr_shift; //new
+    bool shift_works = false;//new
+    bool normalize_to_den = true; //new
+    int start_deg_num = 0;//new
+    int start_deg_den = 1;//new
+    uint32_t shifted_max_num_eqn = 0;//new
+    std::unordered_set<uint32_t> shifted_degs_num {};//new
+    std::unordered_set<uint32_t> shifted_degs_den {};//new
+    std::unordered_set<uint32_t> zero_degs_num {};//new
+    std::unordered_set<uint32_t> zero_degs_den {};//new
+    //void check_shifts();
     /*shift_map saved_shifts_num {}; //new
     shift_map saved_shifts_den {}; //new
     std::unordered_set<uint32_t> zero_degs_num {}; //new
