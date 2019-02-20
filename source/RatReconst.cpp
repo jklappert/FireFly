@@ -12,7 +12,7 @@ namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
   bool RatReconst::need_prime_shift = false;
   bool RatReconst::set_singular_system = false;
-  ff_pair_map RatReconst::rand_zi;
+  ff_pair_map RatReconst::rand_zi {};
   std::mutex RatReconst::mutex_statics;
   std::vector<uint32_t> RatReconst::curr_shift {};
 
@@ -74,7 +74,7 @@ namespace firefly {
       shift = std::vector<FFInt> (n);
       curr_shift = shifted_zis;
 
-      for (int i = 0; i < n; ++i) {
+      for (uint32_t i = 0; i < n; ++i) {
         if (shifted_zis[i] == 1)
           shift[i] = get_rand();
       }
@@ -333,12 +333,12 @@ namespace firefly {
             canonical.first = (numerator * equalizer).coefs;
             canonical.second = (denominator * equalizer).coefs;
 
-            for (uint32_t i = start_deg_num; i < max_deg_num; ++i) {
+            for (uint32_t i = start_deg_num; i < (uint32_t)max_deg_num; ++i) {
               if (canonical.first.find( {i}) == canonical.first.end())
                 tmp_solved_coefs_num ++;
             }
 
-            for (uint32_t i = start_deg_den; i < max_deg_den; ++i) {
+            for (uint32_t i = start_deg_den; i < (uint32_t)max_deg_den; ++i) {
               if (canonical.second.find( {i}) == canonical.second.end())
                 tmp_solved_coefs_den ++;
             }
