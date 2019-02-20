@@ -127,8 +127,10 @@ namespace firefly {
           {
             std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-            if (!is_singular_system && set_singular_system)
+            if (!is_singular_system && set_singular_system) {
+              lock_statics.unlock();
               set_singular_system_vars();
+            }
           }
 
           ti.emplace_back(new_ti);
@@ -199,7 +201,6 @@ namespace firefly {
         // theorem
         {
           std::unique_lock<std::mutex> lock(mutex_status);
-
           if (prime_number == 0) zi = 1;
         }
 
@@ -316,7 +317,7 @@ namespace firefly {
             max_deg_den = denominator.max_deg()[0];
 
             if (n == 1)
-              min_deg_den_vec = denominator.min_deg();
+              normalizer_deg = denominator.min_deg();
 
             curr_deg_num = max_deg_num;
 
@@ -362,7 +363,7 @@ namespace firefly {
             combine_primes(canonical.first, canonical.second);
             saved_ti.clear();
             std::unique_lock<std::mutex> lock(mutex_status);
-            prime_number++;
+            ++prime_number;
             queue.clear();
             new_prime = true;
             return;
@@ -591,32 +592,37 @@ namespace firefly {
                 terminator = FFInt(1) - const_den;
                 dummy_map.emplace(std::make_pair(std::vector<uint32_t> (n, 0), terminator));
 
-                if (normalize_to_den)
+                if (normalize_to_den) {
                   denominator += PolynomialFF(n, dummy_map);
-                else
+                  normalizer_den_num = true;
+                } else {
                   numerator += PolynomialFF(n, dummy_map);
-              } else if (numerator.coefs.find(std::vector<uint32_t> (n, 0)) != numerator.coefs.end()) {
-                terminator = numerator.coefs[std::vector<uint32_t> (n, 0)];
-
-                for (const auto & el : denominator.coefs) {
-                  if (min_deg_den_vec.empty())
-                    min_deg_den_vec = el.first;
-                  else if (a_grt_b(min_deg_den_vec, el.first))
-                    min_deg_den_vec = el.first;
+                  normalizer_den_num = false;
                 }
+                normalizer_deg = std::vector<uint32_t> (n, 0);
+              } else if (normalize_to_den && numerator.coefs.find(std::vector<uint32_t> (n, 0)) != numerator.coefs.end()) {
+                terminator = numerator.coefs[std::vector<uint32_t> (n, 0)];
+                normalizer_den_num = false;
+                normalizer_deg = std::vector<uint32_t> (n, 0);
+              } else if (!normalize_to_den && denominator.coefs.find(std::vector<uint32_t> (n, 0)) != denominator.coefs.end()) {
+                terminator = denominator.coefs[std::vector<uint32_t> (n, 0)];
+                normalizer_den_num = true;
+                normalizer_deg = std::vector<uint32_t> (n, 0);
               } else {
                 for (const auto & el : denominator.coefs) {
                   add_non_solved_den(el.first);
 
-                  if (min_deg_den_vec.empty())
-                    min_deg_den_vec = el.first;
-                  else if (a_grt_b(min_deg_den_vec, el.first))
-                    min_deg_den_vec = el.first;
+                  if (normalizer_deg.empty())
+                    normalizer_deg = el.first;
+                  else if (a_grt_b(normalizer_deg, el.first))
+                    normalizer_deg = el.first;
                 }
 
                 for (const auto & candidate : non_solved_degs_den) {
                   if (candidate.second.size() == 1) {
                     terminator = denominator.coefs[candidate.second[0]];
+                    normalizer_den_num = true;
+                    normalizer_deg = candidate.second[0];
                     break;
                   }
                 }
@@ -630,6 +636,8 @@ namespace firefly {
                   for (const auto & candidate : non_solved_degs_num) {
                     if (candidate.second.size() == 1) {
                       terminator = numerator.coefs[candidate.second[0]];
+                      normalizer_den_num = false;
+                      normalizer_deg = candidate.second[0];
                       break;
                     }
                   }
@@ -637,8 +645,8 @@ namespace firefly {
 
                 if (terminator.n == 0) {
                   // normalize to the minimal degree of the denominator
-                  terminator = denominator.coefs[min_deg_den_vec];
-
+                  terminator = denominator.coefs[normalizer_deg];
+                  normalizer_den_num = true;
                   is_singular_system = true;
                 }
               }
@@ -655,12 +663,10 @@ namespace firefly {
               numerator *= equalizer;
               denominator *= equalizer;
 
-              //std::cout << numerator << denominator;
-
               combine_primes(numerator.coefs, denominator.coefs);
 
               std::unique_lock<std::mutex> lock(mutex_status);
-              prime_number++;
+              ++prime_number;
               queue.clear();
               saved_ti.clear();
               std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
@@ -795,7 +801,12 @@ namespace firefly {
                 for (const auto & el : solved_degs_den) solved_den += el.second;
 
                 // normalize
-                FFInt terminator = solved_den.coefs[min_deg_den_vec];
+                FFInt terminator = 0;
+                if (normalizer_den_num) {
+                  terminator = solved_den.coefs[normalizer_deg];
+                } else {
+                  terminator = solved_num.coefs[normalizer_deg];
+                }
                 FFInt equalizer = FFInt(1) / terminator;
 
                 for (const auto & el : g_ni) {
@@ -819,12 +830,10 @@ namespace firefly {
                 solved_den.coefs.erase(std::vector<uint32_t> (n, 0));
               }
 
-              //std::cout << solved_num << solved_den;
-
               combine_primes(solved_num.coefs, solved_den.coefs);
               {
                 std::unique_lock<std::mutex> lock(mutex_status);
-                prime_number++;
+                ++prime_number;
                 queue.clear();
                 saved_ti.clear();
                 std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
@@ -1341,10 +1350,10 @@ namespace firefly {
       file << "max_deg_num\n" << max_deg_num << "\n";
       file << "max_deg_den\n" << max_deg_den << "\n";
       file << "need_prime_shift\n" << need_prime_shift << "\n";
-      file << "min_deg_den_vec\n";
+      file << "normalizer_deg\n";
       std::string tmp_vec = "";
 
-      for (const auto & deg : min_deg_den_vec) {
+      for (const auto & deg : normalizer_deg) {
         tmp_vec += std::to_string(deg) + std::string(" ");
       }
 
@@ -1685,7 +1694,8 @@ namespace firefly {
     solved_den = other.solved_den;
     solved_degs_num = other.solved_degs_num;
     solved_degs_den = other.solved_degs_den;
-    min_deg_den_vec = other.min_deg_den_vec;
+    normalizer_deg = other.normalizer_deg;
+    normalizer_den_num = other.normalizer_den_num;
     is_singular_system = other.is_singular_system;
     queue = other.queue;
     const_den = other.const_den;
@@ -1757,7 +1767,8 @@ namespace firefly {
     solved_den = std::move(other.solved_den);
     solved_degs_num = std::move(other.solved_degs_num);
     solved_degs_den = std::move(other.solved_degs_den);
-    min_deg_den_vec = std::move(other.min_deg_den_vec);
+    normalizer_deg = std::move(other.normalizer_deg);
+    normalizer_den_num = std::move(other.normalizer_den_num);
     is_singular_system = std::move(other.is_singular_system);
     queue = std::move(other.queue);
     const_den = std::move(other.const_den);
@@ -1830,7 +1841,8 @@ namespace firefly {
       solved_den = other.solved_den;
       solved_degs_num = other.solved_degs_num;
       solved_degs_den = other.solved_degs_den;
-      min_deg_den_vec = other.min_deg_den_vec;
+      normalizer_deg = other.normalizer_deg;
+      normalizer_den_num = other.normalizer_den_num;
       is_singular_system = other.is_singular_system;
       queue = other.queue;
       const_den = other.const_den;
@@ -1906,7 +1918,8 @@ namespace firefly {
       solved_den = std::move(other.solved_den);
       solved_degs_num = std::move(other.solved_degs_num);
       solved_degs_den = std::move(other.solved_degs_den);
-      min_deg_den_vec = std::move(other.min_deg_den_vec);
+      normalizer_deg = std::move(other.normalizer_deg);
+      normalizer_den_num = std::move(other.normalizer_den_num);
       is_singular_system = std::move(other.is_singular_system);
       queue = std::move(other.queue);
       const_den = std::move(other.const_den);
@@ -1946,6 +1959,7 @@ namespace firefly {
   }
 
   void RatReconst::disable_shift() {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
     shift = std::vector<FFInt> (n, 0);
   }
 
@@ -2053,7 +2067,6 @@ namespace firefly {
 
   void RatReconst::generate_anchor_points() {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
-
     rand_zi.clear();
 
     for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
@@ -2452,7 +2465,7 @@ namespace firefly {
           } else if (line == "need_prime_shift") {
             curr_parsed_variable = NEED_PRIME_SHIFT;
             parsed_variables[NEED_PRIME_SHIFT] = true;
-          } else if (line == "min_deg_den_vec") {
+          } else if (line == "normalizer_deg") {
             curr_parsed_variable = MIN_DEG_DEN_VEC;
             parsed_variables[MIN_DEG_DEN_VEC] = true;
           } else if (line == "g_ni") {
@@ -2490,14 +2503,14 @@ namespace firefly {
               }
 
               case MIN_DEG_DEN_VEC: {
-                min_deg_den_vec = parse_vector(line);
-                n = min_deg_den_vec.size();
+                normalizer_deg = parse_vector(line);
+                n = normalizer_deg.size();
                 break;
               }
 
               case G_NI: {
                 if (n == 0) {
-                  ERROR_MSG("Input file is in the wrong order! Need to parse 'min_deg_den_vec' first.");
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
                   std::exit(-1);
                 }
 
@@ -2511,7 +2524,7 @@ namespace firefly {
 
               case G_DI: {
                 if (n == 0) {
-                  ERROR_MSG("Input file is in the wrong order! Need to parse 'min_deg_den_vec' first.");
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
                   std::exit(-1);
                 }
 
@@ -2525,7 +2538,7 @@ namespace firefly {
 
               case COMBINED_NI: {
                 if (n == 0) {
-                  ERROR_MSG("Input file is in the wrong order! Need to parse 'min_deg_den_vec' first.");
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
                   std::exit(-1);
                 }
 
@@ -2537,7 +2550,7 @@ namespace firefly {
 
               case COMBINED_DI: {
                 if (n == 0) {
-                  ERROR_MSG("Input file is in the wrong order! Need to parse 'min_deg_den_vec' first.");
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
                   std::exit(-1);
                 }
 
@@ -2566,7 +2579,10 @@ namespace firefly {
       for (const auto & el : combined_di) add_non_solved_den(el.first);
 
       const_den = 0;
-      is_singular_system = need_prime_shift;
+      {
+        std::unique_lock<std::mutex> lock_statics(mutex_statics);
+        is_singular_system = need_prime_shift;
+      }
 
       new_prime = true;
       std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);

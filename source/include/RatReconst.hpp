@@ -131,7 +131,7 @@ namespace firefly {
     void set_new_curr_deg_den_singular(uint32_t key);
     polff_map solved_degs_num {};
     polff_map solved_degs_den {};
-    std::vector<uint32_t> min_deg_den_vec {};
+    std::vector<uint32_t> normalizer_deg {};
     FFInt const_den = 0;
     std::string tag = "";
     bool is_singular_system = false;
@@ -159,6 +159,7 @@ namespace firefly {
     std::unordered_set<uint32_t> shifted_degs_den {};//new
     std::unordered_set<uint32_t> zero_degs_num {};//new
     std::unordered_set<uint32_t> zero_degs_den {};//new
+    bool normalizer_den_num = false;// save state
     enum save_variables {COMBINED_PRIME, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
     MIN_DEG_DEN_VEC, G_NI, G_DI, COMBINED_NI, COMBINED_DI};
   };
