@@ -31,12 +31,7 @@ namespace firefly {
 
         if (n > 1) {
           for (auto & el : shift) el = get_rand();
-
-          //shift[1] = get_rand();
-          //normalize_to_den = false;
-          //start_deg_num = 1;
-          //start_deg_den = 0;
-
+          curr_shift = std::vector<uint32_t> (n, 1);
           curr_zi_order_num = std::vector<uint32_t> (n - 1, 1);
           curr_zi_order_den = std::vector<uint32_t> (n - 1, 1);
         }
@@ -70,10 +65,11 @@ namespace firefly {
       WARNING_MSG("Do you really want to shift a univariate rational function?");
   }
 
-  void RatReconst::set_zi_shift(std::vector<uint32_t> shifted_zis) {
+  void RatReconst::set_zi_shift(const std::vector<uint32_t>& shifted_zis) {
     {
       std::unique_lock<std::mutex> lock(mutex_statics);
       shift = std::vector<FFInt> (n);
+      curr_shift = shifted_zis;
 
       for (int i = 0; i < n; ++i) {
         if (shifted_zis[i] == 1)
@@ -1643,12 +1639,12 @@ namespace firefly {
     return (g_ny.calc(yis) / g_dy.calc(yis)) == num;
   }
 
-  void RatReconst::remove_ni(const std::vector<uint32_t>& deg_vec, RationalNumber& rn) {
+  void RatReconst::remove_ni(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn) {
     g_ni[deg_vec] =  rn;
     combined_ni.erase(deg_vec);
   }
 
-  void RatReconst::remove_di(const std::vector<uint32_t>& deg_vec, RationalNumber& rn) {
+  void RatReconst::remove_di(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn) {
     g_di[deg_vec] =  rn;
     combined_di.erase(deg_vec);
   }
@@ -2082,7 +2078,7 @@ namespace firefly {
     non_solved_degs_den[degree].emplace_back(deg);
   }
 
-  void RatReconst::check_for_solved_degs(std::vector<uint32_t>& uni_degs, const bool is_num) {
+  void RatReconst::check_for_solved_degs(const std::vector<uint32_t>& uni_degs, const bool is_num) {
     for (const auto & el : uni_degs) {
       if (is_num) {
         if (non_solved_degs_num.find(el) == non_solved_degs_num.end()) {
@@ -2172,7 +2168,7 @@ namespace firefly {
     return rand_zi.at(std::make_pair(zi, order));
   }
 
-  std::vector<FFInt> RatReconst::get_rand_zi_vec(std::vector<uint32_t> order) {
+  std::vector<FFInt> RatReconst::get_rand_zi_vec(const std::vector<uint32_t>& order) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> res {};
 
@@ -2424,7 +2420,7 @@ namespace firefly {
     }
   }
 
-  void RatReconst::set_tag(std::string tag_) {
+  void RatReconst::set_tag(const std::string& tag_) {
     tag = tag_;
   }
 

@@ -77,15 +77,15 @@ set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
 add_library(FireFly_static STATIC ${LIBSOURCES})
 set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
-add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
-set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
+#add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
+#set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 
 add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp)
 target_link_libraries(example FireFly_static gmp flint)
 
 # install libraries
 install(
-  TARGETS FireFly_static FireFly_shared
+  TARGETS FireFly_static #FireFly_shared
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )

@@ -25,14 +25,14 @@ namespace firefly {
     void disable_shift();
     void generate_anchor_points();
     FFInt get_rand_zi(uint32_t zi, uint32_t order);
-    std::vector<FFInt> get_rand_zi_vec(std::vector<uint32_t> order);
+    std::vector<FFInt> get_rand_zi_vec(const std::vector<uint32_t>& order);
     FFInt get_zi_shift(uint32_t zi);
     std::vector<FFInt> get_zi_shift_vec();
     bool need_shift();
-    void set_tag(std::string tag_);
+    void set_tag(const std::string& tag_);
     void start_from_saved_file(std::string file_name);
     void scan_for_sparsest_shift();
-    void set_zi_shift(std::vector<uint32_t> shifted_zis);
+    void set_zi_shift(const std::vector<uint32_t>& shifted_zis);
     bool is_shift_working();
   private:
     void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord);
@@ -113,8 +113,8 @@ namespace firefly {
     std::vector<uint32_t> curr_zi_order_den {};
     uint32_t tmp_solved_coefs_num = 0;
     uint32_t tmp_solved_coefs_den = 0;
-    void remove_ni(const std::vector<uint32_t>& deg_vec, RationalNumber& rn);
-    void remove_di(const std::vector<uint32_t>& deg_vec, RationalNumber& rn);
+    void remove_ni(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn);
+    void remove_di(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn);
     RationalFunction result;
     std::vector<FFInt> ti {}; /**< A vector which holds all arguments t_i */
     rn_map g_ni {}; /**< rational coefficient guesses for the numerator*/
@@ -124,7 +124,7 @@ namespace firefly {
     static std::mutex mutex_statics;
     void add_non_solved_num(const std::vector<uint32_t>& deg);
     void add_non_solved_den(const std::vector<uint32_t>& deg);
-    void check_for_solved_degs(std::vector<uint32_t>& uni_degs, const bool is_num);
+    void check_for_solved_degs(const std::vector<uint32_t>& uni_degs, const bool is_num);
     PolynomialFF solve_transposed_vandermonde(std::vector<std::vector<uint32_t>>& degs,
                                               const std::vector<std::pair<FFInt, uint32_t>>& nums);
     void set_new_curr_deg_num_singular(uint32_t key);
