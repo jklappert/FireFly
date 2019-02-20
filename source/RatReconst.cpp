@@ -31,6 +31,7 @@ namespace firefly {
 
         if (n > 1) {
           for (auto & el : shift) el = get_rand();
+
           curr_shift = std::vector<uint32_t> (n, 1);
           curr_zi_order_num = std::vector<uint32_t> (n - 1, 1);
           curr_zi_order_den = std::vector<uint32_t> (n - 1, 1);
@@ -61,8 +62,10 @@ namespace firefly {
   void RatReconst::scan_for_sparsest_shift() {
     scan = true;
 
-    if (n == 1)
-      WARNING_MSG("Do you really want to shift a univariate rational function?");
+    if (n == 1){
+      ERROR_MSG("Do you really want to shift a univariate rational function?");
+      std::exit(-1);
+    }
   }
 
   void RatReconst::set_zi_shift(const std::vector<uint32_t>& shifted_zis) {
@@ -289,22 +292,18 @@ namespace firefly {
 
               if (curr_shift == std::vector<uint32_t> (n, 1)) {
                 all_shift_max_degs = {tmp_max_deg_num, tmp_max_deg_den};
-              } else {
-                if (tmp_max_deg_num == all_shift_max_degs[0] && tmp_max_deg_den == all_shift_max_degs[1]) {
-                  std::unique_lock<std::mutex> lock_statics(mutex_status);
-
-                  if (denominator.min_deg()[0] == 0) {
-                    normalize_to_den = true;
-                    start_deg_den = 1;
-                    start_deg_num = 0;
-                  } else {
-                    normalize_to_den = false;
-                    start_deg_num = 1;
-                    start_deg_den = 0;
-                  }
-
-                  shift_works = true;
+              } else if (tmp_max_deg_num == all_shift_max_degs[0] && tmp_max_deg_den == all_shift_max_degs[1]) {
+                if (denominator.min_deg()[0] == 0) {
+                  normalize_to_den = true;
+                  start_deg_den = 1;
+                  start_deg_num = 0;
+                } else {
+                  normalize_to_den = false;
+                  start_deg_num = 1;
+                  start_deg_den = 0;
                 }
+
+                shift_works = true;
               }
 
               ai.clear();
@@ -2186,7 +2185,14 @@ namespace firefly {
 
   bool RatReconst::is_shift_working() {
     std::unique_lock<std::mutex> lock_status(mutex_status);
+    std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
+    done = false;
+    zi = 1;
     return shift_works;
+  }
+
+  void RatReconst::accept_shift() {
+    scan = false;
   }
 
   std::vector<FFInt> RatReconst::get_zi_shift_vec() {
@@ -2568,7 +2574,6 @@ namespace firefly {
       const_den = 0;
       is_singular_system = need_prime_shift;
 
-      new_prime = true;
       std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
       new_prime = true;
 

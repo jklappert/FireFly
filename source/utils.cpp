@@ -101,7 +101,7 @@ namespace firefly {
       t1 = tmpt - q * t1;
     }
 
-    if (d == 0 || gcd(n, d) != 1){
+    if (d == 0 || gcd(n, d) != 1) {
       not_failed = false;
       n = 1;
       d = 1;
@@ -167,7 +167,7 @@ namespace firefly {
           coef_mat[k][num_eqn] -= coef_mat[k][i] * results[i];
         }
       }
-    } else{
+    } else {
       ERROR_MSG("Singular system of equations!");
       std::exit(-1);
     }
@@ -175,15 +175,75 @@ namespace firefly {
     return results;
   }
 
-  bool a_grt_b(const std::vector<uint>& a, const std::vector<uint>& b) {
-    for(int i = a.size() - 1; i != -1; --i){
-      if(a[i] == b[i])
+  bool a_grt_b(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b) {
+    for (int i = a.size() - 1; i != -1; --i) {
+      if (a[i] == b[i])
         continue;
-      else if(a[i] > b[i])
+      else if (a[i] > b[i])
         return true;
       else
         return false;
     }
+
     return false;
   }
+
+  bool a_grt_b_s(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b) {
+    uint32_t deg1 = 0;
+    uint32_t deg2 = 0;
+
+    for (const auto & el : a) deg1 += el;
+
+    for (const auto & el : b) deg2 += el;
+
+    if (deg1 < deg2)
+      return false;
+    else if (deg1 == deg2)
+      return a > b;
+
+    return true;
+  }
+
+  std::vector<std::vector<uint32_t>> generate_possible_shifts(uint32_t r) {
+    std::vector<std::vector<uint32_t>> result;
+    uint32_t size = 1;
+    uint32_t exp = r;
+    uint32_t base = 2;
+
+    while (exp) {
+      if (exp & 1)
+        size *= base;
+
+      exp >>= 1;
+
+      base *= base;
+    }
+
+    result.reserve(size - 2);
+    std::vector<uint32_t> set = {0, 1};
+
+    for (uint32_t counter = 1; counter < size - 1; ++counter) {
+      std::vector<uint32_t> tuple(r);
+
+      uint32_t current_value = counter;
+
+      for (size_t i = 0; i < r; i++) {
+        uint32_t digit = current_value % 2;
+        tuple[r - i - 1] = set[digit];
+        current_value /= 2;
+      }
+
+      result.push_back(tuple);
+    }
+
+    std::sort(result.begin(), result.end(),
+    [](const std::vector<uint32_t>& a, const std::vector<uint32_t>& b) {
+      return a_grt_b_s(b, a);
+    });
+
+    return result;
+  }
 }
+
+
+

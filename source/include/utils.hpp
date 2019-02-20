@@ -42,5 +42,9 @@ namespace firefly {
   std::vector<FFInt> solve_gauss_system(uint32_t num_eqn,
                                         std::vector<std::vector<FFInt>>& coef_mat);
 
-  bool a_grt_b(const std::vector<uint>& a, const std::vector<uint>& b);
+  bool a_grt_b(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b);
+
+  bool a_grt_b_s(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b);
+
+  std::vector<std::vector<uint32_t>> generate_possible_shifts(uint32_t r);
 }
