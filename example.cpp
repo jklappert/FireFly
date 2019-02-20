@@ -45,7 +45,6 @@ int main() {
       if (!rec.need_shift()) {
         rec.disable_shift();
         shift = rec.get_zi_shift_vec();
-        std::fill(shift.begin(), shift.end(), 0);
       }
 
       std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";

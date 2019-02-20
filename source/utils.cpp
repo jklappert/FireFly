@@ -151,6 +151,13 @@ namespace firefly {
 
     std::vector<FFInt> results(num_eqn);
 
+    /*for(int i = 0; i < num_eqn; i++){
+      for(int j = 0; j <= num_eqn; j++){
+        std::cout << coef_mat[i][j] << " ";
+      }
+      std::cout << "\n";
+    }*/
+
     if (coef_mat[num_eqn - 1][num_eqn - 1] != 0) {
       // Solve equation A * x = b for an upper triangular matrix
       for (int i = num_eqn - 1; i >= 0; i--) {
