@@ -18,6 +18,7 @@ namespace firefly {
     std::vector<RationalFunction> get_result();
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     void black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values);
+    void set_tags(const std::vector<std::string>& tags);
   private:
     uint32_t n;
     uint32_t thr_n;
