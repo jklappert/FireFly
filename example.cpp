@@ -8,7 +8,8 @@ using namespace firefly;
 
 int main() {
   // Example for the automatic interface
-  Reconstructor reconst(4, 4);
+  Reconstructor reconst(4, 4, Reconstructor::CHATTY);
+  reconst.scan_for_sparsest_shift();
   reconst.reconstruct();
   std::vector<RationalFunction> results = reconst.get_result();
   /*for (auto& res : results) {
@@ -29,10 +30,10 @@ void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFIn
   result.clear();
   result.emplace_back(singular_solver(values));
   result.emplace_back(n_eq_1(values[0]));
-  result.emplace_back(n_eq_4(values));
-  //result.emplace_back(gghh(values));
-  result.emplace_back(pol_n_eq_3(values));
-  result.emplace_back(ggh(values));
+//  result.emplace_back(n_eq_4(values));
+//  result.emplace_back(gghh(values));
+//  result.emplace_back(pol_n_eq_3(values));
+//  result.emplace_back(ggh(values));
 }
 
 namespace firefly {
@@ -232,4 +233,3 @@ namespace firefly {
     std::cout << "--------------------------------------------------------------\n";
   }
 }
-

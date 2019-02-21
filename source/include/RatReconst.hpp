@@ -10,6 +10,7 @@ namespace firefly {
 
   class RatReconst : public BaseReconst {
   public:
+    RatReconst() {};
     /**
      *    A constructor
      *    @param n_ the number of parameters
