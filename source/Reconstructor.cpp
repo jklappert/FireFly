@@ -9,7 +9,7 @@ namespace firefly {
 
   void Reconstructor::reconstruct() {
     if (verbosity > 0) {
-      INFO_MSG("New prime: 1");
+      INFO_MSG("New prime: 1.");
     }
 
     FFInt::set_new_prime(primes()[prime_it]);
@@ -82,9 +82,9 @@ namespace firefly {
         ++prime_it;
 
         if (verbosity > 0) {
-          INFO_MSG("New prime: " + std::to_string(prime_it + 1));
-          INFO_MSG("Iterations for last prime: " + std::to_string(iteration));
-          INFO_MSG("Iterations in total: " + std::to_string(total_iterations));
+          INFO_MSG("New prime: " + std::to_string(prime_it + 1) + ".");
+          INFO_MSG("Iterations for last prime: " + std::to_string(iteration) + ".");
+          INFO_MSG("Iterations in total: " + std::to_string(total_iterations) + ".");
         }
 
         iteration = 0;
@@ -123,7 +123,7 @@ namespace firefly {
           started_probes.emplace(std::vector<uint32_t>(n - 1, 1), thr_n);
         } else {
           if (verbosity == 2) {
-            VERBOSE_MSG("Starting " + std::to_string(probes_for_next_prime) + " jobs");
+            VERBOSE_MSG("Starting " + std::to_string(probes_for_next_prime) + " jobs.");
           }
 
           start_probe_jobs(std::vector<uint32_t>(n - 1, 1), probes_for_next_prime);
@@ -248,9 +248,9 @@ namespace firefly {
 
     if (verbosity > 0) {
       INFO_MSG("Done.");
-      INFO_MSG("Iterations for last prime: " + std::to_string(iteration));
-      INFO_MSG("Primes used: " + std::to_string(prime_it + 1));
-      INFO_MSG("Iterations in total: " + std::to_string(total_iterations));
+      INFO_MSG("Iterations for last prime: " + std::to_string(iteration) + ".");
+      INFO_MSG("Primes used: " + std::to_string(prime_it + 1) + ".");
+      INFO_MSG("Iterations in total: " + std::to_string(total_iterations) + ".");
     }
 
     tp.kill_all();
@@ -315,7 +315,7 @@ namespace firefly {
               uint32_t start = fed_ones - started_probes.at(zi_order) + thr_n;
 
               if (verbosity == 2) {
-                VERBOSE_MSG("Starting ones: " + std::to_string(start));
+                VERBOSE_MSG("Starting ones: " + std::to_string(start) + ".");
               }
 
               started_probes.at(zi_order) += start;
@@ -336,7 +336,7 @@ namespace firefly {
                     msg += " " + std::to_string(ele);
                   }
                   msg += " -- " + std::to_string(start);
-                  VERBOSE_MSG(msg);
+                  VERBOSE_MSG(msg + ".");
                 }
 
                 started_probes.at(zi_order) = required_probes;
@@ -350,7 +350,7 @@ namespace firefly {
                   msg += " " + std::to_string(ele);
                 }
                 msg += " -- " + std::to_string(required_probes);
-                VERBOSE_MSG(msg);
+                VERBOSE_MSG(msg + ".");
               }
 
               started_probes.emplace(zi_order, required_probes);
