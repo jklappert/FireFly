@@ -17,7 +17,7 @@ void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFIn
 }
 
 int main() {
-  Reconstructor reconst(4, 8);
+  Reconstructor reconst(4, 2);
   reconst.reconstruct();
   std::vector<RationalFunction> results = reconst.get_result();
   /*for (auto& res : results) {
@@ -27,8 +27,8 @@ int main() {
   /*uint n = 4;
   FFInt::set_new_prime(primes()[0]);
   RatReconst rec(n);
-  //rec.set_tag("gghh");
-  //rec.start_from_saved_file("ff_save/gghh_3.txt");
+  rec.set_tag("sing");
+  //rec.start_from_saved_file("ff_save/sing_2.txt");
 
   std::cout << "--------------------------------------------------------------\n";
   std::cout << "Interpolating rational function\n";
@@ -45,7 +45,7 @@ int main() {
   int kk = 0;
   uint primes_used = 0;
 
-  rec.scan_for_sparsest_shift();
+  //rec.scan_for_sparsest_shift();
   // Feed loop
   std::vector<FFInt> shift = rec.get_zi_shift_vec();
   bool first = true;
@@ -198,7 +198,7 @@ int main() {
 
   std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
   //std::cout << rec_poly.get_result();
-  std::cout << "--------------------------------------------------------------\n";*/
+  std::cout << "--------------------------------------------------------------\n";
 
   /*  FFInt::set_new_prime(primes()[0]);
 

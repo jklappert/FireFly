@@ -141,7 +141,7 @@ namespace firefly {
     static bool need_prime_shift;
     static bool set_singular_system;
     void set_singular_system_vars();
-    std::vector<bool> parsed_variables {std::vector<bool>(9, false)};
+    std::vector<bool> parsed_variables {std::vector<bool>(17, false)};
     int curr_parsed_variable = -1;
     uint32_t sub_count_num = 0;
     uint32_t sub_count_den = 0;
@@ -162,6 +162,8 @@ namespace firefly {
     std::unordered_set<uint32_t> zero_degs_den {};//new
     bool normalizer_den_num = false;// save state
     enum save_variables {COMBINED_PRIME, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
-    MIN_DEG_DEN_VEC, G_NI, G_DI, COMBINED_NI, COMBINED_DI};
+    NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
+    SHIFTED_DEGS_NUM, SHIFTED_DEGS_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
+    COMBINED_NI, COMBINED_DI};
   };
 }
