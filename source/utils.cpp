@@ -169,7 +169,7 @@ namespace firefly {
       }
     } else {
       ERROR_MSG("Singular system of equations!");
-      throw std::runtime_error("sing");
+      throw std::runtime_error("Singular system of equations!");
     }
 
     return results;

@@ -7,7 +7,10 @@
 #include "Polynomial.hpp"
 
 namespace firefly {
-
+  /**
+   * @class RationalFunction
+   * @brief A container class representing rational functions
+   */
   class RationalFunction {
   public:
     /**
@@ -17,6 +20,11 @@ namespace firefly {
      */
     RationalFunction(Polynomial n, Polynomial d);
     RationalFunction();
+    /**
+    *  Transforms the Polynomial object to a string where each variable
+    *  is replaced by the corresponding symbol in a given vector
+    *  @param symbols a vector of symbols, e.g. {"x","y","z"}.
+    */
     std::string to_string(const std::vector<std::string>& symbols) const;
 
     Polynomial numerator;  /**< The coefficients of the numerator */

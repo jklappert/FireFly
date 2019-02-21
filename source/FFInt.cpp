@@ -89,8 +89,16 @@ namespace firefly {
     return FFInt(n_submod(a.n, b.n, FFInt::p));
   }
 
-  FFInt FFInt::operator-() {
+  FFInt FFInt::operator-() const{
     return FFInt(p - n);
+  }
+
+  FFInt FFInt::operator+() const {
+    return FFInt(n);
+  }
+
+  bool FFInt::operator!() const {
+    return !n;
   }
 
   // copied from Kira
