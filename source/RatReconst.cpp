@@ -63,7 +63,7 @@ namespace firefly {
     scan = true;
 
     if (n == 1) {
-      ERROR_MSG("Do you really want to shift a univariate rational function?");
+      ERROR_MSG("You should never want to shift a univariate rational function.");
       std::exit(-1);
     }
   }
@@ -526,6 +526,7 @@ namespace firefly {
             // check which poly reconst should be feeded next
             // it is promising that feeding a PolyReconst with a higher
             // zi degree will be finished next leading to less numerical runs
+            //std::cout << curr_deg_num << " " << curr_deg_den << " " << zi << "\n";
             if (curr_deg_den >= 0 && curr_deg_num >= 0) {
               if (a_grt_b(curr_zi_order_num, curr_zi_order_den)) {
                 std::unique_lock<std::mutex> lock(mutex_status);
@@ -2640,6 +2641,7 @@ namespace firefly {
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
                 shift = std::vector<FFInt> (n, 0);
+
                 for (uint32_t i = 0; i < n; ++i) {
                   if (tmp_vec[i] != 0)
                     shift[i] = get_rand();

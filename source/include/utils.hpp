@@ -47,4 +47,8 @@ namespace firefly {
   bool a_grt_b_s(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b);
 
   std::vector<std::vector<uint32_t>> generate_possible_shifts(uint32_t r);
+
+  void reconstruct_rational_function();
+
+  void reconstruct_polynomial();
 }
