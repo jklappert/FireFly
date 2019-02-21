@@ -48,7 +48,11 @@ namespace firefly {
     FFInt& operator-=(const FFInt&);
     FFInt& operator*=(const FFInt&);
     FFInt& operator/=(const FFInt&);
-    FFInt operator-();
+    FFInt operator-() const;
+    FFInt operator+() const;
+    //FFInt& operator++();
+    //FFInt& operator--();
+    bool operator!() const;
     FFInt pow(const FFInt& ffint) const;
 
     uint64_t n; /**< the integer member of the finite field */

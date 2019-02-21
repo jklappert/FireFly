@@ -526,7 +526,6 @@ namespace firefly {
             // check which poly reconst should be feeded next
             // it is promising that feeding a PolyReconst with a higher
             // zi degree will be finished next leading to less numerical runs
-            //std::cout << curr_deg_num << " " << curr_deg_den << " " << zi << "\n";
             if (curr_deg_den >= 0 && curr_deg_num >= 0) {
               if (a_grt_b(curr_zi_order_num, curr_zi_order_den)) {
                 std::unique_lock<std::mutex> lock(mutex_status);
@@ -806,10 +805,17 @@ namespace firefly {
                 // normalize
                 FFInt terminator = 0;
 
-                if (normalizer_den_num) {
-                  terminator = solved_den.coefs[normalizer_deg];
+                if (normalizer_deg == std::vector<uint32_t> (n)) {
+                  if (const_den != 0)
+                    terminator = const_den;
+                  else
+                    terminator = 1;
                 } else {
-                  terminator = solved_num.coefs[normalizer_deg];
+                  if (normalizer_den_num) {
+                    terminator = solved_den.coefs[normalizer_deg];
+                  } else {
+                    terminator = solved_num.coefs[normalizer_deg];
+                  }
                 }
 
                 FFInt equalizer = FFInt(1) / terminator;
@@ -1327,9 +1333,19 @@ namespace firefly {
         need_prime_shift = true;
       }
 
-      for (const auto & el : g_ni) add_non_solved_num(el.first);
+      for (const auto & el : g_ni) {
+        if (normalize_to_den)
+          add_non_solved_num(el.first);
+        else if (el.first != std::vector<uint32_t> (n))
+          add_non_solved_num(el.first);
+      }
 
-      for (const auto & el : g_di) add_non_solved_den(el.first);
+      for (const auto & el : g_di) {
+        if (!normalize_to_den)
+          add_non_solved_den(el.first);
+        else if (el.first != std::vector<uint32_t> (n))
+          add_non_solved_den(el.first);
+      }
 
       curr_deg_num = max_deg_num;
       curr_deg_den = max_deg_den;
@@ -1490,8 +1506,8 @@ namespace firefly {
       if (prime_number > 0) {
         std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
 
-        //if (std::remove(old_file_name.c_str()) != 0)
-        //  WARNING_MSG("The previously saved file could not be deleted.");
+        if (std::remove(old_file_name.c_str()) != 0)
+          WARNING_MSG("The previously saved file could not be deleted.");
       }
     }
   }
@@ -2190,7 +2206,7 @@ namespace firefly {
   }
 
   PolynomialFF RatReconst::solve_transposed_vandermonde(std::vector<std::vector<uint32_t>>& degs,
-  const std::vector<std::pair<FFInt, uint32_t>>& nums) {
+                                                        const std::vector<std::pair<FFInt, uint32_t>>& nums) {
     uint32_t num_eqn = degs.size();
     std::vector<FFInt> result(num_eqn);
 
@@ -2777,9 +2793,19 @@ namespace firefly {
           need_prime_shift = true;
         }
 
-        for (const auto & el : g_ni) add_non_solved_num(el.first);
+        for (const auto & el : g_ni) {
+          if (normalize_to_den)
+            add_non_solved_num(el.first);
+          else if (el.first != std::vector<uint32_t> (n))
+            add_non_solved_num(el.first);
+        }
 
-        for (const auto & el : g_di) add_non_solved_den(el.first);
+        for (const auto & el : g_di) {
+          if (!normalize_to_den)
+            add_non_solved_den(el.first);
+          else if (el.first != std::vector<uint32_t> (n))
+            add_non_solved_den(el.first);
+        }
 
         curr_deg_num = max_deg_num;
         curr_deg_den = max_deg_den;
@@ -2842,9 +2868,19 @@ namespace firefly {
     tmp_solved_coefs_den = 0;
     tmp_solved_coefs_num = 0;
 
-    for (const auto & el : g_ni) add_non_solved_num(el.first);
+    for (const auto & el : g_ni) {
+      if (normalize_to_den)
+        add_non_solved_num(el.first);
+      else if (el.first != std::vector<uint32_t> (n))
+        add_non_solved_num(el.first);
+    }
 
-    for (const auto & el : g_di) add_non_solved_den(el.first);
+    for (const auto & el : g_di) {
+      if (!normalize_to_den)
+        add_non_solved_den(el.first);
+      else if (el.first != std::vector<uint32_t> (n))
+        add_non_solved_den(el.first);
+    }
 
     curr_deg_num = max_deg_num;
     curr_deg_den = max_deg_den;

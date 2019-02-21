@@ -8,15 +8,15 @@ using namespace firefly;
 
 int main() {
   // Example for the automatic interface
-  Reconstructor reconst(4, 4);
-  reconst.reconstruct();
-  std::vector<RationalFunction> results = reconst.get_result();
+  //Reconstructor reconst(4, 4, Reconstructor::IMPORTANT);
+  //reconst.reconstruct();
+  //std::vector<RationalFunction> results = reconst.get_result();
   /*for (auto& res : results) {
     std::cout << res << "\n";
   }*/
 
   // Example for the reconstruction of a rational function
-  //reconstruct_rational_function();
+  reconstruct_rational_function();
 
   // Example for the reconstruction of a polynomial
   //reconstruct_polynomial();
@@ -27,12 +27,12 @@ int main() {
 // Example of how one can use the black_box function for the automatic interface
 void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
   result.clear();
-  result.emplace_back(singular_solver(values));
-  result.emplace_back(n_eq_1(values[0]));
-  result.emplace_back(n_eq_4(values));
-  //result.emplace_back(gghh(values));
-  result.emplace_back(pol_n_eq_3(values));
-  result.emplace_back(ggh(values));
+  //result.emplace_back(singular_solver(values));
+  //result.emplace_back(n_eq_1(values[0]));
+  //result.emplace_back(n_eq_4(values));
+  result.emplace_back(gghh(values));
+  //result.emplace_back(pol_n_eq_3(values));
+  //result.emplace_back(ggh(values));
 }
 
 namespace firefly {
@@ -96,8 +96,8 @@ namespace firefly {
         }
 
         //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
-        //FFInt num = n_eq_1(z1); // example for n = 1
-        FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
+        FFInt num = n_eq_1(z1); // example for n = 1
+        //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
         //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
         //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
@@ -163,8 +163,8 @@ namespace firefly {
       }
 
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
-      //FFInt num = n_eq_1(z1); // example for n = 1
-      FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
+      FFInt num = n_eq_1(z1); // example for n = 1
+      //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
       //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
