@@ -1740,7 +1740,7 @@ namespace firefly {
     combined_di.erase(deg_vec);
   }
 
-  RatReconst::RatReconst(const RatReconst& other) {
+  RatReconst::RatReconst(const RatReconst& other) : BaseReconst(other) {
     std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
     std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
     std::lock(lock_my_status, lock_other_status);
@@ -1813,7 +1813,7 @@ namespace firefly {
     combined_prime = other.combined_prime;
   }
 
-  RatReconst::RatReconst(RatReconst && other) {
+  RatReconst::RatReconst(RatReconst && other) : BaseReconst(other) {
     std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
     std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
     std::lock(lock_my_status, lock_other_status);
