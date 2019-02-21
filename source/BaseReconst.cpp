@@ -153,16 +153,20 @@ namespace firefly {
   }
 
   void BaseReconst::pc32_init(uint64_t seed) {
-    state = seed + increment;
+    {
+      std::unique_lock<std::mutex> lock_statics(mutex_state);
+      state = seed + increment;
+    }
     pcg32();
   }
 
   uint32_t BaseReconst::pcg32() {
-    uint64_t x = state;
-    uint32_t count = (uint32_t)(x >> 59);
-
+    uint64_t x;
+    uint32_t count;
     {
       std::unique_lock<std::mutex> lock_statics(mutex_state);
+      x = state;
+      count = (uint32_t)(x >> 59);
       state = x * multiplier + increment;
     }
 

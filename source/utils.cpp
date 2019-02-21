@@ -168,8 +168,8 @@ namespace firefly {
         }
       }
     } else {
-      ERROR_MSG("Singular system of equations! " + std::to_string(coef_mat.size()));
-      std::exit(-1);
+      ERROR_MSG("Singular system of equations!");
+      throw std::runtime_error("sing");
     }
 
     return results;

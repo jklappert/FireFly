@@ -1,7 +1,7 @@
 #include "Reconstructor.hpp"
 
 namespace firefly {
-  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t verbosity_): n(n_), thr_n(thr_n_), tp(thr_n), verbosity(verbosity_) {}
+  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t verbosity_): n(n_), thr_n(thr_n_), verbosity(verbosity_), tp(thr_n_) {}
 
   void Reconstructor::scan_for_sparsest_shift() {
     scan = true;
@@ -50,13 +50,15 @@ namespace firefly {
     uint32_t items = 0;
     ++fed_ones;
 
+    int count = 0;
     for (const auto & value : probe) {
       reconst.emplace_back(RatReconst(n));
       // save intermediate results
-      //      reconst.set_tag(std::to_string(equation.first) + "_" + std::to_string(term.first));
+      reconst.back().set_tag(std::to_string(count));
       reconst.back().feed(t, value, zi_order, prime_it);
       reconst.back().interpolate();
       ++items;
+      ++count;
     }
 
     probe.clear();
@@ -250,6 +252,8 @@ namespace firefly {
       INFO_MSG("Primes used: " + std::to_string(prime_it + 1));
       INFO_MSG("Iterations in total: " + std::to_string(total_iterations));
     }
+
+    tp.kill_all();
   }
 
   std::vector<RationalFunction> Reconstructor::get_result() {
@@ -262,7 +266,7 @@ namespace firefly {
     return result;
   }
 
-  void Reconstructor::start_probe_jobs(const std::vector<uint32_t> zi_order, const uint32_t start) {
+  void Reconstructor::start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t start, const uint32_t i) {
     RatReconst tmp(n);
     std::vector<firefly::FFInt> values(n);
     std::vector<firefly::FFInt> shift = tmp.get_zi_shift_vec();
@@ -271,7 +275,12 @@ namespace firefly {
       FFInt t = tmp.get_rand();
       values[0] = t + shift[0];
 
-      std::vector<firefly::FFInt> rand_zi = tmp.get_rand_zi_vec(zi_order);
+      std::vector<firefly::FFInt> rand_zi;
+      if (i == 0) {
+        rand_zi = tmp.get_rand_zi_vec(zi_order);
+      } else {
+        rand_zi = reconst[i].get_rand_zi_vec(zi_order);
+      }
 
       for (uint32_t i = 1; i != n; ++i) {
         values[i] = rand_zi[i - 1] * t + shift[i];
@@ -293,82 +302,72 @@ namespace firefly {
     }
   }
 
-  void Reconstructor::interpolate_job(RatReconst& reconst, uint32_t i) {
-    reconst.interpolate();
+  void Reconstructor::interpolate_job(RatReconst& reconst, const uint i) {
+    if (!reconst.interpolate()) {
+      // start new jobs if required
+      std::unique_lock<std::mutex> lock(mut);
 
-    // start new jobs if required
-    // since interpolate returns immediately if it is already interpolating, too many jobs could be started if the reconstrution is done after the first interpolating finishes
-    std::unique_lock<std::mutex> lock(mut);
-
-    if (!reconst.is_done()) {
-      if (reconst.get_prime() > prime_it) {
-        if (reconst.get_num_eqn() > probes_for_next_prime) {
-          probes_for_next_prime = reconst.get_num_eqn();
-        }
-      } else {
-        std::vector<uint32_t> zi_order = reconst.get_zi_order();
-
-        if (prime_it == 0 && zi_order == std::vector<uint32_t>(n - 1, 1)) {
-          if (started_probes.at(zi_order) - thr_n <= fed_ones - 1) {
-            uint32_t start = fed_ones - started_probes.at(zi_order) + thr_n;
-
-            if (verbosity == 2) {
-              VERBOSE_MSG(std::to_string(i) + " Starting ones: " + std::to_string(start));
-            }
-
-            started_probes.at(zi_order) += start;
-            lock.unlock();
-            start_probe_jobs(zi_order, start);
-            lock.lock();
+      if (!reconst.is_done()) {
+        if (reconst.get_prime() > prime_it) {
+          if (reconst.get_num_eqn() > probes_for_next_prime) {
+            probes_for_next_prime = reconst.get_num_eqn();
           }
         } else {
-          uint32_t required_probes = reconst.get_num_eqn();
-          auto it = started_probes.find(zi_order);
+          std::vector<uint32_t> zi_order = reconst.get_zi_order();
 
-          if (it != started_probes.end()) {
-            if (required_probes > started_probes.at(zi_order)) {
-              uint32_t start = required_probes - started_probes.at(zi_order);
+          if (prime_it == 0 && zi_order == std::vector<uint32_t>(n - 1, 1)) {
+            if (started_probes.at(zi_order) - thr_n <= fed_ones - 1) {
+              uint32_t start = fed_ones - started_probes.at(zi_order) + thr_n;
 
               if (verbosity == 2) {
-                std::string msg = std::to_string(i) + " Starting";
+                VERBOSE_MSG("Starting ones: " + std::to_string(start));
+              }
 
+              started_probes.at(zi_order) += start;
+              lock.unlock();
+              start_probe_jobs(zi_order, start, i);
+            }
+          } else {
+            uint32_t required_probes = reconst.get_num_eqn();
+            auto it = started_probes.find(zi_order);
+
+            if (it != started_probes.end()) {
+              if (required_probes > started_probes.at(zi_order)) {
+                uint32_t start = required_probes - started_probes.at(zi_order);
+
+                if (verbosity == 2) {
+                  std::string msg = "Starting";
+                  for (const auto & ele : zi_order) {
+                    msg += " " + std::to_string(ele);
+                  }
+                  msg += " -- " + std::to_string(start);
+                  VERBOSE_MSG(msg);
+                }
+
+                started_probes.at(zi_order) = required_probes;
+                lock.unlock();
+                start_probe_jobs(zi_order, start, i);
+              }
+            } else {
+              if (verbosity == 2) {
+                std::string msg = "Starting";
                 for (const auto & ele : zi_order) {
                   msg += " " + std::to_string(ele);
                 }
-
-                msg += " -- " + std::to_string(start);
-
+                msg += " -- " + std::to_string(required_probes);
                 VERBOSE_MSG(msg);
               }
 
-              started_probes.at(zi_order) = required_probes;
+              started_probes.emplace(zi_order, required_probes);
               lock.unlock();
-              start_probe_jobs(zi_order, start);
-              lock.lock();
+              start_probe_jobs(zi_order, required_probes, i);
             }
-          } else {
-            if (verbosity == 2) {
-              std::string msg = std::to_string(i) + " Starting";
-
-              for (const auto & ele : zi_order) {
-                msg += " " + std::to_string(ele);
-              }
-
-              msg += " -- " + std::to_string(required_probes);
-
-              VERBOSE_MSG(msg);
-
-            }
-
-            started_probes.emplace(zi_order, required_probes);
-            lock.unlock();
-            start_probe_jobs(zi_order, required_probes);
-            lock.lock();
           }
         }
       }
     }
 
+    std::unique_lock<std::mutex> lock(mut);
     --feeding_jobs;
     cond.notify_one();
   }

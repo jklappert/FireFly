@@ -19,9 +19,9 @@ namespace firefly {
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     void black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values);
   private:
-    uint32_t verbosity;
     uint32_t n;
     uint32_t thr_n;
+    uint32_t verbosity;
     std::vector<RatReconst> reconst {};
     bool scan = false;
     uint32_t prime_it = 0;
@@ -36,7 +36,7 @@ namespace firefly {
     uint32_t probes_for_next_prime = 0;
     uint32_t feeding_jobs = 0;
 
-    void start_probe_jobs(const std::vector<uint32_t> zi_order, const uint32_t start);
-    void interpolate_job(RatReconst& reconst, uint32_t i);
+    void start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t start, const uint i = 0);
+    void interpolate_job(RatReconst& reconst, const uint i);
   };
 }

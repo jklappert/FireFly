@@ -88,10 +88,10 @@ namespace firefly {
       queue.emplace_back(std::make_tuple(new_ti, num, feed_zi_ord));
   }
 
-  void RatReconst::interpolate() {
+  bool RatReconst::interpolate() {
     std::unique_lock<std::mutex> lock(mutex_status);
 
-    if (is_interpolating || queue.empty()) return;
+    if (is_interpolating || queue.empty()) return true;
     else {
       is_interpolating = true;
 
@@ -117,6 +117,7 @@ namespace firefly {
     }
 
     is_interpolating = false;
+    return false;
   }
 
   void RatReconst::interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord) {
@@ -1513,7 +1514,21 @@ namespace firefly {
   }
 
   std::pair<ff_map, ff_map> RatReconst::solve_gauss() {
-    std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
+//    std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
+    std::vector<FFInt> results {};
+    try {
+      results = solve_gauss_system(num_eqn, coef_mat);
+    } catch (std::exception& e) {
+      std::string msg = tag;
+      msg += ": " + std::to_string(is_singular_system) + "\nshift: ";
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      for (auto& el : shift) {
+        msg += std::to_string(el.n) + " ";
+      }
+      msg += "\nnum_eqn: " + std::to_string(num_eqn) + " shifted num_eqn: " + std::to_string(shifted_max_num_eqn) + " sum: " + std::to_string(max_deg_den + max_deg_num + 1 - tmp_solved_coefs_num - tmp_solved_coefs_den);
+      ERROR_MSG(msg);
+      throw std::runtime_error("sing");
+    }
     coef_mat.clear();
 
     ff_map numerator;
@@ -1544,7 +1559,20 @@ namespace firefly {
   }
 
   std::pair<ff_map, ff_map> RatReconst::solve_homogenized_multi_gauss() {
-    std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
+    std::vector<FFInt> results {};
+    try {
+      results = solve_gauss_system(num_eqn, coef_mat);
+    } catch (std::exception& e) {
+      std::string msg = tag;
+      msg += ": " + std::to_string(is_singular_system) + "\nshift: ";
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      for (auto& el : shift) {
+        msg += std::to_string(el.n) + " ";
+      }
+      msg += "\nnum_eqn: " + std::to_string(num_eqn) + " shifted num_eqn: " + std::to_string(shifted_max_num_eqn) + " sum: " + std::to_string(max_deg_den + max_deg_num + 1 - tmp_solved_coefs_num - tmp_solved_coefs_den);
+      ERROR_MSG(msg);
+      throw std::runtime_error("sing");
+    }
     coef_mat.clear();
 
     ff_map numerator;
@@ -2182,13 +2210,38 @@ namespace firefly {
 
   std::vector<FFInt> RatReconst::get_rand_zi_vec(const std::vector<uint32_t>& order) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::unique_lock<std::mutex> lock(mutex_status);
     std::vector<FFInt> res {};
 
-    for (uint32_t i = 2; i <= n; ++i) {
-      res.emplace_back(rand_zi.at(std::make_pair(i, order[i - 2])));
-    }
+    try {
+      for (uint32_t i = 2; i <= n; ++i) {
+        res.emplace_back(rand_zi.at(std::make_pair(i, order[i - 2])));
+      }
 
-    return res;
+      return res;
+    } catch (std::exception& e) {
+      std::string msg = "at:";
+
+      for (const auto & ele : order) {
+        msg += " " + std::to_string(ele);
+      }
+
+      msg += "\nrand_zi:";
+
+      for (auto& rand : rand_zi) {
+        msg += "\n" + std::to_string(rand.first.first) + " " + std::to_string(rand.first.second) + ": " + std::to_string(rand.second.n) + "\n";
+      }
+
+      msg += "zi: " + std::to_string(zi) + " deg num: " + std::to_string(curr_deg_num) + " deg den: " + std::to_string(curr_deg_den) + "\n";
+
+      msg += "zi_order:";
+      for (auto zi : curr_zi_order) {
+        msg += " " + std::to_string(zi);
+      }
+
+      ERROR_MSG(msg);
+      throw std::runtime_error("at");
+    }
   }
 
   FFInt RatReconst::get_zi_shift(uint32_t zi) {

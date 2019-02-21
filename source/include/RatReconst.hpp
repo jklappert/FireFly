@@ -21,7 +21,7 @@ namespace firefly {
     RatReconst& operator=(RatReconst && other);
     void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime);
     RationalFunction get_result();
-    void interpolate();
+    bool interpolate();
     void disable_shift();
     void generate_anchor_points();
     FFInt get_rand_zi(uint32_t zi, uint32_t order);
