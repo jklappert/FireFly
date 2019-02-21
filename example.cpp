@@ -17,7 +17,7 @@ void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFIn
 }
 
 int main() {
-  Reconstructor reconst(4, 4);
+  Reconstructor reconst(4, 2);
   reconst.reconstruct();
   std::vector<RationalFunction> results = reconst.get_result();
   /*for (auto& res : results) {
@@ -27,8 +27,8 @@ int main() {
   /*uint n = 4;
   FFInt::set_new_prime(primes()[0]);
   RatReconst rec(n);
-  //rec.set_tag("gghh");
-  //rec.start_from_saved_file("ff_save/gghh_3.txt");
+  rec.set_tag("sing");
+  //rec.start_from_saved_file("ff_save/sing_2.txt");
 
   std::cout << "--------------------------------------------------------------\n";
   std::cout << "Interpolating rational function\n";
@@ -45,7 +45,7 @@ int main() {
   int kk = 0;
   uint primes_used = 0;
 
-  rec.scan_for_sparsest_shift();
+  //rec.scan_for_sparsest_shift();
   // Feed loop
   std::vector<FFInt> shift = rec.get_zi_shift_vec();
   bool first = true;
@@ -75,11 +75,11 @@ int main() {
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       //FFInt num = n_eq_1(z1); // example for n = 1
       //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-      //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+      FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
 
-      FFInt num = yis[0].pow(15)*yis[1].pow(15)*yis[2].pow(15)*yis[3].pow(15)*yis[4].pow(15);// + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
+      //FFInt num = yis[0].pow(15)*yis[1].pow(15)*yis[2].pow(15)*yis[3].pow(15)*yis[4].pow(15);// + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
       // Feed the algorithm with the current zi_order
       ++count;
       rec.feed(t, num, rec.get_zi_order(), primes_used);
@@ -141,13 +141,13 @@ int main() {
     //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
     //FFInt num = n_eq_1(z1); // example for n = 1
     //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-    //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+    FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
     //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
     ++kk;
     ++count;
 
-    FFInt num = yis[0].pow(15)*yis[1].pow(15)*yis[2].pow(15)*yis[3].pow(15)*yis[4].pow(15);// + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
+    //FFInt num = yis[0].pow(15)*yis[1].pow(15)*yis[2].pow(15)*yis[3].pow(15)*yis[4].pow(15);// + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
     // Feed the algorithm with the current zi_order
     rec.feed(t, num, rec.get_zi_order(), primes_used);
     rec.interpolate();
@@ -198,7 +198,7 @@ int main() {
 
   std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
   //std::cout << rec_poly.get_result();
-  std::cout << "--------------------------------------------------------------\n";*/
+  std::cout << "--------------------------------------------------------------\n";
 
   /*  FFInt::set_new_prime(primes()[0]);
 

@@ -62,7 +62,7 @@ namespace firefly {
   void RatReconst::scan_for_sparsest_shift() {
     scan = true;
 
-    if (n == 1){
+    if (n == 1) {
       ERROR_MSG("Do you really want to shift a univariate rational function?");
       std::exit(-1);
     }
@@ -204,6 +204,7 @@ namespace firefly {
         // theorem
         {
           std::unique_lock<std::mutex> lock(mutex_status);
+
           if (prime_number == 0) zi = 1;
         }
 
@@ -598,6 +599,7 @@ namespace firefly {
                   numerator += PolynomialFF(n, dummy_map);
                   normalizer_den_num = false;
                 }
+
                 normalizer_deg = std::vector<uint32_t> (n, 0);
               } else if (normalize_to_den && numerator.coefs.find(std::vector<uint32_t> (n, 0)) != numerator.coefs.end()) {
                 terminator = numerator.coefs[std::vector<uint32_t> (n, 0)];
@@ -801,11 +803,13 @@ namespace firefly {
 
                 // normalize
                 FFInt terminator = 0;
+
                 if (normalizer_den_num) {
                   terminator = solved_den.coefs[normalizer_deg];
                 } else {
                   terminator = solved_num.coefs[normalizer_deg];
                 }
+
                 FFInt equalizer = FFInt(1) / terminator;
 
                 for (const auto & el : g_ni) {
@@ -1343,7 +1347,7 @@ namespace firefly {
     if (tag.size() > 0) {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       std::ofstream file;
-      std::string file_name = std::string("ff_save/") + tag + std::string("_") + std::to_string(prime_number) + std::string(".txt");
+      std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
       file.open(file_name.c_str());
       file << "combined_prime\n" << combined_prime.get_str() << "\n";
       file << "max_deg_num\n" << max_deg_num << "\n";
@@ -1353,18 +1357,94 @@ namespace firefly {
       std::string tmp_vec = "";
 
       for (const auto & deg : normalizer_deg) {
-        tmp_vec += std::to_string(deg) + std::string(" ");
+        tmp_vec += std::to_string(deg) + " ";
       }
 
       tmp_vec.substr(0, tmp_vec.size() - 1);
       tmp_vec += std::string("\n");
       file << tmp_vec;
+
+      file << "normalize_to_den\n" << normalize_to_den << "\n";
+      file << "normalizer_den_num\n" << normalizer_den_num << "\n";
+      file << "shifted_max_num_eqn\n" << shifted_max_num_eqn << "\n";
+      file << "shift\n";
+
+      std::string tmp_shift = "";
+
+      {
+        std::unique_lock<std::mutex> lock(mutex_statics);
+
+        for (const auto & sft : shift) {
+          if (sft > 0)
+            tmp_shift += "1 ";
+          else
+            tmp_shift += "0 ";
+        }
+
+      }
+      tmp_shift.substr(0, tmp_shift.size() - 1);
+      tmp_shift += std::string("\n");
+
+      file << tmp_shift;
+
+      file << "shifted_degs_num\n";
+      std::string tmp_str = "";
+
+      for (const auto & el : shifted_degs_num) {
+        tmp_str += std::to_string(el) + " ";
+      }
+
+      if (shifted_degs_num.size() > 0) {
+        tmp_str.substr(0, tmp_str.size() - 1);
+        tmp_str += std::string("\n");
+        file << tmp_str;
+      }
+
+      file << "shifted_degs_den\n";
+      tmp_str = "";
+
+      for (const auto & el : shifted_degs_den) {
+        tmp_str += std::to_string(el) + " ";
+      }
+
+      if (shifted_degs_den.size() > 0) {
+        tmp_str.substr(0, tmp_str.size() - 1);
+        tmp_str += std::string("\n");
+        file << tmp_str;
+      }
+
+      file << "zero_degs_num\n";
+      tmp_str = "";
+
+      for (const auto & el : zero_degs_num) {
+        tmp_str += std::to_string(el) + " ";
+      }
+
+      if (zero_degs_num.size() > 0) {
+        tmp_str.substr(0, tmp_str.size() - 1);
+        tmp_str += std::string("\n");
+        file << tmp_str;
+      }
+
+      file << "zero_degs_den\n";
+      tmp_str = "";
+
+      for (const auto & el : zero_degs_den) {
+        tmp_str += std::to_string(el) + " ";
+      }
+
+      if (zero_degs_den.size() > 0) {
+        tmp_str.substr(0, tmp_str.size() - 1);
+        tmp_str += std::string("\n");
+        file << tmp_str;
+      }
+
       file << "g_ni\n";
 
       for (const auto & el : g_ni) {
         std::string tmp_entry = "";
 
-        for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
+        for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + " ";
 
         tmp_entry += std::string(el.second.numerator.get_str()) + " " + std::string(el.second.denominator.get_str()) + std::string("\n");
         file << tmp_entry;
@@ -1406,10 +1486,10 @@ namespace firefly {
       file.close();
 
       if (prime_number > 0) {
-        std::string old_file_name = std::string("ff_save/") + tag + std::string("_") + std::to_string(prime_number - 1) + std::string(".txt");
+        std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
 
-        if (std::remove(old_file_name.c_str()) != 0)
-          WARNING_MSG("The previously saved file could not be deleted.");
+        //if (std::remove(old_file_name.c_str()) != 0)
+        //  WARNING_MSG("The previously saved file could not be deleted.");
       }
     }
   }
@@ -2472,8 +2552,32 @@ namespace firefly {
             curr_parsed_variable = NEED_PRIME_SHIFT;
             parsed_variables[NEED_PRIME_SHIFT] = true;
           } else if (line == "normalizer_deg") {
-            curr_parsed_variable = MIN_DEG_DEN_VEC;
-            parsed_variables[MIN_DEG_DEN_VEC] = true;
+            curr_parsed_variable = NORMALIZER_DEG;
+            parsed_variables[NORMALIZER_DEG] = true;
+          } else if (line == "normalize_to_den") {
+            curr_parsed_variable = NORMALIZE_TO_DEN;
+            parsed_variables[NORMALIZE_TO_DEN] = true;
+          } else if (line == "normalizer_den_num") {
+            curr_parsed_variable = NORMALIZER_DEN_NUM;
+            parsed_variables[NORMALIZER_DEN_NUM] = true;
+          } else if (line == "shifted_max_num_eqn") {
+            curr_parsed_variable = SHIFTED_MAX_NUM_EQN;
+            parsed_variables[SHIFTED_MAX_NUM_EQN] = true;
+          } else if (line == "shift") {
+            curr_parsed_variable = SHIFT;
+            parsed_variables[SHIFT] = true;
+          } else if (line == "shifted_degs_num") {
+            curr_parsed_variable = SHIFTED_DEGS_NUM;
+            parsed_variables[SHIFTED_DEGS_NUM] = true;
+          } else if (line == "shifted_degs_den") {
+            curr_parsed_variable = SHIFTED_DEGS_DEN;
+            parsed_variables[SHIFTED_DEGS_DEN] = true;
+          } else if (line == "zero_degs_num") {
+            curr_parsed_variable = ZERO_DEGS_NUM;
+            parsed_variables[ZERO_DEGS_NUM] = true;
+          } else if (line == "zero_degs_den") {
+            curr_parsed_variable = ZERO_DEGS_DEN;
+            parsed_variables[ZERO_DEGS_DEN] = true;
           } else if (line == "g_ni") {
             curr_parsed_variable = G_NI;
             parsed_variables[G_NI] = true;
@@ -2508,9 +2612,77 @@ namespace firefly {
                 break;
               }
 
-              case MIN_DEG_DEN_VEC: {
+              case NORMALIZER_DEG: {
                 normalizer_deg = parse_vector(line);
                 n = normalizer_deg.size();
+                break;
+              }
+
+              case NORMALIZE_TO_DEN: {
+                normalize_to_den = std::stoi(line);
+                break;
+              }
+
+              case NORMALIZER_DEN_NUM: {
+                normalizer_den_num = std::stoi(line);
+                break;
+              }
+
+              case SHIFTED_MAX_NUM_EQN: {
+                shifted_max_num_eqn = std::stoi(line);
+                break;
+              }
+
+              case SHIFT: {
+                std::vector<uint32_t> tmp_vec = parse_vector(line);
+                std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
+                shift = std::vector<FFInt> (n, 0);
+                for (uint32_t i = 0; i < n; ++i) {
+                  if (tmp_vec[i] != 0)
+                    shift[i] = get_rand();
+                }
+
+                break;
+              }
+
+              case SHIFTED_DEGS_NUM: {
+                std::vector<uint32_t> tmp_vec = parse_vector(line);
+
+                for (const auto & el : tmp_vec) {
+                  shifted_degs_num.emplace(el);
+                }
+
+                break;
+              }
+
+              case SHIFTED_DEGS_DEN: {
+                std::vector<uint32_t> tmp_vec = parse_vector(line);
+
+                for (const auto & el : tmp_vec) {
+                  shifted_degs_den.emplace(el);
+                }
+
+                break;
+              }
+
+              case ZERO_DEGS_NUM: {
+                std::vector<uint32_t> tmp_vec = parse_vector(line);
+
+                for (const auto & el : tmp_vec) {
+                  zero_degs_num.emplace(el);
+                }
+
+                break;
+              }
+
+              case ZERO_DEGS_DEN: {
+                std::vector<uint32_t> tmp_vec = parse_vector(line);
+
+                for (const auto & el : tmp_vec) {
+                  zero_degs_den.emplace(el);
+                }
+
                 break;
               }
 
@@ -2609,7 +2781,7 @@ namespace firefly {
         curr_deg_den = max_deg_den;
 
         std::unique_lock<std::mutex> lock(mutex_status);
-        num_eqn = max_deg_den + max_deg_num + 1;
+        num_eqn = shifted_max_num_eqn;
       } else {
         std::unique_lock<std::mutex> lock(mutex_status);
         num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
@@ -2619,7 +2791,7 @@ namespace firefly {
 
       for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
     } else {
-      ERROR_MSG(std::string("The file '") + file_name + std::string("' could not be found!"));
+      ERROR_MSG("The file '" + file_name + "' could not be found!");
       std::exit(-1);
     }
   }
