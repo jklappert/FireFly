@@ -17,7 +17,7 @@ void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFIn
 }
 
 int main() {
-  Reconstructor reconst(4, 2);
+  Reconstructor reconst(4, 8);
   reconst.reconstruct();
   std::vector<RationalFunction> results = reconst.get_result();
   /*for (auto& res : results) {

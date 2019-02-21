@@ -36,7 +36,7 @@ namespace firefly {
     uint32_t probes_for_next_prime = 0;
     uint32_t feeding_jobs = 0;
 
-    void start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t start, const uint i = 0);
-    void interpolate_job(RatReconst& reconst, const uint i);
+    void start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t start);
+    void interpolate_job(RatReconst& rec);
   };
 }

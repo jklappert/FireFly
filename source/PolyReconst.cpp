@@ -257,11 +257,11 @@ namespace firefly {
             check = true;
 
           if (check && zi == n) {
+            {
+              std::unique_lock<std::mutex> lock(mutex_status);
+              curr_zi_order = std::vector<uint32_t> (n, 1);
+            }
             if (!with_rat_reconst) {
-              {
-                std::unique_lock<std::mutex> lock(mutex_status);
-                curr_zi_order = std::vector<uint32_t> (n, 1);
-              }
               ff_map tmp_pol_ff = construct_canonical(zi, ais[zi]);
               tmp_pol_ff.insert(solved_degs.begin(), solved_degs.end());
 
@@ -505,4 +505,3 @@ namespace firefly {
     return rand_zi.empty();
   }
 }
-
