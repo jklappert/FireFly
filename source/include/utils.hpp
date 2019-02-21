@@ -36,19 +36,45 @@ namespace firefly {
   std::pair<bool, RationalNumber> get_rational_coef_mqrr(const mpz_class& a, const mpz_class& p);
 
   /**
-   *
+   *  Solves the given system of equations using a Gauss-Jordan algorithm
+   *  @param num_eqn the number of equations
+   *  @param coef_mat the matrix which represents the system of equations
    *
    */
   std::vector<FFInt> solve_gauss_system(uint32_t num_eqn,
                                         std::vector<std::vector<FFInt>>& coef_mat);
 
+
+  /**
+   *  Compares two vetors colexographically, i.e. (1,0,0) < (0,1,0), and returns
+   *  true if the first arguement is greater than the second
+   *  @param a first vector which should be probed if it its greater
+   *  @param b the reference vector for the comparison
+   */
   bool a_grt_b(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b);
 
+  /**
+   *  Compares two vetors colexographically, i.e. (1,0,0) < (0,1,0), and returns
+   *  true if the first arguement is greater than the second. This function
+   *  is particulary written for tuples of 0 and 1
+   *  @param a first vector which should be probed if it its greater
+   *  @param b the reference vector for the comparison
+   */
   bool a_grt_b_s(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b);
 
+  /**
+   *  Generates a vector of possible tuples of 1 and 0 for a given length r
+   *  @param r the length of the vector
+   */
   std::vector<std::vector<uint32_t>> generate_possible_shifts(uint32_t r);
 
+  /**
+   *  A test function for the reconstruction of rational functions
+   */
   void reconstruct_rational_function();
 
+  /**
+   *  A test functionm for the reconstruction of polynomials
+   */
   void reconstruct_polynomial();
 }
