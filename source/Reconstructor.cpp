@@ -247,7 +247,7 @@ namespace firefly {
     probe.clear();
 
     if (verbosity == CHATTY) {
-      VERBOSE_MSG("| Iteration: 1 | Done: 0 / " + std::to_string(items) + " | Want new prime: 0 / " + std::to_string(items) + " |");
+      INFO_MSG("| Iteration: 1 | Done: 0 / " + std::to_string(items) + " | Want new prime: 0 / " + std::to_string(items) + " |");
     }
 
     start_probe_jobs(std::vector<uint32_t>(n - 1, 1), 1);
@@ -319,14 +319,14 @@ namespace firefly {
         // start only thr_n jobs first, because the reconstruction can be done after the first feed
         if (probes_for_next_prime > thr_n) {
           if (verbosity == CHATTY) {
-            VERBOSE_MSG("| Starting " + std::to_string(thr_n) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - thr_n) + " jobs will be started later. |");
+            INFO_MSG("| Starting " + std::to_string(thr_n) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - thr_n) + " jobs will be started later. |");
           }
 
           start_probe_jobs(std::vector<uint32_t>(n - 1, 1), thr_n);
           started_probes.emplace(std::vector<uint32_t>(n - 1, 1), thr_n);
         } else {
           if (verbosity == CHATTY) {
-            VERBOSE_MSG("| Starting " + std::to_string(probes_for_next_prime) + " jobs. |");
+            INFO_MSG("| Starting " + std::to_string(probes_for_next_prime) + " jobs. |");
           }
 
           start_probe_jobs(std::vector<uint32_t>(n - 1, 1), probes_for_next_prime);
@@ -400,7 +400,7 @@ namespace firefly {
       std::unique_lock<std::mutex> lock(mut);
 
       if (verbosity == CHATTY) {
-        VERBOSE_MSG("| Iteration: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items)
+        INFO_MSG("| Iteration: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items)
                     + " | " + "Want new prime: " + std::to_string(items_new_prime) + " / " + std::to_string(items) + " |");
       }
 
@@ -502,7 +502,7 @@ namespace firefly {
               uint32_t start = fed_ones - started_probes.at(zi_order) + thr_n;
 
               if (verbosity == CHATTY) {
-                VERBOSE_MSG("| Starting ones: " + std::to_string(start) + ". |");
+                INFO_MSG("| Starting ones: " + std::to_string(start) + ". |");
               }
 
               started_probes.at(zi_order) += start;
@@ -526,8 +526,8 @@ namespace firefly {
 
                   msg = msg.substr(0, msg.length() - 2);
 
-                  msg += ") " + std::to_string(start) + " times";
-                  VERBOSE_MSG(msg + ". |");
+                  msg += ") " + std::to_string(start) + " time(s)";
+                  INFO_MSG(msg + ". |");
                 }
 
                 started_probes.at(zi_order) = required_probes;
@@ -544,8 +544,8 @@ namespace firefly {
 
                 msg = msg.substr(0, msg.length() - 2);
 
-                msg += ") " + std::to_string(required_probes) + " times";
-                VERBOSE_MSG(msg + ". |");
+                msg += ") " + std::to_string(required_probes) + " time(s)";
+                INFO_MSG(msg + ". |");
               }
 
               started_probes.emplace(zi_order, required_probes);
