@@ -9,9 +9,11 @@ using namespace firefly;
 int main() {
   // Example for the automatic interface
   Reconstructor reconst(4, 4);
+  // Enables a scan for a sparse shift
+  reconst.enable_scan();
   // Give the paths to the saved states to resum the run from this
   //std::vector<std::string> file_paths = {"ff_save/0_3.txt","ff_save/1_2.txt","ff_save/2_3.txt","ff_save/3_4.txt","ff_save/4_1.txt","ff_save/5_2.txt"};
-  reconst.enable_scan();
+  // Enables to resume from a saved state
   //reconst.resume_from_saved_state(file_paths);
   // Write the state of all reconstruction objects after each interpolation over a prime field
   //reconst.set_tags();
