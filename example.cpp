@@ -76,6 +76,9 @@ namespace firefly {
 
     // Generate all possible combinations of shifting variables
     auto shift_vec = generate_possible_shifts(n);
+    for(const auto& el : shift_vec){
+      std::cout << el[0] << " " << el[1] << " " << el[2] << " " << el[3] << "\n";
+    }
 
     // Run this loop until a proper shift is found
     while (!found_shift) {

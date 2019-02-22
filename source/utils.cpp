@@ -198,7 +198,7 @@ namespace firefly {
     if (deg1 < deg2)
       return false;
     else if (deg1 == deg2)
-      return a_grt_b(a, b);
+      return a_grt_b(b, a);
 
     return true;
   }
