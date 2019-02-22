@@ -148,9 +148,13 @@ namespace firefly {
             }
 
             if (done) {
-              std::unique_lock<std::mutex> lock(mutex_status);
               combined_di = mpz_map();
               combined_ni = mpz_map();
+              if (tag.size() > 0)
+                save_state();
+
+              std::unique_lock<std::mutex> lock(mutex_status);
+
               combined_prime = 0;
               num_eqn = 0;
               new_prime = false;
@@ -1363,154 +1367,8 @@ namespace firefly {
     for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
 
     // Check if the state should be written out after this prime
-    if (tag.size() > 0) {
-      mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-      std::ofstream file;
-      std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
-      file.open(file_name.c_str());
-      file << "combined_prime\n" << combined_prime.get_str() << "\n";
-      file << "max_deg_num\n" << max_deg_num << "\n";
-      file << "max_deg_den\n" << max_deg_den << "\n";
-      file << "need_prime_shift\n" << need_prime_shift << "\n";
-      file << "normalizer_deg\n";
-      std::string tmp_vec = "";
-
-      for (const auto & deg : normalizer_deg) {
-        tmp_vec += std::to_string(deg) + " ";
-      }
-
-      tmp_vec.substr(0, tmp_vec.size() - 1);
-      tmp_vec += std::string("\n");
-      file << tmp_vec;
-
-      file << "normalize_to_den\n" << normalize_to_den << "\n";
-      file << "normalizer_den_num\n" << normalizer_den_num << "\n";
-      file << "shifted_max_num_eqn\n" << shifted_max_num_eqn << "\n";
-      file << "shift\n";
-
-      std::string tmp_shift = "";
-
-      {
-        std::unique_lock<std::mutex> lock(mutex_statics);
-
-        for (const auto & sft : shift) {
-          if (sft > 0)
-            tmp_shift += "1 ";
-          else
-            tmp_shift += "0 ";
-        }
-
-      }
-      tmp_shift.substr(0, tmp_shift.size() - 1);
-      tmp_shift += std::string("\n");
-
-      file << tmp_shift;
-
-      file << "shifted_degs_num\n";
-      std::string tmp_str = "";
-
-      for (const auto & el : shifted_degs_num) {
-        tmp_str += std::to_string(el) + " ";
-      }
-
-      if (shifted_degs_num.size() > 0) {
-        tmp_str.substr(0, tmp_str.size() - 1);
-        tmp_str += std::string("\n");
-        file << tmp_str;
-      }
-
-      file << "shifted_degs_den\n";
-      tmp_str = "";
-
-      for (const auto & el : shifted_degs_den) {
-        tmp_str += std::to_string(el) + " ";
-      }
-
-      if (shifted_degs_den.size() > 0) {
-        tmp_str.substr(0, tmp_str.size() - 1);
-        tmp_str += std::string("\n");
-        file << tmp_str;
-      }
-
-      file << "zero_degs_num\n";
-      tmp_str = "";
-
-      for (const auto & el : zero_degs_num) {
-        tmp_str += std::to_string(el) + " ";
-      }
-
-      if (zero_degs_num.size() > 0) {
-        tmp_str.substr(0, tmp_str.size() - 1);
-        tmp_str += std::string("\n");
-        file << tmp_str;
-      }
-
-      file << "zero_degs_den\n";
-      tmp_str = "";
-
-      for (const auto & el : zero_degs_den) {
-        tmp_str += std::to_string(el) + " ";
-      }
-
-      if (zero_degs_den.size() > 0) {
-        tmp_str.substr(0, tmp_str.size() - 1);
-        tmp_str += std::string("\n");
-        file << tmp_str;
-      }
-
-      file << "g_ni\n";
-
-      for (const auto & el : g_ni) {
-        std::string tmp_entry = "";
-
-        for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + " ";
-
-        tmp_entry += std::string(el.second.numerator.get_str()) + " " + std::string(el.second.denominator.get_str()) + std::string("\n");
-        file << tmp_entry;
-      }
-
-      file << "g_di\n";
-
-      for (const auto & el : g_di) {
-        std::string tmp_entry = "";
-
-        for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
-
-        tmp_entry += std::string(el.second.numerator.get_str()) + " " + std::string(el.second.denominator.get_str()) + std::string("\n");
-        file << tmp_entry;
-      }
-
-      file << "combined_ni\n";
-
-      for (const auto & el : combined_ni) {
-        std::string tmp_entry = "";
-
-        for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
-
-        tmp_entry += std::string(el.second.get_str()) + std::string("\n");
-        file << tmp_entry;
-      }
-
-      file << "combined_di\n";
-
-      for (const auto & el : combined_di) {
-        std::string tmp_entry = "";
-
-        for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
-
-        tmp_entry += std::string(el.second.get_str()) + std::string("\n");
-        file << tmp_entry;
-      }
-
-      file.close();
-
-      if (prime_number > 0) {
-        std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
-
-        if (std::remove(old_file_name.c_str()) != 0)
-          WARNING_MSG("The previously saved file could not be deleted.");
-      }
-    }
+    if (tag.size() > 0)
+      save_state();
   }
 
   RationalFunction RatReconst::get_result() {
@@ -1525,8 +1383,8 @@ namespace firefly {
         denominator = Polynomial(g_di);
         g_ni.clear();
         g_di.clear();
-        numerator.sort();
-        denominator.sort();
+        //numerator.sort();
+        //denominator.sort();
 
         result = RationalFunction(numerator, denominator);
       }
@@ -2542,6 +2400,156 @@ namespace firefly {
     tag = tag_;
   }
 
+  void RatReconst::save_state() {
+    mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    std::ofstream file;
+    std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
+    file.open(file_name.c_str());
+    file << "combined_prime\n" << combined_prime.get_str() << "\n";
+    file << "is_done\n" << is_done() << "\n";
+    file << "max_deg_num\n" << max_deg_num << "\n";
+    file << "max_deg_den\n" << max_deg_den << "\n";
+    file << "need_prime_shift\n" << need_prime_shift << "\n";
+    file << "normalizer_deg\n";
+    std::string tmp_vec = "";
+
+    for (const auto & deg : normalizer_deg) {
+      tmp_vec += std::to_string(deg) + " ";
+    }
+
+    tmp_vec.substr(0, tmp_vec.size() - 1);
+    tmp_vec += std::string("\n");
+    file << tmp_vec;
+
+    file << "normalize_to_den\n" << normalize_to_den << "\n";
+    file << "normalizer_den_num\n" << normalizer_den_num << "\n";
+    file << "shifted_max_num_eqn\n" << shifted_max_num_eqn << "\n";
+    file << "shift\n";
+
+    std::string tmp_shift = "";
+
+    {
+      std::unique_lock<std::mutex> lock(mutex_statics);
+
+      for (const auto & sft : shift) {
+        if (sft > 0)
+          tmp_shift += "1 ";
+        else
+          tmp_shift += "0 ";
+      }
+
+    }
+    tmp_shift.substr(0, tmp_shift.size() - 1);
+    tmp_shift += std::string("\n");
+
+    file << tmp_shift;
+
+    file << "shifted_degs_num\n";
+    std::string tmp_str = "";
+
+    for (const auto & el : shifted_degs_num) {
+      tmp_str += std::to_string(el) + " ";
+    }
+
+    if (shifted_degs_num.size() > 0) {
+      tmp_str.substr(0, tmp_str.size() - 1);
+      tmp_str += std::string("\n");
+      file << tmp_str;
+    }
+
+    file << "shifted_degs_den\n";
+    tmp_str = "";
+
+    for (const auto & el : shifted_degs_den) {
+      tmp_str += std::to_string(el) + " ";
+    }
+
+    if (shifted_degs_den.size() > 0) {
+      tmp_str.substr(0, tmp_str.size() - 1);
+      tmp_str += std::string("\n");
+      file << tmp_str;
+    }
+
+    file << "zero_degs_num\n";
+    tmp_str = "";
+
+    for (const auto & el : zero_degs_num) {
+      tmp_str += std::to_string(el) + " ";
+    }
+
+    if (zero_degs_num.size() > 0) {
+      tmp_str.substr(0, tmp_str.size() - 1);
+      tmp_str += std::string("\n");
+      file << tmp_str;
+    }
+
+    file << "zero_degs_den\n";
+    tmp_str = "";
+
+    for (const auto & el : zero_degs_den) {
+      tmp_str += std::to_string(el) + " ";
+    }
+
+    if (zero_degs_den.size() > 0) {
+      tmp_str.substr(0, tmp_str.size() - 1);
+      tmp_str += std::string("\n");
+      file << tmp_str;
+    }
+
+    file << "g_ni\n";
+
+    for (const auto & el : g_ni) {
+      std::string tmp_entry = "";
+
+      for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + " ";
+
+      tmp_entry += std::string(el.second.numerator.get_str()) + " " + std::string(el.second.denominator.get_str()) + std::string("\n");
+      file << tmp_entry;
+    }
+
+    file << "g_di\n";
+
+    for (const auto & el : g_di) {
+      std::string tmp_entry = "";
+
+      for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
+
+      tmp_entry += std::string(el.second.numerator.get_str()) + " " + std::string(el.second.denominator.get_str()) + std::string("\n");
+      file << tmp_entry;
+    }
+
+    file << "combined_ni\n";
+
+    for (const auto & el : combined_ni) {
+      std::string tmp_entry = "";
+
+      for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
+
+      tmp_entry += std::string(el.second.get_str()) + std::string("\n");
+      file << tmp_entry;
+    }
+
+    file << "combined_di\n";
+
+    for (const auto & el : combined_di) {
+      std::string tmp_entry = "";
+
+      for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
+
+      tmp_entry += std::string(el.second.get_str()) + std::string("\n");
+      file << tmp_entry;
+    }
+
+    file.close();
+
+    if (prime_number > 0) {
+      std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
+
+      if (std::remove(old_file_name.c_str()) != 0)
+        WARNING_MSG("The previously saved file could not be deleted.");
+    }
+  }
+
   void RatReconst::start_from_saved_file(std::string file_name) {
     std::string line;
     std::ifstream file(file_name.c_str());
@@ -2561,7 +2569,10 @@ namespace firefly {
           curr_parsed_variable = COMBINED_PRIME;
           parsed_variables[COMBINED_PRIME] = true;
         } else {
-          if (line == "max_deg_num") {
+          if (line == "is_done") {
+            curr_parsed_variable = IS_DONE;
+            parsed_variables[IS_DONE] = true;
+          } else if (line == "max_deg_num") {
             curr_parsed_variable = MAX_DEG_NUM;
             parsed_variables[MAX_DEG_NUM] = true;
           } else if (line == "max_deg_den") {
@@ -2616,6 +2627,12 @@ namespace firefly {
                 break;
               }
 
+              case IS_DONE: {
+                std::unique_lock<std::mutex> lock_statics(mutex_status);
+                done = std::stoi(line);
+                break;
+              }
+
               case MAX_DEG_NUM: {
                 max_deg_num = std::stoi(line);
                 break;
@@ -2627,7 +2644,9 @@ namespace firefly {
               }
 
               case NEED_PRIME_SHIFT: {
-                need_prime_shift = std::stoi(line);
+                if (!is_done())
+                  need_prime_shift = std::stoi(line);
+
                 break;
               }
 
@@ -2653,14 +2672,16 @@ namespace firefly {
               }
 
               case SHIFT: {
-                std::vector<uint32_t> tmp_vec = parse_vector(line);
-                std::unique_lock<std::mutex> lock_statics(mutex_statics);
+                if (!is_done()) {
+                  std::vector<uint32_t> tmp_vec = parse_vector(line);
+                  std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-                shift = std::vector<FFInt> (n, 0);
+                  shift = std::vector<FFInt> (n, 0);
 
-                for (uint32_t i = 0; i < n; ++i) {
-                  if (tmp_vec[i] != 0)
-                    shift[i] = get_rand();
+                  for (uint32_t i = 0; i < n; ++i) {
+                    if (tmp_vec[i] != 0)
+                      shift[i] = get_rand();
+                  }
                 }
 
                 break;

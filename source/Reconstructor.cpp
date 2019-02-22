@@ -23,9 +23,17 @@ namespace firefly {
   void Reconstructor::resume_from_saved_state(const std::vector<std::string>& file_paths_) {
     resume_from_state = true;
     file_paths = file_paths_;
-    parse_prime_number(file_paths[0]);
-    tmp_rec.start_from_saved_file(file_paths[0]);
     items = file_paths.size();
+    uint32_t counter = 0;
+
+    for(uint32_t i = 0; i != items; ++i){
+      uint32_t old_it = prime_it;
+      prime_it = std::max(prime_it, parse_prime_number(file_paths[i]));
+      if(prime_it > old_it)
+        counter = i;
+    }
+
+    tmp_rec.start_from_saved_file(file_paths[counter]);
 
     for (uint32_t i = 0; i != items; ++i) {
       reconst.emplace_back(RatReconst(n));
@@ -34,12 +42,12 @@ namespace firefly {
     }
   }
 
-  void Reconstructor::parse_prime_number(std::string& file_name) {
+  uint32_t Reconstructor::parse_prime_number(std::string& file_name) {
     std::string reverse_file_name = file_name;
     std::reverse(reverse_file_name.begin(), reverse_file_name.end());
     reverse_file_name.erase(0, 4);
     size_t pos = reverse_file_name.find("_");
-    prime_it = std::stoi(reverse_file_name.substr(0, pos));
+    return std::stoi(reverse_file_name.substr(0, pos));
   }
 
   void Reconstructor::reconstruct() {
@@ -259,6 +267,7 @@ namespace firefly {
         if (verbosity > SILENT) {
           INFO_MSG("Iterations for last prime field: " + std::to_string(iteration) + ".");
           INFO_MSG("Iterations in total: " + std::to_string(total_iterations) + ".");
+          INFO_MSG("Reconstructed functions: " + std::to_string(items_done) + " / " + std::to_string(items) + ".");
           INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
         }
 
@@ -339,7 +348,7 @@ namespace firefly {
 
       ++iteration;
 
-      uint32_t items_done = 0;
+      items_done = 0;
       uint32_t items_new_prime = 0;
       {
         std::unique_lock<std::mutex> lock(mut);
@@ -426,7 +435,7 @@ namespace firefly {
     total_iterations += iteration;
 
     if (verbosity > SILENT && !scan) {
-      INFO_MSG("Iterations for last prime: " + std::to_string(iteration) + ".");
+      INFO_MSG("Iterations for last prime field: " + std::to_string(iteration) + ".");
     }
   }
 

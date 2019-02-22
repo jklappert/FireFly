@@ -252,6 +252,10 @@ namespace firefly {
      *  @param key the current degree which has to be solved
      */
     void set_new_curr_deg_den_singular(uint32_t key);
+    /**
+     *  Saves the state of the current object and writes it to the specified file
+     */
+    void save_state();
     polff_map solved_degs_num {};
     polff_map solved_degs_den {};
     std::vector<uint32_t> normalizer_deg {};
@@ -263,7 +267,7 @@ namespace firefly {
     static bool need_prime_shift;
     static bool set_singular_system;
     void set_singular_system_vars();
-    std::vector<bool> parsed_variables {std::vector<bool>(17, false)};
+    std::vector<bool> parsed_variables {std::vector<bool>(18, false)};
     int curr_parsed_variable = -1;
     uint32_t sub_count_num = 0;
     uint32_t sub_count_den = 0;
@@ -297,7 +301,7 @@ namespace firefly {
     std::unordered_set<uint32_t> zero_degs_num {};
     std::unordered_set<uint32_t> zero_degs_den {};
     bool normalizer_den_num = false;
-    enum save_variables {COMBINED_PRIME, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
+    enum save_variables {COMBINED_PRIME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
     NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
     SHIFTED_DEGS_NUM, SHIFTED_DEGS_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
     COMBINED_NI, COMBINED_DI};

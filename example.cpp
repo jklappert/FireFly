@@ -9,13 +9,16 @@ using namespace firefly;
 int main() {
   // Example for the automatic interface
   Reconstructor reconst(4, 4);
-  //std::vector<std::string> file_paths = {"ff_save/0_1.txt","ff_save/1_1.txt","ff_save/2_1.txt","ff_save/3_1.txt","ff_save/4_1.txt","ff_save/5_1.txt"};
+  // Give the paths to the saved states to resum the run from this
+  //std::vector<std::string> file_paths = {"ff_save/0_3.txt","ff_save/1_2.txt","ff_save/2_3.txt","ff_save/3_4.txt","ff_save/4_1.txt","ff_save/5_2.txt"};
   reconst.enable_scan();
   //reconst.resume_from_saved_state(file_paths);
+  // Write the state of all reconstruction objects after each interpolation over a prime field
   //reconst.set_tags();
   reconst.reconstruct();
-  //std::vector<RationalFunction> results = reconst.get_result();
-  /*for (auto& res : results) {
+  // Get results
+  /*std::vector<RationalFunction> results = reconst.get_result();
+  for (auto& res : results) {
     std::cout << res << "\n";
   }*/
 
@@ -34,7 +37,7 @@ void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFIn
   result.emplace_back(singular_solver(values));
   result.emplace_back(n_eq_1(values[0]));
   result.emplace_back(n_eq_4(values));
-  //result.emplace_back(gghh(values));
+  result.emplace_back(gghh(values));
   result.emplace_back(pol_n_eq_3(values));
   result.emplace_back(ggh(values));
 }
