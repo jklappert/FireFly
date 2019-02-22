@@ -10,14 +10,16 @@
 namespace firefly {
   typedef std::list<std::tuple<FFInt, std::vector<uint32_t>, std::future<std::vector<FFInt>>>> future_list;
 
-  class Reconstructor{
+  class Reconstructor {
   public:
     Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t verbosity_ = IMPORTANT);
     void enable_scan();
     void reconstruct();
     std::vector<RationalFunction> get_result();
     void black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values);
-    void set_tags(const std::vector<std::string>& tags);
+    void set_tags(const std::vector<std::string>& tags_);
+    void set_tags();
+    void resume_from_saved_state(const std::vector<std::string>& file_paths_);
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
   private:
     uint32_t n;
@@ -25,6 +27,10 @@ namespace firefly {
     uint32_t verbosity;
     std::vector<RatReconst> reconst {};
     bool scan = false;
+    bool save_states = false;
+    bool resume_from_state = false;
+    std::vector<std::string> tags {};
+    std::vector<std::string> file_paths {};
     uint32_t prime_it = 0;
     ThreadPool tp;
     std::mutex mut;
@@ -40,7 +46,11 @@ namespace firefly {
     uint32_t total_iterations = 0;
     RatReconst tmp_rec;
     std::vector<FFInt> shift {};
-
+    /**
+    *  Parses a prime number counter from a file
+    *  @param file_name the file name
+    */
+    void parse_prime_number(std::string& file_name);
     void scan_for_shift();
     void start_first_runs();
     void run_until_done();

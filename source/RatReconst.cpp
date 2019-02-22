@@ -806,8 +806,8 @@ namespace firefly {
                 // normalize
                 FFInt terminator = 0;
 
-                if (normalizer_deg == std::vector<uint32_t> (n)) {
-                  if (const_den != 0)
+                if (normalizer_den_num == normalize_to_den &&  normalizer_deg == std::vector<uint32_t> (n)) {
+                  if (const_den != 1)
                     terminator = 1 - const_den;
                   else
                     terminator = 1;
@@ -1326,7 +1326,6 @@ namespace firefly {
 
     const_den = 0;
 
-    is_singular_system = true;
     if (is_singular_system) {
       tmp_solved_coefs_den = 0;
       tmp_solved_coefs_num = 0;

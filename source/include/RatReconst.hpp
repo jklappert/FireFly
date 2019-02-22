@@ -280,7 +280,7 @@ namespace firefly {
      */
     std::vector<mpz_class> parse_rational_number(std::string& line);
     /**
-     *  Parses a prime number from a file
+     *  Parses a prime number counter from a file
      *  @param file_name the file name
      */
     void parse_prime_number(std::string& file_name);

@@ -9,15 +9,18 @@ using namespace firefly;
 int main() {
   // Example for the automatic interface
   Reconstructor reconst(4, 4);
+  //std::vector<std::string> file_paths = {"ff_save/0_1.txt","ff_save/1_1.txt","ff_save/2_1.txt","ff_save/3_1.txt","ff_save/4_1.txt","ff_save/5_1.txt"};
   reconst.enable_scan();
+  //reconst.resume_from_saved_state(file_paths);
+  //reconst.set_tags();
   reconst.reconstruct();
-  std::vector<RationalFunction> results = reconst.get_result();
+  //std::vector<RationalFunction> results = reconst.get_result();
   /*for (auto& res : results) {
     std::cout << res << "\n";
   }*/
 
   // Example for the reconstruction of a rational function
-//  reconstruct_rational_function();
+  //reconstruct_rational_function();
 
   // Example for the reconstruction of a polynomial
   //reconstruct_polynomial();
@@ -66,11 +69,11 @@ namespace firefly {
     uint primes_used = 0;
 
     // One can use this option to find a sparser shift
-    rec.scan_for_sparsest_shift();
+    //rec.scan_for_sparsest_shift();
 
     // Feed loop
     std::vector<FFInt> shift = rec.get_zi_shift_vec();
-    bool first = true;
+    /*bool first = true;
     bool found_shift = false;
     uint32_t counter = 0;
 
@@ -131,7 +134,7 @@ namespace firefly {
     //rec.set_zi_shift(te);
     shift = rec.get_zi_shift_vec();
     rec.accept_shift();
-    std::cout << "Total numerical runs to get sparse shift: " << count << ".\n";
+    std::cout << "Total numerical runs to get sparse shift: " << count << ".\n";*/
 
     // In this loop the whole reconstruction of a function happens
     while (!rec.is_done()) {

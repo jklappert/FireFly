@@ -11,17 +11,50 @@ namespace firefly {
     scan = true;
   }
 
-  void Reconstructor::reconstruct() {
-    if (verbosity > SILENT) {
-      INFO_MSG("New prime: 1.");
-    }
+  void Reconstructor::set_tags() {
+    save_states = true;
+  }
 
-    if (scan) {
-      scan_for_shift();
-      start_probe_jobs(std::vector<uint32_t>(n - 1, 1), thr_n);
-      started_probes.emplace(std::vector<uint32_t>(n - 1, 1), thr_n);
-    } else {
-      start_first_runs();
+  void Reconstructor::set_tags(const std::vector<std::string>& tags_) {
+    save_states = true;
+    tags = tags_;
+  }
+
+  void Reconstructor::resume_from_saved_state(const std::vector<std::string>& file_paths_) {
+    resume_from_state = true;
+    file_paths = file_paths_;
+    parse_prime_number(file_paths[0]);
+    tmp_rec.start_from_saved_file(file_paths[0]);
+    items = file_paths.size();
+
+    for (uint32_t i = 0; i != items; ++i) {
+      reconst.emplace_back(RatReconst(n));
+      reconst[i].start_from_saved_file(file_paths[i]);
+      probes_for_next_prime = std::max(probes_for_next_prime, reconst[i].get_num_eqn());
+    }
+  }
+
+  void Reconstructor::parse_prime_number(std::string& file_name) {
+    std::string reverse_file_name = file_name;
+    std::reverse(reverse_file_name.begin(), reverse_file_name.end());
+    reverse_file_name.erase(0, 4);
+    size_t pos = reverse_file_name.find("_");
+    prime_it = std::stoi(reverse_file_name.substr(0, pos));
+  }
+
+  void Reconstructor::reconstruct() {
+    if (!resume_from_state) {
+      if (verbosity > SILENT) {
+        INFO_MSG("New prime: 1.");
+      }
+
+      if (scan) {
+        scan_for_shift();
+        start_probe_jobs(std::vector<uint32_t>(n - 1, 1), thr_n);
+        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), thr_n);
+      } else {
+        start_first_runs();
+      }
     }
 
     run_until_done();
@@ -70,7 +103,8 @@ namespace firefly {
       run_until_done();
 
       found_shift = true;
-      for (auto& rec : reconst) {
+
+      for (auto & rec : reconst) {
         if (!rec.is_shift_working()) {
           found_shift = false;
         }
@@ -95,9 +129,10 @@ namespace firefly {
     } else {
       tmp_rec.set_zi_shift(std::vector<uint32_t> (n, 1));
     }
+
     shift = tmp_rec.get_zi_shift_vec();
 
-    for (auto& rec : reconst) {
+    for (auto & rec : reconst) {
       rec.accept_shift();
     }
 
@@ -106,13 +141,16 @@ namespace firefly {
     if (verbosity > SILENT) {
       if (found_shift) {
         std::string msg = "";
-        for (const auto& el : shift_vec[counter - 1]) {
+
+        for (const auto & el : shift_vec[counter - 1]) {
           msg += " " + std::to_string(el);
         }
+
         INFO_MSG("Shift scan completed successfully:" + msg + ".");
       } else {
         INFO_MSG("Shift scan found no sparse shift.");
       }
+
       INFO_MSG("Total black box evaluations for scan: " + std::to_string(total_iterations) + ".");
     }
   }
@@ -129,7 +167,8 @@ namespace firefly {
 
     {
       std::unique_lock<std::mutex> lock(mut);
-      find:
+    find:
+
       while (jobs_finished == 0) {
         cond.wait(lock);
       }
@@ -156,13 +195,26 @@ namespace firefly {
 
     items = probe.size();
 
+    size_t tag_size = tags.size();
+
     for (uint32_t i = 0; i != items; ++i) {
       reconst.emplace_back(RatReconst(n));
+
       if (scan) {
         reconst[i].scan_for_sparsest_shift();
       }
-      // save intermediate results
-      //reconst[i].set_tag(std::to_string(i));
+
+      if (save_states) {
+        if (tag_size > 0)
+          reconst[i].set_tag(tags[i]);
+        else
+          reconst[i].set_tag(std::to_string(i));
+      }
+
+      if (resume_from_state) {
+        reconst[i].start_from_saved_file(file_paths[i]);
+      }
+
       reconst[i].feed(t, probe[i], zi_order, prime_it);
       reconst[i].interpolate();
     }
@@ -183,14 +235,19 @@ namespace firefly {
     std::vector<FFInt> probe {};
 
     uint32_t iteration;
+
     if (scan) {
       iteration = 0;
     } else {
       iteration = 1;
     }
+
     bool done = false;
     bool new_prime = false;
-    probes_for_next_prime = 0;
+    if(resume_from_state){
+      new_prime = true;
+      resume_from_state = false;
+    }
 
     while (!done) {
       if (new_prime) {
@@ -224,8 +281,10 @@ namespace firefly {
           if (verbosity > SILENT) {
             INFO_MSG("Disable shift.");
           }
+
           tmp_rec.disable_shift();
         }
+
         shift = tmp_rec.get_zi_shift_vec();
 
         tmp_rec.generate_anchor_points();
@@ -252,7 +311,8 @@ namespace firefly {
 
       {
         std::unique_lock<std::mutex> lock(mut);
-        find:
+      find:
+
         while (jobs_finished == 0) {
           cond.wait(lock);
         }
@@ -362,6 +422,7 @@ namespace firefly {
     }
 
     total_iterations += iteration;
+
     if (verbosity > SILENT && !scan) {
       INFO_MSG("Iterations for last prime: " + std::to_string(iteration) + ".");
     }
@@ -431,9 +492,11 @@ namespace firefly {
 
                 if (verbosity == CHATTY) {
                   std::string msg = "Starting";
+
                   for (const auto & ele : zi_order) {
                     msg += " " + std::to_string(ele);
                   }
+
                   msg += " -- " + std::to_string(start);
                   VERBOSE_MSG(msg + ".");
                 }
@@ -445,9 +508,11 @@ namespace firefly {
             } else {
               if (verbosity == CHATTY) {
                 std::string msg = "Starting";
+
                 for (const auto & ele : zi_order) {
                   msg += " " + std::to_string(ele);
                 }
+
                 msg += " -- " + std::to_string(required_probes);
                 VERBOSE_MSG(msg + ".");
               }
