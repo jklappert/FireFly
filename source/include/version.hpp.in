@@ -1,0 +1,10 @@
+// ====================================================================
+// This file is part of FireFly.
+//
+// FireFly is licenced under the GNU General Public License (GNU GPL)
+// version 3.
+// ====================================================================
+
+#define FireFly_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define FireFly_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define FireFly_VERSION_RELEASE @PROJECT_VERSION_PATCH@

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(FireFly VERSION 0.0.1 LANGUAGES CXX)
+project(FireFly VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -75,6 +75,10 @@ set(EXEC_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
+configure_file (
+  "${INCLUDE_PATH}/version.hpp.in"
+  "${INCLUDE_PATH}/version.hpp")
+
 add_library(FireFly_static STATIC ${LIBSOURCES})
 set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
 add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
@@ -106,5 +110,7 @@ install(FILES
   "${INCLUDE_PATH}/Reconstructor.hpp"
   "${INCLUDE_PATH}/ThreadPool.hpp"
   "${INCLUDE_PATH}/UintHasher.hpp"
+  "${INCLUDE_PATH}/version.hpp"
   "${INCLUDE_PATH}/utils.hpp"
+
   DESTINATION "${INCLUDE_INSTALL_DIR}")

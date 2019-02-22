@@ -1,3 +1,9 @@
+// ====================================================================
+// This file is part of FireFly.
+//
+// FireFly is licenced under the GNU General Public License (GNU GPL)
+// version 3.
+// ====================================================================
 #include "Polynomial.hpp"
 #include "Logger.hpp"
 #include <chrono>
@@ -32,7 +38,8 @@ namespace firefly {
 
   std::string Polynomial::to_string(const std::vector<std::string>& symbols) const {
     std::string str;
-    if(symbols.size() != n){
+
+    if (symbols.size() != n) {
       ERROR_MSG("Symbol size does not match to number of variables of the polynomial!");
       std::exit(-1);
     }

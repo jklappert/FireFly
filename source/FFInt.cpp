@@ -1,3 +1,9 @@
+// ====================================================================
+// This file is part of FireFly.
+//
+// FireFly is licenced under the GNU General Public License (GNU GPL)
+// version 3.
+// ====================================================================
 #include <sstream>
 #include "FFInt.hpp"
 #include "flint/ulong_extras.h"
@@ -89,7 +95,7 @@ namespace firefly {
     return FFInt(n_submod(a.n, b.n, FFInt::p));
   }
 
-  FFInt FFInt::operator-() const{
+  FFInt FFInt::operator-() const {
     return FFInt(p - n);
   }
 
@@ -159,11 +165,11 @@ namespace firefly {
     return result;
   }
 
-  bool operator==(const FFInt& a, const FFInt& b){
+  bool operator==(const FFInt& a, const FFInt& b) {
     return (a.n == b.n);
   }
 
-  bool operator!=(const FFInt& a, const FFInt& b){
+  bool operator!=(const FFInt& a, const FFInt& b) {
     return (a.n != b.n);
   }
 

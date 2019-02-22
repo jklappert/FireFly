@@ -46,7 +46,6 @@ namespace firefly {
   class ThreadPool {
   public:
     explicit ThreadPool(std::size_t pool_size = std::thread::hardware_concurrency()) {
-      INFO_MSG("Launching " << pool_size << " thread(s).");
 
       for (std::size_t i = 0; i < pool_size; ++i) {
         threads_idle.push_back(true);

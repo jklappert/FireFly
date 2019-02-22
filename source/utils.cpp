@@ -1,3 +1,9 @@
+// ====================================================================
+// This file is part of FireFly.
+//
+// FireFly is licenced under the GNU General Public License (GNU GPL)
+// version 3.
+// ====================================================================
 #include "utils.hpp"
 #include "Logger.hpp"
 

@@ -1,3 +1,10 @@
+// ====================================================================
+// This file is part of FireFly.
+//
+// FireFly is licenced under the GNU General Public License (GNU GPL)
+// version 3.
+// ====================================================================
+
 #pragma once
 
 #include "PolyReconst.hpp"
@@ -166,8 +173,8 @@ namespace firefly {
      *  @param is_num a bool which indicates if the polynomial is in the numerator (true) or denominator (false)
      */
     std::tuple<int, uint32_t, std::vector<uint32_t>> feed_poly(int curr_deg,
-                                                       uint32_t max_deg, std::unordered_map<uint32_t, PolyReconst>& coef,
-                                                       PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num);
+                                                               uint32_t max_deg, std::unordered_map<uint32_t, PolyReconst>& coef,
+                                                               PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num);
     void combine_primes(ff_map& numerator, ff_map& denominator);
     /**
      *  Builds a univariate system of equations for a rational function in the first prime
@@ -302,8 +309,9 @@ namespace firefly {
     std::unordered_set<uint32_t> zero_degs_den {};
     bool normalizer_den_num = false;
     enum save_variables {COMBINED_PRIME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
-    NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
-    SHIFTED_DEGS_NUM, SHIFTED_DEGS_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
-    COMBINED_NI, COMBINED_DI};
+                         NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
+                         SHIFTED_DEGS_NUM, SHIFTED_DEGS_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
+                         COMBINED_NI, COMBINED_DI
+                        };
   };
 }

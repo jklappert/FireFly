@@ -1,8 +1,23 @@
+// ====================================================================
+// This file is part of FireFly.
+//
+// FireFly is licenced under the GNU General Public License (GNU GPL)
+// version 3.
+// ====================================================================
+
 #include "Reconstructor.hpp"
 #include "utils.hpp"
+#include "version.hpp"
 
 namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t verbosity_): n(n_), thr_n(thr_n_), verbosity(verbosity_), tp(thr_n_) {
+    if (verbosity > SILENT) {
+      std::cout << "---------------------------\n";
+      std::cout << "|      FireFly " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "      |\n";
+      std::cout << "---------------------------\n";
+      INFO_MSG("Launching " << thr_n_ << " thread(s).");
+    }
+
     FFInt::set_new_prime(primes()[prime_it]);
     tmp_rec = RatReconst(n);
   }
@@ -26,10 +41,11 @@ namespace firefly {
     items = file_paths.size();
     uint32_t counter = 0;
 
-    for(uint32_t i = 0; i != items; ++i){
+    for (uint32_t i = 0; i != items; ++i) {
       uint32_t old_it = prime_it;
       prime_it = std::max(prime_it, parse_prime_number(file_paths[i]));
-      if(prime_it > old_it)
+
+      if (prime_it > old_it)
         counter = i;
     }
 

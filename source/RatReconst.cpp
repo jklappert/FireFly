@@ -1,3 +1,10 @@
+// ====================================================================
+// This file is part of FireFly.
+//
+// FireFly is licenced under the GNU General Public License (GNU GPL)
+// version 3.
+// ====================================================================
+
 #include "Logger.hpp"
 #include "RatReconst.hpp"
 #include "ReconstHelper.hpp"
@@ -150,6 +157,7 @@ namespace firefly {
             if (done) {
               combined_di = mpz_map();
               combined_ni = mpz_map();
+
               if (tag.size() > 0)
                 save_state();
 

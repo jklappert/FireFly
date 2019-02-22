@@ -1,3 +1,9 @@
+// ====================================================================
+// This file is part of FireFly.
+//
+// FireFly is licenced under the GNU General Public License (GNU GPL)
+// version 3.
+// ====================================================================
 #include "Monomial.hpp"
 
 namespace firefly {
@@ -40,10 +46,12 @@ namespace firefly {
 
   Monomial Monomial::operator*(const Monomial& b) {
     Monomial a = *this;
-    a.coef = a.coef*b.coef;
-    for(uint32_t i = 0; i < powers.size(); ++i){
+    a.coef = a.coef * b.coef;
+
+    for (uint32_t i = 0; i < powers.size(); ++i) {
       a.powers[i] += b.powers[i];
     }
+
     return a;
   }
 

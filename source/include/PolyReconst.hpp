@@ -1,3 +1,10 @@
+// ====================================================================
+// This file is part of FireFly.
+//
+// FireFly is licenced under the GNU General Public License (GNU GPL)
+// version 3.
+// ====================================================================
+
 #pragma once
 
 #include <cstdint>
@@ -70,7 +77,7 @@ namespace firefly {
      *  Sets the anchor points to given values
      *  @param anchor_points the values to which the anchor points should be set
      */
-    void set_anchor_points(const std::vector<FFInt> &anchor_points, bool force = false);
+    void set_anchor_points(const std::vector<FFInt>& anchor_points, bool force = false);
   private:
     /**
      *  Starts the real interpolation managed by the class itself
