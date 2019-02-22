@@ -629,7 +629,7 @@ namespace firefly {
                   }
                 }
 
-                if (terminator.n == 0) {
+                if (terminator == 0) {
                   for (const auto & el : numerator.coefs) {
                     add_non_solved_num(el.first);
                   }
@@ -645,7 +645,7 @@ namespace firefly {
                   }
                 }
 
-                if (terminator.n == 0) {
+                if (terminator == 0) {
                   // normalize to the minimal degree of the denominator
                   terminator = denominator.coefs[normalizer_deg];
                   normalizer_den_num = true;
@@ -807,7 +807,7 @@ namespace firefly {
 
                 if (normalizer_deg == std::vector<uint32_t> (n)) {
                   if (const_den != 0)
-                    terminator = const_den;
+                    terminator = 1 - const_den;
                   else
                     terminator = 1;
                 } else {
@@ -1325,6 +1325,7 @@ namespace firefly {
 
     const_den = 0;
 
+    is_singular_system = true;
     if (is_singular_system) {
       tmp_solved_coefs_den = 0;
       tmp_solved_coefs_num = 0;

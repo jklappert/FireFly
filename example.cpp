@@ -75,8 +75,9 @@ namespace firefly {
     uint32_t counter = 0;
 
     // Generate all possible combinations of shifting variables
-    const auto shift_vec = generate_possible_shifts(n);
+    auto shift_vec = generate_possible_shifts(n);
 
+    shift_vec[0] = {0,1,0,0};
     // Run this loop until a proper shift is found
     while (!found_shift) {
       while (!rec.is_done()) {
@@ -97,10 +98,10 @@ namespace firefly {
         }
 
         //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
-        FFInt num = n_eq_1(z1); // example for n = 1
+        //FFInt num = n_eq_1(z1); // example for n = 1
         //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
         //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
-        //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
+        FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
 
         //FFInt num = yis[0].pow(15)*yis[1].pow(15)*yis[2].pow(15)*yis[3].pow(15)*yis[4].pow(15);// + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
@@ -124,6 +125,8 @@ namespace firefly {
     }
 
     rec.set_zi_shift(shift_vec[counter - 1]);
+    //std::vector<uint32_t> te = {0,1,0,0};
+    //rec.set_zi_shift(te);
     shift = rec.get_zi_shift_vec();
     rec.accept_shift();
     std::cout << "Total numerical runs to get sparse shift: " << count << ".\n";
@@ -164,10 +167,10 @@ namespace firefly {
       }
 
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
-      FFInt num = n_eq_1(z1); // example for n = 1
+      //FFInt num = n_eq_1(z1); // example for n = 1
       //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
       //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
-      //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
+      FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
       ++kk;
       ++count;
