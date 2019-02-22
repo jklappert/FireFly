@@ -52,6 +52,7 @@ namespace firefly {
     uint32_t feeding_jobs = 0;
     uint32_t items = 0;
     uint32_t total_iterations = 0;
+    uint32_t iteration = 0;
     RatReconst tmp_rec;
     std::vector<FFInt> shift {};
     /**

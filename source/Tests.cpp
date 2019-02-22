@@ -488,4 +488,10 @@ namespace firefly {
 
     return num / den;
   }
+
+  FFInt topo4(std::vector<FFInt> yis) {
+    FFInt num = 1;
+    FFInt den = (-1/2)*yis[0]*yis[2]+2*yis[2];
+    return num / den;
+  }
 }

@@ -35,4 +35,6 @@ namespace firefly {
    *  example for a three loop gg -> h integral coefficient
    */
   FFInt ggh(std::vector<FFInt> yis);
+
+  FFInt topo4(std::vector<FFInt> yis);
 }

@@ -56,7 +56,6 @@ namespace firefly {
       solved_num = PolynomialFF(n, zero_deg);
       solved_den = PolynomialFF(n, zero_deg);
 
-
       // fill in the rand_vars for zi_order = 1
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
@@ -691,6 +690,11 @@ namespace firefly {
             } else if (zi > 0) {
               // set new random
               for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
+                if (curr_zi_order.empty()) {
+                  std::cout << "curr_zi_order empty\n";
+                  std::cout << tag << "\n";
+                  std::cout << "n " << n << " tmp_zi " << tmp_zi << " done " << done << " prime " << new_prime << "\n";
+                }
                 auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
                 rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
