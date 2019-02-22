@@ -19,6 +19,7 @@ namespace firefly {
   RatReconst::RatReconst(uint32_t n_) {
     n = n_;
     type = RAT;
+    const_den = 0;
     std::unique_lock<std::mutex> lock_status(mutex_status);
 
     combined_prime = FFInt::p;

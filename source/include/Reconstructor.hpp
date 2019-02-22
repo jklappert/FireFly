@@ -13,12 +13,12 @@ namespace firefly {
   class Reconstructor{
   public:
     Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t verbosity_ = IMPORTANT);
-    void scan_for_sparsest_shift();
+    void enable_scan();
     void reconstruct();
     std::vector<RationalFunction> get_result();
-    enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     void black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values);
     void set_tags(const std::vector<std::string>& tags);
+    enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
   private:
     uint32_t n;
     uint32_t thr_n;

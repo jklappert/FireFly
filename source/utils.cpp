@@ -63,7 +63,6 @@ namespace firefly {
    */
   std::pair<bool, RationalNumber> get_rational_coef_mqrr(const mpz_class& u, const mpz_class& p) {
     // set to T so that less than one percent will be false positive results
-    return std::make_pair(false, RationalNumber(0, 1));
     mpz_class T = 1024 * mpz_sizeinbase(p.get_mpz_t(), 2);
     bool not_failed = true;
 
@@ -199,7 +198,7 @@ namespace firefly {
     if (deg1 < deg2)
       return false;
     else if (deg1 == deg2)
-      return a > b;
+      return a_grt_b(a, b);
 
     return true;
   }

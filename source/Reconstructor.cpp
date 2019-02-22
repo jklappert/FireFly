@@ -7,7 +7,7 @@ namespace firefly {
     tmp_rec = RatReconst(n);
   }
 
-  void Reconstructor::scan_for_sparsest_shift() {
+  void Reconstructor::enable_scan() {
     scan = true;
   }
 
@@ -138,7 +138,7 @@ namespace firefly {
         if ((std::get<2>(*it)).wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
           t = std::get<0>(*it);
           zi_order = std::get<1>(*it);
-          probe = std::move((std::get<2>(*it)).get());
+          probe = (std::get<2>(*it)).get();
           it = probes.erase(it);
           --jobs_finished;
           break;
@@ -261,7 +261,7 @@ namespace firefly {
           if ((std::get<2>(*it)).wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
             t = std::get<0>(*it);
             zi_order = std::get<1>(*it);
-            probe = std::move((std::get<2>(*it)).get());
+            probe = (std::get<2>(*it)).get();
             it = probes.erase(it);
             --jobs_finished;
             break;
@@ -389,7 +389,7 @@ namespace firefly {
         std::unique_lock<std::mutex> lock(mut);
         ++jobs_finished;
         cond.notify_one();
-        return std::move(probe);
+        return probe;
       });
 
       probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));

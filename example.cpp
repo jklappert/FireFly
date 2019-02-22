@@ -9,7 +9,7 @@ using namespace firefly;
 int main() {
   // Example for the automatic interface
   Reconstructor reconst(4, 4);
-  reconst.scan_for_sparsest_shift();
+  reconst.enable_scan();
   reconst.reconstruct();
   std::vector<RationalFunction> results = reconst.get_result();
   /*for (auto& res : results) {
@@ -28,11 +28,11 @@ int main() {
 // Example of how one can use the black_box function for the automatic interface
 void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
   result.clear();
-//  result.emplace_back(singular_solver(values));
-//  result.emplace_back(n_eq_1(values[0]));
+  result.emplace_back(singular_solver(values));
+  result.emplace_back(n_eq_1(values[0]));
   result.emplace_back(n_eq_4(values));
   result.emplace_back(gghh(values));
-//  result.emplace_back(pol_n_eq_3(values));
+  result.emplace_back(pol_n_eq_3(values));
   result.emplace_back(ggh(values));
 }
 
