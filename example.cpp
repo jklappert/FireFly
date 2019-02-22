@@ -15,7 +15,7 @@ using namespace firefly;
 
 int main() {
   // Example for the automatic interface
-  Reconstructor reconst(4, 4);
+  Reconstructor reconst(4, 4/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   reconst.enable_scan();
   // Give the paths to the saved states to resum the run from this

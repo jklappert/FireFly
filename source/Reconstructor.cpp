@@ -84,9 +84,7 @@ namespace firefly {
     run_until_done();
 
     if (verbosity > SILENT) {
-      INFO_MSG("Done.");
-      INFO_MSG("Prime fields used: " + std::to_string(prime_it + 1) + ".");
-      INFO_MSG("Iterations in total: " + std::to_string(total_iterations) + ".");
+      INFO_MSG("Reconstructed all functions successfully.");
     }
 
     tp.kill_all();
@@ -247,7 +245,7 @@ namespace firefly {
     probe.clear();
 
     if (verbosity == CHATTY) {
-      INFO_MSG("| Iteration: 1 | Done: 0 / " + std::to_string(items) + " | Want new prime: 0 / " + std::to_string(items) + " |");
+      INFO_MSG("Iteration: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: 0 / " + std::to_string(items));
     }
 
     start_probe_jobs(std::vector<uint32_t>(n - 1, 1), 1);
@@ -281,8 +279,8 @@ namespace firefly {
         ++prime_it;
 
         if (verbosity > SILENT) {
-          INFO_MSG("Iterations for last prime field: " + std::to_string(iteration) + ".");
-          INFO_MSG("Iterations in total: " + std::to_string(total_iterations) + ".");
+          INFO_MSG("Iterations for previous prime field: " + std::to_string(iteration) + ". | "
+                   + std::to_string(total_iterations) + " iterations in total.");
           INFO_MSG("Reconstructed functions: " + std::to_string(items_done) + " / " + std::to_string(items) + ".");
           INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
         }
@@ -305,11 +303,13 @@ namespace firefly {
         }
 
         if (!tmp_rec.need_shift()) {
-          if (verbosity > SILENT) {
-            INFO_MSG("Disable shift.");
-          }
+          if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
+            if (verbosity > SILENT) {
+              INFO_MSG("Disable shift.");
+            }
 
-          tmp_rec.disable_shift();
+            tmp_rec.disable_shift();
+          }
         }
 
         shift = tmp_rec.get_zi_shift_vec();
@@ -319,14 +319,14 @@ namespace firefly {
         // start only thr_n jobs first, because the reconstruction can be done after the first feed
         if (probes_for_next_prime > thr_n) {
           if (verbosity == CHATTY) {
-            INFO_MSG("| Starting " + std::to_string(thr_n) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - thr_n) + " jobs will be started later. |");
+            INFO_MSG("Starting " + std::to_string(thr_n) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - thr_n) + " jobs will be started later.");
           }
 
           start_probe_jobs(std::vector<uint32_t>(n - 1, 1), thr_n);
           started_probes.emplace(std::vector<uint32_t>(n - 1, 1), thr_n);
         } else {
           if (verbosity == CHATTY) {
-            INFO_MSG("| Starting " + std::to_string(probes_for_next_prime) + " jobs. |");
+            INFO_MSG("Starting " + std::to_string(probes_for_next_prime) + " jobs.");
           }
 
           start_probe_jobs(std::vector<uint32_t>(n - 1, 1), probes_for_next_prime);
@@ -400,8 +400,8 @@ namespace firefly {
       std::unique_lock<std::mutex> lock(mut);
 
       if (verbosity == CHATTY) {
-        INFO_MSG("| Iteration: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items)
-                    + " | " + "Want new prime: " + std::to_string(items_new_prime) + " / " + std::to_string(items) + " |");
+        INFO_MSG("Iteration: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items)
+                 + " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
       }
 
       if (items_done == items) {
@@ -451,7 +451,9 @@ namespace firefly {
     total_iterations += iteration;
 
     if (verbosity > SILENT && !scan) {
-      INFO_MSG("Iterations for last prime field: " + std::to_string(iteration) + ".");
+      INFO_MSG("Iterations for last prime field: " + std::to_string(iteration)
+               + ". | " + std::to_string(prime_it + 1) + " prime fields used. | "
+               + std::to_string(total_iterations) + " iterations in total.");
     }
   }
 
@@ -502,7 +504,7 @@ namespace firefly {
               uint32_t start = fed_ones - started_probes.at(zi_order) + thr_n;
 
               if (verbosity == CHATTY) {
-                INFO_MSG("| Starting ones: " + std::to_string(start) + ". |");
+                INFO_MSG("Starting ones: " + std::to_string(start) + ". |");
               }
 
               started_probes.at(zi_order) += start;
@@ -527,7 +529,7 @@ namespace firefly {
                   msg = msg.substr(0, msg.length() - 2);
 
                   msg += ") " + std::to_string(start) + " time(s)";
-                  INFO_MSG(msg + ". |");
+                  INFO_MSG(msg + ".");
                 }
 
                 started_probes.at(zi_order) = required_probes;
@@ -536,7 +538,7 @@ namespace firefly {
               }
             } else {
               if (verbosity == CHATTY) {
-                std::string msg = "| Starting zi_order (";
+                std::string msg = "Starting zi_order (";
 
                 for (const auto & ele : zi_order) {
                   msg += std::to_string(ele) + ", ";
@@ -545,7 +547,7 @@ namespace firefly {
                 msg = msg.substr(0, msg.length() - 2);
 
                 msg += ") " + std::to_string(required_probes) + " time(s)";
-                INFO_MSG(msg + ". |");
+                INFO_MSG(msg + ".");
               }
 
               started_probes.emplace(zi_order, required_probes);
