@@ -50,8 +50,10 @@ namespace firefly {
     FFInt& operator/=(const FFInt&);
     FFInt operator-() const;
     FFInt operator+() const;
-    //FFInt& operator++();
-    //FFInt& operator--();
+    FFInt operator++();
+    FFInt operator++(int);
+    FFInt operator--();
+    FFInt operator--(int);
     bool operator!() const;
     FFInt pow(const FFInt& ffint) const;
 
