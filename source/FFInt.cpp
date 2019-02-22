@@ -61,6 +61,7 @@ namespace firefly {
     n = 0;
   }
 
+#ifdef FLINT
   FFInt& FFInt::operator+=(const FFInt& ffint) {
     n = n_addmod(n, ffint.n, p);
 
@@ -94,6 +95,7 @@ namespace firefly {
   FFInt operator-(const FFInt& a, const FFInt& b) {
     return FFInt(n_submod(a.n, b.n, FFInt::p));
   }
+#endif
 
   FFInt FFInt::operator-() const {
     return FFInt(p - n);
@@ -189,6 +191,7 @@ namespace firefly {
     return (a.n >= b.n);
   }
 
+#ifdef FLINT
   FFInt operator/(const FFInt& a, const FFInt& b) {
     return FFInt(n_mulmod2_preinv(a.n, n_invmod(b.n, FFInt::p), FFInt::p, FFInt::p_inv));
   }
@@ -196,6 +199,7 @@ namespace firefly {
   FFInt operator*(const FFInt& a, const FFInt& b) {
     return FFInt(n_mulmod2_preinv(a.n, b.n, FFInt::p, FFInt::p_inv));
   }
+#endif
 
   FFInt pow(const FFInt& ffint, const FFInt& power) {
     return ffint.pow(power);
@@ -205,11 +209,16 @@ namespace firefly {
     out << ffint.n;
     return out;
   }
-
+#ifdef FLINT
   void FFInt::set_new_prime(uint64_t prime) {
     FFInt::p = prime;
     FFInt::p_inv = n_preinvert_limb(prime);
   }
+#else
+  void FFInt::set_new_prime(uint64_t prime) {
+    FFInt::p = prime;
+  }
+#endif
 
   void firefly_exists(void) {}
 }

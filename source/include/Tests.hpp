@@ -35,6 +35,18 @@ namespace firefly {
    *  example for a three loop gg -> h integral coefficient
    */
   FFInt ggh(std::vector<FFInt> yis);
+  /**
+   *  a benchmark function with 20 variables
+   */
+  FFInt bench_1(std::vector<FFInt> yis);
+  /**
+   *  a benchmark function with 5 variables and almost complete dense numerator
+   */
+  FFInt bench_2(std::vector<FFInt> yis);
+  /**
+   *  a benchmark function with 5 variables and almost complete sparse
+   */
+  FFInt bench_3(std::vector<FFInt> yis);
 
   FFInt topo4(std::vector<FFInt> yis);
 }
