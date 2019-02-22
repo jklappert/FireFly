@@ -97,6 +97,30 @@ namespace firefly {
     return FFInt(n);
   }
 
+  FFInt FFInt::operator++() {
+    FFInt tmp(n);
+    tmp += 1;
+    return tmp;
+  }
+
+  FFInt FFInt::operator++(int) {
+    FFInt tmp(n);
+    tmp += 1;
+    return tmp;
+  }
+
+  FFInt FFInt::operator--(int) {
+    FFInt tmp(n);
+    tmp -= 1;
+    return tmp;
+  }
+
+  FFInt FFInt::operator--() {
+    FFInt tmp(n);
+    tmp -= 1;
+    return tmp;
+  }
+
   bool FFInt::operator!() const {
     return !n;
   }
