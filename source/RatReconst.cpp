@@ -41,13 +41,13 @@ namespace firefly {
           for (auto & el : shift) el = get_rand();
 
           curr_shift = std::vector<uint32_t> (n, 1);
-          curr_zi_order_num = std::vector<uint32_t> (n - 1, 1);
-          curr_zi_order_den = std::vector<uint32_t> (n - 1, 1);
         }
       }
     }
 
     if (n > 1) {
+      curr_zi_order_num = std::vector<uint32_t> (n - 1, 1);
+      curr_zi_order_den = std::vector<uint32_t> (n - 1, 1);
       curr_zi_order = std::vector<uint32_t> (n - 1, 1);
       lock_status.unlock();
       // add a zero to both polynomials to do arithmetics
@@ -332,10 +332,17 @@ namespace firefly {
             if (n == 1)
               normalizer_deg = denominator.min_deg();
 
-            curr_deg_num = max_deg_num;
+            if (normalize_to_den) {
+              curr_deg_num = max_deg_num;
 
-            if (max_deg_den > 0)
+              if (max_deg_den > 0)
+                curr_deg_den = max_deg_den;
+            } else {
               curr_deg_den = max_deg_den;
+
+              if (max_deg_num > 0)
+                curr_deg_num = max_deg_num;
+            }
 
             FFInt equalizer;
 
@@ -690,11 +697,6 @@ namespace firefly {
             } else if (zi > 0) {
               // set new random
               for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
-                if (curr_zi_order.empty()) {
-                  std::cout << "curr_zi_order empty\n";
-                  std::cout << tag << "\n";
-                  std::cout << "n " << n << " tmp_zi " << tmp_zi << " done " << done << " prime " << new_prime << "\n";
-                }
                 auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
                 rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
@@ -1364,8 +1366,17 @@ namespace firefly {
           add_non_solved_den(el.first);
       }
 
-      curr_deg_num = max_deg_num;
-      curr_deg_den = max_deg_den;
+      if (normalize_to_den) {
+        curr_deg_num = max_deg_num;
+
+        if (max_deg_den > 0)
+          curr_deg_den = max_deg_den;
+      } else {
+        curr_deg_den = max_deg_den;
+
+        if (max_deg_num > 0)
+          curr_deg_num = max_deg_num;
+      }
 
       std::unique_lock<std::mutex> lock(mutex_status);
       num_eqn = shifted_max_num_eqn;
@@ -2840,8 +2851,17 @@ namespace firefly {
             add_non_solved_den(el.first);
         }
 
-        curr_deg_num = max_deg_num;
-        curr_deg_den = max_deg_den;
+        if (normalize_to_den) {
+          curr_deg_num = max_deg_num;
+
+          if (max_deg_den > 0)
+            curr_deg_den = max_deg_den;
+        } else {
+          curr_deg_den = max_deg_den;
+
+          if (max_deg_num > 0)
+            curr_deg_num = max_deg_num;
+        }
 
         std::unique_lock<std::mutex> lock(mutex_status);
         num_eqn = shifted_max_num_eqn;
@@ -2915,8 +2935,17 @@ namespace firefly {
         add_non_solved_den(el.first);
     }
 
-    curr_deg_num = max_deg_num;
-    curr_deg_den = max_deg_den;
+    if (normalize_to_den) {
+      curr_deg_num = max_deg_num;
+
+      if (max_deg_den > 0)
+        curr_deg_den = max_deg_den;
+    } else {
+      curr_deg_den = max_deg_den;
+
+      if (max_deg_num > 0)
+        curr_deg_num = max_deg_num;
+    }
 
     {
       std::unique_lock<std::mutex> lock(mutex_status);

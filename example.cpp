@@ -47,13 +47,13 @@ int main() {
 // Example of how one can use the black_box function for the automatic interface
 void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
   result.clear();
-  //result.emplace_back(singular_solver(values));
-  //result.emplace_back(n_eq_1(values[0]));
-  //result.emplace_back(n_eq_4(values));
-  //result.emplace_back(gghh(values));
-  //result.emplace_back(pol_n_eq_3(values));
-  //result.emplace_back(ggh(values));
-  result.emplace_back(topo4(values));
+  result.emplace_back(singular_solver(values));
+  result.emplace_back(n_eq_1(values[0]));
+  result.emplace_back(n_eq_4(values));
+  result.emplace_back(gghh(values));
+  result.emplace_back(pol_n_eq_3(values));
+  result.emplace_back(ggh(values));
+  result.emplace_back(1/topo4(values));
 }
 
 namespace firefly {

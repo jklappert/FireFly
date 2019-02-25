@@ -119,6 +119,7 @@ namespace firefly {
         shift = tmp_rec.get_zi_shift_vec();
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), thr_n);
         started_probes.emplace(std::vector<uint32_t> (n - 1, 1), thr_n);
+        iteration = 0;
       }
 
       run_until_done();
@@ -485,7 +486,7 @@ namespace firefly {
               uint32_t start = fed_ones - started_probes.at(zi_order) + thr_n;
 
               if (verbosity == CHATTY) {
-                INFO_MSG("Starting ones: " + std::to_string(start) + ". |");
+                INFO_MSG("Starting ones: " + std::to_string(start) + ".");
               }
 
               started_probes.at(zi_order) += start;
