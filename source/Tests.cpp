@@ -496,11 +496,11 @@ namespace firefly {
                 yis[12].pow(20) + yis[13].pow(20) + yis[14].pow(20) + yis[15].pow(20) +
                 yis[16].pow(20) + yis[17].pow(20) + yis[18].pow(20) + yis[19].pow(20);
 
-    FFInt den = yis[0] * yis[1] + yis[2] * yis[3] + yis[4] * yis[5] +
-                (yis[0] * yis[1] + yis[2] * yis[3] + yis[4] * yis[5]).pow(2) +
-                (yis[0] * yis[1] + yis[2] * yis[3] + yis[4] * yis[5]).pow(3) +
-                (yis[0] * yis[1] + yis[2] * yis[3] + yis[4] * yis[5]).pow(4) +
-                (yis[0] * yis[1] + yis[2] * yis[3] + yis[4] * yis[5]).pow(5);
+    FFInt den = yis[19].pow(35) * (yis[0] * yis[1] + yis[2] * yis[3] + yis[4] * yis[5] +
+                                   (yis[0] * yis[1] + yis[2] * yis[3] + yis[4] * yis[5]).pow(2) +
+                                   (yis[0] * yis[1] + yis[2] * yis[3] + yis[4] * yis[5]).pow(3) +
+                                   (yis[0] * yis[1] + yis[2] * yis[3] + yis[4] * yis[5]).pow(4) +
+                                   (yis[0] * yis[1] + yis[2] * yis[3] + yis[4] * yis[5]).pow(5));
 
     return num / den;
   }
@@ -508,22 +508,22 @@ namespace firefly {
   FFInt bench_2(std::vector<FFInt> yis) {
     mpz_class cr_1_mpz;
     cr_1_mpz = "123456789109898799879870980";
-    FFInt num = cr_1_mpz * (yis[0] + yis[1] + yis[2] + yis[3] + yis[4] + yis[5]).pow(20);
-    FFInt den = yis[0] - yis[1];
+    FFInt num = cr_1_mpz * (yis[0] + yis[1] + yis[2] + yis[3] + yis[4]).pow(20);
+    FFInt den = yis[0] - yis[1] + (yis[0] * yis[1] * yis[2] * yis[3] * yis[4]).pow(10);
 
     return num / den;
   }
 
   FFInt bench_3(std::vector<FFInt> yis) {
     FFInt num = yis[0].pow(20) + yis[1].pow(20) + yis[2].pow(10) * yis[3].pow(5) * yis[4].pow(5);
-    FFInt den = yis[0].pow(4) * yis[1].pow(4) * yis[2].pow(4) * yis[3].pow(4) * yis[4].pow(4);
+    FFInt den = (yis[0] * yis[1] * yis[2] * yis[3] * yis[4]).pow(4);
 
     return num / den;
   }
 
   FFInt topo4(std::vector<FFInt> yis) {
     FFInt num = 1;
-    FFInt den = (-1/2)*yis[0]*yis[2]+2*yis[2];
+    FFInt den = (-1 / 2) * yis[0] * yis[2] + 2 * yis[2];
     return num / den;
   }
 }
