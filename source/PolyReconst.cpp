@@ -54,7 +54,7 @@ namespace firefly {
     }
   }
 
-  void PolyReconst::feed(const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t& fed_prime) {
+  void PolyReconst::feed(const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
 
     if (fed_prime == prime_number)
@@ -496,7 +496,7 @@ namespace firefly {
     return rand_zi.at(std::make_pair(zi, order));
   }
 
-  std::vector<FFInt> PolyReconst::get_rand_zi_vec(std::vector<uint32_t> orders) {
+  std::vector<FFInt> PolyReconst::get_rand_zi_vec(const std::vector<uint32_t>& orders) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> yis {};
 

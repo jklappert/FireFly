@@ -8,7 +8,7 @@
 
 namespace firefly {
 
-  RationalFunction::RationalFunction(Polynomial n, Polynomial d) : numerator(n), denominator(d) {}
+  RationalFunction::RationalFunction(const Polynomial& n, const Polynomial& d) : numerator(n), denominator(d) {}
 
   RationalFunction::RationalFunction() {}
 
