@@ -119,7 +119,6 @@ namespace firefly {
         shift = tmp_rec.get_zi_shift_vec();
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), thr_n);
         started_probes.emplace(std::vector<uint32_t> (n - 1, 1), thr_n);
-        iteration = 0;
       }
 
       run_until_done();
@@ -145,6 +144,7 @@ namespace firefly {
       started_probes.clear();
       fed_ones = 0;
       feeding_jobs = 0;
+      iteration = 0;
     }
 
     if (found_shift) {
@@ -177,8 +177,6 @@ namespace firefly {
 
       INFO_MSG("Total black box probes for scan: " + std::to_string(total_iterations) + ".");
     }
-
-    iteration = 0;
   }
 
   void Reconstructor::start_first_runs() {
