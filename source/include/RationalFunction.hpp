@@ -25,7 +25,7 @@ namespace firefly {
      *    @param n the polynomial of the numerator
      *    @param d the polynomial of the denominator
      */
-    RationalFunction(Polynomial n, Polynomial d);
+    RationalFunction(const Polynomial& n, const Polynomial& d);
     RationalFunction();
     /**
     *  Transforms the Polynomial object to a string where each variable

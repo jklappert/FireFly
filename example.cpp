@@ -15,9 +15,9 @@ using namespace firefly;
 
 int main() {
   // Example for the automatic interface
-  Reconstructor reconst(4, 4/*, Reconstructor::CHATTY*/);
+  //Reconstructor reconst(4, 4/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
-  reconst.enable_scan();
+  //reconst.enable_scan();
   // Give the paths to the intermediate results
   //std::vector<std::string> file_paths = {"ff_save/0_3.txt","ff_save/1_2.txt","ff_save/2_3.txt","ff_save/3_4.txt","ff_save/4_1.txt","ff_save/5_2.txt"};
   //std::vector<std::string> file_paths = {"ff_save/sing_3.txt","ff_save/n1_2.txt","ff_save/n4_3.txt","ff_save/gghh_4.txt","ff_save/pol_1.txt","ff_save/ggh_2.txt"};
@@ -28,7 +28,7 @@ int main() {
   // Write the state of all reconstruction objects after each interpolation over a prime field to specified tags
   //std::vector<std::string> tags = {"sing","n1","n4","gghh","pol","ggh"};
   //reconst.set_tags(tags);
-  reconst.reconstruct();
+  //reconst.reconstruct();
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();
   for (auto& res : results) {
@@ -36,11 +36,10 @@ int main() {
   }*/
 
   // Example for the reconstruction of a rational function
-  //reconstruct_rational_function();
+  reconstruct_rational_function();
 
   // Example for the reconstruction of a polynomial
   //reconstruct_polynomial();
-
   return 0;
 }
 
@@ -52,14 +51,13 @@ void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFIn
   result.emplace_back(gghh(values));
   result.emplace_back(pol_n_eq_3(values));
   result.emplace_back(ggh(values));
-  result.emplace_back(1/topo4(values));
 }
 
 namespace firefly {
 
   // Example for the reconstruction of a rational function
   void reconstruct_rational_function() {
-    uint32_t n = 4;
+    uint32_t n = 5;
     FFInt::set_new_prime(primes()[0]);
     RatReconst rec(n);
 
@@ -85,19 +83,16 @@ namespace firefly {
     uint primes_used = 0;
 
     // One can use this option to find a sparser shift
-    //rec.scan_for_sparsest_shift();
+    rec.scan_for_sparsest_shift();
 
     // Feed loop
     std::vector<FFInt> shift = rec.get_zi_shift_vec();
-    /*bool first = true;
+    bool first = true;
     bool found_shift = false;
     uint32_t counter = 0;
 
     // Generate all possible combinations of shifting variables
     auto shift_vec = generate_possible_shifts(n);
-    for(const auto& el : shift_vec){
-      std::cout << el[0] << " " << el[1] << " " << el[2] << " " << el[3] << "\n";
-    }
 
     // Run this loop until a proper shift is found
     while (!found_shift) {
@@ -118,14 +113,21 @@ namespace firefly {
           yis[j] = t_yis[j - 1];
         }
 
+	yis[0] = yis[2];
+	FFInt yi1tmp = yis[1];
+	yis[1] = yis[2];
+	yis[2] = z1;
+
+	//yis[0] = yis[19];
+	//yis[19] = z1;
+
         //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
         //FFInt num = n_eq_1(z1); // example for n = 1
         //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
         //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
-        FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
+        //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
+	FFInt num = bench_3(yis);
 
-
-        //FFInt num = yis[0].pow(15)*yis[1].pow(15)*yis[2].pow(15)*yis[3].pow(15)*yis[4].pow(15);// + yis[0].pow(20)*yis[1].pow(20)*yis[2].pow(20)*yis[3].pow(20);
         // Feed the algorithm with the current zi_order
         ++count;
         rec.feed(t, num, rec.get_zi_order(), primes_used);
@@ -146,11 +148,9 @@ namespace firefly {
     }
 
     rec.set_zi_shift(shift_vec[counter - 1]);
-    //std::vector<uint32_t> te = {0,1,0,0};
-    //rec.set_zi_shift(te);
     shift = rec.get_zi_shift_vec();
     rec.accept_shift();
-    std::cout << "Total numerical runs to get sparse shift: " << count << ".\n";*/
+    std::cout << "Total numerical runs to get sparse shift: " << count << ".\n";
 
     // In this loop the whole reconstruction of a function happens
     while (!rec.is_done()) {
@@ -187,11 +187,19 @@ namespace firefly {
         yis[j] = t_yis[j - 1];
       }
 
+      yis[0] = yis[2];
+      FFInt yi1tmp = yis[1];
+      yis[1] = yis[2];
+      yis[2] = z1;
+      //yis[0] = yis[19];
+      //yis[19] = z1;
+
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       //FFInt num = n_eq_1(z1); // example for n = 1
       //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
       //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
-      FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
+      FFInt num = bench_3(yis);
+      //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
       ++kk;
       ++count;
@@ -205,7 +213,7 @@ namespace firefly {
     std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
     //std::cout << rec.get_result();
     std::cout << "--------------------------------------------------------------\n";
-  }
+    }
 
   // Example for the reconstruction of a polynomial
   void reconstruct_polynomial() {

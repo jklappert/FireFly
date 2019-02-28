@@ -8,7 +8,7 @@
 
 namespace firefly {
 
-  RationalNumber::RationalNumber(mpz_class numerator_, mpz_class denominator_) {
+  RationalNumber::RationalNumber(const mpz_class& numerator_, const mpz_class& denominator_) {
     mpz_class gcd_(gcd(numerator_, denominator_));
     numerator = numerator_ / gcd_;
     denominator = denominator_ / gcd_;

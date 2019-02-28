@@ -44,9 +44,7 @@ namespace firefly {
    */
   FFInt bench_2(std::vector<FFInt> yis);
   /**
-   *  a benchmark function with 5 variables and almost complete sparse
+   *  a benchmark function with 5 variables and almost complete sparse with high degrees
    */
   FFInt bench_3(std::vector<FFInt> yis);
-
-  FFInt topo4(std::vector<FFInt> yis);
 }

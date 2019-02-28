@@ -23,7 +23,7 @@ namespace firefly {
      *  @param numberator_ the numerator as a mpz_class
      *  @param denominator_ the denominator as a mpz_class
      */
-    RationalNumber(mpz_class numerator_, mpz_class denominator_);
+    RationalNumber(const mpz_class& numerator_, const mpz_class& denominator_);
     RationalNumber();
     RationalNumber operator*(const RationalNumber&);
     RationalNumber& operator+=(const RationalNumber& rn);

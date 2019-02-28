@@ -175,7 +175,7 @@ namespace firefly {
         INFO_MSG("Shift scan found no sparse shift.");
       }
 
-      INFO_MSG("Total black box evaluations for scan: " + std::to_string(total_iterations) + ".");
+      INFO_MSG("Total black box probes for scan: " + std::to_string(total_iterations) + ".");
     }
 
     iteration = 0;
@@ -244,7 +244,7 @@ namespace firefly {
 
     ++iteration;
     if (verbosity == CHATTY) {
-      INFO_MSG("Iteration: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: 0 / " + std::to_string(items));
+      INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: 0 / " + std::to_string(items));
     }
 
     start_probe_jobs(zi_order, 1);
@@ -270,8 +270,8 @@ namespace firefly {
         ++prime_it;
 
         if (verbosity > SILENT) {
-          INFO_MSG("Iterations for previous prime field: " + std::to_string(iteration) + ". | "
-                   + std::to_string(total_iterations) + " iterations in total.");
+          INFO_MSG("Probes for previous prime field: " + std::to_string(iteration) + ". | "
+                   + std::to_string(total_iterations) + " probes in total.");
           INFO_MSG("Reconstructed functions: " + std::to_string(items_done) + " / " + std::to_string(items) + ".");
           INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
         }
@@ -388,7 +388,7 @@ namespace firefly {
       std::unique_lock<std::mutex> lock(mut);
 
       if (verbosity == CHATTY) {
-        INFO_MSG("Iteration: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items)
+        INFO_MSG("Probe: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items)
                  + " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
       }
 

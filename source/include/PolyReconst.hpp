@@ -41,7 +41,7 @@ namespace firefly {
      *    @param feed_zi_order the corresponding zi_order to the probe of the black box
      *    @param fed_prime the counter of the prime number corresponding to the feed
      */
-    void feed(const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t& fed_prime);
+    void feed(const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime);
     /**
      *  Starts an interpolation job
      */
@@ -56,7 +56,7 @@ namespace firefly {
      *  @param orders a vector of all zi orders
      *  @return a vector of all random numbers of the given orders
      */
-    std::vector<FFInt> get_rand_zi_vec(std::vector<uint32_t> orders);
+    std::vector<FFInt> get_rand_zi_vec(const std::vector<uint32_t>& orders);
     /**
      *  @return true if the rand_zi container is empty
      */
