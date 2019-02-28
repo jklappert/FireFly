@@ -18,7 +18,7 @@ int main() {
   Reconstructor reconst(4, 4/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   reconst.enable_scan();
-  // Give the paths to the saved states to resum the run from this
+  // Give the paths to the intermediate results
   //std::vector<std::string> file_paths = {"ff_save/0_3.txt","ff_save/1_2.txt","ff_save/2_3.txt","ff_save/3_4.txt","ff_save/4_1.txt","ff_save/5_2.txt"};
   //std::vector<std::string> file_paths = {"ff_save/sing_3.txt","ff_save/n1_2.txt","ff_save/n4_3.txt","ff_save/gghh_4.txt","ff_save/pol_1.txt","ff_save/ggh_2.txt"};
   // Enables to resume from a saved state
@@ -46,7 +46,6 @@ int main() {
 
 // Example of how one can use the black_box function for the automatic interface
 void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
-  result.clear();
   result.emplace_back(singular_solver(values));
   result.emplace_back(n_eq_1(values[0]));
   result.emplace_back(n_eq_4(values));
