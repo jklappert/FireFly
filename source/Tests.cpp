@@ -508,8 +508,8 @@ namespace firefly {
   FFInt bench_2(std::vector<FFInt> yis) {
     mpz_class cr_1_mpz;
     cr_1_mpz = "123456789109898799879870980";
-    FFInt num = cr_1_mpz * (yis[0] + yis[1] + yis[2] + yis[3] + yis[4]).pow(20);
-    FFInt den = yis[0] - yis[1] + (yis[0] * yis[1] * yis[2] * yis[3] * yis[4]).pow(10);
+    FFInt num = cr_1_mpz * (yis[0] + yis[1] + yis[2] + yis[3] + yis[4]).pow(50);
+    FFInt den = yis[3] - yis[1] + (yis[0] * yis[1] * yis[2] * yis[3] * yis[4]).pow(10);
 
     return num / den;
   }

@@ -40,7 +40,6 @@ int main() {
 
   // Example for the reconstruction of a polynomial
   //reconstruct_polynomial();
-
   return 0;
 }
 
