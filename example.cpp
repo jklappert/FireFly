@@ -57,7 +57,7 @@ namespace firefly {
 
   // Example for the reconstruction of a rational function
   void reconstruct_rational_function() {
-    uint32_t n = 5;
+    uint32_t n = 4;
     FFInt::set_new_prime(primes()[0]);
     RatReconst rec(n);
 
@@ -83,11 +83,11 @@ namespace firefly {
     uint primes_used = 0;
 
     // One can use this option to find a sparser shift
-    rec.scan_for_sparsest_shift();
+    //rec.scan_for_sparsest_shift();
 
     // Feed loop
     std::vector<FFInt> shift = rec.get_zi_shift_vec();
-    bool first = true;
+    /*bool first = true;
     bool found_shift = false;
     uint32_t counter = 0;
 
@@ -113,10 +113,10 @@ namespace firefly {
           yis[j] = t_yis[j - 1];
         }
 
-	yis[0] = yis[2];
-	FFInt yi1tmp = yis[1];
-	yis[1] = yis[2];
-	yis[2] = z1;
+	//	yis[0] = yis[2];
+	//FFInt yi1tmp = yis[1];
+	//yis[1] = yis[2];
+	//yis[2] = z1;
 
 	//yis[0] = yis[19];
 	//yis[19] = z1;
@@ -150,7 +150,7 @@ namespace firefly {
     rec.set_zi_shift(shift_vec[counter - 1]);
     shift = rec.get_zi_shift_vec();
     rec.accept_shift();
-    std::cout << "Total numerical runs to get sparse shift: " << count << ".\n";
+    std::cout << "Total numerical runs to get sparse shift: " << count << ".\n";*/
 
     // In this loop the whole reconstruction of a function happens
     while (!rec.is_done()) {
@@ -187,18 +187,18 @@ namespace firefly {
         yis[j] = t_yis[j - 1];
       }
 
-      yis[0] = yis[2];
-      FFInt yi1tmp = yis[1];
-      yis[1] = yis[2];
-      yis[2] = z1;
+      //yis[0] = yis[2];
+      //FFInt yi1tmp = yis[1];
+      //yis[1] = yis[2];
+      //yis[2] = z1;
       //yis[0] = yis[19];
       //yis[19] = z1;
 
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       //FFInt num = n_eq_1(z1); // example for n = 1
-      //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
+      FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
       //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
-      FFInt num = bench_3(yis);
+      //FFInt num = bench_3(yis);
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
       ++kk;

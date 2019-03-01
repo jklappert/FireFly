@@ -699,7 +699,8 @@ namespace firefly {
               for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
                 auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
+                if(rand_zi.find(key) == rand_zi.end())
+                  rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
               }
             }
 
@@ -886,7 +887,8 @@ namespace firefly {
                 for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
                   auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
+                  if(rand_zi.find(key) == rand_zi.end())
+                    rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
                 }
 
                 if (!is_singular_system)
