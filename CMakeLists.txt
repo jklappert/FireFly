@@ -47,6 +47,7 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 
 # include headers
 include_directories(${INCLUDE_PATH})
+include_directories(${FLINT_INCLUDE_DIR}/flint)
 
 # Firefly library files
 file(GLOB LIBSOURCES

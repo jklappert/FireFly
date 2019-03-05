@@ -7,7 +7,7 @@
 #include <sstream>
 #include "FFInt.hpp"
 #ifdef FLINT
-#include "flint/ulong_extras.h"
+#include <ulong_extras.h>
 #endif
 
 namespace firefly {

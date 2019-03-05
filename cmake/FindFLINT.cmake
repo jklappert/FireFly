@@ -1,8 +1,3 @@
-if(FLINT_INCLUDE_DIR AND FLINT_LIBRARIES)
-    # Already in cache, be silent
-    set(FLINT_FIND_QUIETLY TRUE)
-endif()
-
 find_path(FLINT_INCLUDE_DIR flint/flint.h)
 find_library(FLINT_LIBRARIES NAMES flint)
 
