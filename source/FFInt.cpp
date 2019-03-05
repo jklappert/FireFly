@@ -6,7 +6,9 @@
 // ====================================================================
 #include <sstream>
 #include "FFInt.hpp"
+#ifdef FLINT
 #include "flint/ulong_extras.h"
+#endif
 
 namespace firefly {
 
@@ -159,9 +161,9 @@ namespace firefly {
 
       // result=0 in the first pass or when the string is zero padded
       // on the left so that the first (few) chunks give zero.
-      if (result) result = n_mulmod2_preinv(result, 1000000000000000000uLL, FFInt::p, FFInt::p_inv);
+      if (result) result =  (FFInt(result) * FFInt(1000000000000000000uLL)).n;//n_mulmod2_preinv(result, 1000000000000000000uLL, FFInt::p, FFInt::p_inv);
 
-      result = n_addmod(result, intchunk, FFInt::p);
+      result = (FFInt(result) + FFInt(intchunk)).n;// n_addmod(result, intchunk, FFInt::p);
     }
 
     return result;
