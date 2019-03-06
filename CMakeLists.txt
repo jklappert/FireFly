@@ -47,6 +47,7 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 
 # include headers
 include_directories(${INCLUDE_PATH})
+include_directories(${FLINT_INCLUDE_DIR}/flint)
 
 # Firefly library files
 file(GLOB LIBSOURCES
@@ -77,7 +78,6 @@ file(GLOB LIBSOURCES_SHRD
   ${SOURCE_PATH}/Reconstructor.cpp
   ${SOURCE_PATH}/utils.cpp)
 
-set(EXEC_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
@@ -91,6 +91,7 @@ add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
 set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 
 add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
+
 target_link_libraries(example FireFly_static gmp flint)
 
 # install libraries
