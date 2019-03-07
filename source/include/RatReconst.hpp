@@ -12,8 +12,6 @@
 #include <unordered_set>
 
 namespace firefly {
-
-  typedef std::unordered_map<std::vector<uint32_t>, std::unordered_map<uint32_t, std::unordered_map<uint32_t, FFInt>>, UintHasher> shift_map;
   /**
    * @class RatReconst
    * @brief A class to reconstruct a rational function from its values
