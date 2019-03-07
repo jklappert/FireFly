@@ -320,7 +320,7 @@ namespace firefly {
     FFInt cr_1(cr_1_mpz);
     FFInt num = 17 * yis[0] + 7 * yis[1] + yis[2] + yis[0].pow(2) + yis[1].pow(2) + yis[2].pow(2) + yis[3].pow(2) + yis[0] * yis[3].pow(3) + yis[1].pow(4) + yis[3].pow(7) + yis[2].pow(7);
     FFInt den = cr_1 * yis[1] - yis[3] + yis[0] * yis[1] + yis[1] * yis[2] + yis[0] * yis[3] + yis[0].pow(2) * yis[1].pow(2) + yis[2].pow(4);
-    return 0;//num / den;
+    return num / den;
   }
 
   // example for n = 1

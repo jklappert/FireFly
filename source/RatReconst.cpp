@@ -170,6 +170,8 @@ namespace firefly {
               coef_mat_num = std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> ();
               coef_mat_den = std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> ();
               curr_zi_order = std::vector<uint32_t>();
+	      non_solved_degs_num = std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>>();
+	      non_solved_degs_den = std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>>();
               use_chinese_remainder = false;
               return;
             } else {
