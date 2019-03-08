@@ -92,7 +92,7 @@ namespace firefly {
     std::unique_lock<std::mutex> lock(mutex_status);
 
     if (!done && fed_prime == prime_number)
-      queue.emplace_back(std::make_tuple(new_ti, num, feed_zi_ord));
+      queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
   }
 
   bool RatReconst::interpolate() {
@@ -104,7 +104,7 @@ namespace firefly {
 
       while (!queue.empty()) {
         auto food = queue.front();
-        queue.pop_front();
+        queue.pop();
         lock.unlock();
         interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food));
 
@@ -113,8 +113,8 @@ namespace firefly {
           * If not finished, check if we can use some saved runs
           */
           if (saved_ti.find(curr_zi_order) != saved_ti.end()) {
-            std::pair<FFInt, FFInt> key_val = saved_ti.at(curr_zi_order).back();
-            saved_ti.at(curr_zi_order).pop_back();
+            std::pair<FFInt, FFInt> key_val = saved_ti[curr_zi_order].back();
+            saved_ti[curr_zi_order].pop_back();
             interpolate(key_val.first, key_val.second, curr_zi_order);
           }
         }
@@ -170,9 +170,9 @@ namespace firefly {
               coef_mat_num = std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> ();
               coef_mat_den = std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> ();
               curr_zi_order = std::vector<uint32_t>();
-	      non_solved_degs_num = std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>>();
-	      non_solved_degs_den = std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>>();
-	      saved_ti = ff_vec_map();
+              non_solved_degs_num = std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>>();
+              non_solved_degs_den = std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>>();
+              saved_ti = ff_vec_map();
               use_chinese_remainder = false;
               return;
             } else {
@@ -387,7 +387,7 @@ namespace firefly {
             saved_ti.clear();
             std::unique_lock<std::mutex> lock(mutex_status);
             ++prime_number;
-            queue.clear();
+            queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
             new_prime = true;
             return;
           } else if (prime_number == 0) {
@@ -691,7 +691,7 @@ namespace firefly {
 
               std::unique_lock<std::mutex> lock(mutex_status);
               ++prime_number;
-              queue.clear();
+              queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
               saved_ti.clear();
               std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
               curr_zi = 2;
@@ -702,7 +702,8 @@ namespace firefly {
               for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
                 auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                if(rand_zi.find(key) == rand_zi.end())
+
+                if (rand_zi.find(key) == rand_zi.end())
                   rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
               }
             }
@@ -868,7 +869,7 @@ namespace firefly {
               {
                 std::unique_lock<std::mutex> lock(mutex_status);
                 ++prime_number;
-                queue.clear();
+                queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
                 saved_ti.clear();
                 std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
                 new_prime = true;
@@ -884,13 +885,15 @@ namespace firefly {
               // increase zi order by 1
               {
                 std::unique_lock<std::mutex> lock(mutex_status);
+                saved_ti.erase(curr_zi_order);
                 std::transform(curr_zi_order.begin(), curr_zi_order.end(),
                 curr_zi_order.begin(), [](uint32_t x) {return x + 1;});
 
                 for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
                   auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  if(rand_zi.find(key) == rand_zi.end())
+
+                  if (rand_zi.find(key) == rand_zi.end())
                     rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
                 }
 
@@ -1121,6 +1124,7 @@ namespace firefly {
 
     sub_count_den = 0;
     sub_count_num = 0;
+    saved_ti = ff_vec_map();
 
     if (is_singular_system) {
       for (const auto & el : non_solved_degs_num) {

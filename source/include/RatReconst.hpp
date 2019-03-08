@@ -10,6 +10,7 @@
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
 #include <unordered_set>
+#include <queue>
 
 namespace firefly {
   /**
@@ -189,7 +190,7 @@ namespace firefly {
      */
     void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
     bool first_run = true;
-    std::list<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> queue;
+    std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
     std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> coef_mat_num {};
     std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> coef_mat_den {};
