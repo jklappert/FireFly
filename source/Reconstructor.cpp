@@ -12,9 +12,7 @@
 namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t verbosity_): n(n_), thr_n(thr_n_), verbosity(verbosity_), tp(thr_n_) {
     if (verbosity > SILENT) {
-      std::cout << "-----------------------\n";
-      std::cout << "         _\n        /_/       \n     =O(_)\033[1;32m)))\033[0m .-.-\n        \\_\\\n\n     FireFly " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n";
-      std::cout << "-----------------------\n";
+      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
       INFO_MSG("Launching " << thr_n_ << " thread(s).");
     }
 
