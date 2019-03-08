@@ -183,6 +183,7 @@ namespace firefly {
 
   PolynomialFF PolynomialFF::mul(const uint32_t zi) {
     ff_map new_coefs {};
+    new_coefs.reserve(coefs.size());
 
     for (const auto & coef_ : coefs) {
       std::vector<uint32_t> new_element = coef_.first;
@@ -378,5 +379,3 @@ namespace firefly {
   }
 
 }
-
-
