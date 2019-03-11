@@ -98,14 +98,14 @@ namespace firefly {
      *    @param ai The vector of previously computed ai
      *    @return a(i)
      */
-    PolynomialFF comp_ai(const uint32_t tmp_zi, int i, int ip, const PolynomialFF& num, std::vector<PolynomialFF>& ai);
+    FFInt comp_ai(const uint32_t tmp_zi, int i, int ip, const FFInt& num, std::vector<FFInt>& ai);
     /**
      *    Convert the reconstructed polynomial to the canonical form
      *    @param tmp_zi the integer i to a zi
      *    @param ai The computed ai
      *    @return The vector of coefficients of the canonical form
      */
-    ff_map construct_canonical(const uint32_t tmp_zi, std::vector<PolynomialFF>& ai);
+    ff_map construct_canonical(const uint32_t tmp_zi, const std::vector<FFInt>& ai) const;
     /**
      *    Iterative construction of the canonical form
      *    @param tmp_zi the integer i to a z
@@ -113,7 +113,7 @@ namespace firefly {
      *    @param ai The computed ai
      *    @return One iteration step of the canonical polynomial
      */
-    PolynomialFF iterate_canonical(const uint32_t tmp_zi, uint32_t i, std::vector<PolynomialFF>& ai);
+    PolynomialFF iterate_canonical(const uint32_t tmp_zi, uint32_t i, const std::vector<FFInt>& ai) const;
     /**
      *    Test if the guess yields the same answer for the function in the finite
      *    field of prime
@@ -122,9 +122,9 @@ namespace firefly {
      */
     bool test_guess(const FFInt& num);
     /**
-     *  @return a PolynomialFF object of the solved transposed Vandermonde system
+     *  @return a map with a degree as key and FFInt as value of the solved transposed Vandermonde system
      */
-    PolynomialFF solve_transposed_vandermonde();
+    ff_map solve_transposed_vandermonde();
     std::list<std::tuple<FFInt, std::vector<uint32_t>>> queue;
     int deg = -1;
     bool with_rat_reconst = false;
@@ -132,12 +132,17 @@ namespace firefly {
     PolynomialFF result_ff;
     std::vector<std::vector<uint32_t>> rec_degs {};
     ff_map solved_degs {};
+    ff_map tmp_solved_degs {};
     std::vector<FFInt> nums {};
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */
-    polff_vec_map ais {};
+    std::unordered_map<std::vector<uint32_t>, std::vector<FFInt>, UintHasher> ais {};
     std::unordered_map<uint32_t, int> max_deg {};
     static std::mutex mutex_statics;
     static ff_pair_map rand_zi;
+    std::vector<uint32_t> zero_element {};
+    bool combine_res = false;
+    ff_map construct_tmp_canonical(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) const;
+    void check_for_tmp_solved_degs(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai);
   };
 }
