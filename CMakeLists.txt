@@ -121,3 +121,6 @@ install(FILES
   "${INCLUDE_PATH}/utils.hpp"
 
   DESTINATION "${INCLUDE_INSTALL_DIR}")
+
+# adding documentation
+add_subdirectory(doc)
