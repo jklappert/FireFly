@@ -29,6 +29,10 @@ namespace firefly {
     RatReconst(RatReconst && other);
     RatReconst& operator=(const RatReconst& other);
     RatReconst& operator=(RatReconst && other);
+    /**
+     *  Resets all static variables of the object
+     */
+    static void reset();
     void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime);
     /**
      *  @return the result of the reconstruction as a RationalFunction object

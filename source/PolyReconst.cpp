@@ -511,4 +511,9 @@ namespace firefly {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return rand_zi.empty();
   }
+
+  void PolyReconst::reset() {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    rand_zi = ff_pair_map();
+  }
 }

@@ -78,6 +78,10 @@ namespace firefly {
      *  @param anchor_points the values to which the anchor points should be set
      */
     void set_anchor_points(const std::vector<FFInt>& anchor_points, bool force = false);
+    /**
+     *  Resets all statics
+     */
+    static void reset();
   private:
     /**
      *  Starts the real interpolation managed by the class itself

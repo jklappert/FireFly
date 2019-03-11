@@ -2965,4 +2965,14 @@ namespace firefly {
 
     for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
   }
+
+  void RatReconst::reset() {
+    std::unique_lock<std::mutex> lock(mutex_statics);
+    shift = std::vector<FFInt> ();
+    need_prime_shift = false;
+    set_singular_system = false;
+    rand_zi = ff_pair_map();
+    curr_shift = std::vector<uint32_t>();
+    PolyReconst::reset();
+  }
 }

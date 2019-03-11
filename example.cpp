@@ -15,7 +15,7 @@ using namespace firefly;
 
 int main() {
   // Example for the automatic interface
-  //Reconstructor reconst(4, 4/*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(4, 4/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   //reconst.enable_scan();
   // Give the paths to the intermediate results
@@ -28,12 +28,15 @@ int main() {
   // Write the state of all reconstruction objects after each interpolation over a prime field to specified tags
   //std::vector<std::string> tags = {"sing","n1","n4","gghh","pol","ggh"};
   //reconst.set_tags(tags);
-  //reconst.reconstruct();
+  reconst.reconstruct();
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();
   for (auto& res : results) {
     std::cout << res << "\n";
   }*/
+
+  // Resets all statics in RatReconst to start a new reconstruction
+  RatReconst::reset();
 
   // Example for the reconstruction of a rational function
   reconstruct_rational_function();
@@ -113,20 +116,11 @@ namespace firefly {
           yis[j] = t_yis[j - 1];
         }
 
-	//	yis[0] = yis[2];
-	//FFInt yi1tmp = yis[1];
-	//yis[1] = yis[2];
-	//yis[2] = z1;
-
-	//yis[0] = yis[19];
-	//yis[19] = z1;
-
         //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
         //FFInt num = n_eq_1(z1); // example for n = 1
         //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
         //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
         //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
-	FFInt num = bench_3(yis);
 
         // Feed the algorithm with the current zi_order
         ++count;
@@ -187,18 +181,10 @@ namespace firefly {
         yis[j] = t_yis[j - 1];
       }
 
-      //yis[0] = yis[2];
-      //FFInt yi1tmp = yis[1];
-      //yis[1] = yis[2];
-      //yis[2] = z1;
-      //yis[0] = yis[19];
-      //yis[19] = z1;
-
       FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       //FFInt num = n_eq_1(z1); // example for n = 1
       //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
       //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
-      //FFInt num = bench_3(yis);
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
       ++kk;
