@@ -155,8 +155,9 @@ namespace firefly {
             if (ais[zero_element].back() == 0) {
               combine_res = true;
               ais[zero_element].pop_back();
-            } else if (deg != -1 && (uint32_t) deg == i)
+            } else if (deg != -1 && (uint32_t) deg == i) {
               combine_res = true;
+            }
           }
 
           std::unique_lock<std::mutex> lock(mutex_status);
@@ -182,7 +183,7 @@ namespace firefly {
             std::vector<uint32_t> deg_vec = el.first;
             FFInt coef_num = el.second;
 
-            for (uint32_t tmp_zi = 1; tmp_zi < zi; ++tmp_zi) {
+            for (uint32_t tmp_zi = 1; tmp_zi < zi + 1; ++tmp_zi) {
               // curr_zi_ord starts at 1, thus we need to subtract 1 entry
               std::unique_lock<std::mutex> lock_statics(mutex_statics);
               coef_num *= rand_zi[std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1])].pow(deg_vec[tmp_zi - 1]);
@@ -216,11 +217,11 @@ namespace firefly {
                 ais[key].pop_back();
                 check_for_tmp_solved_degs(key, ais[key]);
                 ais.erase(key);
-              } else if (deg != -1 && i < (uint32_t) deg)
-                not_done_counter ++;
-              else if (deg != -1 && i == (uint32_t) deg) {
+              } else if (deg != -1 && i == (uint32_t) deg) {
                 check_for_tmp_solved_degs(key, ais[key]);
                 ais.erase(key);
+              } else {
+                ++not_done_counter;
               }
             }
 
@@ -573,8 +574,6 @@ namespace firefly {
         solved_degs.emplace(std::make_pair(el.first, el.second));
       else
         tmp_solved_degs.emplace(std::make_pair(el.first, el.second));
-
-      //std::cout << "tmp_deg " << total_deg << " " << deg << "\n" << PolynomialFF(n, tmp_solved_degs);
     }
 
     if (zi > 1) {

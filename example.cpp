@@ -39,10 +39,10 @@ int main() {
   //RatReconst::reset();
 
   // Example for the reconstruction of a rational function
-  reconstruct_rational_function();
+  //reconstruct_rational_function();
 
   // Example for the reconstruction of a polynomial
-  //reconstruct_polynomial();
+  reconstruct_polynomial();
   return 0;
 }
 
@@ -205,7 +205,7 @@ namespace firefly {
   void reconstruct_polynomial() {
     FFInt::set_new_prime(primes()[0]);
     uint32_t n = 3;
-    PolyReconst rec_poly(n, 5);
+    PolyReconst rec_poly(n);
 
     // Initialize some counters
     int count = 0;
