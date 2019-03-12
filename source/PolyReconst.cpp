@@ -182,7 +182,7 @@ namespace firefly {
             std::vector<uint32_t> deg_vec = el.first;
             FFInt coef_num = el.second;
 
-            for (uint32_t tmp_zi = 1; tmp_zi < zi; ++tmp_zi) {
+            for (uint32_t tmp_zi = 1; tmp_zi <= zi; ++tmp_zi) {
               // curr_zi_ord starts at 1, thus we need to subtract 1 entry
               std::unique_lock<std::mutex> lock_statics(mutex_statics);
               coef_num *= rand_zi[std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1])].pow(deg_vec[tmp_zi - 1]);
@@ -257,7 +257,7 @@ namespace firefly {
 
             for (auto & el : pol_ff) {
               rec_degs.emplace_back(el.first);
-              std::cout << "rec_degs " << deg << " " << el.first[0] << " " << el.first[1] << " "<< el.first[2] << "\n";
+              //std::cout << "rec_degs " << deg << " " << el.first[0] << " " << el.first[1] << " " << el.first[2] << "\n";
             }
 
             if (rec_degs.size() == 0 && zi != n) {
@@ -288,7 +288,7 @@ namespace firefly {
               ais.clear();
 
               for (const auto & el : pol_ff) {
-              std::cout << "fin_degs " << deg << " " << zi << " " << el.first[0] << " " << el.first[1] << " "<< el.first[2] << "\n";
+                //std::cout << "fin_degs " << deg << " " << zi << " " << el.first[0] << " " << el.first[1] << " " << el.first[2] << "\n";
                 ais[el.first].emplace_back(el.second);
               }
             }
@@ -304,9 +304,9 @@ namespace firefly {
             ff_map tmp_pol_ff {};
 
             for (const auto & el : ais) {
-              std::cout << "1test " << deg << " " << el.first[0] << " " << el.first[1] << " "<< el.first[2] << "\n";;
+              //std::cout << "1test " << deg << " " << el.first[0] << " " << el.first[1] << " " << el.first[2] << "\n";;
               ff_map tmp = construct_tmp_canonical(el.first, el.second);
-              std::cout << "test " << deg << " " << PolynomialFF(n, tmp);
+              //std::cout << "test " << deg << " " << PolynomialFF(n, tmp);
               tmp_pol_ff.insert(tmp.begin(), tmp.end());
             }
 
@@ -338,7 +338,7 @@ namespace firefly {
               ais.clear();
               result_ff = PolynomialFF(n, tmp_pol_ff).homogenize(deg);
               result_ff.n = n + 1;
-              std::cout << "res deg " << deg << " " << result_ff;
+              //std::cout << "res deg " << deg << " " << result_ff;
               rec_degs = std::vector<std::vector<uint32_t>>();
               nums = std::vector<FFInt>();
             }
@@ -547,15 +547,22 @@ namespace firefly {
     ff_map tmp {};
 
     //todo hier muss irgendwo ein bug sein!
-    for (auto & el : construct_canonical(ai)) { // homogenize
-      std::vector<uint32_t> new_deg(n);
-      new_deg[zi - 1] = el.first[0];
+    //std::cout << "size " << ai.size() << PolynomialFF(n, construct_canonical(ai)) << "\n";
 
-      for (uint32_t j = 0; j < zi - 1; j++) {
-        new_deg[j] = deg_vec[j];
+    if (ai.size() == 1 && zi == n) {
+      tmp.emplace(std::make_pair(deg_vec, ai[0]));
+    } else {
+      for (auto & el : construct_canonical(ai)) { // homogenize
+        std::vector<uint32_t> new_deg(n);
+        new_deg[zi - 1] = el.first[0];
+        //std::cout << "deg " << deg << " zi " << zi << " " << el.first[0] << "\n";
+
+        for (uint32_t j = 0; j < zi - 1; j++) {
+          new_deg[j] = deg_vec[j];
+        }
+
+        tmp.emplace(std::make_pair(new_deg, el.second));
       }
-
-      tmp.emplace(std::make_pair(new_deg, el.second));
     }
 
     return tmp;
