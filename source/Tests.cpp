@@ -309,7 +309,7 @@ namespace firefly {
                                      (-8128 + 2032 * z1) * t_yis[0] . pow(3) + (-48 + 12 * z1) * t_yis[0] . pow(4)) * t_yis[1] . pow(5) +
                                     (-2048 + 512 * z1 + (-4160 + 1040 * z1) * t_yis[0] + (-2480 + 620 * z1) * t_yis[0] . pow(2) +
                                      (-64 + 16 * z1) * t_yis[0] . pow(3)) * t_yis[1] . pow(6) +
-				     (-256 + 64 * z1 + (-272 + 68 * z1) * t_yis[0] + (-16 + 4 * z1) * t_yis[0] . pow(2)) * t_yis[1] . pow(7)));
+                                    (-256 + 64 * z1 + (-272 + 68 * z1) * t_yis[0] + (-16 + 4 * z1) * t_yis[0] . pow(2)) * t_yis[1] . pow(7)));
     return num / den;
   }
 
@@ -508,7 +508,7 @@ namespace firefly {
   FFInt bench_2(std::vector<FFInt> yis) {
     mpz_class cr_1_mpz;
     cr_1_mpz = "123456789109898799879870980";
-    FFInt num = cr_1_mpz * (( 1 + yis[0] + yis[1] + yis[2] + yis[3] + yis[4]).pow(20) - 1);
+    FFInt num = cr_1_mpz * ((1 + yis[0] + yis[1] + yis[2] + yis[3] + yis[4]).pow(20) - 1);
     FFInt den = yis[3] - yis[1] + (yis[0] * yis[1] * yis[2] * yis[3] * yis[4]).pow(10);
 
     return num / den;
@@ -516,7 +516,7 @@ namespace firefly {
 
   FFInt bench_3(std::vector<FFInt> yis) {
     FFInt num = yis[0].pow(100) + yis[1].pow(200) + yis[2].pow(300);
-    FFInt den = yis[0]*yis[1]*yis[2]*yis[3]*yis[4] + (yis[0] * yis[1] * yis[2] * yis[3] * yis[4]).pow(4);
+    FFInt den = yis[0] * yis[1] * yis[2] * yis[3] * yis[4] + (yis[0] * yis[1] * yis[2] * yis[3] * yis[4]).pow(4);
 
     return num / den;
   }

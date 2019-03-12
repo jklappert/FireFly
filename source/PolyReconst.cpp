@@ -23,9 +23,9 @@ namespace firefly {
   PolyReconst::PolyReconst(uint32_t n_, const int deg_inp, const bool with_rat_reconst_inp) {
     std::unique_lock<std::mutex> lock_status(mutex_status);
 
-    zero_element = std::vector<uint32_t>(n);
     type = POLY;
     n = n_;
+    zero_element = std::vector<uint32_t>(n);
     combined_prime = FFInt::p;
     curr_zi_order = std::vector<uint32_t>(n, 1);
 
@@ -150,9 +150,12 @@ namespace firefly {
           if (i == 0)
             ais[zero_element].emplace_back(num);
           else {
-            ais[zero_element].emplace_back(comp_ai(zi, i, i, num, ais[zero_element]));
+            ais[zero_element].emplace_back(comp_ai(i, i, num, ais[zero_element]));
 
-            if ((uint32_t) deg == i)
+            if (ais[zero_element].back() == 0) {
+              combine_res = true;
+              ais[zero_element].pop_back();
+            } else if (deg != -1 && (uint32_t) deg == i)
               combine_res = true;
           }
 
@@ -205,18 +208,17 @@ namespace firefly {
 
             for (const auto & el : solve_transposed_vandermonde()) {
               std::vector<uint32_t> key = el.first;
-              uint32_t size_i = ais[key].size();
 
-              FFInt tmp_ai = comp_ai(zi, size_i, size_i, el.second, ais[key]);
+              FFInt tmp_ai = comp_ai(i, i, el.second, ais[key]);
               ais[key].emplace_back(tmp_ai);
 
               if (tmp_ai == 0) {
                 ais[key].pop_back();
                 check_for_tmp_solved_degs(key, ais[key]);
                 ais.erase(key);
-              } else if (deg > 0 && size_i + 1 < (uint32_t) deg)
+              } else if (deg != -1 && i < (uint32_t) deg)
                 not_done_counter ++;
-              else if (deg > 0 && size_i + 1 == (uint32_t) deg) {
+              else if (deg != -1 && i == (uint32_t) deg) {
                 check_for_tmp_solved_degs(key, ais[key]);
                 ais.erase(key);
               }
@@ -236,10 +238,7 @@ namespace firefly {
 
         // if the lowest stage ai is zero, combine them into an ai for a higher stage
         // and check if we are done
-        if ((zi == 1 && ais[zero_element].back() == 0) || combine_res) {
-          if (deg == -1 || ais[zero_element].back() == 0)
-            ais[zero_element].pop_back();
-
+        if (combine_res) {
           combine_res = false;
 
           if (n > 1) {
@@ -258,14 +257,8 @@ namespace firefly {
 
             for (auto & el : pol_ff) {
               rec_degs.emplace_back(el.first);
+              std::cout << "rec_degs " << deg << " " << el.first[0] << " " << el.first[1] << " "<< el.first[2] << "\n";
             }
-
-            // The monomials which have to be reconstructed have to
-            // ordered in a monotonical way to utilize the Vandermonde
-            // system solver
-            std::sort(rec_degs.begin(), rec_degs.end(), std::greater<std::vector<uint32_t>>());
-
-            nums.reserve(rec_degs.size());
 
             if (rec_degs.size() == 0 && zi != n) {
               std::unique_lock<std::mutex> lock(mutex_status);
@@ -275,7 +268,12 @@ namespace firefly {
             if (zi != n) {
               std::unique_lock<std::mutex> lock(mutex_status);
               zi ++;
+              // The monomials which have to be reconstructed have to
+              // ordered in a monotonical way to utilize the Vandermonde
+              // system solver
+              std::sort(rec_degs.begin(), rec_degs.end(), std::greater<std::vector<uint32_t>>());
 
+              nums.reserve(rec_degs.size());
               ais.clear();
 
               for (const auto & el : pol_ff) {
@@ -285,8 +283,15 @@ namespace firefly {
               // reset zi order
               curr_zi_order = std::vector<uint32_t> (n, 1);
               curr_zi_order[zi - 1] = 2;
-            } else
+            } else {
               check = true;
+              ais.clear();
+
+              for (const auto & el : pol_ff) {
+              std::cout << "fin_degs " << deg << " " << zi << " " << el.first[0] << " " << el.first[1] << " "<< el.first[2] << "\n";
+                ais[el.first].emplace_back(el.second);
+              }
+            }
           } else if (zi == 1 && n == 1)
             check = true;
 
@@ -299,7 +304,9 @@ namespace firefly {
             ff_map tmp_pol_ff {};
 
             for (const auto & el : ais) {
+              std::cout << "1test " << deg << " " << el.first[0] << " " << el.first[1] << " "<< el.first[2] << "\n";;
               ff_map tmp = construct_tmp_canonical(el.first, el.second);
+              std::cout << "test " << deg << " " << PolynomialFF(n, tmp);
               tmp_pol_ff.insert(tmp.begin(), tmp.end());
             }
 
@@ -328,8 +335,10 @@ namespace firefly {
                 combined_prime = p3.second;
               }
             } else {
+              ais.clear();
               result_ff = PolynomialFF(n, tmp_pol_ff).homogenize(deg);
               result_ff.n = n + 1;
+              std::cout << "res deg " << deg << " " << result_ff;
               rec_degs = std::vector<std::vector<uint32_t>>();
               nums = std::vector<FFInt>();
             }
@@ -372,45 +381,44 @@ namespace firefly {
     return result_ff;
   }
 
-  FFInt PolyReconst::comp_ai(const uint32_t tmp_zi, int i, int ip,
-                             const FFInt& num, std::vector<FFInt>& ai) {
+  FFInt PolyReconst::comp_ai(int i, int ip, const FFInt& num, std::vector<FFInt>& ai) {
     if (ip == 0) return num;
 
     FFInt yi_i_p_1;
     FFInt yi_ip;
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
-      yi_i_p_1 = rand_zi[std::make_pair(tmp_zi, i + 1)];
-      yi_ip = rand_zi[std::make_pair(tmp_zi, ip)];
+      yi_i_p_1 = rand_zi[std::make_pair(zi, i + 1)];
+      yi_ip = rand_zi[std::make_pair(zi, ip)];
     }
 
-    return (comp_ai(tmp_zi, i, ip - 1, num, ai) - ai[ip - 1]) / (yi_i_p_1 - yi_ip); //yi[i + 1] - yi[ip - 1 + 1] the +1 in the first and the +1 in the second is due to the 0th element in the vector
+    return (comp_ai(i, ip - 1, num, ai) - ai[ip - 1]) / (yi_i_p_1 - yi_ip); //yi[i + 1] - yi[ip - 1 + 1] the +1 in the first and the +1 in the second is due to the 0th element in the vector
   }
 
-  ff_map PolyReconst::construct_canonical(const uint32_t tmp_zi, const std::vector<FFInt>& ai) const {
+  ff_map PolyReconst::construct_canonical(const std::vector<FFInt>& ai) const {
     size_t size = ai.size();
 
     if (size == 1) return {{std::vector<uint32_t> (1, 0), ai[0]}};
     else if (size == 0) return {{std::vector<uint32_t> (n, 0), 0}};
 
-    return (PolynomialFF(1, {{std::vector<uint32_t> (1, 0), ai[0]}}) + iterate_canonical(tmp_zi, 1, ai)).coefs;
+    return (PolynomialFF(1, {{std::vector<uint32_t> (1, 0), ai[0]}}) + iterate_canonical(1, ai)).coefs;
   }
 
-  PolynomialFF PolyReconst::iterate_canonical(const uint32_t tmp_zi, uint32_t i, const std::vector<FFInt>& ai) const {
+  PolynomialFF PolyReconst::iterate_canonical(uint32_t i, const std::vector<FFInt>& ai) const {
     FFInt yi;
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
-      yi = rand_zi[std::make_pair(tmp_zi, i)];
+      yi = rand_zi[std::make_pair(zi, i)];
     }
 
-    PolynomialFF dum_pol = PolynomialFF(1, {{{i}, ai[i]}});
+    PolynomialFF dum_pol = PolynomialFF(1, {{{0}, ai[i]}});
 
     if (i < ai.size() - 1) {
-      PolynomialFF poly = dum_pol + iterate_canonical(tmp_zi, i + 1, ai);
-      return poly.mul(tmp_zi) + poly * (-yi); //yi[i - 1 + 1] +1 is due to 0th element
+      PolynomialFF poly = dum_pol + iterate_canonical(i + 1, ai);
+      return poly.mul(1) + poly * (-yi); //yi[i - 1 + 1] +1 is due to 0th element
     }
 
-    return dum_pol * (-yi) + dum_pol.mul(tmp_zi); // yi[i - 1 + 1]
+    return dum_pol * (-yi) + dum_pol.mul(1); // yi[i - 1 + 1]
   }
 
   bool PolyReconst::test_guess(const FFInt& num) {
@@ -538,7 +546,8 @@ namespace firefly {
   ff_map PolyReconst::construct_tmp_canonical(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) const {
     ff_map tmp {};
 
-    for (auto & el : construct_canonical(zi, ai)) { // homogenize
+    //todo hier muss irgendwo ein bug sein!
+    for (auto & el : construct_canonical(ai)) { // homogenize
       std::vector<uint32_t> new_deg(n);
       new_deg[zi - 1] = el.first[0];
 
@@ -558,21 +567,19 @@ namespace firefly {
     for (auto & el : tmp) {
       int total_deg = 0;
 
-      for (auto & e : el.first) total_deg += e;
+      for (const auto & e : el.first) total_deg += e;
 
-      if (total_deg == deg) {
+      if (total_deg == deg)
         solved_degs.emplace(std::make_pair(el.first, el.second));
-      } else {
+      else
         tmp_solved_degs.emplace(std::make_pair(el.first, el.second));
-      }
+
+      //std::cout << "tmp_deg " << total_deg << " " << deg << "\n" << PolynomialFF(n, tmp_solved_degs);
     }
 
-    std::cout << deg_vec.size() << "\n";
-    std::cout << "test " << deg_vec[0] << " " << deg_vec[1] << " " << deg_vec[2] << "\n";
-    for(const auto& el : rec_degs){
-      std::cout << el[0] << " " << el[1] << " " << el[2] << "\n";
+    if (zi > 1) {
+      std::vector<std::vector<uint32_t>>::iterator it = std::find(rec_degs.begin(), rec_degs.end(), deg_vec);
+      rec_degs.erase(it);
     }
-    std::vector<std::vector<uint32_t>>::iterator it = std::find(rec_degs.begin(), rec_degs.end(), deg_vec);
-    rec_degs.erase(it);
   }
 }
