@@ -39,10 +39,10 @@ int main() {
   //RatReconst::reset();
 
   // Example for the reconstruction of a rational function
-  //reconstruct_rational_function();
+  reconstruct_rational_function();
 
   // Example for the reconstruction of a polynomial
-  reconstruct_polynomial();
+  //reconstruct_polynomial();
   return 0;
 }
 
@@ -181,10 +181,10 @@ namespace firefly {
         yis[j] = t_yis[j - 1];
       }
 
-      FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
+      //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       //FFInt num = n_eq_1(z1); // example for n = 1
       //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-      //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+      FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
       ++kk;
@@ -205,7 +205,7 @@ namespace firefly {
   void reconstruct_polynomial() {
     FFInt::set_new_prime(primes()[0]);
     uint32_t n = 3;
-    PolyReconst rec_poly(n);
+    PolyReconst rec_poly(n, 5);
 
     // Initialize some counters
     int count = 0;
@@ -247,7 +247,7 @@ namespace firefly {
     }
 
     std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
-    //std::cout << rec_poly.get_result();
+    std::cout << rec_poly.get_result();
     std::cout << "--------------------------------------------------------------\n";
   }
 }

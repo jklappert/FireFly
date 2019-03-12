@@ -151,13 +151,13 @@ namespace firefly {
             ais[zero_element].emplace_back(num);
           else {
             ais[zero_element].emplace_back(comp_ai(i, i, num, ais[zero_element]));
+          }
 
-            if (ais[zero_element].back() == 0) {
-              combine_res = true;
-              ais[zero_element].pop_back();
-            } else if (deg != -1 && (uint32_t) deg == i) {
-              combine_res = true;
-            }
+          if (ais[zero_element].back() == 0) {
+            combine_res = true;
+            ais[zero_element].pop_back();
+          } else if (deg != -1 && (uint32_t) deg == i) {
+            combine_res = true;
           }
 
           std::unique_lock<std::mutex> lock(mutex_status);
@@ -170,7 +170,7 @@ namespace firefly {
             std::vector<uint32_t> deg_vec = el.first;
             FFInt coef_num = el.second;
 
-            for (uint32_t tmp_zi = 1; tmp_zi < zi; ++tmp_zi) {
+            for (uint32_t tmp_zi = 1; tmp_zi <= zi; ++tmp_zi) {
               // curr_zi_ord starts at 1, thus we need to subtract 1 entry
               std::unique_lock<std::mutex> lock_statics(mutex_statics);
               coef_num *= rand_zi[std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1])].pow(deg_vec[tmp_zi - 1]);
@@ -210,6 +210,11 @@ namespace firefly {
             for (const auto & el : solve_transposed_vandermonde()) {
               std::vector<uint32_t> key = el.first;
 
+              uint32_t tmp_deg = deg;
+              for (auto ele : key) {
+                tmp_deg -= ele;
+              }
+
               FFInt tmp_ai = comp_ai(i, i, el.second, ais[key]);
               ais[key].emplace_back(tmp_ai);
 
@@ -217,7 +222,7 @@ namespace firefly {
                 ais[key].pop_back();
                 check_for_tmp_solved_degs(key, ais[key]);
                 ais.erase(key);
-              } else if (deg != -1 && i == (uint32_t) deg) {
+              } else if (deg != -1 && i == tmp_deg) {
                 check_for_tmp_solved_degs(key, ais[key]);
                 ais.erase(key);
               } else {
@@ -258,7 +263,6 @@ namespace firefly {
 
             for (auto & el : pol_ff) {
               rec_degs.emplace_back(el.first);
-              //std::cout << "rec_degs " << deg << " " << el.first[0] << " " << el.first[1] << " " << el.first[2] << "\n";
             }
 
             if (rec_degs.size() == 0 && zi != n) {
@@ -289,7 +293,6 @@ namespace firefly {
               ais.clear();
 
               for (const auto & el : pol_ff) {
-                //std::cout << "fin_degs " << deg << " " << zi << " " << el.first[0] << " " << el.first[1] << " " << el.first[2] << "\n";
                 ais[el.first].emplace_back(el.second);
               }
             }
@@ -305,9 +308,7 @@ namespace firefly {
             ff_map tmp_pol_ff {};
 
             for (const auto & el : ais) {
-              //std::cout << "1test " << deg << " " << el.first[0] << " " << el.first[1] << " " << el.first[2] << "\n";;
               ff_map tmp = construct_tmp_canonical(el.first, el.second);
-              //std::cout << "test " << deg << " " << PolynomialFF(n, tmp);
               tmp_pol_ff.insert(tmp.begin(), tmp.end());
             }
 
@@ -339,7 +340,6 @@ namespace firefly {
               ais.clear();
               result_ff = PolynomialFF(n, tmp_pol_ff).homogenize(deg);
               result_ff.n = n + 1;
-              //std::cout << "res deg " << deg << " " << result_ff;
               rec_degs = std::vector<std::vector<uint32_t>>();
               nums = std::vector<FFInt>();
             }
@@ -378,7 +378,6 @@ namespace firefly {
   }
 
   PolynomialFF PolyReconst::get_result_ff() {
-
     return result_ff;
   }
 
@@ -547,16 +546,12 @@ namespace firefly {
   ff_map PolyReconst::construct_tmp_canonical(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) const {
     ff_map tmp {};
 
-    //todo hier muss irgendwo ein bug sein!
-    //std::cout << "size " << ai.size() << PolynomialFF(n, construct_canonical(ai)) << "\n";
-
     if (ai.size() == 1 && zi == n) {
       tmp.emplace(std::make_pair(deg_vec, ai[0]));
     } else {
       for (auto & el : construct_canonical(ai)) { // homogenize
         std::vector<uint32_t> new_deg(n);
         new_deg[zi - 1] = el.first[0];
-        //std::cout << "deg " << deg << " zi " << zi << " " << el.first[0] << "\n";
 
         for (uint32_t j = 0; j < zi - 1; j++) {
           new_deg[j] = deg_vec[j];
