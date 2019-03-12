@@ -149,16 +149,14 @@ namespace firefly {
         if (zi == 1) {
           if (i == 0)
             ais[zero_element].emplace_back(num);
-          else {
+          else
             ais[zero_element].emplace_back(comp_ai(i, i, num, ais[zero_element]));
-          }
 
           if (ais[zero_element].back() == 0) {
             combine_res = true;
             ais[zero_element].pop_back();
-          } else if (deg != -1 && (uint32_t) deg == i) {
+          } else if (deg != -1 && (uint32_t) deg == i)
             combine_res = true;
-          }
 
           std::unique_lock<std::mutex> lock(mutex_status);
           curr_zi_order[zi - 1] ++;
@@ -211,6 +209,7 @@ namespace firefly {
               std::vector<uint32_t> key = el.first;
 
               uint32_t tmp_deg = deg;
+
               for (auto ele : key) {
                 tmp_deg -= ele;
               }
@@ -352,15 +351,15 @@ namespace firefly {
           }
         }
       }
+    }
 
-      if (!with_rat_reconst) {
-        for (uint32_t tmp_zi = 1; tmp_zi <= n; ++tmp_zi) {
-          auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1]);
-          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    if (!with_rat_reconst) {
+      for (uint32_t tmp_zi = 1; tmp_zi <= n; ++tmp_zi) {
+        auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1]);
+        std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-          if (rand_zi.find(key) == rand_zi.end())
-            rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
-        }
+        if (rand_zi.find(key) == rand_zi.end())
+          rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
       }
     }
   }
@@ -584,3 +583,5 @@ namespace firefly {
     }
   }
 }
+
+
