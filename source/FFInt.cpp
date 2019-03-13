@@ -1,9 +1,21 @@
-// ====================================================================
-// This file is part of FireFly.
+//==================================================================================
+//    FireFly - Reconstructing rational functions and polynomial over finite fields.
+//    Copyright (C) 2019  Jonas Klappert and Fabian Lange
 //
-// FireFly is licenced under the GNU General Public License (GNU GPL)
-// version 3.
-// ====================================================================
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//==================================================================================
+
 #include <sstream>
 #include "FFInt.hpp"
 #ifdef FLINT
@@ -161,7 +173,7 @@ namespace firefly {
 
       // result=0 in the first pass or when the string is zero padded
       // on the left so that the first (few) chunks give zero.
-      if (result) result =  (FFInt(result) * FFInt(1000000000000000000uLL)).n;//n_mulmod2_preinv(result, 1000000000000000000uLL, FFInt::p, FFInt::p_inv);
+      if (result) result = (FFInt(result) * FFInt(1000000000000000000uLL)).n; //n_mulmod2_preinv(result, 1000000000000000000uLL, FFInt::p, FFInt::p_inv);
 
       result = (FFInt(result) + FFInt(intchunk)).n;// n_addmod(result, intchunk, FFInt::p);
     }
