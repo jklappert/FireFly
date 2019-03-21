@@ -24,7 +24,6 @@
 #include "RationalNumber.hpp"
 #include "PolynomialFF.hpp"
 #include "UintHasher.hpp"
-#include "FFInt.hpp"
 #include <stdint.h>
 
 namespace firefly {
