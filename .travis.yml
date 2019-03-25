@@ -9,6 +9,7 @@ before_install:
   - ./configure
   - make
   - sudo make install
+  - cd ..
 script:
   - mkdir build
   - cd build
