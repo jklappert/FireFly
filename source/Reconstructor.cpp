@@ -138,7 +138,6 @@ namespace firefly {
       for (auto & rec : reconst) {
         if (!rec.is_shift_working()) {
           found_shift = false;
-          break;
         }
       }
 

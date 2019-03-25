@@ -20,6 +20,8 @@
 
 #include "RationalNumber.hpp"
 
+#include <vector>
+
 namespace firefly {
   /**
    * @class Monomial
