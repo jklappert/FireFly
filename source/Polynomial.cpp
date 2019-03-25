@@ -18,7 +18,6 @@
 
 #include "Polynomial.hpp"
 #include "Logger.hpp"
-#include <chrono>
 
 namespace firefly {
 

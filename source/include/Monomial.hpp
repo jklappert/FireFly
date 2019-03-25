@@ -19,7 +19,6 @@
 #pragma once
 
 #include "RationalNumber.hpp"
-#include "FFInt.hpp"
 
 namespace firefly {
   /**
