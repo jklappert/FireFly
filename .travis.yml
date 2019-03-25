@@ -57,5 +57,5 @@ before_install:
 script:
   - mkdir build
   - cd build
-  - cmake -DWITH_FLINT=false ..
+  - cmake -DWITH_FLINT=false -DOMIT_EXAMPLE=true ..
   - make
