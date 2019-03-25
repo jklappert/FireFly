@@ -25,37 +25,37 @@ namespace firefly {
   /**
    *  example for n = 4 which uses the singular_solver
    */
-  FFInt singular_solver(std::vector<FFInt> yis);
+  FFInt singular_solver(const std::vector<FFInt>& yis);
   /**
    *  example for n = 1
    */
-  FFInt n_eq_1(FFInt z1);
+  FFInt n_eq_1(const FFInt& z1);
   /**
    *  example for n = 4 and the usage of the Chinese Remainder Theorem
    */
-  FFInt n_eq_4(std::vector<FFInt> yis);
+  FFInt n_eq_4(const std::vector<FFInt>& yis);
   /**
    *  example for a large interpolation problem augmented with large coefficients
    */
-  FFInt gghh(std::vector<FFInt> yis);
+  FFInt gghh(const std::vector<FFInt>& yis);
   /**
    *  example for the reconstruction of a polynomial
    */
-  FFInt pol_n_eq_3(std::vector<FFInt> yis);
+  FFInt pol_n_eq_3(const std::vector<FFInt>& yis);
   /**
    *  example for a three loop gg -> h integral coefficient
    */
-  FFInt ggh(std::vector<FFInt> yis);
+  FFInt ggh(const std::vector<FFInt>& yis);
   /**
    *  a benchmark function with 20 variables
    */
-  FFInt bench_1(std::vector<FFInt> yis);
+  FFInt bench_1(const std::vector<FFInt>& yis);
   /**
    *  a benchmark function with 5 variables and almost complete dense numerator
    */
-  FFInt bench_2(std::vector<FFInt> yis);
+  FFInt bench_2(const std::vector<FFInt>& yis);
   /**
    *  a benchmark function with 5 variables and almost complete sparse with high degrees
    */
-  FFInt bench_3(std::vector<FFInt> yis);
+  FFInt bench_3(const std::vector<FFInt>& yis);
 }
