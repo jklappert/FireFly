@@ -1,4 +1,8 @@
 language: cpp
+addons:
+  apt:
+    packages:
+- libgmp-dev
 compiler:
   - clang
   - gcc
