@@ -377,7 +377,7 @@ namespace firefly {
       }
 
       tp.run_priority_task([this, zi_order, t, probe](){
-        feed_job(zi_order, t, probe, iteration);
+        feed_job(zi_order, t, probe);
       });
 
       {
@@ -469,7 +469,7 @@ namespace firefly {
     total_iterations += iteration;
   }
 
-  void Reconstructor::start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t start) {
+  void Reconstructor::start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t to_start) {
     bool ones = false;
     if (prime_it == 0 && zi_order == std::vector<uint32_t> (n - 1, 1)) {
       ones = true;
@@ -477,7 +477,7 @@ namespace firefly {
 
     std::vector<FFInt> values(n);
 
-    for (uint32_t j = 0; j != start; ++j) {
+    for (uint32_t j = 0; j != to_start; ++j) {
       FFInt t = tmp_rec.get_rand();
       values[0] = t + shift[0];
 
@@ -517,7 +517,7 @@ namespace firefly {
     }
   }
 
-  void Reconstructor::feed_job(const std::vector<uint32_t> zi_order, const firefly::FFInt t, std::vector<FFInt>* probe, const uint32_t iteration_tmp) {
+  void Reconstructor::feed_job(const std::vector<uint32_t> zi_order, const firefly::FFInt t, std::vector<FFInt>* probe) {
     {
       std::unique_lock<std::mutex> lock(feed_control);
       interpolate_jobs += items;

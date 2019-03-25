@@ -81,8 +81,8 @@ namespace firefly {
     void scan_for_shift();
     void start_first_runs();
     void run_until_done();
-    void start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t start);
-    void feed_job(const std::vector<uint32_t> zi_order, const firefly::FFInt t, std::vector<FFInt>* probe, const uint32_t iteration_tmp);
+    void start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t to_start);
+    void feed_job(const std::vector<uint32_t> zi_order, const FFInt t, std::vector<FFInt>* probe);
     void interpolate_job(RatReconst& rec);
   };
 }
