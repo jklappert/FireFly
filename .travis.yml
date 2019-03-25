@@ -3,6 +3,7 @@ compiler:
   - clang
   - gcc
 before_install:
+  - sudo apt-get update
   - sudo apt-get install libgmp-dev
 script:
   - mkdir build
