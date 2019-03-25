@@ -21,11 +21,11 @@
 #include "Logger.hpp"
 
 #include <condition_variable>
+#include <deque>
 #include <functional>
 #include <future>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <stdexcept>
 #include <thread>
 #include <vector>
@@ -36,10 +36,10 @@ namespace firefly {
    * @class Thread_pool
    * @brief A pool of threads
    *
-   * Thread_pool represents a collection of threads.  Tasks (callables)
-   * can be added to an internal queue.  The tasks will be executed as
-   * soon as there is an idle thread.  The destructor of the Thread_pool
-   * will wait until all tasks are finished and the queue is empty.
+   * Thread_pool represents a collection of threads. Tasks (callables)
+   * can be added to an internal deque. The tasks will be executed as
+   * soon as there is an idle thread. The destructor of the Thread_pool
+   * will wait until all tasks are finished and the deque is empty.
    *
    * @param pool_size number of threads in the pool
    */
@@ -65,7 +65,7 @@ namespace firefly {
                 return;
 
               task = std::move(tasks.front());
-              tasks.pop();
+              tasks.pop_front();
             }
 
             task();
@@ -110,7 +110,28 @@ namespace firefly {
       } else {
         {
           std::unique_lock<std::mutex> lock(mutex);
-          tasks.emplace([ptask]() { (*ptask)(); });
+          tasks.emplace_back([ptask]() { (*ptask)(); });
+        }
+        condition.notify_one();
+      }
+
+      return fut;
+    }
+
+    template <typename Task>
+    auto run_priority_packaged_task(Task && task) -> std::future<decltype(task())> {
+      using return_t = decltype(task());
+
+      auto ptask = std::make_shared<std::packaged_task<return_t()>>([task]() { return task(); });
+
+      std::future<return_t> fut = ptask->get_future();
+
+      if (threads.empty()) {
+        (*ptask)();
+      } else {
+        {
+          std::unique_lock<std::mutex> lock(mutex);
+          tasks.emplace_front([ptask]() { (*ptask)(); });
         }
         condition.notify_one();
       }
@@ -126,7 +147,20 @@ namespace firefly {
       } else {
         {
           std::unique_lock<std::mutex> lock(mutex);
-          tasks.emplace(std::forward<Task>(task));
+          tasks.emplace_back(std::forward<Task>(task));
+        }
+        condition.notify_one();
+      }
+    }
+
+    template <typename Task>
+    void run_priority_task(Task && task) {
+      if (threads.empty()) {
+        task();
+      } else {
+        {
+          std::unique_lock<std::mutex> lock(mutex);
+          tasks.emplace_front(std::forward<Task>(task));
         }
         condition.notify_one();
       }
@@ -151,7 +185,7 @@ namespace firefly {
     void kill_all() {
       {
         std::unique_lock<std::mutex> lock(mutex);
-        tasks = std::queue<std::function<void()>>();
+        tasks = std::deque<std::function<void()>>();
       }
 
       while (wait());
@@ -159,7 +193,7 @@ namespace firefly {
 
   private:
     std::vector<std::thread> threads {};
-    std::queue<std::function<void()>> tasks {};
+    std::deque<std::function<void()>> tasks {};
     std::mutex mutex {};
     std::condition_variable condition {};
     bool stop {false};

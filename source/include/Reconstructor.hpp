@@ -51,17 +51,24 @@ namespace firefly {
     std::vector<std::string> file_paths {};
     uint32_t prime_it = 0;
     ThreadPool tp;
-    std::mutex mut;
-    std::condition_variable cond;
+    std::mutex future_control;
+    std::mutex job_control;
+    std::mutex feed_control;
+    std::mutex print_control;
+    std::mutex status_control;
+    std::condition_variable condition_future;
+    std::condition_variable condition_feed;
     // list containing the parameters and the future of the parallel tasks; t, zi_order, future
     future_list probes {};
     uint32_t jobs_finished = 0;
     std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes {};
     uint32_t fed_ones = 0;
     uint32_t probes_for_next_prime = 0;
-    uint32_t items_done = 0;
-    uint32_t feeding_jobs = 0;
     uint32_t items = 0;
+    uint32_t items_done = 0;
+    uint32_t items_new_prime = 0;
+    uint32_t feed_jobs = 0;
+    uint32_t interpolate_jobs = 0;
     uint32_t total_iterations = 0;
     uint32_t iteration = 0;
     RatReconst tmp_rec;
@@ -75,6 +82,7 @@ namespace firefly {
     void start_first_runs();
     void run_until_done();
     void start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t start);
+    void feed_job(const std::vector<uint32_t> zi_order, const firefly::FFInt t, std::vector<FFInt>* probe, const uint32_t iteration_tmp);
     void interpolate_job(RatReconst& rec);
   };
 }

@@ -94,6 +94,7 @@ namespace firefly {
 
     if (verbosity > SILENT) {
       INFO_MSG("Reconstructed all functions successfully.");
+      INFO_MSG(std::to_string(total_iterations) + " probes in total.");
     }
 
     tp.kill_all();
@@ -137,6 +138,7 @@ namespace firefly {
       for (auto & rec : reconst) {
         if (!rec.is_shift_working()) {
           found_shift = false;
+          break;
         }
       }
 
@@ -152,8 +154,10 @@ namespace firefly {
       jobs_finished = 0;
       started_probes.clear();
       fed_ones = 0;
-      feeding_jobs = 0;
+      feed_jobs = 0;
+      interpolate_jobs = 0;
       iteration = 0;
+      items_done = 0;
     }
 
     if (found_shift) {
@@ -199,13 +203,13 @@ namespace firefly {
     std::vector<FFInt> probe {};
 
     {
-      std::unique_lock<std::mutex> lock(mut);
+      std::unique_lock<std::mutex> lock_future(future_control);
 
       // sometimes the future is not ready even though the solution job returned already
       // probably there is an additional copy operation involved
       while (probe.empty()) {
         while (jobs_finished == 0) {
-          cond.wait(lock);
+          condition_future.wait(lock_future);
         }
 
         for (auto it = probes.begin(); it != probes.end(); ++it) {
@@ -220,6 +224,8 @@ namespace firefly {
         }
       }
     }
+
+    ++iteration;
 
     ++fed_ones;
     items = probe.size();
@@ -249,8 +255,6 @@ namespace firefly {
 
     probe.clear();
 
-    ++iteration;
-
     if (verbosity == CHATTY) {
       INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: 0 / " + std::to_string(items));
     }
@@ -262,7 +266,6 @@ namespace firefly {
   void Reconstructor::run_until_done() {
     FFInt t = 1;
     std::vector<uint32_t> zi_order(n - 1, 1);
-    std::vector<FFInt> probe {};
 
     bool done = false;
     bool new_prime = false;
@@ -274,6 +277,8 @@ namespace firefly {
 
     while (!done) {
       if (new_prime) {
+        tp.kill_all();
+
         total_iterations += iteration;
         ++prime_it;
 
@@ -286,13 +291,13 @@ namespace firefly {
 
         iteration = 0;
 
-        tp.kill_all();
-
         probes.clear();
         jobs_finished = 0;
         started_probes.clear();
+        feed_jobs = 0;
+        interpolate_jobs = 0;
         new_prime = false;
-        feeding_jobs = 0;
+        items_new_prime = 0;
 
         FFInt::set_new_prime(primes()[prime_it]);
 
@@ -312,7 +317,6 @@ namespace firefly {
         }
 
         shift = tmp_rec.get_zi_shift_vec();
-
         tmp_rec.generate_anchor_points();
 
         // start only thr_n jobs first, because the reconstruction can be done after the first feed
@@ -335,21 +339,23 @@ namespace firefly {
         probes_for_next_prime = 0;
       }
 
+      std::vector<FFInt>* probe = new std::vector<FFInt>;
+
       {
-        std::unique_lock<std::mutex> lock(mut);
+        std::unique_lock<std::mutex> lock_future(future_control);
 
         // sometimes the future is not ready even though the solution job returned already
         // probably there is an additional copy operation involved
-        while (probe.empty()) {
+        while (probe->empty()) {
           while (jobs_finished == 0) {
-            cond.wait(lock);
+            condition_future.wait(lock_future);
           }
 
           for (auto it = probes.begin(); it != probes.end(); ++it) {
             if ((std::get<2>(*it)).wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
               t = std::get<0>(*it);
               zi_order = std::get<1>(*it);
-              probe = (std::get<2>(*it)).get();
+              *probe = (std::get<2>(*it)).get();
               it = probes.erase(it);
               --jobs_finished;
               break;
@@ -360,86 +366,102 @@ namespace firefly {
 
       ++iteration;
 
-      items_done = 0;
-      uint32_t items_new_prime = 0;
+      if (prime_it == 0 && zi_order == std::vector<uint32_t>(n - 1, 1)) {
+        std::unique_lock<std::mutex> lock_status(job_control);
+        ++fed_ones;
+      }
+
       {
-        std::unique_lock<std::mutex> lock(mut);
-
-        if (prime_it == 0 && zi_order == std::vector<uint32_t>(n - 1, 1)) {
-          ++fed_ones;
-        }
+        std::unique_lock<std::mutex> lock_feed(feed_control);
+        ++feed_jobs;
       }
 
-      for (uint32_t i = 0; i != items; ++i) {
-        if (!reconst[i].is_done()) {
-          if (reconst[i].get_prime() == prime_it) {
-            {
-              std::unique_lock<std::mutex> lock(mut);
-              ++feeding_jobs;
-            }
+      tp.run_priority_task([this, zi_order, t, probe](){
+        feed_job(zi_order, t, probe, iteration);
+      });
 
-            reconst[i].feed(t, probe[i], zi_order, prime_it);
-
-            tp.run_task([this, i]() {
-              interpolate_job(reconst[i]);
-            });
-          } else {
-            ++items_new_prime;
-          }
-        } else {
-          ++items_done;
-        }
-      }
-
-      probe.clear();
-
-      std::unique_lock<std::mutex> lock(mut);
-
-      if (verbosity == CHATTY) {
-        INFO_MSG("Probe: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items)
-                 + " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
-      }
-
-      if (items_done == items) {
-        done = true;
-      } else if (items_done + items_new_prime == items) {
-        new_prime = true;
-      } else if (probes.size() == 0) {
-        bool cont = false;
-
-        while (feeding_jobs > 0) {
-          cond.wait(lock);
-
-          if (probes.size() > 0) {
-            cont = true;
-            break;
-          }
-        }
-
-        if (cont) {
-          continue;
-        }
-
-        // no jobs are running anymore, check if done or new_prime else throw error
-        items_done = 0;
-        items_new_prime = 0;
-
-        for (uint32_t i = 0; i != items; ++i) {
-          if (!reconst[i].is_done()) {
-            if (reconst[i].get_prime() != prime_it) {
-              ++items_new_prime;
-            }
-          } else {
-            ++items_done;
-          }
-        }
+      {
+        std::unique_lock<std::mutex> lock_status(status_control);
 
         if (items_done == items) {
           done = true;
+          continue;
         } else if (items_done + items_new_prime == items) {
           new_prime = true;
-        } else {
-          throw std::runtime_error("No items to feed anymore");
+          continue;
+        }
+      }
+
+      {
+        std::unique_lock<std::mutex> lock_future(future_control);
+
+        if (jobs_finished == 0 && probes.size() == 0) {
+          lock_future.unlock();
+
+          bool cont = false;
+
+          {
+            std::unique_lock<std::mutex> lock_feed(feed_control);
+
+            while (feed_jobs > 0 || interpolate_jobs > 0) {
+              condition_feed.wait(lock_feed);
+
+              lock_feed.unlock();
+              lock_future.lock();
+
+              if (jobs_finished > 0 || probes.size() > 0) {
+                lock_future.unlock();
+                cont = true;
+                break;
+              }
+
+              lock_future.unlock();
+              lock_feed.lock();
+            }
+          }
+
+          {
+            std::unique_lock<std::mutex> lock_status(status_control);
+
+            if (items_done == items) {
+              done = true;
+              continue;
+            } else if (items_done + items_new_prime == items) {
+              new_prime = true;
+              continue;
+            }
+          }
+
+          if (cont) {
+            continue;
+          }
+
+          // no jobs are running anymore, check if done or new_prime else throw error
+          uint32_t items_done_tmp = 0;
+          uint32_t items_new_prime_tmp = 0;
+
+          for (auto & rec : reconst) {
+            if (!rec.is_done()) {
+              if (rec.get_prime() != prime_it) {
+                ++items_new_prime_tmp;
+              }
+            } else {
+              ++items_done_tmp;
+            }
+          }
+
+          if (!scan && (items_done_tmp > items_done || items_new_prime_tmp > items_new_prime)) {
+            items_done = items_done_tmp;
+            items_new_prime = items_new_prime_tmp;
+          }
+
+          if (items_done_tmp == items) {
+            done = true;
+          } else if (items_done_tmp + items_new_prime_tmp == items) {
+            new_prime = true;
+          } else {
+            throw std::runtime_error("No items to feed anymore");
+          }
         }
       }
     }
@@ -448,6 +470,11 @@ namespace firefly {
   }
 
   void Reconstructor::start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t start) {
+    bool ones = false;
+    if (prime_it == 0 && zi_order == std::vector<uint32_t> (n - 1, 1)) {
+      ones = true;
+    }
+
     std::vector<FFInt> values(n);
 
     for (uint32_t j = 0; j != start; ++j) {
@@ -460,29 +487,99 @@ namespace firefly {
         values[i] = rand_zi[i - 1] * t + shift[i];
       }
 
-      std::unique_lock<std::mutex> lock(mut);
+      std::unique_lock<std::mutex> lock(future_control);
 
-      auto future = tp.run_packaged_task([this, values]() {
-        std::vector<FFInt> probe {};
-        black_box(probe, values);
+      if (ones) {
+        auto future = tp.run_priority_packaged_task([this, values]() {
+          std::vector<FFInt> probe {};
+          black_box(probe, values);
 
-        std::unique_lock<std::mutex> lock(mut);
-        ++jobs_finished;
-        cond.notify_one();
-        return probe;
-      });
+          std::unique_lock<std::mutex> lock(future_control);
+          ++jobs_finished;
+          condition_future.notify_one();
+          return probe;
+        });
 
-      probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));
+        probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));
+      } else {
+        auto future = tp.run_packaged_task([this, values]() {
+          std::vector<FFInt> probe {};
+          black_box(probe, values);
+
+          std::unique_lock<std::mutex> lock(future_control);
+          ++jobs_finished;
+          condition_future.notify_one();
+          return probe;
+        });
+
+        probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));
+      }
     }
+  }
+
+  void Reconstructor::feed_job(const std::vector<uint32_t> zi_order, const firefly::FFInt t, std::vector<FFInt>* probe, const uint32_t iteration_tmp) {
+    {
+      std::unique_lock<std::mutex> lock(feed_control);
+      interpolate_jobs += items;
+    }
+
+    uint32_t items_done_tmp = 0;
+    uint32_t items_new_prime_tmp = 0;
+    uint32_t counter = 0;
+
+    for (uint32_t i = 0; i != items; ++i) {
+      if (!reconst[i].is_done()) {
+        if (reconst[i].get_prime() == prime_it) {
+          ++counter;
+
+          reconst[i].feed(t, (*probe)[i], zi_order, prime_it);
+
+          tp.run_task([this, i]() {
+            interpolate_job(reconst[i]);
+          });
+        } else {
+          ++items_new_prime_tmp;
+        }
+      } else {
+        ++items_done_tmp;
+      }
+    }
+
+    delete probe;
+
+    {
+      std::unique_lock<std::mutex> lock_status(status_control);
+
+      if (!scan && (items_done_tmp > items_done || items_new_prime_tmp > items_new_prime)) {
+        if (items_done_tmp > items_done) {
+          items_done = items_done_tmp;
+        }
+
+        if (items_new_prime_tmp > items_new_prime) {
+          items_new_prime = items_new_prime_tmp;
+        }
+
+        std::unique_lock<std::mutex> lock_print(print_control);
+
+        if (verbosity == CHATTY) {
+          INFO_MSG("Probe: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) + " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
+        }
+      }
+    }
+
+    std::unique_lock<std::mutex> lock(feed_control);
+    interpolate_jobs -= (items - counter);
+    --feed_jobs;
+    condition_feed.notify_one();
   }
 
   void Reconstructor::interpolate_job(RatReconst& rec) {
     if (!rec.interpolate()) {
       // start new jobs if required
-      std::unique_lock<std::mutex> lock(mut);
-
       if (!rec.is_done()) {
         if (rec.get_prime() > prime_it) {
+          std::unique_lock<std::mutex> lock(job_control);
+
           if (rec.get_num_eqn() > probes_for_next_prime) {
             probes_for_next_prime = rec.get_num_eqn();
           }
@@ -490,27 +587,67 @@ namespace firefly {
           std::vector<uint32_t> zi_order = rec.get_zi_order();
 
           if (prime_it == 0 && zi_order == std::vector<uint32_t>(n - 1, 1)) {
+            std::unique_lock<std::mutex> lock(job_control);
+
             if (started_probes.at(zi_order) - thr_n <= fed_ones - 1) {
               uint32_t start = fed_ones - started_probes.at(zi_order) + thr_n;
+              started_probes.at(zi_order) += start;
 
-              if (verbosity == CHATTY) {
-                INFO_MSG("Starting ones: " + std::to_string(start) + ".");
+              lock.unlock();
+
+              {
+                std::unique_lock<std::mutex> lock_print(print_control);
+
+                if (verbosity == CHATTY) {
+                  INFO_MSG("Starting ones: " + std::to_string(start) + ".");
+                }
               }
 
-              started_probes.at(zi_order) += start;
-              lock.unlock();
               start_probe_jobs(zi_order, start);
             }
           } else {
             uint32_t required_probes = rec.get_num_eqn();
+
+            std::unique_lock<std::mutex> lock(job_control);
+
             auto it = started_probes.find(zi_order);
 
             if (it != started_probes.end()) {
               if (required_probes > started_probes.at(zi_order)) {
                 uint32_t start = required_probes - started_probes.at(zi_order);
+                started_probes.at(zi_order) = required_probes;
+
+                lock.unlock();
+
+                {
+                  std::unique_lock<std::mutex> lock_print(print_control);
+
+                  if (verbosity == CHATTY) {
+                    std::string msg = "| Starting zi_order (";
+
+                    for (const auto & ele : zi_order) {
+                      msg += std::to_string(ele) + ", ";
+                    }
+
+                    msg = msg.substr(0, msg.length() - 2);
+
+                    msg += ") " + std::to_string(start) + " time(s)";
+                    INFO_MSG(msg + ".");
+                  }
+                }
+
+                start_probe_jobs(zi_order, start);
+              }
+            } else {
+              started_probes.emplace(zi_order, required_probes);
+
+              lock.unlock();
+
+              {
+                std::unique_lock<std::mutex> lock_print(print_control);
 
                 if (verbosity == CHATTY) {
-                  std::string msg = "| Starting zi_order (";
+                  std::string msg = "Starting zi_order (";
 
                   for (const auto & ele : zi_order) {
                     msg += std::to_string(ele) + ", ";
@@ -518,30 +655,11 @@ namespace firefly {
 
                   msg = msg.substr(0, msg.length() - 2);
 
-                  msg += ") " + std::to_string(start) + " time(s)";
+                  msg += ") " + std::to_string(required_probes) + " time(s)";
                   INFO_MSG(msg + ".");
                 }
-
-                started_probes.at(zi_order) = required_probes;
-                lock.unlock();
-                start_probe_jobs(zi_order, start);
-              }
-            } else {
-              if (verbosity == CHATTY) {
-                std::string msg = "Starting zi_order (";
-
-                for (const auto & ele : zi_order) {
-                  msg += std::to_string(ele) + ", ";
-                }
-
-                msg = msg.substr(0, msg.length() - 2);
-
-                msg += ") " + std::to_string(required_probes) + " time(s)";
-                INFO_MSG(msg + ".");
               }
 
-              started_probes.emplace(zi_order, required_probes);
-              lock.unlock();
               start_probe_jobs(zi_order, required_probes);
             }
           }
@@ -549,8 +667,8 @@ namespace firefly {
       }
     }
 
-    std::unique_lock<std::mutex> lock(mut);
-    --feeding_jobs;
-    cond.notify_one();
+    std::unique_lock<std::mutex> lock(feed_control);
+    --interpolate_jobs;
+    condition_feed.notify_one();
   }
 }

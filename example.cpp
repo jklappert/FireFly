@@ -26,9 +26,9 @@ using namespace firefly;
 
 int main() {
   // Example for the automatic interface
-  //Reconstructor reconst(4, 4/*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(4, 4/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
-  //reconst.enable_scan();
+  reconst.enable_scan();
   // Give the paths to the intermediate results
   //std::vector<std::string> file_paths = {"ff_save/0_3.txt","ff_save/1_2.txt","ff_save/2_3.txt","ff_save/3_4.txt","ff_save/4_1.txt","ff_save/5_2.txt"};
   //std::vector<std::string> file_paths = {"ff_save/sing_3.txt","ff_save/n1_2.txt","ff_save/n4_3.txt","ff_save/gghh_4.txt","ff_save/pol_1.txt","ff_save/ggh_2.txt"};
@@ -39,7 +39,7 @@ int main() {
   // Write the state of all reconstruction objects after each interpolation over a prime field to specified tags
   //std::vector<std::string> tags = {"sing","n1","n4","gghh","pol","ggh"};
   //reconst.set_tags(tags);
-  //reconst.reconstruct();
+  reconst.reconstruct();
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();
   for (auto& res : results) {
@@ -50,7 +50,7 @@ int main() {
   //RatReconst::reset();
 
   // Example for the reconstruction of a rational function
-  reconstruct_rational_function();
+  //reconstruct_rational_function();
 
   // Example for the reconstruction of a polynomial
   //reconstruct_polynomial();
