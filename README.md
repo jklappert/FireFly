@@ -1,6 +1,6 @@
 # FireFly
 
-[![Build Status](https://travis-ci.org/FireFly-Library/FireFly.svg?branch=master)](https://travis-ci.org/FireFly-Library/FireFly)
+[![Build Status](https://travis-ci.org/jklappert/FireFly.svg?branch=master)](https://travis-ci.org/jklappert/FireFly)
 
 FireFly is a reconstruction library for rational functions and polynomials written in C++.
 

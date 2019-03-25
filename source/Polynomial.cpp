@@ -42,7 +42,7 @@ namespace firefly {
 
   void Polynomial::sort() {
     std::sort(coefs.begin(), coefs.end(),
-    [](const Monomial& a, const Monomial& b) {
+    [](const Monomial & a, const Monomial & b) {
       return a_grt_b(b.powers, a.powers);
     });
   }

@@ -376,7 +376,7 @@ namespace firefly {
         ++feed_jobs;
       }
 
-      tp.run_priority_task([this, zi_order, t, probe](){
+      tp.run_priority_task([this, zi_order, t, probe]() {
         feed_job(zi_order, t, probe);
       });
 
@@ -471,6 +471,7 @@ namespace firefly {
 
   void Reconstructor::start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t to_start) {
     bool ones = false;
+
     if (prime_it == 0 && zi_order == std::vector<uint32_t> (n - 1, 1)) {
       ones = true;
     }

@@ -37,7 +37,23 @@ namespace firefly {
     n = std::stoull(in.get_str());
   }
 
-  // copied from Kira
+  /* This function is a part of the program Kira.
+  * Copyright (C) Johann Usovitsch <jusovitsch@googlemail.com>
+  * Philipp Maierhoefer <particle@maierhoefer.net>
+  * Peter Uwer <peter.uwer@physik.hu-berlin.de>
+  *
+  * Modified work Copyright (C) 2019  Jonas Klappert and Fabian Lange
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version , or (at
+  * your option) any later version as published by the Free Software
+  * Foundation.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  */
   FFInt::FFInt(const std::string& str, const std::vector<std::pair<std::string, uint64_t>>& replacements) {
     for (const auto & var : replacements) {
       if (var.first == str) {
@@ -147,7 +163,23 @@ namespace firefly {
     return !n;
   }
 
-  // copied from Kira
+  /* This function is a part of the program Kira.
+  * Copyright (C) Johann Usovitsch <jusovitsch@googlemail.com>
+  * Philipp Maierhoefer <particle@maierhoefer.net>
+  * Peter Uwer <peter.uwer@physik.hu-berlin.de>
+  *
+  * Modified work Copyright (C) 2019  Jonas Klappert and Fabian Lange
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version , or (at
+  * your option) any later version as published by the Free Software
+  * Foundation.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  */
   uint64_t FFInt::parse_longint(const std::string& str) {
     // Parse a long integer, passed as a string, take the modulus wrt. prime
     // and return it. The string is split into chunks of at most 18 digits

@@ -1,5 +1,6 @@
 // ====================================================================
 // This file is part of FlexibleSUSY.
+// Modified work Copyright (C) 2019  Jonas Klappert and Fabian Lange
 //
 // FlexibleSUSY is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published
