@@ -20,7 +20,7 @@
 
 namespace firefly {
   //example for gg->HH large interpolation problem augmented with large coefficients
-  FFInt gghh(std::vector<FFInt> yis) {
+  FFInt gghh(const std::vector<FFInt>& yis) {
     FFInt z1 = yis[0];
     std::vector<FFInt> t_yis(3);
     t_yis[0] = yis[1];
@@ -326,7 +326,7 @@ namespace firefly {
   }
 
   // example for singular_solver for n = 4
-  FFInt singular_solver(std::vector<FFInt> yis) {
+  FFInt singular_solver(const std::vector<FFInt>& yis) {
     mpz_class cr_1_mpz;
     cr_1_mpz = "123456789109898799879870980";
     FFInt cr_1(cr_1_mpz);
@@ -336,7 +336,7 @@ namespace firefly {
   }
 
   // example for n = 1
-  FFInt n_eq_1(FFInt z1) {
+  FFInt n_eq_1(const FFInt& z1) {
     FFInt num = (576 * z1.pow(12) - 35145 * z1.pow(11)
                  + 946716 * z1.pow(10) - 14842335 * z1.pow(9)
                  + 150236238 * z1.pow(8) - 1028892363 * z1.pow(7)
@@ -353,7 +353,7 @@ namespace firefly {
   }
 
   // example for n = 4 using the Chinese Remainder Theorem
-  FFInt n_eq_4(std::vector<FFInt> yis) {
+  FFInt n_eq_4(const std::vector<FFInt>& yis) {
     mpz_class cr_1_mpz;
     cr_1_mpz = "123456789109898799879870980";
     mpz_class cr_2_mpz;
@@ -381,11 +381,11 @@ namespace firefly {
     return num / den;
   }
 
-  FFInt pol_n_eq_3(std::vector<FFInt> yis) {
+  FFInt pol_n_eq_3(const std::vector<FFInt>& yis) {
     return yis[0].pow(5) + yis[0] * yis[1].pow(4) + yis[0] * yis[1] * yis[2].pow(3) + yis[1].pow(5);
   }
 
-  FFInt ggh(std::vector<FFInt> yis) {
+  FFInt ggh(const std::vector<FFInt>& yis) {
     FFInt num = -4444263936000 + 26953049894400 * yis[0] - 68516061805440 * yis[0] . pow(2) +
                 89743434192000 * yis[0] . pow(3) - 49560953693040 * yis[0] . pow(4) -
                 28729977426000 * yis[0] . pow(5) + 79757115103800 * yis[0] . pow(6) -
@@ -501,7 +501,7 @@ namespace firefly {
     return num / den;
   }
 
-  FFInt bench_1(std::vector<FFInt> yis) {
+  FFInt bench_1(const std::vector<FFInt>& yis) {
     FFInt num = yis[0].pow(20) + yis[1].pow(20) + yis[2].pow(20) + yis[3].pow(20) +
                 yis[4].pow(20) + yis[5].pow(20) + yis[6].pow(20) + yis[7].pow(20) +
                 yis[8].pow(20) + yis[9].pow(20) + yis[10].pow(20) + yis[11].pow(20) +
@@ -517,7 +517,7 @@ namespace firefly {
     return num / den;
   }
 
-  FFInt bench_2(std::vector<FFInt> yis) {
+  FFInt bench_2(const std::vector<FFInt>& yis) {
     mpz_class cr_1_mpz;
     cr_1_mpz = "123456789109898799879870980";
     FFInt num = cr_1_mpz * ((1 + yis[0] + yis[1] + yis[2] + yis[3] + yis[4]).pow(20) - 1);
@@ -526,7 +526,7 @@ namespace firefly {
     return num / den;
   }
 
-  FFInt bench_3(std::vector<FFInt> yis) {
+  FFInt bench_3(const std::vector<FFInt>& yis) {
     FFInt num = yis[0].pow(100) + yis[1].pow(200) + yis[2].pow(300);
     FFInt den = yis[0] * yis[1] * yis[2] * yis[3] * yis[4] + (yis[0] * yis[1] * yis[2] * yis[3] * yis[4]).pow(4);
 
