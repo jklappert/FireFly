@@ -2,6 +2,8 @@ language: cpp
 compiler:
   - clang
   - gcc
+before_install:
+  - sudo apt-get install libgmp-dev
 script:
   - mkdir build
   - cd build
