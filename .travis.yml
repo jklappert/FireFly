@@ -2,10 +2,15 @@ language: cpp
 compiler:
   - clang
   - gcc
+#before_install:
+#  - sudo apt-get update
+#  - sudo apt-get upgrade -y --allow-unauthenticated
+#  - sudo apt-get install libgmp-dev
 before_install:
-  - sudo apt-get update
-  - sudo apt-get upgrade -y --allow-unauthenticated
-  - sudo apt-get install libgmp-dev
+  - sudo apt-get install -y libgmp-dev
+addons:
+  apt:
+    update: true
 script:
   - mkdir build
   - cd build
