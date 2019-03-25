@@ -113,9 +113,26 @@ namespace firefly {
     */
     uint32_t parse_prime_number(std::string& file_name);
     void scan_for_shift();
+    /**
+     *  Initializes vector of reconstruction objects and starts first probes
+     */
     void start_first_runs();
+    /**
+     *  Starts new jobs until the reconstruction is done
+     */
     void run_until_done();
+    /**
+     *  Queues a number of jobs corresponding to a given zi_order
+     *  @param zi_order the order of which a given number of jobs should be started
+     *  @param to_start the number of jobs which should be queued
+     */
     void start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t to_start);
+    /**
+     *  Feeds the reconstruction objects
+     *  @param zi_order the order at which the black box was probed
+     *  @param t the value of the homogenization variable t
+     *  @param probe a vector of black box probes in an immutable order
+     */
     void feed_job(const std::vector<uint32_t> zi_order, const FFInt t, std::vector<FFInt>* probe);
     void interpolate_job(RatReconst& rec);
   };
