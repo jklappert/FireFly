@@ -9,9 +9,6 @@ before_install:
   - ./configure
   - make
   - sudo make install
-addons:
-  apt:
-    update: true
 script:
   - mkdir build
   - cd build
