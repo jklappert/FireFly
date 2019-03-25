@@ -623,7 +623,7 @@ namespace firefly {
                   std::unique_lock<std::mutex> lock_print(print_control);
 
                   if (verbosity == CHATTY) {
-                    std::string msg = "| Starting zi_order (";
+                    std::string msg = "Starting zi_order (";
 
                     for (const auto & ele : zi_order) {
                       msg += std::to_string(ele) + ", ";

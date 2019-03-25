@@ -2,7 +2,7 @@ language: cpp
 addons:
   apt:
     packages:
-- libgmp-dev
+      - libgmp-dev
 compiler:
   - clang
   - gcc
