@@ -22,8 +22,8 @@
 #include <unordered_map>
 #include <vector>
 #include "UintHasher.hpp"
-#include "Monomial.hpp"
 #include "PolynomialFF.hpp"
+#include "Monomial.hpp"
 
 namespace firefly {
   typedef std::unordered_map<std::vector<uint32_t>, RationalNumber, UintHasher> rn_map;

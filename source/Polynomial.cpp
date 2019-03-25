@@ -17,6 +17,7 @@
 //==================================================================================
 
 #include "Polynomial.hpp"
+#include "utils.hpp"
 #include "Logger.hpp"
 
 namespace firefly {
@@ -40,7 +41,10 @@ namespace firefly {
   Polynomial::Polynomial() {}
 
   void Polynomial::sort() {
-    std::sort(coefs.begin(), coefs.end());
+    std::sort(coefs.begin(), coefs.end(),
+    [](const Monomial& a, const Monomial& b) {
+      return a_grt_b(b.powers, a.powers);
+    });
   }
 
   void Polynomial::clear() {
