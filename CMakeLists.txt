@@ -8,7 +8,7 @@ find_package(GMP REQUIRED)
 # if you want to use FLINT instead of your own implementation, call cmake with
 # cmake -DWITH_FLINT=true ..
 # set(WITH_FLINT false)
-if(${WITH_FLINT} STREQUAL true)
+if("${WITH_FLINT}" STREQUAL true)
   find_package(FLINT REQUIRED)
   add_definitions(-DFLINT)
 endif()
