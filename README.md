@@ -21,7 +21,7 @@ FireFly uses CMake to generate files for build automation. To build FireFly one 
 cd $FIREFLY_PATH
 mkdir build
 cd build
-cmake -DWITH_FLINT=true .. # Without FLINT: -DWITH_FLINT=false
+cmake -DWITH_FLINT=true .. # Without FLINT: -DWITH_FLINT=false or omit this
 ```
 After calling `cmake` the build directory contains all required build files. Assuming that GNU make is sued, one can start the build by running
 ```
