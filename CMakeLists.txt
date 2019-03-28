@@ -50,7 +50,7 @@ include_directories(${INCLUDE_PATH})
 include_directories(${FLINT_INCLUDE_DIR}/flint)
 
 # Firefly library files
-file(GLOB LIBSOURCES
+set(LIBSOURCES
   ${SOURCE_PATH}/BaseReconst.cpp
   ${SOURCE_PATH}/FFInt.cpp
   ${SOURCE_PATH}/Monomial.cpp
@@ -64,7 +64,7 @@ file(GLOB LIBSOURCES
   ${SOURCE_PATH}/Reconstructor.cpp
   ${SOURCE_PATH}/utils.cpp)
 
-file(GLOB LIBSOURCES_SHRD
+set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/BaseReconst.cpp
   ${SOURCE_PATH}/FFInt.cpp
   ${SOURCE_PATH}/Monomial.cpp
