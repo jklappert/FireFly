@@ -8,15 +8,11 @@ find_package(GMP REQUIRED)
 # if you want to use FLINT instead of your own implementation, call cmake with
 # cmake -DWITH_FLINT=true ..
 # set(WITH_FLINT false)
-if(${WITH_FLINT} STREQUAL true)
+if("${WITH_FLINT}" STREQUAL true)
   find_package(FLINT REQUIRED)
   add_definitions(-DFLINT)
 endif()
 
-# set your favorite compile here
-set(CMAKE_CXX_COMPILER g++)
-
-set(CMAKE_BUILD_TYPE Release)
 # set the build type to release. If one needs debugging symbols, compile
 # with "CMAKE_BUILD_TYPE Debug"
 if(NOT CMAKE_BUILD_TYPE)
@@ -50,7 +46,7 @@ include_directories(${INCLUDE_PATH})
 include_directories(${FLINT_INCLUDE_DIR}/flint)
 
 # Firefly library files
-file(GLOB LIBSOURCES
+set(LIBSOURCES
   ${SOURCE_PATH}/BaseReconst.cpp
   ${SOURCE_PATH}/FFInt.cpp
   ${SOURCE_PATH}/Monomial.cpp
@@ -64,7 +60,7 @@ file(GLOB LIBSOURCES
   ${SOURCE_PATH}/Reconstructor.cpp
   ${SOURCE_PATH}/utils.cpp)
 
-file(GLOB LIBSOURCES_SHRD
+set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/BaseReconst.cpp
   ${SOURCE_PATH}/FFInt.cpp
   ${SOURCE_PATH}/Monomial.cpp
@@ -91,9 +87,10 @@ add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
 set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 
 if("${OMIT_EXAMPLE}" STREQUAL "")
-add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-
-target_link_libraries(example FireFly_static gmp flint)
+  if("${WITH_FLINT}" STREQUAL "true")
+    add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
+    target_link_libraries(example FireFly_static gmp flint)
+  endif()
 endif()
 
 # install libraries
