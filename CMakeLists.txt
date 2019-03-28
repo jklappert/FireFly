@@ -103,6 +103,14 @@ install(
   LIBRARY DESTINATION lib
 )
 
+configure_file("cmake/pc.in" "firefly.pc" @ONLY)
+
+# install pkgconfig file
+install(FILES
+  "${CMAKE_BINARY_DIR}/firefly.pc"
+
+DESTINATION "${LIB_INSTALL_DIR}/pkgconfig")
+
 # install public headers
 install(FILES
   "${INCLUDE_PATH}/BaseReconst.hpp"
