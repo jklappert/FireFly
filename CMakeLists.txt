@@ -91,9 +91,10 @@ add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
 set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 
 if("${OMIT_EXAMPLE}" STREQUAL "")
-add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-
-target_link_libraries(example FireFly_static gmp flint)
+  if("${WITH_FLINT}" STREQUAL "true")
+    add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
+    target_link_libraries(example FireFly_static gmp flint)
+  endif()
 endif()
 
 # install libraries
