@@ -5,7 +5,7 @@
 FireFly is a reconstruction library for rational functions and polynomials written in C++.
 
 Please refer to this paper when using FireFly:
-* J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[1903.xxxx](https://arxiv.org/abs/1903.xxxx)]
+* J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[1904.00009](https://arxiv.org/abs/1904.00009)]
 
 ## Requirements
 
