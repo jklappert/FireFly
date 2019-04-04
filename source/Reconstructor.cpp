@@ -307,9 +307,8 @@ namespace firefly {
 
         if (!tmp_rec.need_shift()) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
-            if (verbosity > SILENT) {
+            if (verbosity > SILENT)
               INFO_MSG("Disable shift.");
-            }
 
             tmp_rec.disable_shift();
           }
