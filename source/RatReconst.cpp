@@ -1548,6 +1548,8 @@ namespace firefly {
   std::pair<ff_map, ff_map> RatReconst::solve_homogenized_multi_gauss() {
     std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
     coef_mat.clear();
+    num_sub_den.clear();
+    num_sub_num.clear();
 
     ff_map numerator;
     ff_map denominator;
