@@ -1718,6 +1718,8 @@ namespace firefly {
     shifted_degs_den = other.shifted_degs_den;
     zero_degs_num = other.zero_degs_num;
     zero_degs_den = other.zero_degs_den;
+    num_sub_den = other.num_sub_den;
+    num_sub_num = other.num_sub_num;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -1791,6 +1793,8 @@ namespace firefly {
     shifted_degs_den = std::move(other.shifted_degs_den);
     zero_degs_num = std::move(other.zero_degs_num);
     zero_degs_den = std::move(other.zero_degs_den);
+    num_sub_den = std::move(other.num_sub_den);
+    num_sub_num = std::move(other.num_sub_num);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -1865,6 +1869,8 @@ namespace firefly {
       shifted_degs_den = other.shifted_degs_den;
       zero_degs_num = other.zero_degs_num;
       zero_degs_den = other.zero_degs_den;
+      num_sub_den = other.num_sub_den;
+      num_sub_num = other.num_sub_num;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -1942,6 +1948,8 @@ namespace firefly {
       shifted_degs_den = std::move(other.shifted_degs_den);
       zero_degs_num = std::move(other.zero_degs_num);
       zero_degs_den = std::move(other.zero_degs_den);
+      num_sub_den = std::move(other.num_sub_den);
+      num_sub_num = std::move(other.num_sub_num);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);
@@ -2025,7 +2033,6 @@ namespace firefly {
 
       if (coef_mat.size() == 0) {
         yis.erase(yis.begin());
-        //std::cout << yis.size() << " " << tmp_ti << "\n";
         num_sub_num = solved_num.calc_n_m_1_map(yis);
         num_sub_den = solved_den.calc_n_m_1_map(yis);
       }
