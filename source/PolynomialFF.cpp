@@ -58,6 +58,30 @@ namespace firefly {
     return res;
   }
 
+  std::unordered_map<uint32_t, FFInt> PolynomialFF::calc_n_m_1_map(const std::vector<FFInt>& x) const {
+    std::unordered_map<uint32_t, FFInt> eval_map {};
+    uint32_t n_m_1 = n - 1;
+
+    for (const auto & term : coefs) {
+      FFInt product(1);
+      uint32_t deg = 0;
+
+      for (uint32_t i = 0; i < n_m_1; ++i) {
+        deg += term.first[i + 1];
+        product *= x[i].pow(term.first[i + 1]);
+      }
+
+      deg += term.first[0];
+
+      if (eval_map.find(deg) != eval_map.end())
+        eval_map[deg] += term.second * product;
+      else
+        eval_map.emplace(std::make_pair(deg, term.second * product));
+    }
+
+    return eval_map;
+  }
+
   PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b) {
     ff_map new_coefs {};
 

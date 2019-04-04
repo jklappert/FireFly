@@ -1515,6 +1515,8 @@ namespace firefly {
   std::pair<ff_map, ff_map> RatReconst::solve_gauss() {
     std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
     coef_mat.clear();
+    num_sub_den.clear();
+    num_sub_num.clear();
 
     ff_map numerator;
     ff_map denominator;
@@ -2007,13 +2009,6 @@ namespace firefly {
     std::vector<FFInt> eq;
     eq.reserve(num_eqn + 1);
 
-    for (uint32_t i = 0; i < n; ++i) {
-      {
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
-        yis[i] = yis[i] * tmp_ti + shift[i];
-      }
-    }
-
     if (!is_singular_system) {
       // Build system of equations; in combined_.. are the non-solved coefficients
       for (const auto & pow_vec : non_solved_degs_num) {
@@ -2028,12 +2023,31 @@ namespace firefly {
       // been solved
       eq.emplace_back(0);
 
-      eq.back() += solved_den.calc(yis) * tmp_num;
-      eq.back() -= solved_num.calc(yis);
+      if (coef_mat.size() == 0) {
+        yis.erase(yis.begin());
+        //std::cout << yis.size() << " " << tmp_ti << "\n";
+        num_sub_num = solved_num.calc_n_m_1_map(yis);
+        num_sub_den = solved_den.calc_n_m_1_map(yis);
+      }
+
+      for (const auto & el : num_sub_num) {
+        eq.back() -= el.second * tmp_ti.pow(el.first);
+      }
+
+      for (const auto & el : num_sub_den) {
+        eq.back() += el.second * tmp_ti.pow(el.first) * tmp_num;
+      }
 
       coef_mat.emplace_back(std::move(eq));
     } else {
       FFInt res;
+
+      for (uint32_t i = 0; i < n; ++i) {
+        {
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+          yis[i] = yis[i] * tmp_ti + shift[i];
+        }
+      }
 
       if (normalize_to_den)
         res = (1 - const_den) * tmp_num;
@@ -2987,3 +3001,6 @@ namespace firefly {
     PolyReconst::reset();
   }
 }
+
+
+

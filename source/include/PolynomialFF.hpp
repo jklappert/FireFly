@@ -64,6 +64,13 @@ namespace firefly {
      *  @return f(x)
      */
     FFInt calc_n_m_1(const std::vector<FFInt>& x) const;
+    /**
+     *  Evaluates the polynomial at a given parameter point omitting the first
+     *  variable
+     *  @param x the parameter point which is of length n - 1
+     *  @return f(x) splitted to univariate degrees
+     */
+    std::unordered_map<uint32_t, FFInt> calc_n_m_1_map(const std::vector<FFInt>& x) const;
     ff_map coefs {};
     /**
      *  @return true if the PolynomialFF object has no coefficients or only one which is zero
