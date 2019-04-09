@@ -1,5 +1,6 @@
 # Copyright (c) 2006, Laurent Montel, <montel@kde.org>
 # Copyright (c) 2007, Francesco Biscani, <bluescarni@gmail.com>
+# Copyright (c) 2019, Jonas Klappert and Fabian Lange
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -25,7 +26,7 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # ------------------------------------------------------------------------------------------
 
-# Try to find the GMP libraries:
+# Try to find the GMP libraries used with C++ code:
 # GMP_FOUND - System has GMP lib
 # GMP_INCLUDE_DIR - The GMP include directory
 # GMP_LIBRARIES - Libraries needed to use GMP
@@ -36,7 +37,7 @@ if (GMP_INCLUDE_DIR AND GMP_LIBRARIES)
   unset(GMP_LIBRARIES CACHE)
 endif (GMP_INCLUDE_DIR AND GMP_LIBRARIES)
 
-find_path(GMP_INCLUDE_DIR NAMES gmp.h)
+find_path(GMP_INCLUDE_DIR NAMES gmpxx.h)
 if(STBIN)
   find_library(GMP_LIBRARIES NAMES libgmp.a gmp)
 else(STBIN)
@@ -48,7 +49,8 @@ if(GMP_INCLUDE_DIR AND GMP_LIBRARIES)
 endif(GMP_INCLUDE_DIR AND GMP_LIBRARIES)
 
 if(GMP_FOUND)
-  message(STATUS "Configured GMP: ${GMP_LIBRARIES}")
+  message(STATUS "Found GMP library: ${GMP_LIBRARIES}")
+  message(STATUS "Found GMP headers: ${GMP_INCLUDE_DIR}")
 else(GMP_FOUND)
   message(STATUS "Could NOT find GMP")
 endif(GMP_FOUND)

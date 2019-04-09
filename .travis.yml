@@ -6,5 +6,5 @@ compiler:
 script:
   - mkdir build
   - cd build
-  - cmake -DWITH_FLINT=false -DOMIT_EXAMPLE=true ..
+  - cmake -DWITH_FLINT=false ..
   - make
