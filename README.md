@@ -36,6 +36,8 @@ If FLINT is used for modular arithmetic and it cannot be found in the default sy
 -DFLINT_INCLUDE_DIR=$FLINT_INC_PATH -DFLINT_LIBRARY=$FLINT_LIB_PATH
 ```
 
+where `FLINT_LIB_PATH` is the absolute path pointing to the shared library of FLINT.
+
 ## Reconstructing functions
 To reconstruct functions with FireFly it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionaly, black-box probes are calculated parallelized.
 
