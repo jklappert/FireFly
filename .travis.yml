@@ -1,0 +1,10 @@
+dist: xenial
+language: cpp
+compiler:
+  - clang
+  - gcc
+script:
+  - mkdir build
+  - cd build
+  - cmake -DWITH_FLINT=false -DOMIT_EXAMPLE=true ..
+  - make
