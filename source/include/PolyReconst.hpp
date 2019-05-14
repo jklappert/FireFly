@@ -110,7 +110,6 @@ namespace firefly {
     static void set_BT(bool use_BT_new);
 
     static bool use_Newton;
-
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -179,7 +178,6 @@ namespace firefly {
     * @param coeffs the coefficients of the interpolated polynomial
     */
     void check_for_tmp_solved_degs_BT(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt> & coeffs, std::vector<size_t> &);
-
     std::list<std::tuple<FFInt, std::vector<uint32_t>>> queue;
     int deg = -1;
     bool with_rat_reconst = false;

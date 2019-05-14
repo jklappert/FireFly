@@ -24,6 +24,7 @@
 #include <chrono>
 #include "Poly.hpp"
 
+
 namespace firefly {
   // TODO check if this interpolates in combination with RatReconst to use the
   // static rand_zi of RatReconst to save additional memory -> note that
@@ -125,6 +126,7 @@ namespace firefly {
           L.clear();
           Delta.clear();
           BM_iteration.clear();
+
           ais.emplace(std::make_pair(std::vector<uint32_t> (n), std::vector<FFInt> ()));
 
           for (const auto ci : combined_ci) {
@@ -402,9 +404,8 @@ namespace firefly {
             // to remove them from the next Vandermonde systems
             rec_degs.clear();
 
-            if (zi == 1){
+            if (zi == 1)
               check_for_tmp_solved_degs(zero_element, ais[zero_element]);
-            }
 
             ff_map pol_ff = tmp_solved_degs;
             tmp_solved_degs.clear();
@@ -428,6 +429,7 @@ namespace firefly {
 
               nums.reserve(rec_degs.size());
               ais.clear();
+
               Nums_for_BM.clear();
               BT_Terminator.clear();
               B.clear();
@@ -454,6 +456,7 @@ namespace firefly {
             } else {
               check = true;
               ais.clear();
+
               Nums_for_BM.clear();
               BT_Terminator.clear();
               Lambda.clear();
@@ -484,6 +487,7 @@ namespace firefly {
             }
 
             ff_map tmp_pol_ff {};
+
             for (const auto & el : ais) {
               ff_map tmp = construct_tmp_canonical(el.first, el.second);
               tmp_pol_ff.insert(tmp.begin(), tmp.end());
@@ -515,6 +519,7 @@ namespace firefly {
               }
             } else {
               ais.clear();
+
               Nums_for_BM.clear();
               BT_Terminator.clear();
               Lambda.clear();
@@ -522,6 +527,7 @@ namespace firefly {
               L.clear();
               Delta.clear();
               BM_iteration.clear();
+
               result_ff = PolynomialFF(n, tmp_pol_ff).homogenize(deg);
               result_ff.n = n + 1;
               rec_degs = std::vector<std::vector<uint32_t>>();
@@ -638,11 +644,11 @@ namespace firefly {
         // curr_zi_ord starts at 1, thus we need to subtract 1 entry
         std::unique_lock<std::mutex> lock_statics(mutex_statics);
         vi *= rand_zi.at(std::make_pair(tmp_zi, el[tmp_zi - 1]));
-        // vi *= rand_zi.at(std::make_pair(tmp_zi, 1)).pow(el[tmp_zi - 1]);
       }
 
       vis.emplace_back(vi);
     }
+
 
     result = solve_transposed_vandermonde2(vis, nums);
 
@@ -717,7 +723,6 @@ namespace firefly {
 
   void PolyReconst::check_for_tmp_solved_degs(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) {
     ff_map tmp = construct_tmp_canonical(deg_vec, ai);
-
 
     // std::cout << "Writing results after finishing Newton: "<< PolynomialFF(n, tmp);
 
@@ -928,3 +933,4 @@ namespace firefly {
     use_BT = use_BT_new;
   }
 }
+

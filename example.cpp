@@ -19,19 +19,16 @@
 #include "Reconstructor.hpp"
 #include "Tests.hpp"
 #include "Logger.hpp"
-
 #include "PolyReconst.hpp"
-#include "Poly.hpp"
-
 #include "utils.hpp"
 
 using namespace firefly;
 
 int main() {
   // Example for the automatic interface
-  // Reconstructor reconst(4, 4, Reconstructor::IMPORTANT);
+  Reconstructor reconst(4, 1/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
-  // reconst.enable_scan();
+  reconst.enable_scan();
   // Give the paths to the intermediate results
   //std::vector<std::string> file_paths = {"ff_save/0_3.txt","ff_save/1_2.txt","ff_save/2_3.txt","ff_save/3_4.txt","ff_save/4_1.txt","ff_save/5_2.txt"};
   //std::vector<std::string> file_paths = {"ff_save/sing_3.txt","ff_save/n1_2.txt","ff_save/n4_3.txt","ff_save/gghh_4.txt","ff_save/pol_1.txt","ff_save/ggh_2.txt"};
@@ -42,7 +39,7 @@ int main() {
   // Write the state of all reconstruction objects after each interpolation over a prime field to specified tags
   //std::vector<std::string> tags = {"sing","n1","n4","gghh","pol","ggh"};
   //reconst.set_tags(tags);
-  // reconst.reconstruct();
+  reconst.reconstruct();
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();
   for (auto& res : results) {
@@ -50,13 +47,13 @@ int main() {
   }*/
 
   // Resets all statics in RatReconst to start a new reconstruction
-  // RatReconst::reset();
+  //RatReconst::reset();
 
   // Example for the reconstruction of a rational function
-  // reconstruct_rational_function();
+  //reconstruct_rational_function();
 
   // Example for the reconstruction of a polynomial
-  reconstruct_polynomial();
+  //reconstruct_polynomial();
   return 0;
 }
 
@@ -133,7 +130,7 @@ namespace firefly {
         //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
         //FFInt num = n_eq_1(z1); // example for n = 1
         //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-        //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+        FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
         //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
 
         // Feed the algorithm with the current zi_order
@@ -201,7 +198,6 @@ namespace firefly {
       // FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       // FFInt num = bench_3(yis);
       // FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
-
       // FFInt num = pol_7(yis);
 
       ++kk;
@@ -266,5 +262,4 @@ namespace firefly {
     std::cout << rec_poly.get_result();
     std::cout << "--------------------------------------------------------------\n";
   }
-
 }

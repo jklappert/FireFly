@@ -388,10 +388,8 @@ namespace firefly {
 
             ai.clear();
             ti.clear();
-          } else if (prime_number == 0){
+          } else if (prime_number == 0)
             canonical = solve_gauss();
-          }
-
           else
             canonical = solve_homogenized_multi_gauss();
 
@@ -953,6 +951,7 @@ namespace firefly {
         if (curr_deg == 0) {
           while (!rec.is_new_prime()) {
             FFInt sub = 0;
+
             if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size()) {
               sub = sub_save[curr_deg][sub_count].calc_n_m_1(yis);
             }

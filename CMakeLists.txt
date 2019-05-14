@@ -76,7 +76,7 @@ set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/utils.cpp
   ${SOURCE_PATH}/Poly.cpp)
 
-set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly_edited")
+set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
 configure_file (
@@ -85,19 +85,17 @@ configure_file (
 
 add_library(FireFly_static STATIC ${LIBSOURCES})
 set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
-#add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
-#set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
+add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
+set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 
-if("${OMIT_EXAMPLE}" STREQUAL "")
-  if("${WITH_FLINT}" STREQUAL "true")
-    add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-    target_link_libraries(example FireFly_static gmp flint)
-  endif()
+if("${WITH_FLINT}" STREQUAL "true")
+  add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
+  target_link_libraries(example FireFly_static gmp flint)
 endif()
 
 # install libraries
 install(
-  TARGETS FireFly_static #FireFly_shared
+  TARGETS FireFly_static FireFly_shared
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
@@ -129,7 +127,6 @@ install(FILES
   "${INCLUDE_PATH}/version.hpp"
   "${INCLUDE_PATH}/utils.hpp"
   "${INCLUDE_PATH}/Poly.hpp"
-
   DESTINATION "${INCLUDE_INSTALL_DIR}")
 
 # adding documentation

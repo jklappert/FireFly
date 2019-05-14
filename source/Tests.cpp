@@ -322,7 +322,8 @@ namespace firefly {
                                     (-2048 + 512 * z1 + (-4160 + 1040 * z1) * t_yis[0] + (-2480 + 620 * z1) * t_yis[0] . pow(2) +
                                      (-64 + 16 * z1) * t_yis[0] . pow(3)) * t_yis[1] . pow(6) +
                                     (-256 + 64 * z1 + (-272 + 68 * z1) * t_yis[0] + (-16 + 4 * z1) * t_yis[0] . pow(2)) * t_yis[1] . pow(7)));
-    return num/den;
+
+    return num / den;
   }
 
   // example for singular_solver for n = 4
@@ -384,6 +385,7 @@ namespace firefly {
   FFInt pol_n_eq_3(const std::vector<FFInt>& yis) {
     return yis[0].pow(5) + yis[0] * yis[1].pow(4) + yis[0] * yis[1] * yis[2].pow(3) + yis[1].pow(5);
   }
+
 
   FFInt pol_20_20(const std::vector<FFInt>& yis) {
     FFInt Result(0);

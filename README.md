@@ -16,14 +16,16 @@ FireFly requires:
 * [GMP](https://gmplib.org/) >= 6.1
 
 ## Building FireFly
-FireFly uses CMake to generate files for build automation. To build FireFly one should first create a seperate `build` diredctory inside FireFly's top directory. Afterwards, `cmake` should be called:
+FireFly uses CMake to generate files for build automation. To build FireFly one should first create a seperate `build` directory inside FireFly's top directory. Afterwards, `cmake` should be called:
 ```
 cd $FIREFLY_PATH
 mkdir build
 cd build
 cmake -DWITH_FLINT=true .. # Without FLINT: -DWITH_FLINT=false or omit this
 ```
-After calling `cmake` the build directory contains all required build files. Assuming that GNU make is sued, one can start the build by running
+
+After calling `cmake` the build directory contains all required build files. Assuming that GNU make is used, one can start the build by running
+
 ```
 make
 ```
@@ -35,6 +37,8 @@ If FLINT is used for modular arithmetic and it cannot be found in the default sy
 ```
 -DFLINT_INCLUDE_DIR=$FLINT_INC_PATH -DFLINT_LIBRARY=$FLINT_LIB_PATH
 ```
+
+where `FLINT_LIB_PATH` is the absolute path pointing to the shared library of FLINT.
 
 ## Reconstructing functions
 To reconstruct functions with FireFly it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionaly, black-box probes are calculated parallelized.
