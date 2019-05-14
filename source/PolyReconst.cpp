@@ -175,7 +175,25 @@ namespace firefly {
 
           bool finished = false;
 
-          if(use_BT){
+          if(use_Newton){
+	    if (i == 0)
+	      ais[zero_element].emplace_back(num);
+	    else
+	      ais[zero_element].emplace_back(comp_ai(i, i, num, ais[zero_element]));
+
+	    if (ais[zero_element].back() == 0) {
+	      combine_res = true;
+	      ais[zero_element].pop_back();
+	      finished = true;
+	      // std::cout << "Newton interpolation finished first in the first variable.\n";
+	    } else if (deg != -1 && (uint32_t) deg == i) {
+	      combine_res = true;
+	      finished = true;
+	    }
+	    // std::cout << "Newton interpolation finished first in the first variable.\n";
+	  }
+	  
+          if(use_BT && !finished){
             if(Nums_for_BM[zero_element].size() == 0 || i == 0){
               BT_Terminator.erase(zero_element);
               B.erase(zero_element);
@@ -219,21 +237,6 @@ namespace firefly {
                 BT_Terminator[zero_element] = 1;
               }
             }
-          }
-
-          if(use_Newton && !finished){
-            if (i == 0)
-              ais[zero_element].emplace_back(num);
-            else
-              ais[zero_element].emplace_back(comp_ai(i, i, num, ais[zero_element]));
-
-            if (ais[zero_element].back() == 0) {
-              combine_res = true;
-              ais[zero_element].pop_back();
-              // std::cout << "Newton interpolation finished first in the first variable.\n";
-            } else if (deg != -1 && (uint32_t) deg == i)
-              combine_res = true;
-              // std::cout << "Newton interpolation finished first in the first variable.\n";
           }
 
           std::unique_lock<std::mutex> lock(mutex_status);
@@ -289,7 +292,47 @@ namespace firefly {
 
               bool finished = false;
 
-              if(use_BT){
+              if(use_Newton){
+		uint32_t tmp_deg = deg;
+
+		for (auto ele : key) {
+		  tmp_deg -= ele;
+		}
+
+		FFInt tmp_ai = comp_ai(i, i, el.second, ais[key]);
+		ais[key].emplace_back(tmp_ai);
+
+		if (tmp_ai == 0) {
+		  ais[key].pop_back();
+		  check_for_tmp_solved_degs(key, ais[key]);
+		  ais.erase(key);
+		  BT_Terminator.erase(key);
+		  B.erase(key);
+		  L.erase(key);
+		  Delta.erase(key);
+		  BM_iteration.erase(key);
+		  Nums_for_BM.erase(key);
+		  Lambda.erase(key);
+		  finished = true;
+		  // std::cout << "Newton interpolation finished first.\n";
+		} else if (deg != -1 && i == tmp_deg) {
+		  check_for_tmp_solved_degs(key, ais[key]);
+		  ais.erase(key);
+		  BT_Terminator.erase(key);
+		  B.erase(key);
+		  L.erase(key);
+		  Delta.erase(key);
+		  BM_iteration.erase(key);
+		  Nums_for_BM.erase(key);
+		  Lambda.erase(key);
+		  finished = true;
+		  // std::cout << "Newton interpolation finished first.\n";
+		} else {
+		  ++not_done_counter;
+		}
+	      }
+	      
+              if(use_BT && !finished){
 
                 Nums_for_BM[key].emplace_back(el.second);
 
@@ -335,44 +378,6 @@ namespace firefly {
                   not_done_counter_BM++;
                 }
               }
-
-              if(use_Newton && !finished){
-                uint32_t tmp_deg = deg;
-
-                for (auto ele : key) {
-                  tmp_deg -= ele;
-                }
-
-                FFInt tmp_ai = comp_ai(i, i, el.second, ais[key]);
-                ais[key].emplace_back(tmp_ai);
-
-                if (tmp_ai == 0) {
-                  ais[key].pop_back();
-                  check_for_tmp_solved_degs(key, ais[key]);
-                  ais.erase(key);
-                  BT_Terminator.erase(key);
-                  B.erase(key);
-                  L.erase(key);
-                  Delta.erase(key);
-                  BM_iteration.erase(key);
-                  Nums_for_BM.erase(key);
-                  Lambda.erase(key);
-                  // std::cout << "Newton interpolation finished first.\n";
-                } else if (deg != -1 && i == tmp_deg) {
-                  check_for_tmp_solved_degs(key, ais[key]);
-                  ais.erase(key);
-                  BT_Terminator.erase(key);
-                  B.erase(key);
-                  L.erase(key);
-                  Delta.erase(key);
-                  BM_iteration.erase(key);
-                  Nums_for_BM.erase(key);
-                  Lambda.erase(key);
-                  // std::cout << "Newton interpolation finished first.\n";
-                } else {
-                  ++not_done_counter;
-                }
-              }
             }
             if (not_done_counter == 0 && use_Newton){
               combine_res = true;
@@ -381,6 +386,7 @@ namespace firefly {
             if (not_done_counter_BM == 0 && use_BT){
               combine_res = true;
             }
+	    
           } else {
             // increase all zi order of the lower stages by one
             std::unique_lock<std::mutex> lock(mutex_status);
@@ -703,18 +709,21 @@ namespace firefly {
   ff_map PolyReconst::construct_tmp_canonical(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) const {
     ff_map tmp {};
 
+    //    std::cout << "test " << PolynomialFF(n,ff_map) << "\n";
     if (ai.size() == 1 && zi == n) {
       tmp.emplace(std::make_pair(deg_vec, ai[0]));
     } else {
       for (auto & el : construct_canonical(ai)) { // homogenize
-        std::vector<uint32_t> new_deg(n);
-        new_deg[zi - 1] = el.first[0];
+	if(el.second != 0){
+	  std::vector<uint32_t> new_deg(n);
+	  new_deg[zi - 1] = el.first[0];
 
-        for (uint32_t j = 0; j < zi - 1; j++) {
-          new_deg[j] = deg_vec[j];
-        }
+	  for (uint32_t j = 0; j < zi - 1; j++) {
+	    new_deg[j] = deg_vec[j];
+	  }
 
-        tmp.emplace(std::make_pair(new_deg, el.second));
+	  tmp.emplace(std::make_pair(new_deg, el.second));
+	}
       }
     }
 
@@ -724,16 +733,16 @@ namespace firefly {
   void PolyReconst::check_for_tmp_solved_degs(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) {
     ff_map tmp = construct_tmp_canonical(deg_vec, ai);
 
-    // std::cout << "Writing results after finishing Newton: "<< PolynomialFF(n, tmp);
+    //std::cout << "Writing results after finishing Newton: "<< PolynomialFF(n, tmp);
 
     for (auto & el : tmp) {
       int total_deg = 0;
 
       for (const auto & e : el.first) total_deg += e;
 
-      if (total_deg == deg)
+      if (total_deg == deg && el.second != 0)
         solved_degs.emplace(std::make_pair(el.first, el.second));
-      else
+      else if (el.second != 0)
         tmp_solved_degs.emplace(std::make_pair(el.first, el.second));
     }
 
@@ -899,6 +908,7 @@ namespace firefly {
 
   void PolyReconst::check_for_tmp_solved_degs_BT(const std::vector<uint32_t> & deg_vec, const std::vector<FFInt> & coeffs, std::vector<size_t> & exponents){
     ff_map tmp;
+    
     for(size_t i = 0; i < exponents.size(); i++){
       std::vector<uint32_t> new_deg_vec = deg_vec;
       new_deg_vec[zi-1] = exponents.at(i);
@@ -907,15 +917,15 @@ namespace firefly {
     if(exponents.size() == 0){
       tmp.emplace(std::make_pair(deg_vec, FFInt(0)));
     }
-
+    //std::cout << "Writing results after finishing bt: "<< PolynomialFF(n, tmp);
     for (auto & el : tmp) {
       int total_deg = 0;
 
       for (const auto & e : el.first) total_deg += e;
 
-      if (total_deg == deg)
+      if (total_deg == deg && el.second != 0)
         solved_degs.emplace(std::make_pair(el.first, el.second));
-      else
+      else if (el.second != 0)
         tmp_solved_degs.emplace(std::make_pair(el.first, el.second));
     }
 

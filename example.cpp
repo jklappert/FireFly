@@ -26,9 +26,9 @@ using namespace firefly;
 
 int main() {
   // Example for the automatic interface
-  Reconstructor reconst(4, 1/*, Reconstructor::CHATTY*/);
+  //Reconstructor reconst(4, 1/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
-  reconst.enable_scan();
+  //reconst.enable_scan();
   // Give the paths to the intermediate results
   //std::vector<std::string> file_paths = {"ff_save/0_3.txt","ff_save/1_2.txt","ff_save/2_3.txt","ff_save/3_4.txt","ff_save/4_1.txt","ff_save/5_2.txt"};
   //std::vector<std::string> file_paths = {"ff_save/sing_3.txt","ff_save/n1_2.txt","ff_save/n4_3.txt","ff_save/gghh_4.txt","ff_save/pol_1.txt","ff_save/ggh_2.txt"};
@@ -39,7 +39,7 @@ int main() {
   // Write the state of all reconstruction objects after each interpolation over a prime field to specified tags
   //std::vector<std::string> tags = {"sing","n1","n4","gghh","pol","ggh"};
   //reconst.set_tags(tags);
-  reconst.reconstruct();
+  //reconst.reconstruct();
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();
   for (auto& res : results) {
@@ -50,7 +50,7 @@ int main() {
   //RatReconst::reset();
 
   // Example for the reconstruction of a rational function
-  //reconstruct_rational_function();
+  reconstruct_rational_function();
 
   // Example for the reconstruction of a polynomial
   //reconstruct_polynomial();
@@ -65,6 +65,10 @@ void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFIn
   result.emplace_back(gghh(values));
   result.emplace_back(pol_n_eq_3(values));
   result.emplace_back(ggh(values));
+  //  result.emplace_back(pol_20_20(values));
+  // result.emplace_back(pol_1(values));
+  // result.emplace_back(pol_6(values));
+  // result.emplace_back(pol_7(values));
 }
 
 namespace firefly {
@@ -192,13 +196,23 @@ namespace firefly {
         yis[j] = t_yis[j - 1];
       }
 
-      FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
+      FFInt s = yis[0];
+      FFInt m22 = yis[1];
+      FFInt tt = yis[2];
+      FFInt d = yis[3];
+      
+      //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       // FFInt num = n_eq_1(z1); // example for n = 1
       // FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
       // FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       // FFInt num = bench_3(yis);
       // FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
       // FFInt num = pol_7(yis);
+      FFInt nn = (156-148*d+47*d.pow(2)-5*d.pow(3))*s.pow(2)+(-52+32*d-5*d.pow(2))*s.pow(3)+tt*(s*(-156+148*d-47*d.pow(2)+5*d.pow(3))+(52-32*d+5*d.pow(2))*s.pow(2)+(104-116*d+42*d.pow(2)-5*d.pow(3))*s.pow(3))+m22.pow(2)*(s*(36-42*d+16*d.pow(2)-2*d.pow(3))+(-324+342*d-120*d.pow(2)+14*d.pow(3))*s.pow(2)+tt*(-36+42*d-16*d.pow(2)+s*(324-342*d+120*d.pow(2)-14*d.pow(3))+2*d.pow(3)+(72-84*d+32*d.pow(2)-4*d.pow(3))*s.pow(2))+(-72+84*d-32*d.pow(2)+4*d.pow(3))*s.pow(3))+(-104+116*d-42*d.pow(2)+5*d.pow(3))*s.pow(4)+m22*(s*(-36+42*d-16*d.pow(2)+2*d.pow(3))+(240-278*d+105*d.pow(2)-13*d.pow(3))*s.pow(2)+(-524+568*d-203*d.pow(2)+24*d.pow(3))*s.pow(3)+tt*(36-42*d+16*d.pow(2)-2*d.pow(3)+s*(-240+278*d-105*d.pow(2)+13*d.pow(3))+(524-568*d+203*d.pow(2)-24*d.pow(3))*s.pow(2)+(40-52*d+22*d.pow(2)-3*d.pow(3))*s.pow(3))+(-40+52*d-22*d.pow(2)+3*d.pow(3))*s.pow(4));
+
+      FFInt dd = m22.pow(2)*((-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(2)+(384-320*d+88*d.pow(2)-8*d.pow(3))*s.pow(3)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(4))+m22*((192-160*d+44*d.pow(2)-4*d.pow(3))*s.pow(2)+(-576+480*d-132*d.pow(2)+12*d.pow(3))*s.pow(3)+(576-480*d+132*d.pow(2)-12*d.pow(3))*s.pow(4)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(5));
+
+      FFInt num = nn/dd;
 
       ++kk;
       ++count;
@@ -216,7 +230,7 @@ namespace firefly {
   // Example for the reconstruction of a polynomial
   void reconstruct_polynomial() {
     FFInt::set_new_prime(primes()[0]);
-    uint32_t n = 20;
+    uint32_t n = 4;
     PolyReconst rec_poly(n);
 
     // Initialize some counters
@@ -249,7 +263,15 @@ namespace firefly {
 
       yis = rec_poly.get_rand_zi_vec(rec_poly.get_zi_order());
 
-      FFInt num = pol_20_20(yis);
+      //      FFInt num = pol_20_20(yis);
+
+      FFInt s = yis[0];
+      FFInt m22 = yis[1];
+      FFInt t = yis[2];
+      FFInt d = yis[3];
+      //      FFInt num = (156-148*d+47*d.pow(2)-5*d.pow(3))*s.pow(2)+(-52+32*d-5*d.pow(2))*s.pow(3)+t*(s*(-156+148*d-47*d.pow(2)+5*d.pow(3))+(52-32*d+5*d.pow(2))*s.pow(2)+(104-116*d+42*d.pow(2)-5*d.pow(3))*s.pow(3))+m22.pow(2)*(s*(36-42*d+16*d.pow(2)-2*d.pow(3))+(-324+342*d-120*d.pow(2)+14*d.pow(3))*s.pow(2)+t*(-36+42*d-16*d.pow(2)+s*(324-342*d+120*d.pow(2)-14*d.pow(3))+2*d.pow(3)+(72-84*d+32*d.pow(2)-4*d.pow(3))*s.pow(2))+(-72+84*d-32*d.pow(2)+4*d.pow(3))*s.pow(3))+(-104+116*d-42*d.pow(2)+5*d.pow(3))*s.pow(4)+m22*(s*(-36+42*d-16*d.pow(2)+2*d.pow(3))+(240-278*d+105*d.pow(2)-13*d.pow(3))*s.pow(2)+(-524+568*d-203*d.pow(2)+24*d.pow(3))*s.pow(3)+t*(36-42*d+16*d.pow(2)-2*d.pow(3)+s*(-240+278*d-105*d.pow(2)+13*d.pow(3))+(524-568*d+203*d.pow(2)-24*d.pow(3))*s.pow(2)+(40-52*d+22*d.pow(2)-3*d.pow(3))*s.pow(3))+(-40+52*d-22*d.pow(2)+3*d.pow(3))*s.pow(4));
+
+      FFInt num = m22.pow(2)*((-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(2)+(384-320*d+88*d.pow(2)-8*d.pow(3))*s.pow(3)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(4))+m22*((192-160*d+44*d.pow(2)-4*d.pow(3))*s.pow(2)+(-576+480*d-132*d.pow(2)+12*d.pow(3))*s.pow(3)+(576-480*d+132*d.pow(2)-12*d.pow(3))*s.pow(4)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(5));
 
       ++kk;
       ++count;

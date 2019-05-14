@@ -697,7 +697,7 @@ namespace firefly {
 
               numerator *= equalizer;
               denominator *= equalizer;
-
+	      
               combine_primes(numerator.coefs, denominator.coefs);
 
               std::unique_lock<std::mutex> lock(mutex_status);
@@ -1644,7 +1644,7 @@ namespace firefly {
       yis[0] = ti[0] + shift[0];
 
       for (uint32_t i = 1; i < n; ++i) {
-        yis[i] = ti[0] * rand_zi[std::make_pair(i + 1, curr_zi_order[i - 1])] + shift[i];
+        yis[i] = ti[0] * rand_zi[std::make_pair(i + 1, 1)].pow(curr_zi_order[i-1]) + shift[i];
       }
     }
 
