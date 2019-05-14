@@ -58,7 +58,8 @@ set(LIBSOURCES
   ${SOURCE_PATH}/RatReconst.cpp
   ${SOURCE_PATH}/ReconstHelper.cpp
   ${SOURCE_PATH}/Reconstructor.cpp
-  ${SOURCE_PATH}/utils.cpp)
+  ${SOURCE_PATH}/utils.cpp
+  ${SOURCE_PATH}/Poly.cpp)
 
 set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/BaseReconst.cpp
@@ -72,7 +73,8 @@ set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/RatReconst.cpp
   ${SOURCE_PATH}/ReconstHelper.cpp
   ${SOURCE_PATH}/Reconstructor.cpp
-  ${SOURCE_PATH}/utils.cpp)
+  ${SOURCE_PATH}/utils.cpp
+  ${SOURCE_PATH}/Poly.cpp)
 
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
@@ -124,7 +126,7 @@ install(FILES
   "${INCLUDE_PATH}/UintHasher.hpp"
   "${INCLUDE_PATH}/version.hpp"
   "${INCLUDE_PATH}/utils.hpp"
-
+  "${INCLUDE_PATH}/Poly.hpp"
   DESTINATION "${INCLUDE_INSTALL_DIR}")
 
 # adding documentation

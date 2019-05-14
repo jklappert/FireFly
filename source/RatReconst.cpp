@@ -2010,7 +2010,6 @@ namespace firefly {
         eq.emplace_back(-tmp_ti.pow(tmp_key) * tmp_num);
     }
 
-
     eq.emplace_back(res);
 
     coef_mat.emplace_back(std::move(eq));
@@ -2081,7 +2080,6 @@ namespace firefly {
         else
           eq.emplace_back(-tmp_ti.pow(tmp_key) * tmp_num);
       }
-
 
       eq.emplace_back(res);
 
@@ -3012,10 +3010,3 @@ namespace firefly {
     PolyReconst::reset();
   }
 }
-
-
-
-
-
-
-

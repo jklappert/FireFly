@@ -23,7 +23,9 @@ mkdir build
 cd build
 cmake -DWITH_FLINT=true .. # Without FLINT: -DWITH_FLINT=false or omit this
 ```
+
 After calling `cmake` the build directory contains all required build files. Assuming that GNU make is used, one can start the build by running
+
 ```
 make
 ```

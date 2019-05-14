@@ -322,6 +322,7 @@ namespace firefly {
                                     (-2048 + 512 * z1 + (-4160 + 1040 * z1) * t_yis[0] + (-2480 + 620 * z1) * t_yis[0] . pow(2) +
                                      (-64 + 16 * z1) * t_yis[0] . pow(3)) * t_yis[1] . pow(6) +
                                     (-256 + 64 * z1 + (-272 + 68 * z1) * t_yis[0] + (-16 + 4 * z1) * t_yis[0] . pow(2)) * t_yis[1] . pow(7)));
+
     return num / den;
   }
 
@@ -383,6 +384,37 @@ namespace firefly {
 
   FFInt pol_n_eq_3(const std::vector<FFInt>& yis) {
     return yis[0].pow(5) + yis[0] * yis[1].pow(4) + yis[0] * yis[1] * yis[2].pow(3) + yis[1].pow(5);
+  }
+
+
+  FFInt pol_20_20(const std::vector<FFInt>& yis) {
+    FFInt Result(0);
+    for(size_t i = 0; i < 20; i++){
+      Result += FFInt(i) * yis[i].pow(20);
+    }
+    return Result;
+  }
+
+  FFInt pol_1(const std::vector<FFInt>& yis){
+    return 5/7 * yis[0].pow(2) * yis[2].pow(3) * yis[3] * yis[5] * yis[7] * yis[8].pow(2) +  121435 * yis[0] * yis[1] * yis[2] * yis[3].pow(2) * yis[4].pow(2) * yis[7] * yis[8] + 98625467 * yis[1] * yis[2] * yis[3] * yis[4].pow(2) * yis[7] * yis[8] + 5476546657 * yis[0] * yis[2].pow(3) * yis[3].pow(2) * yis[4].pow(2) * yis[5].pow(2) * yis[6] * yis[7].pow(2) +  1536465 * yis[1] * yis[2] * yis[3] * yis[4].pow(2) * yis[5] * yis[6] * yis[7].pow(2);
+  }
+
+  FFInt pol_6(const std::vector<FFInt>& yis){
+    FFInt Result(0);
+    for(size_t i = 0; i < 6; i++){
+      Result += yis[0].pow(i) * yis[1].pow(i) * yis[2].pow(i) * yis[3].pow(i) * yis[4].pow(i);
+    }
+    return Result;
+  }
+
+  FFInt pol_7(const std::vector<FFInt>& yis){
+    FFInt Result(0);
+    for(size_t i = 0; i < 5; i++){
+      FFInt a;
+      a = yis[0] + yis[1] + yis[2] + yis[3] + yis[4];
+      Result += a.pow(i);
+    }
+    return Result;
   }
 
   FFInt ggh(const std::vector<FFInt>& yis) {

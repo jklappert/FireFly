@@ -19,14 +19,14 @@
 #include "Reconstructor.hpp"
 #include "Tests.hpp"
 #include "Logger.hpp"
-
+#include "PolyReconst.hpp"
 #include "utils.hpp"
 
 using namespace firefly;
 
 int main() {
   // Example for the automatic interface
-  Reconstructor reconst(4, 4/*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(4, 1/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   reconst.enable_scan();
   // Give the paths to the intermediate results
@@ -192,12 +192,13 @@ namespace firefly {
         yis[j] = t_yis[j - 1];
       }
 
-      //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
-      //FFInt num = n_eq_1(z1); // example for n = 1
-      //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-      FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
-      //FFInt num = bench_3(yis);
-      //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
+      FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
+      // FFInt num = n_eq_1(z1); // example for n = 1
+      // FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
+      // FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+      // FFInt num = bench_3(yis);
+      // FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
+      // FFInt num = pol_7(yis);
 
       ++kk;
       ++count;
@@ -208,15 +209,15 @@ namespace firefly {
     }
 
     std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
-    //std::cout << rec.get_result();
+    // std::cout << rec.get_result();
     std::cout << "--------------------------------------------------------------\n";
   }
 
   // Example for the reconstruction of a polynomial
   void reconstruct_polynomial() {
     FFInt::set_new_prime(primes()[0]);
-    uint32_t n = 3;
-    PolyReconst rec_poly(n, 5);
+    uint32_t n = 20;
+    PolyReconst rec_poly(n);
 
     // Initialize some counters
     int count = 0;
@@ -248,7 +249,7 @@ namespace firefly {
 
       yis = rec_poly.get_rand_zi_vec(rec_poly.get_zi_order());
 
-      FFInt num = pol_n_eq_3(yis);
+      FFInt num = pol_20_20(yis);
 
       ++kk;
       ++count;

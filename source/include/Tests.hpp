@@ -39,9 +39,13 @@ namespace firefly {
    */
   FFInt gghh(const std::vector<FFInt>& yis);
   /**
-   *  example for the reconstruction of a polynomial
+   *  examples for the reconstruction of a polynomial
    */
   FFInt pol_n_eq_3(const std::vector<FFInt>& yis);
+  FFInt pol_20_20(const std::vector<FFInt>& yis);
+  FFInt pol_1(const std::vector<FFInt>& yis);
+  FFInt pol_6(const std::vector<FFInt>& yis);
+  FFInt pol_7(const std::vector<FFInt>& yis);
   /**
    *  example for a three loop gg -> h integral coefficient
    */
