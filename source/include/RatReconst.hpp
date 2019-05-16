@@ -112,6 +112,10 @@ namespace firefly {
      *  Sets the currently set shift to be the one used during the reconstruction
      */
     void accept_shift();
+    /**
+     *  @return is_interpolating
+     */
+    bool get_is_interpolating();
   private:
     /**
      *  Starts the real interpolation managed by the class itself

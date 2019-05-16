@@ -697,7 +697,7 @@ namespace firefly {
 
               numerator *= equalizer;
               denominator *= equalizer;
-	      
+
               combine_primes(numerator.coefs, denominator.coefs);
 
               std::unique_lock<std::mutex> lock(mutex_status);
@@ -2229,6 +2229,11 @@ namespace firefly {
 
   void RatReconst::accept_shift() {
     scan = false;
+  }
+
+  bool RatReconst::get_is_interpolating() {
+    std::unique_lock<std::mutex> lock(mutex_status);
+    return is_interpolating;
   }
 
   std::vector<FFInt> RatReconst::get_zi_shift_vec() {
