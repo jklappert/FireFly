@@ -598,7 +598,8 @@ namespace firefly {
                 PolynomialFF res = el.second.get_result_ff();
                 shifted_degs_num.emplace(el.first);
 
-                if (!(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
+                // TODO: define empty/zero polynomials uniquely
+                if (!(res.coefs.size() == 0) && !(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
                   numerator += res;
                 else
                   zero_degs_num.emplace(el.first);
@@ -608,7 +609,8 @@ namespace firefly {
                 PolynomialFF res = el.second.get_result_ff();
                 shifted_degs_den.emplace(el.first);
 
-                if (!(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
+                // TODO: define empty/zero polynomials uniquely
+                if (!(res.coefs.size() == 0) && !(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
                   denominator += res;
                 else
                   zero_degs_den.emplace(el.first);
@@ -1628,7 +1630,7 @@ namespace firefly {
     RationalNumber equalizer = rf.denominator.coefs[0].coef;
     RationalNumber terminator(equalizer.denominator, equalizer.numerator);
 
-    rf.numerator *=  terminator;
+    rf.numerator *= terminator;
     rf.denominator *= terminator;
     return rf;
   }

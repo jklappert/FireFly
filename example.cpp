@@ -200,7 +200,7 @@ namespace firefly {
       FFInt m22 = yis[1];
       FFInt tt = yis[2];
       FFInt d = yis[3];
-      
+
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       // FFInt num = n_eq_1(z1); // example for n = 1
       // FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
