@@ -75,7 +75,7 @@ namespace firefly {
 
   // Example for the reconstruction of a rational function
   void reconstruct_rational_function() {
-    uint32_t n = 4;
+    uint32_t n = 2;
     FFInt::set_new_prime(primes()[0]);
     RatReconst rec(n);
 
@@ -196,10 +196,10 @@ namespace firefly {
         yis[j] = t_yis[j - 1];
       }
 
-      FFInt s = yis[0];
-      FFInt m22 = yis[1];
-      FFInt tt = yis[2];
-      FFInt d = yis[3];
+      //FFInt s = yis[0];
+      //FFInt m22 = yis[1];
+      FFInt tt = yis[1];
+      FFInt d = yis[0];
 
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       // FFInt num = n_eq_1(z1); // example for n = 1
@@ -208,11 +208,15 @@ namespace firefly {
       // FFInt num = bench_3(yis);
       // FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
       // FFInt num = pol_7(yis);
-      FFInt nn = (156-148*d+47*d.pow(2)-5*d.pow(3))*s.pow(2)+(-52+32*d-5*d.pow(2))*s.pow(3)+tt*(s*(-156+148*d-47*d.pow(2)+5*d.pow(3))+(52-32*d+5*d.pow(2))*s.pow(2)+(104-116*d+42*d.pow(2)-5*d.pow(3))*s.pow(3))+m22.pow(2)*(s*(36-42*d+16*d.pow(2)-2*d.pow(3))+(-324+342*d-120*d.pow(2)+14*d.pow(3))*s.pow(2)+tt*(-36+42*d-16*d.pow(2)+s*(324-342*d+120*d.pow(2)-14*d.pow(3))+2*d.pow(3)+(72-84*d+32*d.pow(2)-4*d.pow(3))*s.pow(2))+(-72+84*d-32*d.pow(2)+4*d.pow(3))*s.pow(3))+(-104+116*d-42*d.pow(2)+5*d.pow(3))*s.pow(4)+m22*(s*(-36+42*d-16*d.pow(2)+2*d.pow(3))+(240-278*d+105*d.pow(2)-13*d.pow(3))*s.pow(2)+(-524+568*d-203*d.pow(2)+24*d.pow(3))*s.pow(3)+tt*(36-42*d+16*d.pow(2)-2*d.pow(3)+s*(-240+278*d-105*d.pow(2)+13*d.pow(3))+(524-568*d+203*d.pow(2)-24*d.pow(3))*s.pow(2)+(40-52*d+22*d.pow(2)-3*d.pow(3))*s.pow(3))+(-40+52*d-22*d.pow(2)+3*d.pow(3))*s.pow(4));
+      //FFInt nn = (156-148*d+47*d.pow(2)-5*d.pow(3))*s.pow(2)+(-52+32*d-5*d.pow(2))*s.pow(3)+tt*(s*(-156+148*d-47*d.pow(2)+5*d.pow(3))+(52-32*d+5*d.pow(2))*s.pow(2)+(104-116*d+42*d.pow(2)-5*d.pow(3))*s.pow(3))+m22.pow(2)*(s*(36-42*d+16*d.pow(2)-2*d.pow(3))+(-324+342*d-120*d.pow(2)+14*d.pow(3))*s.pow(2)+tt*(-36+42*d-16*d.pow(2)+s*(324-342*d+120*d.pow(2)-14*d.pow(3))+2*d.pow(3)+(72-84*d+32*d.pow(2)-4*d.pow(3))*s.pow(2))+(-72+84*d-32*d.pow(2)+4*d.pow(3))*s.pow(3))+(-104+116*d-42*d.pow(2)+5*d.pow(3))*s.pow(4)+m22*(s*(-36+42*d-16*d.pow(2)+2*d.pow(3))+(240-278*d+105*d.pow(2)-13*d.pow(3))*s.pow(2)+(-524+568*d-203*d.pow(2)+24*d.pow(3))*s.pow(3)+tt*(36-42*d+16*d.pow(2)-2*d.pow(3)+s*(-240+278*d-105*d.pow(2)+13*d.pow(3))+(524-568*d+203*d.pow(2)-24*d.pow(3))*s.pow(2)+(40-52*d+22*d.pow(2)-3*d.pow(3))*s.pow(3))+(-40+52*d-22*d.pow(2)+3*d.pow(3))*s.pow(4));
 
-      FFInt dd = m22.pow(2)*((-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(2)+(384-320*d+88*d.pow(2)-8*d.pow(3))*s.pow(3)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(4))+m22*((192-160*d+44*d.pow(2)-4*d.pow(3))*s.pow(2)+(-576+480*d-132*d.pow(2)+12*d.pow(3))*s.pow(3)+(576-480*d+132*d.pow(2)-12*d.pow(3))*s.pow(4)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(5));
+      //FFInt dd = m22.pow(2)*((-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(2)+(384-320*d+88*d.pow(2)-8*d.pow(3))*s.pow(3)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(4))+m22*((192-160*d+44*d.pow(2)-4*d.pow(3))*s.pow(2)+(-576+480*d-132*d.pow(2)+12*d.pow(3))*s.pow(3)+(576-480*d+132*d.pow(2)-12*d.pow(3))*s.pow(4)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(5));
 
-      FFInt num = nn/dd;
+      FFInt nn = (9*d.pow(3)-81*d.pow(2)+242*d-240);
+
+      FFInt dd = ((d.pow(3)-12*d.pow(2)+48*d-64)*tt.pow(2));
+
+      FFInt num = 1/dd;
 
       ++kk;
       ++count;
@@ -230,7 +234,7 @@ namespace firefly {
   // Example for the reconstruction of a polynomial
   void reconstruct_polynomial() {
     FFInt::set_new_prime(primes()[0]);
-    uint32_t n = 4;
+    uint32_t n = 2;
     PolyReconst rec_poly(n);
 
     // Initialize some counters
@@ -265,13 +269,15 @@ namespace firefly {
 
       //      FFInt num = pol_20_20(yis);
 
-      FFInt s = yis[0];
-      FFInt m22 = yis[1];
-      FFInt t = yis[2];
-      FFInt d = yis[3];
+      //FFInt s = yis[0];
+      //FFInt m22 = yis[1];
+      FFInt t = yis[1];
+      FFInt d = yis[0];
       //      FFInt num = (156-148*d+47*d.pow(2)-5*d.pow(3))*s.pow(2)+(-52+32*d-5*d.pow(2))*s.pow(3)+t*(s*(-156+148*d-47*d.pow(2)+5*d.pow(3))+(52-32*d+5*d.pow(2))*s.pow(2)+(104-116*d+42*d.pow(2)-5*d.pow(3))*s.pow(3))+m22.pow(2)*(s*(36-42*d+16*d.pow(2)-2*d.pow(3))+(-324+342*d-120*d.pow(2)+14*d.pow(3))*s.pow(2)+t*(-36+42*d-16*d.pow(2)+s*(324-342*d+120*d.pow(2)-14*d.pow(3))+2*d.pow(3)+(72-84*d+32*d.pow(2)-4*d.pow(3))*s.pow(2))+(-72+84*d-32*d.pow(2)+4*d.pow(3))*s.pow(3))+(-104+116*d-42*d.pow(2)+5*d.pow(3))*s.pow(4)+m22*(s*(-36+42*d-16*d.pow(2)+2*d.pow(3))+(240-278*d+105*d.pow(2)-13*d.pow(3))*s.pow(2)+(-524+568*d-203*d.pow(2)+24*d.pow(3))*s.pow(3)+t*(36-42*d+16*d.pow(2)-2*d.pow(3)+s*(-240+278*d-105*d.pow(2)+13*d.pow(3))+(524-568*d+203*d.pow(2)-24*d.pow(3))*s.pow(2)+(40-52*d+22*d.pow(2)-3*d.pow(3))*s.pow(3))+(-40+52*d-22*d.pow(2)+3*d.pow(3))*s.pow(4));
 
-      FFInt num = m22.pow(2)*((-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(2)+(384-320*d+88*d.pow(2)-8*d.pow(3))*s.pow(3)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(4))+m22*((192-160*d+44*d.pow(2)-4*d.pow(3))*s.pow(2)+(-576+480*d-132*d.pow(2)+12*d.pow(3))*s.pow(3)+(576-480*d+132*d.pow(2)-12*d.pow(3))*s.pow(4)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(5));
+      //FFInt num = m22.pow(2)*((-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(2)+(384-320*d+88*d.pow(2)-8*d.pow(3))*s.pow(3)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(4))+m22*((192-160*d+44*d.pow(2)-4*d.pow(3))*s.pow(2)+(-576+480*d-132*d.pow(2)+12*d.pow(3))*s.pow(3)+(576-480*d+132*d.pow(2)-12*d.pow(3))*s.pow(4)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(5));
+
+      FFInt num = ((d.pow(3)-12*d.pow(2)+48*d-64)*t.pow(2));
 
       ++kk;
       ++count;

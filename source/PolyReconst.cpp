@@ -192,7 +192,7 @@ namespace firefly {
 	    }
 	    // std::cout << "Newton interpolation finished first in the first variable.\n";
 	  }
-	  
+
           if(use_BT && !finished){
             if(Nums_for_BM[zero_element].size() == 0 || i == 0){
               BT_Terminator.erase(zero_element);
@@ -331,7 +331,7 @@ namespace firefly {
 		  ++not_done_counter;
 		}
 	      }
-	      
+
               if(use_BT && !finished){
 
                 Nums_for_BM[key].emplace_back(el.second);
@@ -386,7 +386,7 @@ namespace firefly {
             if (not_done_counter_BM == 0 && use_BT){
               combine_res = true;
             }
-	    
+
           } else {
             // increase all zi order of the lower stages by one
             std::unique_lock<std::mutex> lock(mutex_status);
@@ -908,7 +908,7 @@ namespace firefly {
 
   void PolyReconst::check_for_tmp_solved_degs_BT(const std::vector<uint32_t> & deg_vec, const std::vector<FFInt> & coeffs, std::vector<size_t> & exponents){
     ff_map tmp;
-    
+
     for(size_t i = 0; i < exponents.size(); i++){
       std::vector<uint32_t> new_deg_vec = deg_vec;
       new_deg_vec[zi-1] = exponents.at(i);
@@ -924,6 +924,8 @@ namespace firefly {
       for (const auto & e : el.first) total_deg += e;
 
       if (total_deg == deg && el.second != 0)
+        solved_degs.emplace(std::make_pair(el.first, el.second));
+      else if (n == 1)
         solved_degs.emplace(std::make_pair(el.first, el.second));
       else if (el.second != 0)
         tmp_solved_degs.emplace(std::make_pair(el.first, el.second));
@@ -943,4 +945,3 @@ namespace firefly {
     use_BT = use_BT_new;
   }
 }
-
