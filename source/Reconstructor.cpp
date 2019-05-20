@@ -134,7 +134,7 @@ namespace firefly {
       run_until_done();
 
       // Kill all jobs
-      // otherwise it can happen that a RatReconst is feeded with old data
+      // otherwise it can happen that a RatReconst is fed with old data
       tp.kill_all();
 
       found_shift = true;
