@@ -133,6 +133,10 @@ namespace firefly {
 
       run_until_done();
 
+      // Kill all jobs
+      // otherwise it can happen that a RatReconst is feeded with old data
+      tp.kill_all();
+
       found_shift = true;
 
       for (auto & rec : reconst) {
@@ -148,7 +152,6 @@ namespace firefly {
         ++counter;
       }
 
-      tp.kill_all();
       probes.clear();
       jobs_finished = 0;
       started_probes.clear();
