@@ -14,17 +14,17 @@ namespace firefly{
 		coeff = std::vector<FFInt>();
 	}
 
-	Poly::Poly(std::vector<FFInt>  & coeff_vector){
+	Poly::Poly(std::vector<FFInt>& coeff_vector){
 		coeff = coeff_vector;
 	}
 
-	Poly::Poly(const Poly & old_poly){
+	Poly::Poly(const Poly& old_poly){
 		coeff = old_poly.coeff;
 	}
 
 	Poly::~Poly(){
 		std::vector<FFInt>().swap(coeff);
-	};
+	}
 
 	size_t Poly::get_deg() const{
 		for(size_t i = coeff.size()-1; i >= 1; i--){
@@ -40,7 +40,7 @@ namespace firefly{
 			coeff.pop_back();
 		};
 		coeff.shrink_to_fit();
-	};
+	}
 
 	void Poly::rev(){
 		shrink_to_fit();
@@ -59,6 +59,7 @@ namespace firefly{
 				coeff.emplace(coeff.begin() + i, - a.coeff.at(i));
 			};
 		}
+		return *this;
 	}
 
 	Poly& Poly::operator+=(const Poly& a){
@@ -73,18 +74,21 @@ namespace firefly{
 				coeff.emplace(coeff.begin() + i, a.coeff.at(i));
 			};
 		}
+		return *this;
 	}
 
 	Poly& Poly::operator*=(const FFInt& a){
 		for(size_t i = 0; i <= get_deg(); i++){
 			coeff.at(i) *= a;
 		};
+		return *this;
 	}
 
 	Poly& Poly::operator/=(const FFInt& a){
 		for(size_t i = 0; i <= get_deg(); i++){
 			coeff.at(i) /= a;
 		};
+		return *this;
 	}
 
 	Poly operator*(const Poly& a, const FFInt& b){
@@ -125,6 +129,7 @@ namespace firefly{
 			};
 		}
 		coeff.swap(tmp_coeff);
+		return *this;
 	}
 
 	Poly operator*(const Poly& a, const Poly& b){
@@ -227,13 +232,10 @@ namespace firefly{
 					master = (master % queue.back());
 				};
 				master.coeff.at(0) -= FFInt(1);
-				std::cout << "Mater polynomial: " << master << "\n";
 				Poly h;
 				h = gcd(queue.back(), master);
-				std::cout << "h=" << h << "\n";
 				Poly f;
 				f = queue.back() / h;
-				std::cout << "f=" << f << "\n";
 				queue.back() = h;
 				queue.back().shrink_to_fit();
 				queue.emplace_back(f);
