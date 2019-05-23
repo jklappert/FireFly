@@ -436,27 +436,13 @@ namespace firefly {
                 if (!normalize_to_den && deg == 0)
                   continue;
 
-                {
-                  std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  PolyReconst rec(n - 1, deg, true);
+                PolyReconst rec(n - 1, deg, true);
+                coef_n.emplace(std::make_pair(deg, std::move(rec)));
 
-                  if (rec.is_rand_zi_empty()) {
-                    std::vector<FFInt> anchor_points {};
-
-                    for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
-                      anchor_points.emplace_back(rand_zi[std::make_pair(tmp_zi, 1)]);
-                    }
-
-                    rec.set_anchor_points(anchor_points);
-                  }
-
-                  coef_n.emplace(std::make_pair(deg, std::move(rec)));
-
-                  if (deg == 0) {
-                    // this saves some memory since we only need one numerical value
-                    // for the constant coefficient
-                    saved_num_num[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_num);
-                  }
+                if (deg == 0) {
+                  // this saves some memory since we only need one numerical value
+                  // for the constant coefficient
+                  saved_num_num[curr_zi_order][{deg, zi}] = std::make_pair(el.second, sub_count_num);
                 }
               }
 
@@ -472,24 +458,11 @@ namespace firefly {
                 if (normalize_to_den && deg == 0)
                   continue;
 
-                {
-                  std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  PolyReconst rec(n - 1, deg, true);
+                PolyReconst rec(n - 1, deg, true);
+                coef_d.emplace(std::make_pair(deg, std::move(rec)));
 
-                  if (rec.is_rand_zi_empty()) {
-                    std::vector<FFInt> anchor_points {};
-
-                    for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi)
-                      anchor_points.emplace_back(rand_zi[std::make_pair(tmp_zi, 1)]);
-
-                    rec.set_anchor_points(anchor_points);
-                  }
-
-                  coef_d.emplace(std::make_pair(deg, std::move(rec)));
-
-                  if (deg == 0)
-                    saved_num_den[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_den);
-                }
+                if (deg == 0)
+                  saved_num_den[curr_zi_order][{deg, zi}] = std::make_pair(el.second, sub_count_den);
               }
 
               if ((int) deg <= curr_deg_den && deg > 0 && curr_zi_order[zi - 2] < deg + 3) {
@@ -2091,12 +2064,22 @@ namespace firefly {
 
   void RatReconst::generate_anchor_points() {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
     rand_zi.clear();
 
     for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), get_rand()));
     }
+
+    PolyReconst rec(n - 1, 0, true);
+    std::vector<FFInt> anchor_points {};
+
+    for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
+      anchor_points.emplace_back(rand_zi[std::make_pair(tmp_zi, 1)]);
+    }
+
+    rec.set_anchor_points(anchor_points, true);
   }
 
   void RatReconst::add_non_solved_num(const std::vector<uint32_t>& deg) {
