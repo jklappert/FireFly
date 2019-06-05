@@ -20,6 +20,7 @@
 
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
+#include "FFThieleInterpolator.hpp"
 #include <unordered_set>
 #include <queue>
 
@@ -116,6 +117,10 @@ namespace firefly {
      *  @return is_interpolating
      */
     bool get_is_interpolating();
+    /**
+     *  With this option a full interpolation is performed over all prime fields to be sensitive of unlicky primes
+     */
+    void set_save_interpolation();
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -125,14 +130,6 @@ namespace firefly {
      */
     void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord);
     /**
-     *    Computes the coefficient a(i) = ai.at(i) recursively
-     *    @param i The order of a(i)
-     *    @param ip Recursion order
-     *    @param num f(y_i)
-     *    @return a(i)
-     */
-    FFInt comp_ai(int i, int ip, const FFInt& num);
-    /**
      *    Normalize the rational function such that the first non-zero coefficient
      *    of the denominator is normalized to 1
      *    @param rf the rational function
@@ -140,32 +137,13 @@ namespace firefly {
      */
     RationalFunction normalize(RationalFunction& rf);
     /**
-     *    Constructs the canonical form of the rational function recursivly
-     *    @return the rational function in its canonical form
-     */
-    std::pair<ff_map, ff_map>  construct_canonical();
-    /**
-     *    Iterates Thiele's interpolation formula to get the canonical form
-     *    of the rational function
-     *    @param i an integer telling the current degree of the rational function
-     *    @return the recursivly iterated rational function in its canonical form
-     */
-    std::pair<PolynomialFF, PolynomialFF> iterate_canonical(uint32_t i);
-    /**
-     *    Calculates f(y_i) using  Thiele's interpolation formula
-     *    @param i order of the highest coefficient a_i
-     *    @param ip order of sub coefficient a_ip
-     *    @param y y_i
-     *    @returns f(y_i)
-     */
-    FFInt comp_fyi(uint32_t i, uint32_t ip, const FFInt& y);
-    /**
      *    Test if the guess yields the same answer for the function in the finite
      *    field of prime
-     *    @param prime The prime number which defines the finite field
+     *    @param num the numerical value of the black bock
+     *    @param ti the homogenization variable t
      *    @return true or false
      */
-    bool test_guess(const FFInt& num);
+    bool test_guess(const FFInt& num, const FFInt& ti);
     /**
      *  @return true if all coefficients can be promoted to Q
      */
@@ -217,7 +195,6 @@ namespace firefly {
     PolynomialFF solved_den;
     uint32_t curr_zi = 2;
     ff_vec_map saved_ti {};
-    std::vector<FFInt> ai {};
     std::unordered_map<uint32_t, PolyReconst> coef_n {};
     std::unordered_map<uint32_t, PolyReconst> coef_d {};
     std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_num {};// a vector entry should be just a pointer to save memory
@@ -232,6 +209,8 @@ namespace firefly {
     int max_deg_den = -1;
     int curr_deg_num = -1;
     int curr_deg_den = -1;
+    uint32_t tmp_sol_const_num = 0;
+    uint32_t tmp_sol_const_den = 0;
     std::vector<uint32_t> curr_zi_order_num {};
     std::vector<uint32_t> curr_zi_order_den {};
     uint32_t tmp_solved_coefs_num = 0;
@@ -239,7 +218,6 @@ namespace firefly {
     void remove_ni(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn);
     void remove_di(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn);
     RationalFunction result;
-    std::vector<FFInt> ti {}; /**< A vector which holds all arguments t_i */
     rn_map g_ni {}; /**< rational coefficient guesses for the numerator*/
     rn_map g_di {}; /**< rational coefficient guesses for the denominator*/
     mpz_map combined_ni {};  /**< The combination of the coefficients of the numerator over finite field with the chinese remained theorem */
@@ -261,14 +239,6 @@ namespace firefly {
      *  @param is_num indicates if this is the numerator (true) or denominator (false)
      */
     void check_for_solved_degs(const std::vector<uint32_t>& uni_degs, const bool is_num);
-    /**
-     *  Solves a generalzied transposed Vandermonde system
-     *  @param degs the monomial degrees of the system
-     *  @param nums the probes of the polynomial
-     *  @return a PolynomialFF object corresponding to the solution of the system
-     */
-    PolynomialFF solve_transposed_vandermonde(std::vector<std::vector<uint32_t>>& degs,
-                                              const std::vector<std::pair<FFInt, uint32_t>>& nums);
     /**
      *  Solves a transposed Vandermonde system and calculates the terms originating from the shift after the first prime for the numerator
      *  @param key the current degree which has to be solved
@@ -315,6 +285,17 @@ namespace firefly {
      *  @param file_name the file name
      */
     void parse_prime_number(std::string& file_name);
+    /**
+     *  Checks if the reconstruction is done
+     *  @param num a numerical value of the black box
+     *  @param ti a numerical value for the probing variable
+     *  @return true if the reconstruction is done
+     */
+    bool check_if_done(const FFInt& num, const FFInt& ti);
+    /**
+     *  @returns the anchor points
+     */
+    std::vector<FFInt> get_anchor_points();
     bool scan = false;
     std::vector<uint32_t> all_shift_max_degs {};
     static std::vector<uint32_t> curr_shift;
@@ -323,11 +304,14 @@ namespace firefly {
     int start_deg_num = 0;
     int start_deg_den = 1;
     uint32_t shifted_max_num_eqn = 0;
+    bool div_by_zero = false;
     std::unordered_set<uint32_t> shifted_degs_num {};
     std::unordered_set<uint32_t> shifted_degs_den {};
     std::unordered_set<uint32_t> zero_degs_num {};
     std::unordered_set<uint32_t> zero_degs_den {};
     bool normalizer_den_num = false;
+    ThieleInterpolator t_interpolator;
+    uint32_t interpolations = 1;
     enum save_variables {COMBINED_PRIME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SHIFTED_DEGS_NUM, SHIFTED_DEGS_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,

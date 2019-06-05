@@ -59,7 +59,9 @@ set(LIBSOURCES
   ${SOURCE_PATH}/ReconstHelper.cpp
   ${SOURCE_PATH}/Reconstructor.cpp
   ${SOURCE_PATH}/utils.cpp
-  ${SOURCE_PATH}/Poly.cpp)
+  ${SOURCE_PATH}/Poly.cpp
+  ${SOURCE_PATH}/FFThieleInterpolator.cpp
+  ${SOURCE_PATH}/RatReconstCC.cpp)
 
 set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/BaseReconst.cpp
@@ -74,7 +76,9 @@ set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/ReconstHelper.cpp
   ${SOURCE_PATH}/Reconstructor.cpp
   ${SOURCE_PATH}/utils.cpp
-  ${SOURCE_PATH}/Poly.cpp)
+  ${SOURCE_PATH}/Poly.cpp
+  ${SOURCE_PATH}/FFThieleInterpolator.cpp
+  ${SOURCE_PATH}/RatReconstCC.cpp)
 
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")

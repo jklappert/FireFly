@@ -175,26 +175,27 @@ namespace firefly {
 
           bool finished = false;
 
-          if(use_newton){
-      	    if (i == 0)
-      	      ais[zero_element].emplace_back(num);
-      	    else
-      	      ais[zero_element].emplace_back(comp_ai(i, i, num, ais[zero_element]));
+          if (use_newton) {
+            if (i == 0)
+              ais[zero_element].emplace_back(num);
+            else
+              ais[zero_element].emplace_back(comp_ai(i, i, num, ais[zero_element]));
 
-      	    if (ais[zero_element].back() == 0) {
-      	      combine_res = true;
-      	      ais[zero_element].pop_back();
-      	      finished = true;
-      	      // std::cout << "Newton interpolation finished first in the first variable.\n";
-      	    } else if (deg != -1 && (uint32_t) deg == i) {
-      	      combine_res = true;
-      	      finished = true;
-      	    }
-      	    // std::cout << "Newton interpolation finished first in the first variable.\n";
-      	  }
+            if (ais[zero_element].back() == 0) {
+              combine_res = true;
+              ais[zero_element].pop_back();
+              finished = true;
+              // std::cout << "Newton interpolation finished first in the first variable.\n";
+            } else if (deg != -1 && (uint32_t) deg == i) {
+              combine_res = true;
+              finished = true;
+            }
 
-          if(use_bt && !finished){
-            if(nums_for_bt[zero_element].size() == 0 || i == 0){
+            // std::cout << "Newton interpolation finished first in the first variable.\n";
+          }
+
+          if (use_bt && !finished) {
+            if (nums_for_bt[zero_element].size() == 0 || i == 0) {
               bt_terminator.erase(zero_element);
               b.erase(zero_element);
               l.erase(zero_element);
@@ -210,13 +211,14 @@ namespace firefly {
               bm_iteration[zero_element] = 1;
             }
 
-
             nums_for_bt[zero_element].emplace_back(num);
 
             finished = berlekamp_massey_step(zero_element);
-            if(finished){
+
+            if (finished) {
               std::pair<std::vector<FFInt>, std::vector<size_t>> roots = rootsexponents(zero_element, get_rand_zi(zi, 1));
-              if(roots.first.size() == lambda[zero_element].size() - 1){
+
+              if (roots.first.size() == lambda[zero_element].size() - 1) {
                 std::vector<FFInt> result;
                 result = solve_transposed_vandermonde(roots.first, nums_for_bt[zero_element]);
                 //combine the result if suceeded with the former interpolated polynomial
@@ -232,7 +234,7 @@ namespace firefly {
                 bm_iteration.erase(zero_element);
                 nums_for_bt.erase(zero_element);
                 lambda.erase(zero_element);
-              }else{
+              } else {
                 finished = false;
                 bt_terminator[zero_element] = 1;
               }
@@ -292,51 +294,51 @@ namespace firefly {
 
               bool finished = false;
 
-              if(use_newton){
-            		uint32_t tmp_deg = deg;
+              if (use_newton) {
+                uint32_t tmp_deg = deg;
 
-            		for (auto ele : key) {
-            		  tmp_deg -= ele;
-            		}
+                for (auto ele : key) {
+                  tmp_deg -= ele;
+                }
 
-            		FFInt tmp_ai = comp_ai(i, i, el.second, ais[key]);
-            		ais[key].emplace_back(tmp_ai);
+                FFInt tmp_ai = comp_ai(i, i, el.second, ais[key]);
+                ais[key].emplace_back(tmp_ai);
 
-            		if (tmp_ai == 0) {
-            		  ais[key].pop_back();
-            		  check_for_tmp_solved_degs_for_newton(key, ais[key]);
-            		  ais.erase(key);
-            		  bt_terminator.erase(key);
-            		  b.erase(key);
-            		  l.erase(key);
-            		  delta.erase(key);
-            		  bm_iteration.erase(key);
-            		  nums_for_bt.erase(key);
-            		  lambda.erase(key);
-            		  finished = true;
-            		  // std::cout << "Newton interpolation finished first.\n";
-            		} else if (deg != -1 && i == tmp_deg) {
-            		  check_for_tmp_solved_degs_for_newton(key, ais[key]);
-            		  ais.erase(key);
-            		  bt_terminator.erase(key);
-            		  b.erase(key);
-            		  l.erase(key);
-            		  delta.erase(key);
-            		  bm_iteration.erase(key);
-            		  nums_for_bt.erase(key);
-            		  lambda.erase(key);
-            		  finished = true;
-            		  // std::cout << "Newton interpolation finished first.\n";
-            		} else {
-            		  ++not_done_counter_newton;
-            		}
-	            }
+                if (tmp_ai == 0) {
+                  ais[key].pop_back();
+                  check_for_tmp_solved_degs_for_newton(key, ais[key]);
+                  ais.erase(key);
+                  bt_terminator.erase(key);
+                  b.erase(key);
+                  l.erase(key);
+                  delta.erase(key);
+                  bm_iteration.erase(key);
+                  nums_for_bt.erase(key);
+                  lambda.erase(key);
+                  finished = true;
+                  // std::cout << "Newton interpolation finished first.\n";
+                } else if (deg != -1 && i == tmp_deg) {
+                  check_for_tmp_solved_degs_for_newton(key, ais[key]);
+                  ais.erase(key);
+                  bt_terminator.erase(key);
+                  b.erase(key);
+                  l.erase(key);
+                  delta.erase(key);
+                  bm_iteration.erase(key);
+                  nums_for_bt.erase(key);
+                  lambda.erase(key);
+                  finished = true;
+                  // std::cout << "Newton interpolation finished first.\n";
+                } else {
+                  ++not_done_counter_newton;
+                }
+              }
 
-              if(use_bt && !finished){
+              if (use_bt && !finished) {
 
                 nums_for_bt[key].emplace_back(el.second);
 
-                if(nums_for_bt[key].size() == 1){
+                if (nums_for_bt[key].size() == 1) {
                   bt_terminator.erase(key);
                   b.erase(key);
                   l.erase(key);
@@ -353,9 +355,10 @@ namespace firefly {
 
                 finished = berlekamp_massey_step(key);
 
-                if(finished){
+                if (finished) {
                   std::pair<std::vector<FFInt>, std::vector<size_t>> roots = rootsexponents(key, get_rand_zi(zi, 1));
-                  if(roots.first.size() == lambda[key].size() - 1){
+
+                  if (roots.first.size() == lambda[key].size() - 1) {
                     std::vector<FFInt> result = solve_transposed_vandermonde(roots.first, nums_for_bt[key]);
                     //combine the result if suceeded with the former interpolated polynomial
                     //check for tmp solved degrees
@@ -369,21 +372,22 @@ namespace firefly {
                     nums_for_bt.erase(key);
                     lambda.erase(key);
                     ais.erase(key);
-                  }else{
+                  } else {
                     not_done_counter_bt++;
                     finished = false;
                     bt_terminator[key] = 1;
                   }
-                }else{
+                } else {
                   not_done_counter_bt++;
                 }
               }
             }
-            if (not_done_counter_newton == 0 && use_newton){
+
+            if (not_done_counter_newton == 0 && use_newton) {
               combine_res = true;
             }
 
-            if (not_done_counter_bt == 0 && use_bt){
+            if (not_done_counter_bt == 0 && use_bt) {
               combine_res = true;
             }
 
@@ -516,9 +520,20 @@ namespace firefly {
                 std::pair<mpz_class, mpz_class> p2;
                 std::pair<mpz_class, mpz_class> p3;
 
-                for (auto it = combined_ci.begin(); it != combined_ci.end(); ++it) {
-                  p1 = std::make_pair(it->second, combined_prime);
-                  p2 = std::make_pair(ci_tmp[it->first], FFInt::p);
+                for (const auto el : combined_ci) {
+                  if (ci_tmp.find(el.first) == ci_tmp.end() && gi.find(el.first) == gi.end()) {
+                    ci_tmp.emplace(std::make_pair(el.first, 0));
+                  }
+                }
+
+                for (auto it = ci_tmp.begin(); it != ci_tmp.end(); ++it) {
+                  p2 = std::make_pair(it->second, FFInt::p);
+
+                  if (combined_ci.find(it->first) == combined_ci.end() && gi.find(it->first) == gi.end()) {
+                    combined_ci.emplace(std::make_pair(it->first, 0));
+                  }
+
+                  p1 = std::make_pair(combined_ci[it->first], combined_prime);
                   p3 = run_chinese_remainder(p1, p2);
                   combined_ci[it->first] = p3.first;
                 }
@@ -657,7 +672,6 @@ namespace firefly {
       vis.emplace_back(vi);
     }
 
-
     result = solve_transposed_vandermonde(vis, nums);
 
     // Bring result in canonical form
@@ -711,21 +725,20 @@ namespace firefly {
   ff_map PolyReconst::construct_tmp_canonical(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) const {
     ff_map tmp {};
 
-    //    std::cout << "test " << PolynomialFF(n,ff_map) << "\n";
     if (ai.size() == 1 && zi == n) {
       tmp.emplace(std::make_pair(deg_vec, ai[0]));
     } else {
       for (auto & el : construct_canonical(ai)) { // homogenize
-	if(el.second != 0){
-	  std::vector<uint32_t> new_deg(n);
-	  new_deg[zi - 1] = el.first[0];
+        if (el.second != 0) {
+          std::vector<uint32_t> new_deg(n);
+          new_deg[zi - 1] = el.first[0];
 
-	  for (uint32_t j = 0; j < zi - 1; j++) {
-	    new_deg[j] = deg_vec[j];
-	  }
+          for (uint32_t j = 0; j < zi - 1; j++) {
+            new_deg[j] = deg_vec[j];
+          }
 
-	  tmp.emplace(std::make_pair(new_deg, el.second));
-	}
+          tmp.emplace(std::make_pair(new_deg, el.second));
+        }
       }
     }
 
@@ -754,120 +767,155 @@ namespace firefly {
     }
   }
 
-  void PolyReconst::set_bt_threshold(size_t threshold){
+  void PolyReconst::set_bt_threshold(size_t threshold) {
     bt_threshold = threshold;
   }
 
-  bool PolyReconst::berlekamp_massey_step(std::vector<uint32_t>& key){
+  bool PolyReconst::berlekamp_massey_step(std::vector<uint32_t>& key) {
     FFInt delta_r = 0;
-    for(size_t i = 0; i < lambda[key].size(); i++){
-      delta_r += lambda[key].at(i) * nums_for_bt[key].at(bm_iteration[key]-i-1);
-    };
-    if(delta_r == FFInt(0)){
+
+    for (size_t i = 0; i < lambda[key].size(); i++) {
+      delta_r += lambda[key].at(i) * nums_for_bt[key].at(bm_iteration[key] - i - 1);
+    }
+
+    if (delta_r == FFInt(0)) {
       b[key].insert(b[key].begin(), FFInt(0));
-      while(b[key].back() == FFInt(0)){
+
+      while (b[key].back() == FFInt(0)) {
         b[key].pop_back();
       }
+
       bt_terminator[key]++;
-      if(bt_terminator[key] >= bt_threshold + 1 && bm_iteration[key] > 2*l[key]) {
+
+      if (bt_terminator[key] >= bt_threshold + 1 && bm_iteration[key] > 2 * l[key]) {
         bm_iteration[key]++;
         return true;
-      }else{
+      } else {
         bm_iteration[key]++;
         return false;
-      };
-    };
-    if(delta_r != FFInt(0)){
-      std::vector<FFInt> b_temp (lambda[key]);
+      }
+    }
+
+    if (delta_r != FFInt(0)) {
+      std::vector<FFInt> b_temp(lambda[key]);
       std::vector<FFInt> lambda_temp;
       b[key].insert(b[key].begin(), FFInt(0));
-      for(size_t j = 0; j < lambda[key].size() || j < b[key].size(); j++){
-        if(j < lambda[key].size() && j < b[key].size()){
-          lambda_temp.emplace_back(lambda[key].at(j) - delta_r/delta[key]*b[key].at(j));
-        };
-        if(j < lambda[key].size() && j >= b[key].size()){
+
+      for (size_t j = 0; j < lambda[key].size() || j < b[key].size(); j++) {
+        if (j < lambda[key].size() && j < b[key].size()) {
+          lambda_temp.emplace_back(lambda[key].at(j) - delta_r / delta[key]*b[key].at(j));
+        }
+
+        if (j < lambda[key].size() && j >= b[key].size()) {
           lambda_temp.emplace_back(lambda[key].at(j));
-        };
-        if(j >= lambda[key].size() && j < b[key].size()){
-          lambda_temp.emplace_back(- delta_r/delta[key]*b[key].at(j));
-        };
-      };
-      if(2*l[key] < bm_iteration[key]){
+        }
+
+        if (j >= lambda[key].size() && j < b[key].size()) {
+          lambda_temp.emplace_back(- delta_r / delta[key]*b[key].at(j));
+        }
+      }
+
+      if (2 * l[key] < bm_iteration[key]) {
         l[key] = bm_iteration[key] - l[key];
         delta[key] = delta_r;
         b[key].swap(b_temp);
       }
+
       lambda[key].swap(lambda_temp);
-      while(lambda[key].back() == FFInt(0)){
+
+      while (lambda[key].back() == FFInt(0)) {
         lambda[key].pop_back();
-      };
-      while(b[key].back() == FFInt(0)){
+      }
+
+      while (b[key].back() == FFInt(0)) {
         b[key].pop_back();
-      };
+      }
+
       bm_iteration[key]++;
+
       bt_terminator[key] = 1;
+
       return false;
     }
-    std::cout << "\033[1;31mBerlekamp Massey step exit was wrong!\033[0m\n";
+
+    ERROR_MSG("Berlekamp Massey step exit was wrong!");
     return false;
   }
 
-  std::pair<std::vector<FFInt>, std::vector<size_t>> PolyReconst::rootsexponents(std::vector<uint32_t>& key, const FFInt& base){
+  std::pair<std::vector<FFInt>, std::vector<size_t>> PolyReconst::rootsexponents(std::vector<uint32_t>& key, const FFInt& base) {
     std::pair<std::vector<FFInt>, std::vector<size_t>> roots;
     FFInt a(1);
     size_t count = 0;
     size_t sol_deg = 0;
-    for(size_t i = 0; i < key.size(); i++){
+
+    for (size_t i = 0; i < key.size(); i++) {
       sol_deg += key.at(i);
     }
-    while(roots.first.size() < lambda[key].size() - 1){
+
+    while (roots.first.size() < lambda[key].size() - 1) {
       FFInt result(0);
-      for(size_t i = 0; i < lambda[key].size(); i++){
-        result += lambda[key].at(lambda[key].size() - i- 1) * a.pow(i);
-      };
-      if(result == 0){
+
+      for (size_t i = 0; i < lambda[key].size(); i++) {
+        result += lambda[key].at(lambda[key].size() - i - 1) * a.pow(i);
+      }
+
+      if (result == 0) {
         roots.first.emplace_back(a);
         roots.second.emplace_back(count);
         rand_zi.emplace(std::make_pair(std::make_pair(zi, count), a));
       }
+
       a *= base;
-      if(a == FFInt(1)){break;};
+
+      if (a == FFInt(1))
+        break;
+
       count++;
-      if(count > deg- sol_deg){break;};
+
+      if (count > deg - sol_deg)
+        break;
     }
-    if(roots.first.size() != lambda[key].size()-1){
-      std::cout << "\033[1;31mThe Polynomial calculated by the Berlekamp/Massey algorithm is not correct\033[0m\n";
-    }
+
+    if (roots.first.size() != lambda[key].size() - 1)
+      ERROR_MSG("The Polynomial calculated by the Berlekamp/Massey algorithm is not correct");
+
     return roots;
   }
 
-  std::pair<std::vector<FFInt>, std::vector<size_t>> PolyReconst::rootsexponents_with_poly_class(std::vector<uint32_t>& key, const FFInt& base){
+  std::pair<std::vector<FFInt>, std::vector<size_t>> PolyReconst::rootsexponents_with_poly_class(std::vector<uint32_t>& key, const FFInt& base) {
     std::pair<std::vector<FFInt>, std::vector<size_t>> rootsexponent;
     Poly lambdapoly(lambda[key]);
     lambdapoly.rev();
     std::vector<FFInt> roots = lambdapoly.roots();
     FFInt a(1);
-    for(size_t count = 0; count <= (size_t) deg; count++){
-      for(size_t j = 0; j < roots.size(); j++){
-        if(a == roots.at(j)){
+
+    for (size_t count = 0; count <= (size_t) deg; count++) {
+      for (size_t j = 0; j < roots.size(); j++) {
+        if (a == roots.at(j)) {
           rootsexponent.first.emplace_back(a);
           rootsexponent.second.emplace_back(count);
         }
       }
+
       a *= base;
-      if(a == FFInt(1)){break;};
-      if(rootsexponent.first.size() == roots.size()){break;};
+
+      if (a == FFInt(1))
+        break;
+
+      if (rootsexponent.first.size() == roots.size())
+        break;
     }
-    if(rootsexponent.first.size() != lambdapoly.get_deg()){
-      std::cout << "\033[1;31mThe Polynomial calculated by the Berlekamp/Massey algorithm is not correct\033[0m\n";
-    }
+
+    if (rootsexponent.first.size() != lambdapoly.get_deg())
+      ERROR_MSG("The Polynomial calculated by the Berlekamp/Massey algorithm is not correct");
+
     return rootsexponent;
   }
 
-  std::vector<FFInt> PolyReconst::solve_transposed_vandermonde(std::vector<FFInt>& vis, std::vector<FFInt>& fis){
+  std::vector<FFInt> PolyReconst::solve_transposed_vandermonde(std::vector<FFInt>& vis, std::vector<FFInt>& fis) {
     uint32_t num_eqn = vis.size();
 
-    if(num_eqn == 0){
+    if (num_eqn == 0) {
       return std::vector<FFInt> {FFInt(0)};
     }
 
@@ -907,21 +955,23 @@ namespace firefly {
 
       result[i] = s / t / vis[i];
     }
+
     return result;
   }
 
-  void PolyReconst::check_for_tmp_solved_degs_for_bt(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& coeffs, std::vector<size_t>& exponents){
+  void PolyReconst::check_for_tmp_solved_degs_for_bt(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& coeffs, std::vector<size_t>& exponents) {
     ff_map tmp;
 
-    for(size_t i = 0; i < exponents.size(); i++){
+    for (size_t i = 0; i < exponents.size(); i++) {
       std::vector<uint32_t> new_deg_vec = deg_vec;
-      new_deg_vec[zi-1] = exponents.at(i);
+      new_deg_vec[zi - 1] = exponents.at(i);
       tmp.emplace(std::make_pair(new_deg_vec, coeffs.at(i)));
     }
-    if(exponents.size() == 0){
+
+    if (exponents.size() == 0) {
       tmp.emplace(std::make_pair(deg_vec, FFInt(0)));
     }
-    //std::cout << "Writing results after finishing bt: "<< PolynomialFF(n, tmp);
+
     for (auto & el : tmp) {
       int total_deg = 0;
 
@@ -941,11 +991,11 @@ namespace firefly {
     }
   }
 
-  void PolyReconst::set_newton(bool use_newton_new){
+  void PolyReconst::set_newton(bool use_newton_new) {
     use_newton = use_newton_new;
   }
 
-  void PolyReconst::set_bt(bool use_bt_new){
+  void PolyReconst::set_bt(bool use_bt_new) {
     use_bt = use_bt_new;
   }
 }

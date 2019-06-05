@@ -56,6 +56,8 @@ namespace firefly {
       }
     }
 
+    t_interpolator = ThieleInterpolator();
+
     if (n > 1) {
       curr_zi_order_num = std::vector<uint32_t> (n - 1, 1);
       curr_zi_order_den = std::vector<uint32_t> (n - 1, 1);
@@ -143,114 +145,24 @@ namespace firefly {
 
       // Compare if the food is the expected food; if not, store it for later use
       if (feed_zi_ord == curr_zi_order) {
-        // first check if we are done. If not start the reconstruction again using
+        // first check if we are done. If not start the interpolation again using
         // the chinese remainder theorem in combining the previous results
-        if (new_prime) {
-          {
-            std::unique_lock<std::mutex> lock_statics(mutex_statics);
+        if (new_prime)
+          if (check_if_done(num, new_ti))
+            return;
 
-            if (!is_singular_system && set_singular_system) {
-              lock_statics.unlock();
-              set_singular_system_vars();
-            }
-          }
-
-          ti.emplace_back(new_ti);
-
-          if (rec_rat_coef()) {
-            bool tmp_done = test_guess(num);
-            {
-              std::unique_lock<std::mutex> lock(mutex_status);
-              done = tmp_done;
-            }
-
-            if (done) {
-              combined_di = mpz_map();
-              combined_ni = mpz_map();
-
-              if (tag.size() > 0)
-                save_state();
-
-              std::unique_lock<std::mutex> lock(mutex_status);
-
-              combined_prime = 0;
-              num_eqn = 0;
-              new_prime = false;
-              solved_den = PolynomialFF();
-              solved_num = PolynomialFF();
-              coef_mat_num = std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> ();
-              coef_mat_den = std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> ();
-              curr_zi_order = std::vector<uint32_t>();
-              non_solved_degs_num = std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>>();
-              non_solved_degs_den = std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>>();
-              saved_ti = ff_vec_map();
-              use_chinese_remainder = false;
-              return;
-            } else {
-              for (const auto & ci : combined_ni) {
-                g_ni.erase(ci.first);
-              }
-
-              for (const auto & ci : combined_di) {
-                g_di.erase(ci.first);
-              }
-            }
-          }
-
-          if (!use_chinese_remainder) use_chinese_remainder = true;
-
-          {
-            std::unique_lock<std::mutex> lock(mutex_status);
-            new_prime = false;
-          }
-          ti.pop_back();
-
-          if (!is_singular_system) {
-            ff_map tmp_num {};
-            tmp_num.reserve(g_ni.size() + 1);
-            ff_map tmp_den {};
-            tmp_den.reserve(g_di.size() + 1);
-            tmp_num.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
-            tmp_den.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
-
-            for (const auto & el : g_ni) {
-              tmp_num[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
-            }
-
-            for (const auto & el : g_di) {
-              tmp_den[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
-            }
-
-            solved_num = PolynomialFF(n, tmp_num);
-            solved_den = PolynomialFF(n, tmp_den);
-          }
-        }
-
-        // basic reconstruction algorithm, check if reconstructed function is equal
+        // basic interpolation algorithm, check if interpolation function is equal
         // to numeric input and calculate coefficients a_i, check chinese chinese remainder
         // theorem
         {
           std::unique_lock<std::mutex> lock(mutex_status);
 
-          if (prime_number == 0) zi = 1;
+          if (prime_number < interpolations) zi = 1;
         }
 
-        if (max_deg_num == -1) {
-          ti.emplace_back(new_ti);
-          const uint32_t i = ti.size() - 1;
-
-          if (i == 0) {
-            ai.emplace_back(num);
-          } else {
-            if (num == comp_fyi(i - 1, i - 1, ti.back())) check = true;
-
-            if (!check)
-              ai.emplace_back(comp_ai(i, i, num));
-          }
-        } else {
-          if (coef_mat.empty())
-            coef_mat.reserve(num_eqn);
-
+        if (max_deg_num == -1)
+          check = t_interpolator.add_point(num, new_ti);
+        else {
           std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
 
           // Prepare food for Gauss system
@@ -270,20 +182,19 @@ namespace firefly {
             // Get yi's for the current feed
             std::vector<FFInt> yis;
 
-            if (n > 1) {
+            if (n > 1)
               yis = get_rand_zi_vec(curr_zi_order);
-            }
 
             yis.emplace(yis.begin(), 1);
 
             // build Gauss system for univariate reconstruction needed for
             // multivariate rational functions
-            if (prime_number == 0)
+            if (prime_number < interpolations)
               build_uni_gauss(tmp_ti, tmp_num, yis);
             else
               build_homogenized_multi_gauss(tmp_ti, tmp_num, yis);
 
-            if (coef_mat.size() == num_eqn) {
+            if (num_eqn == coef_mat.size()) {
               check = true;
               break;
             }
@@ -299,9 +210,7 @@ namespace firefly {
           // determine them and save all information
           if (max_deg_num == -1) {
 
-            ti.pop_back();
-
-            canonical = construct_canonical();
+            canonical = t_interpolator.get_result();
             PolynomialFF numerator = PolynomialFF(1, canonical.first);
             PolynomialFF denominator = PolynomialFF(1, canonical.second);
 
@@ -335,8 +244,7 @@ namespace firefly {
                 shift_works = true;
               }
 
-              ai.clear();
-              ti.clear();
+              t_interpolator = ThieleInterpolator();
               return;
             }
 
@@ -368,14 +276,18 @@ namespace firefly {
             canonical.first = (numerator * equalizer).coefs;
             canonical.second = (denominator * equalizer).coefs;
 
-            for (uint32_t i = start_deg_num; i < (uint32_t)max_deg_num; ++i) {
+            for (uint32_t i = start_deg_num; i < (uint32_t) max_deg_num; ++i) {
               if (canonical.first.find( {i}) == canonical.first.end())
                 tmp_solved_coefs_num ++;
+              else if (i == 0)
+                tmp_sol_const_num = 1;
             }
 
-            for (uint32_t i = start_deg_den; i < (uint32_t)max_deg_den; ++i) {
+            for (uint32_t i = start_deg_den; i < (uint32_t) max_deg_den; ++i) {
               if (canonical.second.find( {i}) == canonical.second.end())
                 tmp_solved_coefs_den ++;
+              else if (i == 0)
+                tmp_sol_const_den = 1;
             }
 
             // set number of equations needed for univariate rational function
@@ -383,30 +295,26 @@ namespace firefly {
             {
               std::unique_lock<std::mutex> lock(mutex_status);
               num_eqn = max_deg_den + max_deg_num + 1
-                        - tmp_solved_coefs_num - tmp_solved_coefs_den;
+                        - tmp_solved_coefs_num - tmp_solved_coefs_den
+                        - tmp_sol_const_num - tmp_sol_const_den;
             }
 
-            ai.clear();
-            ti.clear();
-          } else if (prime_number == 0)
+            t_interpolator = ThieleInterpolator();
+          } else if (prime_number < interpolations)
             canonical = solve_gauss();
           else
             canonical = solve_homogenized_multi_gauss();
 
           if (n == 1) {
             combine_primes(canonical.first, canonical.second);
-            saved_ti.clear();
-            std::unique_lock<std::mutex> lock(mutex_status);
-            ++prime_number;
-            queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
-            new_prime = true;
             return;
-          } else if (prime_number == 0) {
+          } else if (prime_number < interpolations) {
             {
               std::unique_lock<std::mutex> lock(mutex_status);
               zi = curr_zi;
             }
 
+            // remove zero degrees
             if (first_run) {
               ff_map num_coef = canonical.first;
               ff_map den_coef = canonical.second;
@@ -442,7 +350,7 @@ namespace firefly {
                 if (deg == 0) {
                   // this saves some memory since we only need one numerical value
                   // for the constant coefficient
-                  saved_num_num[curr_zi_order][{deg, zi}] = std::make_pair(el.second, sub_count_num);
+                  saved_num_num[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_num);
                 }
               }
 
@@ -462,7 +370,7 @@ namespace firefly {
                 coef_d.emplace(std::make_pair(deg, std::move(rec)));
 
                 if (deg == 0)
-                  saved_num_den[curr_zi_order][{deg, zi}] = std::make_pair(el.second, sub_count_den);
+                  saved_num_den[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_den);
               }
 
               if ((int) deg <= curr_deg_den && deg > 0 && curr_zi_order[zi - 2] < deg + 3) {
@@ -475,7 +383,7 @@ namespace firefly {
             uint32_t zi_num = curr_deg_num > 0 ? coef_n[curr_deg_num].get_zi() + 1 : 0;
             uint32_t zi_den = curr_deg_den > 0 ? coef_d[curr_deg_den].get_zi() + 1 : 0;
 
-            // reconstruct the numerator
+            // interpolate the numerator
             if (curr_deg_num >= 0) {
               PolyReconst rec = coef_n[curr_deg_num];
 
@@ -488,7 +396,7 @@ namespace firefly {
               }
             }
 
-            // reconstruct the denominator
+            // interpolate the denominator
             if (curr_deg_den >= 0) {
               PolyReconst rec = coef_d[curr_deg_den];
 
@@ -596,79 +504,104 @@ namespace firefly {
               // if the denominator is just a constant, there is no corresponding
               // PolyReconst object. Thus we set the minimal degree to a zero tuple
 
-              if (const_den != 1) {
-                ff_map dummy_map {};
-                terminator = FFInt(1) - const_den;
-                dummy_map.emplace(std::make_pair(std::vector<uint32_t> (n, 0), terminator));
+              if (prime_number == 0) {
+                if (const_den != 1) {
+                  ff_map dummy_map {};
+                  terminator = FFInt(1) - const_den;
+                  dummy_map.emplace(std::make_pair(std::vector<uint32_t> (n, 0), terminator));
 
-                if (normalize_to_den) {
-                  denominator += PolynomialFF(n, dummy_map);
-                  normalizer_den_num = true;
-                } else {
-                  numerator += PolynomialFF(n, dummy_map);
-                  normalizer_den_num = false;
-                }
-
-                normalizer_deg = std::vector<uint32_t> (n, 0);
-              } else if (normalize_to_den && numerator.coefs.find(std::vector<uint32_t> (n, 0)) != numerator.coefs.end()) {
-                terminator = numerator.coefs[std::vector<uint32_t> (n, 0)];
-                normalizer_den_num = false;
-                normalizer_deg = std::vector<uint32_t> (n, 0);
-              } else if (!normalize_to_den && denominator.coefs.find(std::vector<uint32_t> (n, 0)) != denominator.coefs.end()) {
-                terminator = denominator.coefs[std::vector<uint32_t> (n, 0)];
-                normalizer_den_num = true;
-                normalizer_deg = std::vector<uint32_t> (n, 0);
-              } else {
-                for (const auto & el : denominator.coefs) {
-                  add_non_solved_den(el.first);
-
-                  if (normalizer_deg.empty())
-                    normalizer_deg = el.first;
-                  else if (a_grt_b(normalizer_deg, el.first))
-                    normalizer_deg = el.first;
-                }
-
-                for (const auto & candidate : non_solved_degs_den) {
-                  if (candidate.second.size() == 1) {
-                    terminator = denominator.coefs[candidate.second[0]];
+                  if (normalize_to_den) {
+                    denominator += PolynomialFF(n, dummy_map);
                     normalizer_den_num = true;
-                    normalizer_deg = candidate.second[0];
-                    break;
-                  }
-                }
-
-                if (terminator == 0) {
-                  for (const auto & el : numerator.coefs) {
-                    add_non_solved_num(el.first);
+                  } else {
+                    numerator += PolynomialFF(n, dummy_map);
+                    normalizer_den_num = false;
                   }
 
+                  normalizer_deg = std::vector<uint32_t> (n, 0);
+                } else if (normalize_to_den && numerator.coefs.find(std::vector<uint32_t> (n, 0)) != numerator.coefs.end()) {
+                  terminator = numerator.coefs[std::vector<uint32_t> (n, 0)];
+                  normalizer_den_num = false;
+                  normalizer_deg = std::vector<uint32_t> (n, 0);
+                } else if (!normalize_to_den && denominator.coefs.find(std::vector<uint32_t> (n, 0)) != denominator.coefs.end()) {
+                  terminator = denominator.coefs[std::vector<uint32_t> (n, 0)];
+                  normalizer_den_num = true;
+                  normalizer_deg = std::vector<uint32_t> (n, 0);
+                } else {
+                  for (const auto & el : denominator.coefs) {
+                    add_non_solved_den(el.first);
 
-                  for (const auto & candidate : non_solved_degs_num) {
+                    if (normalizer_deg.empty())
+                      normalizer_deg = el.first;
+                    else if (a_grt_b(normalizer_deg, el.first))
+                      normalizer_deg = el.first;
+                  }
+
+                  for (const auto & candidate : non_solved_degs_den) {
                     if (candidate.second.size() == 1) {
-                      terminator = numerator.coefs[candidate.second[0]];
-                      normalizer_den_num = false;
+                      terminator = denominator.coefs[candidate.second[0]];
+                      normalizer_den_num = true;
                       normalizer_deg = candidate.second[0];
                       break;
                     }
                   }
+
+                  if (terminator == 0) {
+                    for (const auto & el : numerator.coefs) {
+                      add_non_solved_num(el.first);
+                    }
+
+                    for (const auto & candidate : non_solved_degs_num) {
+                      if (candidate.second.size() == 1) {
+                        terminator = numerator.coefs[candidate.second[0]];
+                        normalizer_den_num = false;
+                        normalizer_deg = candidate.second[0];
+                        break;
+                      }
+                    }
+                  }
+
+                  if (terminator == 0) {
+                    // normalize to the minimal degree of the denominator
+                    terminator = denominator.coefs[normalizer_deg];
+                    normalizer_den_num = true;
+                    is_singular_system = true;
+                  }
                 }
 
-                if (terminator == 0) {
-                  // normalize to the minimal degree of the denominator
-                  terminator = denominator.coefs[normalizer_deg];
-                  normalizer_den_num = true;
-                  is_singular_system = true;
+                shifted_max_num_eqn = coef_n.size() + coef_d.size();
+              } else {
+                if (const_den != 1) {
+                  ff_map dummy_map {};
+                  terminator = FFInt(1) - const_den;
+                  dummy_map.emplace(std::make_pair(std::vector<uint32_t> (n, 0), terminator));
+
+                  if (normalize_to_den) {
+                    denominator += PolynomialFF(n, dummy_map);
+                    normalizer_den_num = true;
+                  } else {
+                    numerator += PolynomialFF(n, dummy_map);
+                    normalizer_den_num = false;
+                  }
                 }
+
+                if (normalizer_den_num)
+                  terminator = denominator.coefs[normalizer_deg];
+                else
+                  terminator = numerator.coefs[normalizer_deg];
               }
 
-              shifted_max_num_eqn = coef_n.size()  + coef_d.size();
+              curr_zi_order_num = std::vector<uint32_t> (n - 1, 1);
+              curr_zi_order_den = std::vector<uint32_t> (n - 1, 1);
+
               coef_n.clear();
               coef_d.clear();
-              curr_zi_order_num.clear();
-              curr_zi_order_den.clear();
 
               // normalize
               FFInt equalizer = FFInt(1) / terminator;
+
+              if (equalizer == 0)
+                div_by_zero = true;
 
               numerator *= equalizer;
               denominator *= equalizer;
@@ -676,13 +609,9 @@ namespace firefly {
               combine_primes(numerator.coefs, denominator.coefs);
 
               std::unique_lock<std::mutex> lock(mutex_status);
-              ++prime_number;
-              queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
-              saved_ti.clear();
               std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
               curr_zi = 2;
               zi = 2;
-              new_prime = true;
             } else if (zi > 0) {
               // set new random
               for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
@@ -707,7 +636,7 @@ namespace firefly {
                 // Solve multivariate Vandermonde system for corresponding degree,
                 // remove entry from non_solved_degs and add it to solve_degs
                 if (coef_mat_num[key].size() == non_solved_degs_num[key].size()) {
-                  solved_num += solve_transposed_vandermonde(non_solved_degs_num[key], coef_mat_num[key]);
+                  solved_num += solve_vandermonde_system(non_solved_degs_num[key], coef_mat_num[key], get_anchor_points());
                   non_solved_degs_num.erase(key);
                   coef_mat_num.erase(key);
                 }
@@ -720,7 +649,7 @@ namespace firefly {
                   coef_mat_den[key].emplace_back(std::make_pair(sol.second, 0));
 
                 if (coef_mat_den[key].size() == non_solved_degs_den[key].size()) {
-                  solved_den += solve_transposed_vandermonde(non_solved_degs_den[key], coef_mat_den[key]);
+                  solved_den += solve_vandermonde_system(non_solved_degs_den[key], coef_mat_den[key], get_anchor_points());
                   non_solved_degs_den.erase(key);
                   coef_mat_den.erase(key);
                 }
@@ -854,11 +783,7 @@ namespace firefly {
               combine_primes(solved_num.coefs, solved_den.coefs);
               {
                 std::unique_lock<std::mutex> lock(mutex_status);
-                ++prime_number;
-                queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
-                saved_ti.clear();
                 std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
-                new_prime = true;
               }
               // reset solved coefficients
               ff_map zero_deg {};
@@ -924,6 +849,8 @@ namespace firefly {
         // since the constant is just a constant, we do not have to get mutliple
         // numerical values to reconstruct the coefficient
         if (curr_deg == 0) {
+          tmp_sol_const_num = 0;
+          tmp_sol_const_den = 0;
           while (!rec.is_new_prime()) {
             FFInt sub = 0;
 
@@ -1089,7 +1016,8 @@ namespace firefly {
         {
           std::unique_lock<std::mutex> lock(mutex_status);
           num_eqn = max_deg_den + max_deg_num + 1
-                    - tmp_solved_coefs_num - tmp_solved_coefs_den;
+                    - tmp_solved_coefs_num - tmp_solved_coefs_den
+                    - tmp_sol_const_num - tmp_sol_const_den;
         }
 
         if (curr_deg >= 0) {
@@ -1111,8 +1039,10 @@ namespace firefly {
     sub_count_den = 0;
     sub_count_num = 0;
     saved_ti = ff_vec_map();
+    tmp_sol_const_num = 0;
+    tmp_sol_const_den = 0;
 
-    if (is_singular_system) {
+    if (is_singular_system && !div_by_zero) {
       for (const auto & el : non_solved_degs_num) {
         tmp_deg_num.emplace_back(el.first);
       }
@@ -1126,263 +1056,300 @@ namespace firefly {
     non_solved_degs_num.clear();
     sub_num = polff_vec_map();
     sub_den = polff_vec_map();
+    saved_num_num = ff_map_map();
+    saved_num_den = ff_map_map();
+    coef_d = std::unordered_map<uint32_t, PolyReconst>();
+    coef_n = std::unordered_map<uint32_t, PolyReconst>();
 
-    if (!use_chinese_remainder) {
-      saved_num_num = ff_map_map();
-      saved_num_den = ff_map_map();
-      coef_d = std::unordered_map<uint32_t, PolyReconst>();
-      coef_n = std::unordered_map<uint32_t, PolyReconst>();
-      combined_ni = convert_to_mpz(numerator);
-      combined_di = convert_to_mpz(denominator);
+    if (!div_by_zero) {
+      if (!use_chinese_remainder) {
+        combined_ni = convert_to_mpz(numerator);
+        combined_di = convert_to_mpz(denominator);
 
-      // if the coefficient is not a rational number thus divided by 1,
-      // it will not change in the next run and can be omitted to save
-      // numerical runs
-      mpz_map combined_ni_back = combined_ni;
+        // if the coefficient is not a rational number thus divided by 1,
+        // it will not change in the next run and can be omitted to save
+        // numerical runs
+        mpz_map combined_ni_back = combined_ni;
 
-      for (auto & c_ni : combined_ni_back) {
-        RationalNumber rn_wang;
-        bool wang;
+        for (auto & c_ni : combined_ni_back) {
+          /*RationalNumber rn_wang;
+          bool wang;
 
-        auto res = get_rational_coef(c_ni.second, combined_prime);
-        wang = res.first;
+          auto res = get_rational_coef(c_ni.second, combined_prime);
+          wang = res.first;
 
-        if (wang)
-          rn_wang = res.second;
+          if (wang)
+            rn_wang = res.second;
 
-        if (wang && rn_wang.numerator == c_ni.second && rn_wang.denominator == 1) {
-          remove_ni(c_ni.first, rn_wang);
-          continue;
-        }
-
-        add_non_solved_num(c_ni.first);
-      }
-
-      mpz_map combined_di_back = combined_di;
-
-      for (auto & c_di : combined_di_back) {
-        RationalNumber rn_wang;
-        bool wang;
-
-        auto res = get_rational_coef(c_di.second, combined_prime);
-        wang = res.first;
-
-        if (wang)
-          rn_wang = res.second;
-
-        if (wang && rn_wang.numerator == c_di.second && rn_wang.denominator == 1) {
-          remove_di(c_di.first, rn_wang);
-          continue;
-        }
-
-        add_non_solved_den(c_di.first);
-      }
-
-      if (is_singular_system) {
-        check_for_solved_degs(tmp_deg_num, true);
-
-        if (is_singular_system)
-          check_for_solved_degs(tmp_deg_den, false);
-      }
-
-      combined_ni_back.clear();
-      combined_di_back.clear();
-      tmp_solved_coefs_num = 0;
-      tmp_solved_coefs_den = 0;
-    } else {
-      mpz_map combined_ni_back = combined_ni;
-      mpz_map combined_di_back = combined_di;
-      mpz_class combined_prime_back = combined_prime;
-      std::pair<mpz_class, mpz_class> p1;
-      std::pair<mpz_class, mpz_class> p2;
-      std::pair<mpz_class, mpz_class> p3;
-
-      //numerator
-      for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
-        p1 = std::make_pair(it->second, combined_prime);
-        p2 = std::make_pair(mpz_class(numerator[it->first].n), FFInt::p);
-        p3 = run_chinese_remainder(p1, p2);
-        combined_ni[it->first] = p3.first;
-      }
-
-      // denominator
-      for (auto it = combined_di.begin(); it != combined_di.end(); ++it) {
-        p1 = std::make_pair(it->second, combined_prime);
-        p2 = std::make_pair(mpz_class(denominator[it->first].n), FFInt::p);
-        p3 = run_chinese_remainder(p1, p2);
-        combined_di[it->first] = p3.first;
-      }
-
-      combined_prime = p3.second;
-
-      // Remove already known coefficients from solve algorithm to save numerical runs
-      for (auto & c_ni : combined_ni_back) {
-        if (g_ni.find(c_ni.first) == g_ni.end()) {
-          RationalNumber last_rn_wang;
-          RationalNumber curr_rn_wang;
-          bool last_wang;
-          bool curr_wang;
-          auto res = get_rational_coef(c_ni.second, combined_prime_back);
-          last_wang = res.first;
-
-          if (last_wang)
-            last_rn_wang = res.second;
-
-          res = get_rational_coef(combined_ni[c_ni.first], combined_prime);
-          curr_wang = res.first;
-
-          if (curr_wang)
-            curr_rn_wang = res.second;
-
-
-          RationalNumber last_rn_monagan;
-          RationalNumber curr_rn_monagan;
-          bool last_monagan;
-          bool curr_monagan;
-
-          res = get_rational_coef_mqrr(c_ni.second, combined_prime_back);
-          last_monagan = res.first;
-
-          if (last_monagan)
-            last_rn_monagan = res.second;
-
-          res = get_rational_coef_mqrr(combined_ni[c_ni.first], combined_prime);
-          curr_monagan = res.first;
-
-          if (curr_monagan)
-            curr_rn_monagan = res.second;
-
-
-          if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
-            remove_ni(c_ni.first, curr_rn_wang);
+          if (wang && rn_wang.numerator == c_ni.second && rn_wang.denominator == 1) {
+            remove_ni(c_ni.first, rn_wang);
             continue;
-          }
+          }*/
 
-          if (last_monagan && curr_monagan && last_rn_monagan == curr_rn_monagan) {
-            remove_ni(c_ni.first, curr_rn_monagan);
-            continue;
-          }
-
-          if (c_ni.second == combined_ni[c_ni.first]) {
-            RationalNumber rn = RationalNumber(c_ni.second, 1);
-            remove_ni(c_ni.first, rn);
-          } else
+          if (!normalizer_den_num && c_ni.first == normalizer_deg)
+            remove_ni(c_ni.first, RationalNumber(1, 1));
+          else
             add_non_solved_num(c_ni.first);
         }
-      }
 
-      for (auto & c_di : combined_di_back) {
-        if (g_di.find(c_di.first) == g_di.end()) {
-          RationalNumber last_rn_wang;
-          RationalNumber curr_rn_wang;
-          bool last_wang;
-          bool curr_wang;
-          auto res = get_rational_coef(c_di.second, combined_prime_back);
-          last_wang = res.first;
+        mpz_map combined_di_back = combined_di;
 
-          if (last_wang)
-            last_rn_wang = res.second;
+        for (auto & c_di : combined_di_back) {
+          /*RationalNumber rn_wang;
+          bool wang;
 
-          res = get_rational_coef(combined_di[c_di.first], combined_prime);
-          curr_wang = res.first;
+          auto res = get_rational_coef(c_di.second, combined_prime);
+          wang = res.first;
 
-          if (curr_wang)
-            curr_rn_wang = res.second;
+          if (wang)
+            rn_wang = res.second;
 
-
-          RationalNumber last_rn_monagan;
-          RationalNumber curr_rn_monagan;
-          bool last_monagan;
-          bool curr_monagan;
-
-          res = get_rational_coef_mqrr(c_di.second, combined_prime_back);
-          last_monagan = res.first;
-
-          if (last_monagan)
-            last_rn_monagan = res.second;
-
-          res = get_rational_coef_mqrr(combined_di[c_di.first], combined_prime);
-          curr_monagan = res.first;
-
-          if (curr_monagan)
-            curr_rn_monagan = res.second;
-
-          if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
-            remove_di(c_di.first, curr_rn_wang);
+          if (wang && rn_wang.numerator == c_di.second && rn_wang.denominator == 1) {
+            remove_di(c_di.first, rn_wang);
             continue;
-          }
+          }*/
 
-          if (last_monagan && curr_monagan && last_rn_monagan == curr_rn_monagan) {
-            remove_di(c_di.first, curr_rn_monagan);
-            continue;
-          }
-
-          if (c_di.second == combined_di[c_di.first]) {
-            RationalNumber rn = RationalNumber(c_di.second, 1);
-            remove_di(c_di.first, rn);
-          } else
+          if (normalizer_den_num && c_di.first == normalizer_deg)
+            remove_di(c_di.first, RationalNumber(1, 1));
+          else
             add_non_solved_den(c_di.first);
+        }
+
+
+        if (is_singular_system) {
+          check_for_solved_degs(tmp_deg_num, true);
+
+          if (is_singular_system)
+            check_for_solved_degs(tmp_deg_den, false);
+        }
+      } else {
+        for (const auto & el : numerator) {
+          if (combined_ni.find(el.first) == combined_ni.end() && g_ni.find(el.first) == g_ni.end())
+            combined_ni.emplace(std::make_pair(el.first, 0));
+        }
+
+        for (const auto & el : denominator) {
+          if (combined_di.find(el.first) == combined_di.end() && g_di.find(el.first) == g_di.end())
+            combined_di.emplace(std::make_pair(el.first, 0));
+        }
+
+        for (const auto & el : combined_ni) {
+          if (numerator.find(el.first) == numerator.end() && g_ni.find(el.first) == g_ni.end())
+            numerator.emplace(std::make_pair(el.first, 0));
+        }
+
+        for (const auto & el : combined_di) {
+          if (denominator.find(el.first) == denominator.end() && g_di.find(el.first) == g_di.end())
+            denominator.emplace(std::make_pair(el.first, 0));
+        }
+
+        mpz_map combined_ni_back = combined_ni;
+        mpz_map combined_di_back = combined_di;
+        mpz_class combined_prime_back = combined_prime;
+        std::pair<mpz_class, mpz_class> p1;
+        std::pair<mpz_class, mpz_class> p2;
+        std::pair<mpz_class, mpz_class> p3;
+
+        //numerator
+        for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
+          p1 = std::make_pair(it->second, combined_prime);
+          p2 = std::make_pair(mpz_class(numerator[it->first].n), FFInt::p);
+          p3 = run_chinese_remainder(p1, p2);
+          combined_ni[it->first] = p3.first;
+        }
+
+        // denominator
+        for (auto it = combined_di.begin(); it != combined_di.end(); ++it) {
+          p1 = std::make_pair(it->second, combined_prime);
+          p2 = std::make_pair(mpz_class(denominator[it->first].n), FFInt::p);
+          p3 = run_chinese_remainder(p1, p2);
+          combined_di[it->first] = p3.first;
+        }
+
+        combined_prime = p3.second;
+
+        // Remove already known coefficients from solve algorithm to save numerical runs
+        for (auto & c_ni : combined_ni_back) {
+          if (g_ni.find(c_ni.first) == g_ni.end()) {
+            RationalNumber last_rn_wang;
+            RationalNumber curr_rn_wang;
+            bool last_wang;
+            bool curr_wang;
+            auto res = get_rational_coef(c_ni.second, combined_prime_back);
+            last_wang = res.first;
+
+            if (last_wang)
+              last_rn_wang = res.second;
+
+            res = get_rational_coef(combined_ni[c_ni.first], combined_prime);
+            curr_wang = res.first;
+
+            if (curr_wang)
+              curr_rn_wang = res.second;
+
+
+            RationalNumber last_rn_monagan;
+            RationalNumber curr_rn_monagan;
+            bool last_monagan;
+            bool curr_monagan;
+
+            res = get_rational_coef_mqrr(c_ni.second, combined_prime_back);
+            last_monagan = res.first;
+
+            if (last_monagan)
+              last_rn_monagan = res.second;
+
+            res = get_rational_coef_mqrr(combined_ni[c_ni.first], combined_prime);
+            curr_monagan = res.first;
+
+            if (curr_monagan)
+              curr_rn_monagan = res.second;
+
+
+            if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
+              remove_ni(c_ni.first, curr_rn_wang);
+              continue;
+            }
+
+            if (last_monagan && curr_monagan && last_rn_monagan == curr_rn_monagan) {
+              remove_ni(c_ni.first, curr_rn_monagan);
+              continue;
+            }
+
+            if (c_ni.second == combined_ni[c_ni.first]) {
+              RationalNumber rn = RationalNumber(c_ni.second, 1);
+              remove_ni(c_ni.first, rn);
+            } else
+              add_non_solved_num(c_ni.first);
+          }
+        }
+
+        for (auto & c_di : combined_di_back) {
+          if (g_di.find(c_di.first) == g_di.end()) {
+            RationalNumber last_rn_wang;
+            RationalNumber curr_rn_wang;
+            bool last_wang;
+            bool curr_wang;
+            auto res = get_rational_coef(c_di.second, combined_prime_back);
+            last_wang = res.first;
+
+            if (last_wang)
+              last_rn_wang = res.second;
+
+            res = get_rational_coef(combined_di[c_di.first], combined_prime);
+            curr_wang = res.first;
+
+            if (curr_wang)
+              curr_rn_wang = res.second;
+
+
+            RationalNumber last_rn_monagan;
+            RationalNumber curr_rn_monagan;
+            bool last_monagan;
+            bool curr_monagan;
+
+            res = get_rational_coef_mqrr(c_di.second, combined_prime_back);
+            last_monagan = res.first;
+
+            if (last_monagan)
+              last_rn_monagan = res.second;
+
+            res = get_rational_coef_mqrr(combined_di[c_di.first], combined_prime);
+            curr_monagan = res.first;
+
+            if (curr_monagan)
+              curr_rn_monagan = res.second;
+
+            if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
+              remove_di(c_di.first, curr_rn_wang);
+              continue;
+            }
+
+            if (last_monagan && curr_monagan && last_rn_monagan == curr_rn_monagan) {
+              remove_di(c_di.first, curr_rn_monagan);
+              continue;
+            }
+
+            if (c_di.second == combined_di[c_di.first]) {
+              RationalNumber rn = RationalNumber(c_di.second, 1);
+              remove_di(c_di.first, rn);
+            } else
+              add_non_solved_den(c_di.first);
+          }
+        }
+
+        if (is_singular_system) {
+          check_for_solved_degs(tmp_deg_num, true);
+
+          if (is_singular_system)
+            check_for_solved_degs(tmp_deg_den, false);
         }
       }
 
-      if (is_singular_system) {
-        check_for_solved_degs(tmp_deg_num, true);
+      if (prime_number + 1 >= interpolations) {
+        if (is_singular_system) {
+          {
+            std::unique_lock<std::mutex> lock_statics(mutex_statics);
+            need_prime_shift = true;
+          }
 
-        if (is_singular_system)
-          check_for_solved_degs(tmp_deg_den, false);
+          for (const auto & el : g_ni) {
+            if (normalize_to_den)
+              add_non_solved_num(el.first);
+            else if (el.first != std::vector<uint32_t> (n))
+              add_non_solved_num(el.first);
+          }
+
+          for (const auto & el : g_di) {
+            if (!normalize_to_den)
+              add_non_solved_den(el.first);
+            else if (el.first != std::vector<uint32_t> (n))
+              add_non_solved_den(el.first);
+          }
+
+          if (normalize_to_den) {
+            curr_deg_num = max_deg_num;
+
+            if (max_deg_den > 0)
+              curr_deg_den = max_deg_den;
+          } else {
+            curr_deg_den = max_deg_den;
+
+            if (max_deg_num > 0)
+              curr_deg_num = max_deg_num;
+          }
+
+          std::unique_lock<std::mutex> lock(mutex_status);
+          num_eqn = shifted_max_num_eqn;
+        } else {
+          std::unique_lock<std::mutex> lock(mutex_status);
+          num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
+        }
       }
 
-      combined_ni_back.clear();
-      combined_di_back.clear();
-      combined_prime_back = 0;
+      for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
+
+      for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
+    } else {
+      div_by_zero = false;
+      interpolations ++;
+    }
+
+    if (prime_number + 1 < interpolations) {
+      max_deg_num = -1;
+      first_run = true;
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      need_prime_shift = true;
     }
 
     const_den = 0;
-
-    if (is_singular_system) {
-      tmp_solved_coefs_den = 0;
-      tmp_solved_coefs_num = 0;
-      {
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
-        need_prime_shift = true;
-      }
-
-      for (const auto & el : g_ni) {
-        if (normalize_to_den)
-          add_non_solved_num(el.first);
-        else if (el.first != std::vector<uint32_t> (n))
-          add_non_solved_num(el.first);
-      }
-
-      for (const auto & el : g_di) {
-        if (!normalize_to_den)
-          add_non_solved_den(el.first);
-        else if (el.first != std::vector<uint32_t> (n))
-          add_non_solved_den(el.first);
-      }
-
-      if (normalize_to_den) {
-        curr_deg_num = max_deg_num;
-
-        if (max_deg_den > 0)
-          curr_deg_den = max_deg_den;
-      } else {
-        curr_deg_den = max_deg_den;
-
-        if (max_deg_num > 0)
-          curr_deg_num = max_deg_num;
-      }
-
-      std::unique_lock<std::mutex> lock(mutex_status);
-      num_eqn = shifted_max_num_eqn;
-    } else {
-      std::unique_lock<std::mutex> lock(mutex_status);
-      num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
-    }
-
-    for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
-
-    for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
+    std::unique_lock<std::mutex> lock(mutex_status);
+    ++prime_number;
+    queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
+    saved_ti.clear();
+    new_prime = true;
+    tmp_solved_coefs_den = 0;
+    tmp_solved_coefs_num = 0;
 
     // Check if the state should be written out after this prime
     if (tag.size() > 0)
@@ -1470,23 +1437,6 @@ namespace firefly {
     return run_test;
   }
 
-  FFInt RatReconst::comp_ai(int i, int ip, const FFInt& num) {
-    if (ip == 0) {
-      return num;
-    } else {
-      FFInt ai_i = comp_ai(i, ip - 1, num);
-      return (ti[i] - ti[ip - 1]) / (ai_i - ai[ip - 1]);
-    }
-  }
-
-  FFInt RatReconst::comp_fyi(uint32_t i, uint32_t ip, const FFInt& y) {
-    if (ip == 0) {
-      return ai[i];
-    } else {
-      return ai[i - ip] + (-ti[i - ip] + y) / comp_fyi(i, ip - 1, y);
-    }
-  }
-
   std::pair<ff_map, ff_map> RatReconst::solve_gauss() {
     std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
     coef_mat.clear();
@@ -1500,6 +1450,9 @@ namespace firefly {
     for (const auto & el : coef_n) {
       uint32_t tmp_key = el.first;
 
+      if (tmp_key == 0 && tmp_sol_const_num == 1)
+        continue;
+
       if ((int)tmp_key <= curr_deg_num) {
         std::vector<uint32_t> power = {tmp_key};
         numerator.emplace(std::make_pair(std::move(power), results[counter]));
@@ -1509,6 +1462,9 @@ namespace firefly {
 
     for (const auto & el : coef_d) {
       uint32_t tmp_key = el.first;
+
+      if (tmp_key == 0 && tmp_sol_const_den == 1)
+        continue;
 
       if ((int) tmp_key <= curr_deg_den) {
         std::vector<uint32_t> power = {tmp_key};
@@ -1567,38 +1523,6 @@ namespace firefly {
     return std::make_pair(numerator, denominator);
   }
 
-  std::pair<ff_map, ff_map> RatReconst::construct_canonical() {
-    if (ai.size() == 1) {
-      ff_map numerator_ff;
-      std::vector<uint32_t> zero_deg = {0};
-      numerator_ff.emplace(std::make_pair(zero_deg, ai[0]));
-      ff_map denominator_ff;
-      denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1)));
-      return std::make_pair(numerator_ff, denominator_ff);
-    } else {
-      std::pair<PolynomialFF, PolynomialFF> r = iterate_canonical(1);
-      FFInt mti = -ti[0];
-      return std::make_pair((r.first * ai[0] + r.second * mti + r.second.mul(1)).coefs,
-                            r.first.coefs);
-    }
-  }
-
-  std::pair<PolynomialFF, PolynomialFF> RatReconst::iterate_canonical(uint32_t i) {
-    if (i < ai.size() - 1) {
-      std::pair<PolynomialFF, PolynomialFF> fnp1 = iterate_canonical(i + 1);
-      FFInt mti = -ti[i];
-      return std::pair<PolynomialFF, PolynomialFF> (fnp1.first * ai[i] + fnp1.second.mul(1) + fnp1.second * mti,
-                                                    fnp1.first);
-    } else {
-      ff_map numerator_ff;
-      std::vector<uint32_t> zero_deg = {0};
-      numerator_ff.emplace(std::make_pair(zero_deg, ai[i]));
-      ff_map denominator_ff;
-      denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1)));
-      return std::make_pair(PolynomialFF(1, numerator_ff), PolynomialFF(1, denominator_ff));
-    }
-  }
-
   RationalFunction RatReconst::normalize(RationalFunction& rf) {
     RationalNumber equalizer = rf.denominator.coefs[0].coef;
     RationalNumber terminator(equalizer.denominator, equalizer.numerator);
@@ -1608,7 +1532,7 @@ namespace firefly {
     return rf;
   }
 
-  bool RatReconst::test_guess(const FFInt& num) {
+  bool RatReconst::test_guess(const FFInt& num, const FFInt& ti) {
     ff_map g_ff_ni = convert_to_ffint(g_ni);
     ff_map g_ff_di = convert_to_ffint(g_di);
     PolynomialFF g_ny(n, g_ff_ni);
@@ -1616,10 +1540,10 @@ namespace firefly {
     std::vector<FFInt> yis = std::vector<FFInt> (n);
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
-      yis[0] = ti[0] + shift[0];
+      yis[0] = ti + shift[0];
 
       for (uint32_t i = 1; i < n; ++i) {
-        yis[i] = ti[0] * rand_zi[std::make_pair(i + 1, 1)].pow(curr_zi_order[i-1]) + shift[i];
+        yis[i] = ti * rand_zi[std::make_pair(i + 1, 1)].pow(curr_zi_order[i - 1]) + shift[i];
       }
     }
 
@@ -1634,314 +1558,6 @@ namespace firefly {
   void RatReconst::remove_di(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn) {
     g_di[deg_vec] =  rn;
     combined_di.erase(deg_vec);
-  }
-
-  RatReconst::RatReconst(const RatReconst& other) : BaseReconst(other) {
-    std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
-    std::lock(lock_my_status, lock_other_status);
-
-    first_run = other.first_run;
-    coef_mat = other.coef_mat;
-    curr_zi = other.curr_zi;
-    saved_ti = other.saved_ti;
-    ai = other.ai;
-    coef_n = other.coef_n;
-    coef_d = other.coef_d;
-    non_solved_degs_den = other.non_solved_degs_den;
-    non_solved_degs_num = other.non_solved_degs_num;
-    saved_num_num = other.saved_num_num;
-    saved_num_den = other.saved_num_den;
-    max_deg_num = other.max_deg_num;
-    max_deg_den = other.max_deg_den;
-    curr_deg_num = other.curr_deg_num;
-    curr_deg_den = other.curr_deg_den;
-    curr_zi_order_num = other.curr_zi_order_num;
-    curr_zi_order_den = other.curr_zi_order_den;
-    tmp_solved_coefs_num = other.tmp_solved_coefs_num;
-    tmp_solved_coefs_den = other.tmp_solved_coefs_den;
-    result = other.result;
-    ti = other.ti;
-    g_ni = other.g_ni;
-    g_di = other.g_di;
-    combined_ni = other.combined_ni;
-    combined_di = other.combined_di;
-    coef_mat_num = other.coef_mat_num;
-    coef_mat_den = other.coef_mat_den;
-    solved_num = other.solved_num;
-    solved_den = other.solved_den;
-    solved_degs_num = other.solved_degs_num;
-    solved_degs_den = other.solved_degs_den;
-    normalizer_deg = other.normalizer_deg;
-    normalizer_den_num = other.normalizer_den_num;
-    is_singular_system = other.is_singular_system;
-    queue = other.queue;
-    const_den = other.const_den;
-    tag = other.tag;
-    sub_num = other.sub_num;
-    sub_den = other.sub_den;
-    parsed_variables = other.parsed_variables;
-    curr_parsed_variable = other.curr_parsed_variable;
-    sub_count_num = other.sub_count_num;
-    sub_count_den = other.sub_count_den;
-    scan = other.scan;
-    all_shift_max_degs = other.all_shift_max_degs;
-    shift_works = other.shift_works;
-    normalize_to_den = other.normalize_to_den;
-    start_deg_num = other.start_deg_num;
-    start_deg_den = other.start_deg_den;
-    shifted_max_num_eqn = other.shifted_max_num_eqn;
-    shifted_degs_num = other.shifted_degs_num;
-    shifted_degs_den = other.shifted_degs_den;
-    zero_degs_num = other.zero_degs_num;
-    zero_degs_den = other.zero_degs_den;
-    num_sub_den = other.num_sub_den;
-    num_sub_num = other.num_sub_num;
-
-    done = other.done;
-    new_prime = other.new_prime;
-    check = other.check;
-    use_chinese_remainder = other.use_chinese_remainder;
-    curr_zi_order = other.curr_zi_order;
-    prime_number = other.prime_number;
-    num_eqn = other.num_eqn;
-    n = other.n;
-    type = other.type;
-    zi = other.zi;
-    combined_prime = other.combined_prime;
-  }
-
-  RatReconst::RatReconst(RatReconst && other) : BaseReconst(other) {
-    std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
-    std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
-    std::lock(lock_my_status, lock_other_status);
-
-    first_run = std::move(other.first_run);
-    coef_mat = std::move(other.coef_mat);
-    curr_zi = std::move(other.curr_zi);
-    saved_ti = std::move(other.saved_ti);
-    ai = std::move(other.ai);
-    coef_n = std::move(other.coef_n);
-    coef_d = std::move(other.coef_d);
-    non_solved_degs_den = std::move(other.non_solved_degs_den);
-    non_solved_degs_num = std::move(other.non_solved_degs_num);
-    saved_num_num = std::move(other.saved_num_num);
-    saved_num_den = std::move(other.saved_num_den);
-    max_deg_num = std::move(other.max_deg_num);
-    max_deg_den = std::move(other.max_deg_den);
-    curr_deg_num = std::move(other.curr_deg_num);
-    curr_deg_den = std::move(other.curr_deg_den);
-    curr_zi_order_num = std::move(other.curr_zi_order_num);
-    curr_zi_order_den = std::move(other.curr_zi_order_den);
-    tmp_solved_coefs_num = std::move(other.tmp_solved_coefs_num);
-    tmp_solved_coefs_den = std::move(other.tmp_solved_coefs_den);
-    result = std::move(other.result);
-    ti = std::move(other.ti);
-    g_ni = std::move(other.g_ni);
-    g_di = std::move(other.g_di);
-    combined_ni = std::move(other.combined_ni);
-    combined_di = std::move(other.combined_di);
-    coef_mat_num = std::move(other.coef_mat_num);
-    coef_mat_den = std::move(other.coef_mat_den);
-    solved_num = std::move(other.solved_num);
-    solved_den = std::move(other.solved_den);
-    solved_degs_num = std::move(other.solved_degs_num);
-    solved_degs_den = std::move(other.solved_degs_den);
-    normalizer_deg = std::move(other.normalizer_deg);
-    normalizer_den_num = std::move(other.normalizer_den_num);
-    is_singular_system = std::move(other.is_singular_system);
-    queue = std::move(other.queue);
-    const_den = std::move(other.const_den);
-    tag = std::move(other.tag);
-    sub_num = std::move(other.sub_num);
-    sub_den = std::move(other.sub_den);
-    parsed_variables = std::move(other.parsed_variables);
-    curr_parsed_variable = std::move(other.curr_parsed_variable);
-    sub_count_num = std::move(other.sub_count_num);
-    sub_count_den = std::move(other.sub_count_den);
-    scan = std::move(other.scan);
-    all_shift_max_degs = std::move(other.all_shift_max_degs);
-    shift_works = std::move(other.shift_works);
-    normalize_to_den = std::move(other.normalize_to_den);
-    start_deg_num = std::move(other.start_deg_num);
-    start_deg_den = std::move(other.start_deg_den);
-    shifted_max_num_eqn = std::move(other.shifted_max_num_eqn);
-    shifted_degs_num = std::move(other.shifted_degs_num);
-    shifted_degs_den = std::move(other.shifted_degs_den);
-    zero_degs_num = std::move(other.zero_degs_num);
-    zero_degs_den = std::move(other.zero_degs_den);
-    num_sub_den = std::move(other.num_sub_den);
-    num_sub_num = std::move(other.num_sub_num);
-
-    done = std::move(other.done);
-    new_prime = std::move(other.new_prime);
-    check = std::move(other.check);
-    use_chinese_remainder = std::move(other.use_chinese_remainder);
-    curr_zi_order = std::move(other.curr_zi_order);
-    prime_number = std::move(other.prime_number);
-    num_eqn = std::move(other.num_eqn);
-    n = std::move(other.n);
-    type = std::move(other.type);
-    zi = std::move(other.zi);
-    combined_prime = std::move(other.combined_prime);
-  }
-
-  RatReconst& RatReconst::operator=(const RatReconst& other) {
-    if (this != &other) {
-      std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
-      std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
-      std::lock(lock_my_status, lock_other_status);
-
-      first_run = other.first_run;
-      coef_mat = other.coef_mat;
-      curr_zi = other.curr_zi;
-      saved_ti = other.saved_ti;
-      ai = other.ai;
-      coef_n = other.coef_n;
-      coef_d = other.coef_d;
-      saved_num_num = other.saved_num_num;
-      saved_num_den = other.saved_num_den;
-      non_solved_degs_den = other.non_solved_degs_den;
-      non_solved_degs_num = other.non_solved_degs_num;
-      max_deg_num = other.max_deg_num;
-      max_deg_den = other.max_deg_den;
-      curr_deg_num = other.curr_deg_num;
-      curr_deg_den = other.curr_deg_den;
-      curr_zi_order_num = other.curr_zi_order_num;
-      curr_zi_order_den = other.curr_zi_order_den;
-      tmp_solved_coefs_num = other.tmp_solved_coefs_num;
-      tmp_solved_coefs_den = other.tmp_solved_coefs_den;
-      result = other.result;
-      ti = other.ti;
-      g_ni = other.g_ni;
-      g_di = other.g_di;
-      combined_ni = other.combined_ni;
-      combined_di = other.combined_di;
-      coef_mat_num = other.coef_mat_num;
-      coef_mat_den = other.coef_mat_den;
-      solved_num = other.solved_num;
-      solved_den = other.solved_den;
-      solved_degs_num = other.solved_degs_num;
-      solved_degs_den = other.solved_degs_den;
-      normalizer_deg = other.normalizer_deg;
-      normalizer_den_num = other.normalizer_den_num;
-      is_singular_system = other.is_singular_system;
-      queue = other.queue;
-      const_den = other.const_den;
-      tag = other.tag;
-      sub_num = other.sub_num;
-      sub_den = other.sub_den;
-      parsed_variables = other.parsed_variables;
-      curr_parsed_variable = other.curr_parsed_variable;
-      sub_count_num = other.sub_count_num;
-      sub_count_den = other.sub_count_den;
-      scan = other.scan;
-      all_shift_max_degs = other.all_shift_max_degs;
-      shift_works = other.shift_works;
-      normalize_to_den = other.normalize_to_den;
-      start_deg_num = other.start_deg_num;
-      start_deg_den = other.start_deg_den;
-      shifted_max_num_eqn = other.shifted_max_num_eqn;
-      shifted_degs_num = other.shifted_degs_num;
-      shifted_degs_den = other.shifted_degs_den;
-      zero_degs_num = other.zero_degs_num;
-      zero_degs_den = other.zero_degs_den;
-      num_sub_den = other.num_sub_den;
-      num_sub_num = other.num_sub_num;
-
-      done = other.done;
-      new_prime = other.new_prime;
-      check = other.check;
-      use_chinese_remainder = other.use_chinese_remainder;
-      curr_zi_order = other.curr_zi_order;
-      prime_number = other.prime_number;
-      num_eqn = other.num_eqn;
-      n = other.n;
-      type = other.type;
-      zi = other.zi;
-      combined_prime = other.combined_prime;
-    }
-
-    return *this;
-  }
-
-  RatReconst& RatReconst::operator=(RatReconst && other) {
-    if (this != &other) {
-      std::unique_lock<std::mutex> lock_my_status(mutex_status, std::defer_lock);
-      std::unique_lock<std::mutex> lock_other_status(other.mutex_status, std::defer_lock);
-      std::lock(lock_my_status, lock_other_status);
-
-      first_run = std::move(other.first_run);
-      coef_mat = std::move(other.coef_mat);
-      curr_zi = std::move(other.curr_zi);
-      saved_ti = std::move(other.saved_ti);
-      ai = std::move(other.ai);
-      coef_n = std::move(other.coef_n);
-      coef_d = std::move(other.coef_d);
-      saved_num_num = std::move(other.saved_num_num);
-      saved_num_den = std::move(other.saved_num_den);
-      non_solved_degs_den = std::move(other.non_solved_degs_den);
-      non_solved_degs_num = std::move(other.non_solved_degs_num);
-      max_deg_num = std::move(other.max_deg_num);
-      max_deg_den = std::move(other.max_deg_den);
-      curr_deg_num = std::move(other.curr_deg_num);
-      curr_deg_den = std::move(other.curr_deg_den);
-      curr_zi_order_num = std::move(other.curr_zi_order_num);
-      curr_zi_order_den = std::move(other.curr_zi_order_den);
-      tmp_solved_coefs_num = std::move(other.tmp_solved_coefs_num);
-      tmp_solved_coefs_den = std::move(other.tmp_solved_coefs_den);
-      result = std::move(other.result);
-      ti = std::move(other.ti);
-      g_ni = std::move(other.g_ni);
-      g_di = std::move(other.g_di);
-      combined_ni = std::move(other.combined_ni);
-      combined_di = std::move(other.combined_di);
-      coef_mat_num = std::move(other.coef_mat_num);
-      coef_mat_den = std::move(other.coef_mat_den);
-      solved_num = std::move(other.solved_num);
-      solved_den = std::move(other.solved_den);
-      solved_degs_num = std::move(other.solved_degs_num);
-      solved_degs_den = std::move(other.solved_degs_den);
-      normalizer_deg = std::move(other.normalizer_deg);
-      normalizer_den_num = std::move(other.normalizer_den_num);
-      is_singular_system = std::move(other.is_singular_system);
-      queue = std::move(other.queue);
-      const_den = std::move(other.const_den);
-      tag = std::move(other.tag);
-      sub_num = std::move(other.sub_num);
-      sub_den = std::move(other.sub_den);
-      parsed_variables = std::move(other.parsed_variables);
-      curr_parsed_variable = std::move(other.curr_parsed_variable);
-      sub_count_num = std::move(other.sub_count_num);
-      sub_count_den = std::move(other.sub_count_den);
-      scan = std::move(other.scan);
-      all_shift_max_degs = std::move(other.all_shift_max_degs);
-      shift_works = std::move(other.shift_works);
-      normalize_to_den = std::move(other.normalize_to_den);
-      start_deg_num = std::move(other.start_deg_num);
-      start_deg_den = std::move(other.start_deg_den);
-      shifted_max_num_eqn = std::move(other.shifted_max_num_eqn);
-      shifted_degs_num = std::move(other.shifted_degs_num);
-      shifted_degs_den = std::move(other.shifted_degs_den);
-      zero_degs_num = std::move(other.zero_degs_num);
-      zero_degs_den = std::move(other.zero_degs_den);
-      num_sub_den = std::move(other.num_sub_den);
-      num_sub_num = std::move(other.num_sub_num);
-
-      done = std::move(other.done);
-      new_prime = std::move(other.new_prime);
-      check = std::move(other.check);
-      use_chinese_remainder = std::move(other.use_chinese_remainder);
-      curr_zi_order = std::move(other.curr_zi_order);
-      prime_number = std::move(other.prime_number);
-      num_eqn = std::move(other.num_eqn);
-      n = std::move(other.n);
-      type = std::move(other.type);
-      zi = std::move(other.zi);
-      combined_prime = std::move(other.combined_prime);
-    }
-
-    return *this;
   }
 
   void RatReconst::disable_shift() {
@@ -1970,7 +1586,13 @@ namespace firefly {
     for (auto & el : coef_n) {
       uint32_t tmp_key = el.first;
 
-      if ((int) tmp_key > curr_deg_num)
+      if (tmp_key == 0 && tmp_sol_const_num == 1) {
+        res -= saved_num_num.at(std::vector<uint32_t> (n - 1, 1)).at( {0, 2}).first;
+
+        if (curr_deg_num < max_deg_num){
+          res += sub_num[0].front().calc(yis);
+        }
+      } else if ((int) tmp_key > curr_deg_num)
         res -= el.second.get_result_ff().calc(yis);
       else
         eq.emplace_back(tmp_ti.pow(tmp_key));
@@ -1979,7 +1601,12 @@ namespace firefly {
     for (auto & el : coef_d) {
       uint32_t tmp_key = el.first;
 
-      if ((int) tmp_key > curr_deg_den)
+      if (tmp_key == 0 && tmp_sol_const_den == 1) {
+        res += saved_num_den.at(std::vector<uint32_t> (n - 1, 1)).at( {0, 2}).first* tmp_num;
+
+        if (curr_deg_den < max_deg_den)
+          res -= sub_den[0].front().calc(yis) * tmp_num;
+      } else if ((int) tmp_key > curr_deg_den)
         res += el.second.get_result_ff().calc(yis) * tmp_num;
       else
         eq.emplace_back(-tmp_ti.pow(tmp_key) * tmp_num);
@@ -2114,75 +1741,6 @@ namespace firefly {
     }
   }
 
-  PolynomialFF RatReconst::solve_transposed_vandermonde(std::vector<std::vector<uint32_t>>& degs,
-                                                        const std::vector<std::pair<FFInt, uint32_t>>& nums) {
-    uint32_t num_eqn = degs.size();
-    std::vector<FFInt> result(num_eqn);
-
-    // calculate base entries of Vandermonde matrix
-    std::vector<FFInt> vis;
-    vis.reserve(num_eqn);
-    std::sort(degs.begin(), degs.end(), std::greater<std::vector<uint32_t>>());
-
-    for (const auto & el : degs) {
-      FFInt vi = 1;
-
-      // z_1 is always = 1 which does not matter while determining the coefficient
-      for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
-        // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
-        vi *= rand_zi[std::make_pair(tmp_zi, 1)].pow(el[tmp_zi - 1]);
-      }
-
-      vis.emplace_back(vi);
-    }
-
-    // Initialize the coefficient vector of the master polynomial
-    std::vector<FFInt> cis(num_eqn);
-
-    // The coefficients of the master polynomial are found by recursion
-    // where we have
-    // P(Z) = (Z - v_0)*(Z - v_1)*...*(Z - v_{n-1})
-    //      =  c_0 + c_1*Z + ... + Z^n
-    cis[num_eqn - 1] = -vis[0];
-
-    for (uint32_t i = 1; i < num_eqn; ++i) {
-      for (uint32_t j = num_eqn - 1 - i; j < num_eqn - 1; ++j) {
-        cis[j] -= vis[i] * cis[j + 1];
-      }
-
-      cis[num_eqn - 1] -= vis[i];
-    }
-
-    // Each subfactor in turn is synthetically divided,
-    // matrix-multiplied by the right hand-side,
-    // and supplied with a denominator (since all vi should be different,
-    // there is no additional check if a coefficient in synthetical division
-    // leads to a vanishing denominator)
-    for (uint32_t i = 0; i < num_eqn; ++i) {
-      FFInt t = 1;
-      FFInt b = 1;
-      FFInt s = nums[num_eqn - 1].first;
-
-      for (int j = num_eqn - 1; j > 0; j--) {
-        b = cis[j] + vis[i] * b;
-        s += nums[j - 1].first * b;
-        t = vis[i] * t + b;
-      }
-
-      result[i] = s / t / vis[i];
-    }
-
-    // Bring result in canonical form
-    ff_map poly;
-
-    for (uint32_t i = 0; i < num_eqn; ++i) {
-      poly.emplace(std::make_pair(degs[i], result[i]));
-    }
-
-    return PolynomialFF(n, poly);
-  }
-
   FFInt RatReconst::get_rand_zi(uint32_t zi, uint32_t order) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return rand_zi.at(std::make_pair(zi, order));
@@ -2248,7 +1806,7 @@ namespace firefly {
       }
     }
 
-    solved_degs_num[key] = solve_transposed_vandermonde(non_solved_degs_num[key], coef_mat_num[key]);
+    solved_degs_num[key] = solve_vandermonde_system(non_solved_degs_num[key], coef_mat_num[key], get_anchor_points());
 
     std::vector<uint32_t> zero_deg(n);
     PolynomialFF zero_poly(n, {{zero_deg, 0}});
@@ -2356,7 +1914,7 @@ namespace firefly {
       }
     }
 
-    solved_degs_den[key] = solve_transposed_vandermonde(non_solved_degs_den[key], coef_mat_den[key]);
+    solved_degs_den[key] = solve_vandermonde_system(non_solved_degs_den[key], coef_mat_den[key], get_anchor_points());
 
     std::vector<uint32_t> zero_deg(n);
     PolynomialFF zero_poly(n, {{zero_deg, 0}});
@@ -2999,4 +2557,86 @@ namespace firefly {
     curr_shift = std::vector<uint32_t>();
     PolyReconst::reset();
   }
+
+  void RatReconst::set_save_interpolation() {
+    interpolations = 100;
+  }
+
+  bool RatReconst::check_if_done(const FFInt& num, const FFInt& ti) {
+    {
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
+      if (!is_singular_system && set_singular_system) {
+        lock_statics.unlock();
+        set_singular_system_vars();
+      }
+    }
+
+    if (rec_rat_coef()) {
+      bool tmp_done = test_guess(num, ti);
+      {
+        std::unique_lock<std::mutex> lock(mutex_status);
+        done = tmp_done;
+      }
+
+      if (done) {
+        if (tag.size() > 0)
+          save_state();
+
+        std::unique_lock<std::mutex> lock(mutex_status);
+        new_prime = false;
+        curr_zi_order = std::vector<uint32_t>();
+        use_chinese_remainder = false;
+        return true;
+      } else {
+        for (const auto & ci : combined_ni) {
+          g_ni.erase(ci.first);
+        }
+
+        for (const auto & ci : combined_di) {
+          g_di.erase(ci.first);
+        }
+      }
+    }
+
+    if (!use_chinese_remainder) use_chinese_remainder = true;
+
+    {
+      std::unique_lock<std::mutex> lock(mutex_status);
+      new_prime = false;
+    }
+
+    if (!is_singular_system) {
+      ff_map tmp_num {};
+      tmp_num.reserve(g_ni.size() + 1);
+      ff_map tmp_den {};
+      tmp_den.reserve(g_di.size() + 1);
+      tmp_num.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
+      tmp_den.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
+
+      for (const auto & el : g_ni) {
+        tmp_num[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
+      }
+
+      for (const auto & el : g_di) {
+        tmp_den[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
+      }
+
+      solved_num = PolynomialFF(n, tmp_num);
+      solved_den = PolynomialFF(n, tmp_den);
+    }
+
+    return false;
+  }
+
+  std::vector<FFInt> RatReconst::get_anchor_points() {
+    std::vector<FFInt> res(n - 1);
+
+    for (uint32_t i = 2; i <= n; ++i) {
+      res[i - 2] = rand_zi[std::make_pair(i, 1)];
+    }
+
+    return res;
+  }
 }
+
