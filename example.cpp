@@ -79,6 +79,7 @@ namespace firefly {
     uint32_t n = 4;
     FFInt::set_new_prime(primes()[0]);
     RatReconst rec(n);
+
     //rec.set_save_interpolation();
 
     // One can set a tag to start from a previously saved run after an interpolation
@@ -209,8 +210,8 @@ namespace firefly {
 
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       //FFInt num = n_eq_1(z1) + tt*FFInt(primes()[1]); // example for n = 1
-      FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-      //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+      //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
+      FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       //FFInt num = bench_3(yis);
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
       //FFInt num = pol_7(yis);

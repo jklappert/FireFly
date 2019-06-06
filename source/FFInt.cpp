@@ -94,13 +94,13 @@ namespace firefly {
 
 #ifdef FLINT
   FFInt& FFInt::operator+=(const FFInt& ffint) {
-    n = n_addmod(n, ffint.n, p);
+    n = (p - ffint.n > n ? n + ffint.n : n + ffint.n - p);
 
     return *this;
   }
 
   FFInt& FFInt::operator-=(const FFInt& ffint) {
-    n = n_submod(n, ffint.n, p);
+    n = (ffint.n > n ? n - ffint.n + p : n - ffint.n);
 
     return *this;
   }
@@ -120,27 +120,22 @@ namespace firefly {
   }
 
   FFInt operator+(const FFInt& a, const FFInt& b) {
-    return FFInt(n_addmod(a.n, b.n, FFInt::p));
+    return FFInt((FFInt::p - b.n > a.n ? a.n + b.n : a.n + b.n - FFInt::p));
   }
 
   FFInt operator-(const FFInt& a, const FFInt& b) {
-    return FFInt(n_submod(a.n, b.n, FFInt::p));
+    return FFInt((b.n > a.n ? a.n - b.n + FFInt::p : a.n - b.n));
   }
 #endif
 
 #ifdef DEFAULT
   FFInt& FFInt::operator+=(const FFInt& ffint) {
-    n += ffint.n;
-
-    if (n >= p) n -= p;
-
+    n = (p - ffint.n > n ? n + ffint.n : n + ffint.n - p);
     return *this;
   }
 
   FFInt& FFInt::operator-=(const FFInt& ffint) {
-    if (ffint.n > n) n += p;
-
-    n -= ffint.n;
+    n = (ffint.n > n ? n - ffint.n + p : n - ffint.n);
     return *this;
   }
 
@@ -155,46 +150,35 @@ namespace firefly {
   }
 
   FFInt FFInt::pow(const FFInt& ffint) const {
-    FFInt result;
+    FFInt res = 1;
 
     if (ffint.n == 2u) {
-      // Fast-track the most common case
-      result.n = mod_mul(n, n, p);
+      // Fast-track
+      res = mod_mul(n, n, p);
     } else {
-      uint64_t exp;
-      uint64_t base;
+      int y = ffint.n;
+      FFInt x = n;
 
-      if (ffint.n < (p >> 1)) {
-        // treat as positive exponent
-        exp = ffint.n;
-        base = n;
-      } else {
-        // treat as negative exponent
-        exp = p - ffint.n;
-        base = mod_inv(n, p); // =1/b.c
+      while (y > 0) {
+        // If y is odd, multiply x with result
+        if (y & 1)
+          res = (res * x);
+
+        // y must be even now
+        y = y >> 1; // y = y/2
+        x *= x;
       }
-
-      result.n = mod_pow(base, exp, p);
     }
 
-    return result;
+    return res;
   }
 
   FFInt operator+(const FFInt& a, const FFInt& b) {
-    auto sum = a.n + b.n;
-
-    if (sum >= FFInt::p) sum -= FFInt::p;
-
-    return FFInt(sum);
+    return FFInt((FFInt::p - b.n > a.n ? a.n + b.n : a.n + b.n - FFInt::p));
   }
 
   FFInt operator-(const FFInt& a, const FFInt& b) {
-    auto diff = a.n;
-
-    if (b.n > diff) diff += FFInt::p;
-
-    diff -= b.n;
-    return FFInt(diff);
+    return FFInt((b.n > a.n ? a.n - b.n + FFInt::p : a.n - b.n));
   }
 #endif
 
@@ -276,9 +260,17 @@ namespace firefly {
 
       // result=0 in the first pass or when the string is zero padded
       // on the left so that the first (few) chunks give zero.
-      if (result) result = (FFInt(result) * FFInt(1000000000000000000uLL)).n; //n_mulmod2_preinv(result, 1000000000000000000uLL, FFInt::p, FFInt::p_inv);
+#ifdef FLINT
 
-      result = (FFInt(result) + FFInt(intchunk)).n;// n_addmod(result, intchunk, FFInt::p);
+      if (result) result = n_mulmod2_preinv(result, 1000000000000000000uLL, FFInt::p, FFInt::p_inv);
+
+      result = n_addmod(result, intchunk, FFInt::p);
+#else
+
+      if (result) result = (FFInt(result) * FFInt(1000000000000000000uLL)).n;
+
+      result = (FFInt(result) + FFInt(intchunk)).n;
+#endif
     }
 
     return result;
