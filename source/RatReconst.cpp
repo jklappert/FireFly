@@ -851,6 +851,7 @@ namespace firefly {
         if (curr_deg == 0) {
           tmp_sol_const_num = 0;
           tmp_sol_const_den = 0;
+
           while (!rec.is_new_prime()) {
             FFInt sub = 0;
 
@@ -1343,11 +1344,13 @@ namespace firefly {
     }
 
     const_den = 0;
-    std::unique_lock<std::mutex> lock(mutex_status);
-    ++prime_number;
-    queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
-    saved_ti.clear();
-    new_prime = true;
+    {
+      std::unique_lock<std::mutex> lock(mutex_status);
+      ++prime_number;
+      queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
+      saved_ti.clear();
+      new_prime = true;
+    }
     tmp_solved_coefs_den = 0;
     tmp_solved_coefs_num = 0;
 
@@ -1589,7 +1592,7 @@ namespace firefly {
       if (tmp_key == 0 && tmp_sol_const_num == 1) {
         res -= saved_num_num.at(std::vector<uint32_t> (n - 1, 1)).at( {0, 2}).first;
 
-        if (curr_deg_num < max_deg_num){
+        if (curr_deg_num < max_deg_num) {
           res += sub_num[0].front().calc(yis);
         }
       } else if ((int) tmp_key > curr_deg_num)
@@ -2154,13 +2157,15 @@ namespace firefly {
       file << tmp_entry;
     }
 
+    file << "interpolations\n" << interpolations << "\n";
+
     file.close();
 
     if (prime_number > 0) {
-      std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
+      /*std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
 
       if (std::remove(old_file_name.c_str()) != 0)
-        WARNING_MSG("The previously saved file could not be deleted.");
+        WARNING_MSG("The previously saved file could not be deleted.");*/
     }
   }
 
@@ -2234,6 +2239,9 @@ namespace firefly {
           } else if (line == "combined_di") {
             curr_parsed_variable = COMBINED_DI;
             parsed_variables[COMBINED_DI] = true;
+          } else if (line == "interpolations") {
+            curr_parsed_variable = INTERPOLATIONS;
+            parsed_variables[INTERPOLATIONS] = true;
           } else {
             switch (curr_parsed_variable) {
               case COMBINED_PRIME: {
@@ -2392,6 +2400,17 @@ namespace firefly {
 
                 break;
               }
+
+              case INTERPOLATIONS: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(-1);
+                }
+
+                interpolations = std::stoi(line);
+
+                break;
+              }
             }
 
           }
@@ -2420,45 +2439,47 @@ namespace firefly {
       std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
       new_prime = true;
 
-      if (is_singular_system) {
-        tmp_solved_coefs_den = 0;
-        tmp_solved_coefs_num = 0;
-        {
-          std::unique_lock<std::mutex> lock_statics(mutex_statics);
-          need_prime_shift = true;
-        }
+      if (prime_number >= interpolations) {
+        if (is_singular_system) {
+          tmp_solved_coefs_den = 0;
+          tmp_solved_coefs_num = 0;
+          {
+            std::unique_lock<std::mutex> lock_statics(mutex_statics);
+            need_prime_shift = true;
+          }
 
-        for (const auto & el : g_ni) {
-          if (normalize_to_den)
-            add_non_solved_num(el.first);
-          else if (el.first != std::vector<uint32_t> (n))
-            add_non_solved_num(el.first);
-        }
+          for (const auto & el : g_ni) {
+            if (normalize_to_den)
+              add_non_solved_num(el.first);
+            else if (el.first != std::vector<uint32_t> (n))
+              add_non_solved_num(el.first);
+          }
 
-        for (const auto & el : g_di) {
-          if (!normalize_to_den)
-            add_non_solved_den(el.first);
-          else if (el.first != std::vector<uint32_t> (n))
-            add_non_solved_den(el.first);
-        }
+          for (const auto & el : g_di) {
+            if (!normalize_to_den)
+              add_non_solved_den(el.first);
+            else if (el.first != std::vector<uint32_t> (n))
+              add_non_solved_den(el.first);
+          }
 
-        if (normalize_to_den) {
-          curr_deg_num = max_deg_num;
-
-          if (max_deg_den > 0)
-            curr_deg_den = max_deg_den;
-        } else {
-          curr_deg_den = max_deg_den;
-
-          if (max_deg_num > 0)
+          if (normalize_to_den) {
             curr_deg_num = max_deg_num;
-        }
 
-        std::unique_lock<std::mutex> lock(mutex_status);
-        num_eqn = shifted_max_num_eqn;
-      } else {
-        std::unique_lock<std::mutex> lock(mutex_status);
-        num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
+            if (max_deg_den > 0)
+              curr_deg_den = max_deg_den;
+          } else {
+            curr_deg_den = max_deg_den;
+
+            if (max_deg_num > 0)
+              curr_deg_num = max_deg_num;
+          }
+
+          std::unique_lock<std::mutex> lock(mutex_status);
+          num_eqn = shifted_max_num_eqn;
+        } else {
+          std::unique_lock<std::mutex> lock(mutex_status);
+          num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
+        }
       }
 
       for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};

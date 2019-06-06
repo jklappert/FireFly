@@ -79,6 +79,10 @@ namespace firefly {
      *  @return returns the currently interpoleded i of the corresponding zi
      */
     uint32_t get_zi();
+    /**
+     *  Sets a new seed for the random number generator
+     */
+    void set_seed(uint64_t seed);
   protected:
     bool use_chinese_remainder = false; /**< A bool which indicates if the Chinese Remainder Theorem is used */
     bool check = false; /**< A bool which indicates if one could check the current interpolation */

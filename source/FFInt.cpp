@@ -18,6 +18,7 @@
 
 #include <sstream>
 #include "FFInt.hpp"
+#include "utils.hpp"
 #ifdef FLINT
 #include <ulong_extras.h>
 #endif
@@ -127,6 +128,76 @@ namespace firefly {
   }
 #endif
 
+#ifdef DEFAULT
+  FFInt& FFInt::operator+=(const FFInt& ffint) {
+    n += ffint.n;
+
+    if (n >= p) n -= p;
+
+    return *this;
+  }
+
+  FFInt& FFInt::operator-=(const FFInt& ffint) {
+    if (ffint.n > n) n += p;
+
+    n -= ffint.n;
+    return *this;
+  }
+
+  FFInt& FFInt::operator*=(const FFInt& ffint) {
+    n = mod_mul(n, ffint.n, p);
+    return *this;
+  }
+
+  FFInt& FFInt::operator/=(const FFInt& ffint) {
+    n = mod_mul(n, mod_inv(ffint.n, p), p);
+    return *this;
+  }
+
+  FFInt FFInt::pow(const FFInt& ffint) const {
+    FFInt result;
+
+    if (ffint.n == 2u) {
+      // Fast-track the most common case
+      result.n = mod_mul(n, n, p);
+    } else {
+      uint64_t exp;
+      uint64_t base;
+
+      if (ffint.n < (p >> 1)) {
+        // treat as positive exponent
+        exp = ffint.n;
+        base = n;
+      } else {
+        // treat as negative exponent
+        exp = p - ffint.n;
+        base = mod_inv(n, p); // =1/b.c
+      }
+
+      result.n = mod_pow(base, exp, p);
+    }
+
+    return result;
+  }
+
+  FFInt operator+(const FFInt& a, const FFInt& b) {
+    auto sum = a.n + b.n;
+
+    if (sum >= FFInt::p) sum -= FFInt::p;
+
+    return FFInt(sum);
+  }
+
+  FFInt operator-(const FFInt& a, const FFInt& b) {
+    auto diff = a.n;
+
+    if (b.n > diff) diff += FFInt::p;
+
+    diff -= b.n;
+    return FFInt(diff);
+  }
+#endif
+
   FFInt FFInt::operator-() const {
     return FFInt(p - n);
   }
@@ -180,7 +251,7 @@ namespace firefly {
   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   * GNU General Public License for more details.
   */
-  uint64_t FFInt::parse_longint(const std::string& str) {
+  uint64_t FFInt::parse_longint(const std::string& str) const {
     // Parse a long integer, passed as a string, take the modulus wrt. prime
     // and return it. The string is split into chunks of at most 18 digits
     // which are then put together via modular arithmetic.
@@ -244,6 +315,16 @@ namespace firefly {
 
   FFInt operator*(const FFInt& a, const FFInt& b) {
     return FFInt(n_mulmod2_preinv(a.n, b.n, FFInt::p, FFInt::p_inv));
+  }
+#endif
+
+#ifdef DEFAULT
+  FFInt operator/(const FFInt& a, const FFInt& b) {
+    return FFInt(mod_mul(a.n, mod_inv(b.n, FFInt::p), FFInt::p));
+  }
+
+  FFInt operator*(const FFInt& a, const FFInt& b) {
+    return FFInt(mod_mul(a.n, b.n, FFInt::p));
   }
 #endif
 

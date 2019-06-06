@@ -174,8 +174,8 @@ namespace firefly {
       base *= base;
     }
 
-    result.reserve(size - 2);
-    //result.emplace_back(std::vector<uint32_t> (r));
+    result.reserve(size - 1);
+    result.emplace_back(std::vector<uint32_t> (r));
     std::vector<uint32_t> set = {0, 1};
 
     for (uint32_t counter = 1; counter < size - 1; ++counter) {
@@ -324,4 +324,60 @@ namespace firefly {
 
     return PolynomialFF(n + 1, poly);
   }
+
+#ifdef DEFAULT
+  uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {
+    // m must be at most 63 bit.
+    uint64_t d = 0;
+    uint64_t mp2 = m >> 1;
+
+    for (int i = 0; i != 64; ++i) {
+      d = (d > mp2) ? (d << 1) - m : d << 1;
+
+      if (a & 0x8000000000000000ULL) d += b;
+
+      if (d > m) d -= m;
+
+      a <<= 1;
+    }
+
+    return d;
+  }
+
+  uint64_t mod_pow(uint64_t base, uint64_t exp, uint64_t m) {
+    // m must be at most 63 bit
+    uint64_t res = 1;
+
+    while (exp) {
+      if (exp & 1) res = mod_mul(res, base, m);
+
+      base = mod_mul(base, base, m);
+      exp >>= 1;
+    }
+
+    return res;
+  }
+
+  uint64_t mod_inv(uint64_t a, uint64_t m) {
+    int64_t t {0};
+    int64_t newt {1};
+    int64_t tmpt;
+    uint64_t r {m};
+    uint64_t newr {a};
+    uint64_t tmpr;
+    uint64_t q;
+
+    while (newr) {
+      q = r / newr;
+      tmpt = t;
+      t = newt;
+      newt = tmpt - q * newt;
+      tmpr = r;
+      r = newr;
+      newr = tmpr - q * newr;
+    }
+
+    return t < 0 ? t + m : t;
+  }
+#endif
 }

@@ -54,24 +54,24 @@ namespace firefly {
    */
   std::pair<bool, RationalNumber> get_rational_coef_mqrr(const mpz_class& a, const mpz_class& p);
 
-   /**
-   *  Solves the given system of equations using a Gauss-Jordan algorithm
-   *  @param num_eqn the number of equations
-   *  @param coef_mat the matrix which represents the system of equations
-   *
-   */
+  /**
+  *  Solves the given system of equations using a Gauss-Jordan algorithm
+  *  @param num_eqn the number of equations
+  *  @param coef_mat the matrix which represents the system of equations
+  *
+  */
   std::vector<FFInt> solve_gauss_system(uint32_t num_eqn,
                                         std::vector<std::vector<FFInt>>& coef_mat);
-   /**
-   *  Solves the given modified Vandermonde system
-   *  @param degs the contributing degrees
-   *  @param nums the evaluated numerical values
-   *  @param val the anchor points
-   *  @return the polynomial
-   */
+  /**
+  *  Solves the given modified Vandermonde system
+  *  @param degs the contributing degrees
+  *  @param nums the evaluated numerical values
+  *  @param val the anchor points
+  *  @return the polynomial
+  */
   PolynomialFF solve_vandermonde_system(std::vector<std::vector<uint32_t>>& degs,
-                       const std::vector<std::pair<FFInt, uint32_t>>& nums,
-                       const std::vector<FFInt> val);
+                                        const std::vector<std::pair<FFInt, uint32_t>>& nums,
+                                        const std::vector<FFInt> val);
   /**
    *  Compares two vetors colexographically, i.e. (1,0,0) < (0,1,0), and returns
    *  true if the first arguement is greater than the second
@@ -104,4 +104,21 @@ namespace firefly {
    *  A test functionm for the reconstruction of polynomials
    */
   void reconstruct_polynomial();
+#ifdef DEFAULT
+  uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m);
+  /**
+   *  Performs a exponentiation modulo m
+   *  @param base the base
+   *  @param exp the exponent
+   *  @param m the modulus
+   *  @return (base^exp) mod m
+   */
+  uint64_t mod_pow(uint64_t base, uint64_t exp, uint64_t m);
+  /**
+   *  Calculates the multiplicative inverse using the Extended Euclidean Algorithm
+   *  @param a the integer of which the multiplicative inverse should be calculated
+   *  @param m the modulus
+   */
+  uint64_t mod_inv(uint64_t a, uint64_t m);
+#endif
 }

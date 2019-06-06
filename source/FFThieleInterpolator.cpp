@@ -74,4 +74,25 @@ namespace firefly {
       return std::make_pair(PolynomialFF(1, numerator_ff), PolynomialFF(1, denominator_ff));
     }
   }
+
+  ThieleInterpolator& ThieleInterpolator::operator=(const ThieleInterpolator& other) {
+    ai = other.ai;
+    ti = other.ti;
+  }
+
+  ThieleInterpolator& ThieleInterpolator::operator=(ThieleInterpolator && other) {
+    ai = std::move(other.ai);
+    ti = std::move(other.ti);
+  }
+
+  ThieleInterpolator::ThieleInterpolator(const ThieleInterpolator& other) {
+    ai = other.ai;
+    ti = other.ti;
+  }
+
+  ThieleInterpolator::ThieleInterpolator(ThieleInterpolator && other) {
+    ai = std::move(other.ai);
+    ti = std::move(other.ti);
+  }
+
 }

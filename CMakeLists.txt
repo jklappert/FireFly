@@ -5,16 +5,40 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(GMP REQUIRED)
 
-# if you want to use FLINT instead of your own implementation, call cmake with
+# decleare some colours
+if(NOT WIN32)
+  string(ASCII 27 Esc)
+  set(ColourReset "${Esc}[m")
+  set(ColourBold  "${Esc}[1m")
+  set(Red         "${Esc}[31m")
+  set(Green       "${Esc}[32m")
+  set(Yellow      "${Esc}[33m")
+  set(Blue        "${Esc}[34m")
+  set(Magenta     "${Esc}[35m")
+  set(Cyan        "${Esc}[36m")
+  set(White       "${Esc}[37m")
+  set(BoldRed     "${Esc}[1;31m")
+  set(BoldGreen   "${Esc}[1;32m")
+  set(BoldYellow  "${Esc}[1;33m")
+  set(BoldBlue    "${Esc}[1;34m")
+  set(BoldMagenta "${Esc}[1;35m")
+  set(BoldCyan    "${Esc}[1;36m")
+  set(BoldWhite   "${Esc}[1;37m")
+endif()
+
+# if you want to use FLINT instead of our default implementation, call cmake with
 # cmake -DWITH_FLINT=true ..
 # set(WITH_FLINT false)
 if("${WITH_FLINT}" STREQUAL true)
   find_package(FLINT REQUIRED)
   add_definitions(-DFLINT)
+else()
+  message("-- ${Red}Using default modular arithmetic. This can be much slower than FLINT!${ColourReset}")
+  add_definitions(-DDEFAULT)
 endif()
 
 # set the build type to release. If one needs debugging symbols, compile
-# with "CMAKE_BUILD_TYPE Debug"
+# with "-DCMAKE_BUILD_TYPE=Debug"
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -95,6 +119,9 @@ set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 if("${WITH_FLINT}" STREQUAL "true")
   add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
   target_link_libraries(example FireFly_static gmp flint)
+else()
+  add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
+  target_link_libraries(example FireFly_static gmp)
 endif()
 
 # install libraries
@@ -131,6 +158,7 @@ install(FILES
   "${INCLUDE_PATH}/version.hpp"
   "${INCLUDE_PATH}/utils.hpp"
   "${INCLUDE_PATH}/Poly.hpp"
+  "${INCLUDE_PATH}/FFThieleInterpolator.hpp"
   DESTINATION "${INCLUDE_INSTALL_DIR}")
 
 # adding documentation

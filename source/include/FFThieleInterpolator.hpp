@@ -5,6 +5,10 @@
 
 namespace firefly {
 
+    /**
+   * @class ThieleInterpolator
+   * @brief A interpolator class for univariate rational function interpolation using Thiele's formula
+   */
   class ThieleInterpolator {
   public:
     /**
@@ -22,7 +26,10 @@ namespace firefly {
      *  @return returns a pair of ff_maps which correspond to the numerator and denominator
      */
     std::pair<ff_map, ff_map> get_result();
-    ThieleInterpolator& operator=(const ThieleInterpolator&) = default;
+    ThieleInterpolator(const ThieleInterpolator& other);
+    ThieleInterpolator(ThieleInterpolator && other);
+    ThieleInterpolator& operator=(const ThieleInterpolator& other);
+    ThieleInterpolator& operator=(ThieleInterpolator && other);
   private:
     std::vector<FFInt> ai {}; /**< A vector which holds all coefficients a_i */
     std::vector<FFInt> ti {}; /**< A vector which holds all arguments t_i */

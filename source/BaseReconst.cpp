@@ -121,7 +121,15 @@ namespace firefly {
 
   //TODO allow for seed with std::srand(std::time(nullptr));
   FFInt BaseReconst::get_rand() {
-    return FFInt(pcg32()) + FFInt(1);
+    FFInt rand(pcg32());
+    if(rand != 0)
+      return rand;
+    else 
+      return rand + FFInt(1);
+  }
+
+  void BaseReconst::set_seed(uint64_t seed) {
+    pc32_init(seed);
   }
 
   uint32_t BaseReconst::get_zi() {

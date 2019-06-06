@@ -79,6 +79,9 @@ namespace firefly {
     zero_degs_den = other.zero_degs_den;
     num_sub_den = other.num_sub_den;
     num_sub_num = other.num_sub_num;
+    interpolations = other.interpolations;
+    t_interpolator = other.t_interpolator;
+    div_by_zero = other.div_by_zero;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -86,7 +89,6 @@ namespace firefly {
     use_chinese_remainder = other.use_chinese_remainder;
     curr_zi_order = other.curr_zi_order;
     prime_number = other.prime_number;
-    interpolations = other.interpolations;
     num_eqn = other.num_eqn;
     n = other.n;
     type = other.type;
@@ -154,6 +156,9 @@ namespace firefly {
     zero_degs_den = std::move(other.zero_degs_den);
     num_sub_den = std::move(other.num_sub_den);
     num_sub_num = std::move(other.num_sub_num);
+    interpolations = std::move(other.interpolations);
+    t_interpolator = std::move(other.t_interpolator);
+    div_by_zero = std::move(other.div_by_zero);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -161,7 +166,6 @@ namespace firefly {
     use_chinese_remainder = std::move(other.use_chinese_remainder);
     curr_zi_order = std::move(other.curr_zi_order);
     prime_number = std::move(other.prime_number);
-    interpolations = std::move(other.interpolations);
     num_eqn = std::move(other.num_eqn);
     n = std::move(other.n);
     type = std::move(other.type);
@@ -231,6 +235,8 @@ namespace firefly {
       num_sub_den = other.num_sub_den;
       num_sub_num = other.num_sub_num;
       interpolations = other.interpolations;
+      t_interpolator = other.t_interpolator;
+      div_by_zero = other.div_by_zero;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -310,6 +316,8 @@ namespace firefly {
       num_sub_den = std::move(other.num_sub_den);
       num_sub_num = std::move(other.num_sub_num);
       interpolations = std::move(other.interpolations);
+      t_interpolator = std::move(other.t_interpolator);
+      div_by_zero = std::move(other.div_by_zero);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);

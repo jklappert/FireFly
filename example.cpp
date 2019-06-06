@@ -59,13 +59,13 @@ int main() {
 
 // Example of how one can use the black_box function for the automatic interface
 void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
-  result.emplace_back(singular_solver(values));
+  //result.emplace_back(singular_solver(values));
   result.emplace_back(n_eq_1(values[0]));
-  result.emplace_back(n_eq_4(values));
-  result.emplace_back(gghh(values));
+  //result.emplace_back(n_eq_4(values));
+  //result.emplace_back(gghh(values));
   //result.emplace_back(bench_1(values));
-  result.emplace_back(pol_n_eq_3(values));
-  result.emplace_back(ggh(values));
+  //result.emplace_back(pol_n_eq_3(values));
+  //result.emplace_back(ggh(values));
   //  result.emplace_back(pol_20_20(values));
   // result.emplace_back(pol_1(values));
   // result.emplace_back(pol_6(values));
@@ -79,13 +79,13 @@ namespace firefly {
     uint32_t n = 4;
     FFInt::set_new_prime(primes()[0]);
     RatReconst rec(n);
-    rec.set_save_interpolation();
+    //rec.set_save_interpolation();
 
     // One can set a tag to start from a previously saved run after an interpolation
     // over one prime field was successful
     //rec.set_tag("rf");
     // Read in a previously saved file to resume a run from this point
-    //rec.start_from_saved_file("ff_save/rf_2.txt");
+    //rec.start_from_saved_file("ff_save/rf_1.txt");
 
     std::cout << "--------------------------------------------------------------\n";
     std::cout << "Interpolating rational function\n";
@@ -133,11 +133,15 @@ namespace firefly {
           yis[j] = t_yis[j - 1];
         }
 
+        FFInt tt = yis[1];
+        FFInt d = yis[0];
+
         //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
         //FFInt num = n_eq_1(z1); // example for n = 1
         //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-        FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+        //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
         //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
+        FFInt num = (FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + tt + yis[1]) / (yis[1]); //(yis[0].pow(4) + 3*yis[1].pow(5) + yis[2].pow(2));// + tt;
 
         // Feed the algorithm with the current zi_order
         ++count;
@@ -205,7 +209,7 @@ namespace firefly {
 
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       //FFInt num = n_eq_1(z1) + tt*FFInt(primes()[1]); // example for n = 1
-      //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
+      FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
       //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       //FFInt num = bench_3(yis);
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
@@ -223,7 +227,7 @@ namespace firefly {
       //FFInt nn = FFInt(2)/FFInt(3)*d*tt;
       //FFInt dd = 1 + FFInt(primes()[0])*d + d.pow(2)*tt.pow(2);
       //FFInt num = nn/dd;
-      FFInt num = (FFInt(primes()[0]) + FFInt(primes()[2])*FFInt(primes()[1])*yis[0] + 3*yis[0].pow(2) + tt + yis[1])/(yis[1]);//(yis[0].pow(4) + 3*yis[1].pow(5) + yis[2].pow(2));// + tt;
+      //FFInt num = (FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + tt + yis[1]) / (yis[1]); //(yis[0].pow(4) + 3*yis[1].pow(5) + yis[2].pow(2));// + tt;
 
       //std::cout << num << " " << nn/(1+77959*d + d.pow(2)*tt.pow(2)) << "\n";
       //FFInt num = (yis[0].pow(4) + 3*yis[1].pow(5) + yis[2].pow(2))/(2*yis[0]*yis[1]*yis[2].pow(2) + 3*yis[1]);
@@ -293,7 +297,7 @@ namespace firefly {
       ++kk;
       ++count;
 
-      FFInt num = FFInt(primes()[1]) + FFInt(primes()[1])*FFInt(primes()[2])*yis[0] + yis[0].pow(2);//yis[0]*yis[1].pow(2);//yis[0].pow(20) + 2*yis[1] + 2*yis[1].pow(2) + 2*yis[1].pow(3) + 2*yis[1].pow(4)+3*yis[2].pow(20);
+      FFInt num = FFInt(primes()[1]) + FFInt(primes()[1]) * FFInt(primes()[2]) * yis[0] + yis[0].pow(2); //yis[0]*yis[1].pow(2);//yis[0].pow(20) + 2*yis[1] + 2*yis[1].pow(2) + 2*yis[1].pow(3) + 2*yis[1].pow(4)+3*yis[2].pow(20);
 
       rec_poly.feed(num, rec_poly.get_zi_order(), primes_used);
       rec_poly.interpolate();
@@ -304,3 +308,4 @@ namespace firefly {
     std::cout << "--------------------------------------------------------------\n";
   }
 }
+
