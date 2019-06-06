@@ -65,6 +65,37 @@ rec.reconstruct();
 
 The reconstruction will run from this point until it is finished. Additional options can be set and we refer to the `example.cpp` file and the code documentation.
 
+## Converting Mathematica expressions to C++ code
+Sometimes the black box is not provied by a code but rather one creates it which can be useful by performing algebraic computations on large functions. For this purpose FireFly provides a script to convert Mathematica functions to compilable C++ code. The functions have to be provided as a file in which a list of functions is stored, e.g.,
+```
+{x+y,2*x+z,...}
+```
+Additionaly, a file is needed in which the occurring variables are stored as a Mathematica list, too, e.g.,
+```
+{x,y,z,...}
+```
+Note that both lists are allowed to contain expressions and/or strings. The scripts are located in the `mma_2_ff` directory. One can than generate C++ code by calling
+```
+cd mma_2_ff
+chmod u+x convert_to_ff.sh
+./convert_to_ff.sh $PATH_TO_FUNCTION_FILE $PATH_TO_VARIABLES_FILE <number_of_threads>
+```
+Here, `$PATH_TO_FUNCTION_FILE` defines the path to the file in which the list of functions is stored, `$PATH_TO_VARIABLES_FILE` defines the path to the file in which the list of variables is stored, and `<number_of_threads>` defines the number of threads you want to use for the reconstruction process. The latter is given as an integer. During the conversion process a directory `ff_conv` is created in which the C++ files are written. It contains an executable `exec.cpp` which has to be modified to your needs (filling the black box, doing something with the result,...) and all functions which are splitted to numerator and denominator and to subfunctions if they exceed a length of 500 terms. The functions are numbered according to their ordering in the list and can be evaluated in C++ by calling, e.g.,
+```
+std::vector<FFInt> values = {1, 5, 7};
+FFInt res = fun1(values) + fun2(values) + ...;
+```
+When using the `black_box` function in `exec.cpp`, the vector `values` will be filled by FireFly.
+After a specification what the black box should be, the generated makefile will compile your program by calling
+```
+make
+```
+A build directory will be created (`/build`) in which the executable and the object files can be found. To execute the reconstruction one just has to call
+```
+./build/exec
+```
+which will be performed using the number of threads defined in the conversion process.
+
 ## Code Documentation
 Doxygen can be used to generate code documentation. To generate the documentation, run
 ```
