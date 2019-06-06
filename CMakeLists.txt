@@ -33,7 +33,7 @@ if("${WITH_FLINT}" STREQUAL true)
   find_package(FLINT REQUIRED)
   add_definitions(-DFLINT)
 else()
-  message("-- ${Red}Using default modular arithmetic. This can be much slower than FLINT!${ColourReset}")
+  message("-- ${Red}Using default implementation of modular arithmetic. This can be much slower than FLINT!${ColourReset}")
   add_definitions(-DDEFAULT)
 endif()
 

@@ -156,18 +156,20 @@ namespace firefly {
       // Fast-track
       res = mod_mul(n, n, p);
     } else {
-      int y = ffint.n;
-      FFInt x = n;
+      uint64_t exp;
+      uint64_t base;
 
-      while (y > 0) {
-        // If y is odd, multiply x with result
-        if (y & 1)
-          res = (res * x);
-
-        // y must be even now
-        y = y >> 1; // y = y/2
-        x *= x;
+      if (ffint.n < (p >> 1)) {
+        // treat as positive exponent
+        exp = ffint.n;
+        base = n;
+      } else {
+        // treat as negative exponent
+        exp = p - ffint.n;
+        base = mod_inv(n, p); // =1/b.c
       }
+
+      res.n = mod_pow(base, exp, p);
     }
 
     return res;
@@ -341,3 +343,4 @@ namespace firefly {
 
   void firefly_exists(void) {}
 }
+

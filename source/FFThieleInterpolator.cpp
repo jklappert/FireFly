@@ -76,13 +76,21 @@ namespace firefly {
   }
 
   ThieleInterpolator& ThieleInterpolator::operator=(const ThieleInterpolator& other) {
-    ai = other.ai;
-    ti = other.ti;
+    if (this != &other) {
+      ai = other.ai;
+      ti = other.ti;
+    }
+
+    return *this;
   }
 
   ThieleInterpolator& ThieleInterpolator::operator=(ThieleInterpolator && other) {
-    ai = std::move(other.ai);
-    ti = std::move(other.ti);
+    if (this != &other) {
+      ai = std::move(other.ai);
+      ti = std::move(other.ti);
+    }
+
+    return *this;
   }
 
   ThieleInterpolator::ThieleInterpolator(const ThieleInterpolator& other) {

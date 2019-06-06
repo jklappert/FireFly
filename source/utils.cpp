@@ -257,7 +257,7 @@ namespace firefly {
 
   PolynomialFF solve_vandermonde_system(std::vector<std::vector<uint32_t>>& degs,
                                         const std::vector<std::pair<FFInt, uint32_t>>& nums,
-                                        const std::vector<FFInt> val) {
+  const std::vector<FFInt> val) {
     uint32_t num_eqn = degs.size();
     std::vector<FFInt> result(num_eqn);
     uint32_t n = val.size();
@@ -326,7 +326,7 @@ namespace firefly {
   }
 
 #ifdef DEFAULT
-  uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {
+  /*uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {
     // m must be at most 63 bit.
     uint64_t d = 0;
     uint64_t mp2 = m >> 1;
@@ -342,6 +342,21 @@ namespace firefly {
     }
 
     return d;
+  }*/
+
+  uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {
+    long double x;
+    uint64_t c;
+    int64_t r;
+
+    if (a >= m) a %= m;
+
+    if (b >= m) b %= m;
+
+    x = a;
+    c = x * b / m;
+    r = (int64_t)(a * b - c * m) % (int64_t)m;
+    return r < 0 ? r + m : r;
   }
 
   uint64_t mod_pow(uint64_t base, uint64_t exp, uint64_t m) {
