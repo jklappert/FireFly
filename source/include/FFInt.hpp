@@ -80,13 +80,6 @@ namespace firefly {
     static uint64_t p_inv; /**< the inverse of the defining prime needed for FFTs*/
   private:
     uint64_t parse_longint(const std::string& str) const;
-    /**
-     *  Performs a multiplication modulo m
-     *  @param a an integer
-     *  @param b an integer
-     *  @param m the modulus
-     *  @return (a * b) mod m
-     */
   };
 
   bool operator<(const FFInt& a, const FFInt& b);

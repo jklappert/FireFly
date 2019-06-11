@@ -119,13 +119,18 @@ namespace firefly {
     return prime_number;
   }
 
-  //TODO allow for seed with std::srand(std::time(nullptr));
   FFInt BaseReconst::get_rand() {
     FFInt rand(pcg32());
-    if(rand != 0)
+
+    if (rand != 0)
       return rand;
-    else 
-      return rand + FFInt(1);
+    else {
+      while (rand == 0) {
+        rand = FFInt(pcg32());
+      }
+
+      return rand;
+    }
   }
 
   void BaseReconst::set_seed(uint64_t seed) {
