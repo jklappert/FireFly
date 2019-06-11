@@ -1067,25 +1067,9 @@ namespace firefly {
         combined_ni = convert_to_mpz(numerator);
         combined_di = convert_to_mpz(denominator);
 
-        // if the coefficient is not a rational number thus divided by 1,
-        // it will not change in the next run and can be omitted to save
-        // numerical runs
         mpz_map combined_ni_back = combined_ni;
 
         for (auto & c_ni : combined_ni_back) {
-          /*RationalNumber rn_wang;
-          bool wang;
-
-          auto res = get_rational_coef(c_ni.second, combined_prime);
-          wang = res.first;
-
-          if (wang)
-            rn_wang = res.second;
-
-          if (wang && rn_wang.numerator == c_ni.second && rn_wang.denominator == 1) {
-            remove_ni(c_ni.first, rn_wang);
-            continue;
-          }*/
 
           if (!normalizer_den_num && c_ni.first == normalizer_deg)
             remove_ni(c_ni.first, RationalNumber(1, 1));
@@ -1096,19 +1080,6 @@ namespace firefly {
         mpz_map combined_di_back = combined_di;
 
         for (auto & c_di : combined_di_back) {
-          /*RationalNumber rn_wang;
-          bool wang;
-
-          auto res = get_rational_coef(c_di.second, combined_prime);
-          wang = res.first;
-
-          if (wang)
-            rn_wang = res.second;
-
-          if (wang && rn_wang.numerator == c_di.second && rn_wang.denominator == 1) {
-            remove_di(c_di.first, rn_wang);
-            continue;
-          }*/
 
           if (normalizer_den_num && c_di.first == normalizer_deg)
             remove_di(c_di.first, RationalNumber(1, 1));
@@ -2162,10 +2133,10 @@ namespace firefly {
     file.close();
 
     if (prime_number > 0) {
-      /*std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
+      std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
 
       if (std::remove(old_file_name.c_str()) != 0)
-        WARNING_MSG("The previously saved file could not be deleted.");*/
+        WARNING_MSG("The previously saved file could not be deleted.");
     }
   }
 
