@@ -25,7 +25,11 @@ namespace firefly {
   RationalFunction::RationalFunction() {}
 
   std::string RationalFunction::to_string(const std::vector<std::string>& symbols) const {
-    std::string str = "(" + numerator.to_string(symbols) + ")/(" + denominator.to_string(symbols) + ")";
+    std::string str = "(" + numerator.to_string(symbols) + ")/(";
+    if(!denominator.coefs.empty())
+      str += denominator.to_string(symbols) + ")";
+    else
+      str += "1)";
     return str;
   }
 

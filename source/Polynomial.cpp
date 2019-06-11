@@ -54,27 +54,32 @@ namespace firefly {
   std::string Polynomial::to_string(const std::vector<std::string>& symbols) const {
     std::string str;
 
-    if (symbols.size() != n) {
-      ERROR_MSG("Symbol size does not match to number of variables of the polynomial!");
-      std::exit(-1);
-    }
+    if (coefs.empty())
+      str += "0";
+    else {
+      if (symbols.size() != n) {
+        ERROR_MSG("Symbol size does not match to number of variables of the polynomial!");
+        std::exit(-1);
+      }
 
-    for (const auto & mono : coefs) {
-      str += mono.coef.string() + "*";
+      for (const auto & mono : coefs) {
+        str += mono.coef.string() + "*";
 
-      for (uint32_t i = 0; i < mono.powers.size(); ++i) {
-        if (mono.powers[i] > 1) {
-          str += symbols[i] + "^" + std::to_string(mono.powers[i]) + "*";
-        } else if (mono.powers[i] == 1) {
-          str += symbols[i] + "*";
+        for (uint32_t i = 0; i < mono.powers.size(); ++i) {
+          if (mono.powers[i] > 1) {
+            str += symbols[i] + "^" + std::to_string(mono.powers[i]) + "*";
+          } else if (mono.powers[i] == 1) {
+            str += symbols[i] + "*";
+          }
         }
+
+        str.erase(--str.end());
+        str += "+";
       }
 
       str.erase(--str.end());
-      str += "+";
     }
 
-    str.erase(--str.end());
     return str;
   }
 
