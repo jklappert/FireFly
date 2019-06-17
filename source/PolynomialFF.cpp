@@ -217,7 +217,7 @@ namespace firefly {
     return out;
   }
 
-  PolynomialFF PolynomialFF::mul(const uint32_t zi) {
+  PolynomialFF PolynomialFF::mul(const uint32_t zi) const {
     ff_map new_coefs {};
     new_coefs.reserve(coefs.size());
 
@@ -315,7 +315,7 @@ namespace firefly {
     return PolynomialFF(a.n, new_monomials);
   }
 
-  PolynomialFF PolynomialFF::mul_shift(const ff_map& a, const ff_map& b, uint32_t curr_deg) {
+  PolynomialFF PolynomialFF::mul_shift(const ff_map& a, const ff_map& b, uint32_t curr_deg) const {
     ff_map new_monomials;
     new_monomials.reserve(a.size()*b.size() + 1);
 
@@ -336,7 +336,7 @@ namespace firefly {
     return PolynomialFF(n, new_monomials);
   }
 
-  PolynomialFF PolynomialFF::add_shift(const std::vector<FFInt>& shift) {
+  PolynomialFF PolynomialFF::add_shift(const std::vector<FFInt>& shift) const {
     if (shift.size() != n)
       throw std::runtime_error("Mismatch in sizes of the shift and variables!");
 
@@ -350,6 +350,7 @@ namespace firefly {
 
       for (uint32_t j = 0; j < n; ++j) {
         uint32_t deg = powers[j];
+        FFInt tmp_shift = shift[j];
 
         // Calculate all terms originating from (x - a)^deg
         // by determining the binomial coefficients and adding
@@ -357,19 +358,18 @@ namespace firefly {
         if (deg > 0) {
           ff_map tmp_pow_poly;
 
-          if (shift[j] > 0) {
+          if (tmp_shift > 0) {
             std::vector<std::vector<uint32_t>> tmp_powers(deg + 1, std::vector<uint32_t> (n));
 
             for (uint32_t k = 0; k <= deg; ++k) {
               tmp_powers[k][j] = deg - k;
 
-              if (k == 0) {
+              if (k == 0)
                 tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], 1));
-              } else if (k == deg) {
-                tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], shift[j].pow(deg)));
-              } else {
-                tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], bin_coef(deg, k)*shift[j].pow(k)));
-              }
+              else if (k == deg)
+                tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], tmp_shift.pow(deg)));
+              else
+                tmp_pow_poly.emplace(std::make_pair(tmp_powers[k], bin_coef(deg, k)*tmp_shift.pow(k)));
             }
           } else {
             std::vector<uint32_t> tmp_powers(n);
@@ -385,7 +385,6 @@ namespace firefly {
         }
       }
 
-      // since always all variables are shifted decr_power := zero_deg
       if (!pow_poly.coefs.empty()) {
         //std::clock_t begin3 = clock();
         if (res.coefs.empty())
@@ -398,7 +397,7 @@ namespace firefly {
     return res;
   }
 
-  FFInt PolynomialFF::bin_coef(uint32_t n, uint32_t k) {
+  FFInt PolynomialFF::bin_coef(uint32_t n, uint32_t k) const {
     FFInt res = 1;
 
     // Since C(n, k) = C(n, n-k)

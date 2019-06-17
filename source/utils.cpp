@@ -325,6 +325,16 @@ namespace firefly {
     return PolynomialFF(n + 1, poly);
   }
 
+  uint64_t xorshift64star() {
+    uint64_t x = xorshift64star_state;
+    x ^= x >> 12; // a
+    x ^= x << 25; // b
+    x ^= x >> 27; // c
+    xorshift64star_state = x;
+    return x * 0x2545F4914F6CDD1D;
+  }
+
+
 #ifdef DEFAULT
   /*uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {
     // m must be at most 63 bit.

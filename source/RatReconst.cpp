@@ -49,7 +49,7 @@ namespace firefly {
         shift = std::vector<FFInt> (n);
 
         if (n > 1) {
-          for (auto & el : shift) el = get_rand();
+          for (auto & el : shift) el = FFInt(xorshift64star());
 
           curr_shift = std::vector<uint32_t> (n, 1);
         }
@@ -96,7 +96,7 @@ namespace firefly {
 
       for (uint32_t i = 0; i < n; ++i) {
         if (shifted_zis[i] == 1)
-          shift[i] = get_rand();
+          shift[i] = FFInt(xorshift64star());
       }
     }
   }
@@ -1670,7 +1670,7 @@ namespace firefly {
 
     for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
-      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), get_rand()));
+      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), FFInt(xorshift64star())));
     }
 
     PolyReconst rec(n - 1, 0, true);
@@ -2273,7 +2273,7 @@ namespace firefly {
 
                   for (uint32_t i = 0; i < n; ++i) {
                     if (tmp_vec[i] != 0)
-                      shift[i] = get_rand();
+                      shift[i] = FFInt(xorshift64star());
                   }
                 }
 

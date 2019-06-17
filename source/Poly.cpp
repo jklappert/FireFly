@@ -244,7 +244,7 @@ namespace firefly {
     while (!queue.empty()) {
       while (queue.back().get_deg() > 1) {
         std::random_device rd;
-        std::mt19937_64 eng(rd());
+        std::mt19937_64 eng(rd());//TODO Mersenne-Twister is too slow. Replace with pcg32
         std::uniform_int_distribution<unsigned long long> distr;
         FFInt Delta(distr(eng));
         size_t s = ((FFInt(0).p - 1) / 2);

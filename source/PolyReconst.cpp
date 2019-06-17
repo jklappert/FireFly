@@ -185,13 +185,10 @@ namespace firefly {
               combine_res = true;
               ais[zero_element].pop_back();
               finished = true;
-              // std::cout << "Newton interpolation finished first in the first variable.\n";
             } else if (deg != -1 && (uint32_t) deg == i) {
               combine_res = true;
               finished = true;
             }
-
-            // std::cout << "Newton interpolation finished first in the first variable.\n";
           }
 
           if (use_bt && !finished) {
@@ -224,7 +221,6 @@ namespace firefly {
                 //combine the result if suceeded with the former interpolated polynomial
                 //check for tmp solved degrees
                 check_for_tmp_solved_degs_for_bt(zero_element, result, roots.second);
-                // std::cout << "Ben-Or and Tiwari interpolation finished first in the first variable.\n";
                 combine_res = true;
                 ais.erase(zero_element);
                 bt_terminator.erase(zero_element);
@@ -316,7 +312,6 @@ namespace firefly {
                   nums_for_bt.erase(key);
                   lambda.erase(key);
                   finished = true;
-                  // std::cout << "Newton interpolation finished first.\n";
                 } else if (deg != -1 && i == tmp_deg) {
                   check_for_tmp_solved_degs_for_newton(key, ais[key]);
                   ais.erase(key);
@@ -328,10 +323,8 @@ namespace firefly {
                   nums_for_bt.erase(key);
                   lambda.erase(key);
                   finished = true;
-                  // std::cout << "Newton interpolation finished first.\n";
-                } else {
+                } else
                   ++not_done_counter_newton;
-                }
               }
 
               if (use_bt && !finished) {
@@ -363,7 +356,6 @@ namespace firefly {
                     //combine the result if suceeded with the former interpolated polynomial
                     //check for tmp solved degrees
                     check_for_tmp_solved_degs_for_bt(key, result, roots.second);
-                    // std::cout << "Ben-Or and Tiwari interpolation finished first.\n";
                     bt_terminator.erase(key);
                     b.erase(key);
                     l.erase(key);
@@ -692,7 +684,7 @@ namespace firefly {
 
     for (uint32_t tmp_zi = 1; tmp_zi <= n; ++tmp_zi) {
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
-      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), get_rand()));
+      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), FFInt(xorshift64star())));
     }
   }
 
@@ -747,8 +739,6 @@ namespace firefly {
 
   void PolyReconst::check_for_tmp_solved_degs_for_newton(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) {
     ff_map tmp = construct_tmp_canonical(deg_vec, ai);
-
-    //std::cout << "Writing results after finishing Newton: "<< PolynomialFF(n, tmp);
 
     for (auto & el : tmp) {
       int total_deg = 0;
@@ -838,7 +828,7 @@ namespace firefly {
       return false;
     }
 
-    ERROR_MSG("Berlekamp Massey step exit was wrong!");
+    ERROR_MSG("Berlekamp/Massey step exit was wrong!");
     return false;
   }
 

@@ -87,7 +87,7 @@ namespace firefly {
      *  Multiplies the PolynomialFF with a monomial of form zi^1
      *  @param zi the zi which should be multiplied with the PolynomialFF
      */
-    PolynomialFF mul(const uint32_t zi);
+    PolynomialFF mul(const uint32_t zi) const;
     /**
      *  @return the minimal degree of the PolynomialFF
      */
@@ -100,7 +100,7 @@ namespace firefly {
      *  Calculates a new PolynomialFF if one shifts its variables
      *  @param shift the shift of each variable
      */
-    PolynomialFF add_shift(const std::vector<FFInt>& shift);
+    PolynomialFF add_shift(const std::vector<FFInt>& shift) const;
   private:
     std::vector<uint32_t> min_degree {};
     std::vector<uint32_t> max_degree {};
@@ -109,14 +109,14 @@ namespace firefly {
      *  @param n the n
      *  @param k the k
      */
-    FFInt bin_coef(uint32_t n, uint32_t k);
+    FFInt bin_coef(uint32_t n, uint32_t k) const;
     /**
      *  Multiplies two polynomials with no overlap of degrees
      *  @param a first polynimial
      *  @param b second polynomial
      *  @curr_deg degree number of b which is absent in a
      */
-    PolynomialFF mul_shift(const ff_map& a, const ff_map& b, uint32_t curr_deg);
+    PolynomialFF mul_shift(const ff_map& a, const ff_map& b, uint32_t curr_deg) const;
   };
   PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b);
   PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b);

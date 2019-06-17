@@ -21,6 +21,7 @@
 #include <gmpxx.h>
 #include "RationalNumber.hpp"
 #include "PolynomialFF.hpp"
+#include "BaseReconst.hpp"
 
 namespace firefly {
   /**
@@ -104,6 +105,16 @@ namespace firefly {
    *  A test functionm for the reconstruction of polynomials
    */
   void reconstruct_polynomial();
+
+  /**
+   *  An implementaton of the xorshift64* RNG to set anchor points
+   *  @return a random 64-bit number
+   */
+  uint64_t xorshift64star();
+  /**
+   *   The state of the xorshiftstar
+   */
+  static uint64_t xorshift64star_state = 0x4d595df4d0f33173;
 #ifdef DEFAULT
   uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m);
   /**

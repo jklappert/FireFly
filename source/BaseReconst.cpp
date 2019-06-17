@@ -19,7 +19,7 @@
 #include "BaseReconst.hpp"
 #include "PolyReconst.hpp"
 #include "RatReconst.hpp"
-#include <random>
+#include "utils.hpp"
 
 namespace firefly {
   uint64_t const BaseReconst::multiplier = 6364136223846793005u;
@@ -187,6 +187,7 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_state);
       state = seed + increment;
+      xorshift64star_state = state;
     }
     pcg32();
   }
