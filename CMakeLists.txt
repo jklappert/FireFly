@@ -87,7 +87,8 @@ set(LIBSOURCES
   ${SOURCE_PATH}/utils.cpp
   ${SOURCE_PATH}/Poly.cpp
   ${SOURCE_PATH}/FFThieleInterpolator.cpp
-  ${SOURCE_PATH}/RatReconstCC.cpp)
+  ${SOURCE_PATH}/RatReconstCC.cpp
+  ${SOURCE_PATH}/DenseSolver.cpp)
 
 set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/BaseReconst.cpp
@@ -104,7 +105,8 @@ set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/utils.cpp
   ${SOURCE_PATH}/Poly.cpp
   ${SOURCE_PATH}/FFThieleInterpolator.cpp
-  ${SOURCE_PATH}/RatReconstCC.cpp)
+  ${SOURCE_PATH}/RatReconstCC.cpp
+  ${SOURCE_PATH}/DenseSolver.cpp)
 
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")

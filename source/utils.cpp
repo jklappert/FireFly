@@ -200,61 +200,6 @@ namespace firefly {
     return result;
   }
 
-  std::vector<FFInt> solve_gauss_system(uint32_t num_eqn,
-  std::vector<std::vector<FFInt>>& coef_mat) {
-
-    // Transform the matrix in upper triangular form
-    for (uint32_t i = 0; i < num_eqn; ++i) {
-      // search for maximum in this column
-      FFInt max_el = coef_mat[i][i];
-      uint32_t max_row = i;
-
-      for (uint32_t k = i + 1; k < num_eqn; ++k) {
-        FFInt tmp = coef_mat[k][i];
-
-        if (tmp.n > max_el.n) {
-          max_el = tmp;
-          max_row = k;
-        }
-      }
-
-      // swap maximum row with current row (column by column)
-      for (uint32_t k = i; k < num_eqn + 1; ++k) {
-        FFInt tmp = coef_mat[max_row][k];
-        coef_mat[max_row][k] = coef_mat[i][k];
-        coef_mat[i][k] = tmp;
-      }
-
-      // Make all rows below this one zero in the current column
-      for (uint32_t k = i + 1; k < num_eqn; ++k) {
-        FFInt c = -coef_mat[k][i] / coef_mat[i][i];
-
-        for (uint32_t j = i; j < num_eqn + 1; ++j) {
-          if (i == j) coef_mat[k][j] = FFInt(0);
-          else coef_mat[k][j] += c * coef_mat[i][j];
-        }
-      }
-    }
-
-    std::vector<FFInt> results(num_eqn);
-
-    if (coef_mat[num_eqn - 1][num_eqn - 1] != 0) {
-      // Solve equation A * x = b for an upper triangular matrix
-      for (int i = num_eqn - 1; i >= 0; i--) {
-        results[i] = coef_mat[i][num_eqn] / coef_mat[i][i];
-
-        for (int k = i - 1; k >= 0; k--) {
-          coef_mat[k][num_eqn] -= coef_mat[k][i] * results[i];
-        }
-      }
-    } else {
-      ERROR_MSG("Singular system of equations!");
-      throw std::runtime_error("Singular system of equations!");
-    }
-
-    return results;
-  }
-
   PolynomialFF solve_vandermonde_system(std::vector<std::vector<uint32_t>>& degs,
                                         const std::vector<std::pair<FFInt, uint32_t>>& nums,
   const std::vector<FFInt> val) {

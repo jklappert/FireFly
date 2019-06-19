@@ -56,14 +56,6 @@ namespace firefly {
   std::pair<bool, RationalNumber> get_rational_coef_mqrr(const mpz_class& a, const mpz_class& p);
 
   /**
-  *  Solves the given system of equations using a Gauss-Jordan algorithm
-  *  @param num_eqn the number of equations
-  *  @param coef_mat the matrix which represents the system of equations
-  *
-  */
-  std::vector<FFInt> solve_gauss_system(uint32_t num_eqn,
-                                        std::vector<std::vector<FFInt>>& coef_mat);
-  /**
   *  Solves the given modified Vandermonde system
   *  @param degs the contributing degrees
   *  @param nums the evaluated numerical values

@@ -20,6 +20,7 @@
 #include "RatReconst.hpp"
 #include "ReconstHelper.hpp"
 #include "utils.hpp"
+#include "DenseSolver.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -1412,7 +1413,7 @@ namespace firefly {
   }
 
   std::pair<ff_map, ff_map> RatReconst::solve_gauss() {
-    std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
+    std::vector<FFInt> results = solve_gauss_system(coef_mat, num_eqn);
     coef_mat.clear();
     num_sub_den.clear();
     num_sub_num.clear();
@@ -1451,7 +1452,7 @@ namespace firefly {
   }
 
   std::pair<ff_map, ff_map> RatReconst::solve_homogenized_multi_gauss() {
-    std::vector<FFInt> results = solve_gauss_system(num_eqn, coef_mat);
+    std::vector<FFInt> results = solve_gauss_system(coef_mat, num_eqn);
     coef_mat.clear();
     num_sub_den.clear();
     num_sub_num.clear();
