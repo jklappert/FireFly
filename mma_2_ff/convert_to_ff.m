@@ -129,7 +129,12 @@ writeFuns[coefs_,vars_,strm_,suff_,ii_] :=
     Module[{sum},
 	   Do[
 	       tmpterms = Collect[Apply[Plus,coefs[[kk]]],ToExpression[vars], Simplify];
-	       tmpterms = tmpterms /. a_ :> FFInt["mpz_class(",ToString[a],")"] /; Length[IntegerDigits[a]] > 18(*IntegerQ[a]*) //. Power[a_,b_]-> pow[a,b];
+	       tmpterms = tmpterms /. Rational[a_,b_] :> FFInt["mpz_class(",ToString[a],")"]/FFInt["mpz_class(",ToString[b],")"] /; Length[IntegerDigits[a]] > 18 && Length[IntegerDigits[b]] > 18;
+	       tmpterms = tmpterms /. Rational[a_,b_] :> FFInt["mpz_class(",ToString[a],")"]/FFInt[b] /; Length[IntegerDigits[a]] > 18;
+	       tmpterms = tmpterms /. Rational[a_,b_] :> FFInt[a]/FFInt["mpz_class(",ToString[b],")"] /; Length[IntegerDigits[b]] > 18;
+	       tmpterms = tmpterms /. Rational[a_,b_] :> FFInt[a]/FFInt[b];
+	       tmpterms = tmpterms /. a_ :> FFInt["mpz_class(",ToString[a],")"] /; Length[IntegerDigits[a]] > 18(*IntegerQ[a]*);
+	       tmpterms = tmpterms //. Power[a_,b_] :> pow[a,b] /; MemberQ[ToExpression[vars],a];
 (*	       tmpterms = tmpterms /. a_ :> FFInt[a] /; IntegerQ[a];*)
 	       CreateFile["ff_conv/fun"<>ToString[ii]<>suff<>ToString[kk]<>".cpp"];
 	       stream3 = OpenWrite["ff_conv/fun"<>ToString[ii]<>suff<>ToString[kk]<>".cpp"];
