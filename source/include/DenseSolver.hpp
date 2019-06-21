@@ -38,6 +38,14 @@ namespace firefly {
    *  @return True if a is invertible
    */
   bool calc_inverse(const mat_ff& a, mat_ff& inv, uint32_t n);
+  
+  /**
+   *  Calculates the inverse of a matrix using Gauss-Jordan
+   * 
+   *  @param a input matrix build of FFInts
+   *  @param n the size of a
+   */
+  void calc_inverse_2(mat_ff& a, uint32_t n);
 
   /**
   *  Solves the given system of equations using a Gauss-Jordan algorithm

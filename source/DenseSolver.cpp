@@ -32,7 +32,7 @@ namespace firefly {
     if (n == 1)
       return a[0][0];
 
-    mat_ff tmp (n, std::vector<FFInt> (n)); // To store cofactors
+    mat_ff tmp(n, std::vector<FFInt> (n));  // To store cofactors
 
     int sign = 1;  // To store sign multiplier
 
@@ -57,7 +57,7 @@ namespace firefly {
 
     // temp is used to store cofactors of a[][]
     int sign = 1;
-    mat_ff tmp (n, std::vector<FFInt> (n));
+    mat_ff tmp(n, std::vector<FFInt> (n));
 
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
@@ -85,12 +85,12 @@ namespace firefly {
     }
 
     // Find adjoint
-    mat_ff adj (n, std::vector<FFInt> (n));
+    mat_ff adj(n, std::vector<FFInt> (n));
 
     calc_adjoint(a, adj, n);
 
     // Clear inverse
-    inv = mat_ff (n, std::vector<FFInt> (n));
+    inv = mat_ff(n, std::vector<FFInt> (n));
 
     // Find Inverse using formula "inverse(A) = adj(A)/det(A)"
     for (int i = 0; i < n; ++i)
@@ -98,6 +98,71 @@ namespace firefly {
         inv[i][j] = adj[i][j] / det;
 
     return true;
+  }
+
+  void calc_inverse_2(mat_ff& a, uint32_t n) {
+    // Augment a with unit matrix
+    for (int i = 0; i < n; ++i) {
+      std::vector<FFInt> dum(n);
+      dum[i] = 1;
+      std::vector<FFInt> tmp = a[i];
+      tmp.insert(tmp.end(), dum.begin(), dum.end());
+      a[i] = tmp;
+    }
+
+    for (int i = 0; i < n; ++i) {
+      // search for maximum in this column
+      FFInt max_el = a[i][i];
+      int max_row = i;
+
+      for (int k = i + 1; k < n; ++k) {
+        if (a[k][i] > max_el) {
+          max_el = a[k][i];
+          max_row = k;
+        }
+      }
+
+      // swap maximum row with current row (column by column)
+      for (int k = i; k < 2 * n; ++k) {
+        FFInt tmp = a[max_row][k];
+        a[max_row][k] = a[i][k];
+        a[i][k] = tmp;
+      }
+
+      // make all rows below this one 0 in current column
+      for (int k = i + 1; k < n; ++k) {
+        FFInt c = -a[k][i] / a[i][i];
+
+        for (int j = i; j < 2 * n; ++j) {
+          if (i == j)
+            a[k][j] = 0;
+          else
+            a[k][j] += c * a[i][j];
+        }
+      }
+    }
+
+    // solve equation ax=b for an upper triangular matrix a
+    mat_ff res(n, std::vector<FFInt>(n));
+
+    for (int i = n - 1; i >= 0; i--) {
+      for (int k = n; k < 2 * n; ++k) {
+        a[i][k] /= a[i][i];
+      }
+
+      for (int row_mod = i - 1; row_mod >= 0; row_mod--) {
+        for (int column_mod = n; column_mod < 2 * n; ++column_mod) {
+          a[row_mod][column_mod] -= a[i][column_mod] * a[row_mod][i];
+        }
+      }
+
+      // Remove the unit matrix from the result
+      for (int k = n; k < 2 * n; ++k) {
+        res[i][k - n] = a[i][k];
+      }
+    }
+
+    a = res;
   }
 
   std::vector<FFInt> solve_gauss_system(mat_ff& coef_mat, uint32_t num_eqn) {
@@ -154,3 +219,5 @@ namespace firefly {
   }
 
 }
+
+

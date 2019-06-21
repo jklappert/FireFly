@@ -53,14 +53,20 @@ int main() {
 
   // Example for the reconstruction of a polynomial
   //reconstruct_polynomial();
-  
+
   /*mat_ff a = {{33,17,25},{59595, 989983749,99},{23213213, 4354354353,434232324}};
+  mat_ff a_2 = a;
   mat_ff inv;
   calc_inverse(a, inv, 3);
+  calc_inverse_2(a_2, 3);
+
   std::cout << "prime " << FFInt::p << "\n";
   std::cout << inv[0][0] << " " << inv[0][1] << " " << inv[0][2] << "\n"
   << inv[1][0] << " " << inv[1][1] << " " << inv[1][2] << "\n"
-  << inv[2][0] << " " << inv[2][1] << " " << inv[2][2] << "\n";*/
+  << inv[2][0] << " " << inv[2][1] << " " << inv[2][2] << "\n";
+  std::cout << a_2[0][0] << " " << a_2[0][1] << " " << a_2[0][2] << "\n"
+  << a_2[1][0] << " " << a_2[1][1] << " " << a_2[1][2] << "\n"
+  << a_2[2][0] << " " << a_2[2][2] << " " << a_2[2][2] << "\n";*/
   return 0;
 }
 
@@ -316,4 +322,5 @@ namespace firefly {
     std::cout << "--------------------------------------------------------------\n";
   }
 }
+
 
