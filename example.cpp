@@ -54,19 +54,42 @@ int main() {
   // Example for the reconstruction of a polynomial
   //reconstruct_polynomial();
 
-  /*mat_ff a = {{33,17,25},{59595, 989983749,99},{23213213, 4354354353,434232324}};
+  // Some examples of the usage of the dense solver functions
+  /*
+  // Initialize matrices
+  mat_ff a = {{0*33,17,25},{59595, 989983749,99},{23213213, 4354354353,0*434232324}};
   mat_ff a_2 = a;
+  mat_ff a_3 = a;
+  a = {{0*33,17,25,10},{59595, 989983749,99,14},{23213213, 4354354353,0*434232324,200}};
   mat_ff inv;
-  calc_inverse(a, inv, 3);
-  calc_inverse_2(a_2, 3);
-
-  std::cout << "prime " << FFInt::p << "\n";
-  std::cout << inv[0][0] << " " << inv[0][1] << " " << inv[0][2] << "\n"
-  << inv[1][0] << " " << inv[1][1] << " " << inv[1][2] << "\n"
-  << inv[2][0] << " " << inv[2][1] << " " << inv[2][2] << "\n";
+  //----------------------------------------------------------------------------
+  // Calculate inverse of a using Gauss-Jordan algorithm
+  calc_inverse(a_3, 3);
+  // Print inverse of a_3 obtained with Gauss-Jordan
   std::cout << a_2[0][0] << " " << a_2[0][1] << " " << a_2[0][2] << "\n"
   << a_2[1][0] << " " << a_2[1][1] << " " << a_2[1][2] << "\n"
-  << a_2[2][0] << " " << a_2[2][2] << " " << a_2[2][2] << "\n";*/
+  << a_2[2][0] << " " << a_2[2][2] << " " << a_2[2][2] << "\n";
+  // Solve a using Gauss algorithm
+  res = solve_gauss_system(a, 3);
+  std::cout << res[0] << " " << res[1] << " " << res[2] << "\n";
+  //----------------------------------------------------------------------------
+  // Initialize permutation matrix for LU decompositions
+  std::vector<int> p;
+  // Initialize vector for solution of LU system
+  std::vector<FFInt> b = {10,14,200};
+  // Calculate LU decomposition of a_2
+  calc_lu_decomposition(a_2, p, 3);
+  // Solve a_2 using LU decomposition
+  std::vector<FFInt> res = solve_lu(a_2, p, b, 3);
+  std::cout << res[0] << " " << res[1] << " " << res[2] << "\n";
+  // Calculate inverse of a_2 using LU decomposition
+  calc_inverse_lu(a_2, inv, p, 3);
+  // Calculate determinant of a_2 using LU decomposition
+  std::cout << "det " << calc_determinant_lu(a_2, p, 3) << "\n";
+  // Print inverse obtained using LU decomposition
+  std::cout << inv[0][0] << " " << inv[0][1] << " " << inv[0][2] << "\n"
+  << inv[1][0] << " " << inv[1][1] << " " << inv[1][2] << "\n"
+  << inv[2][0] << " " << inv[2][1] << " " << inv[2][2] << "\n";*/
   return 0;
 }
 

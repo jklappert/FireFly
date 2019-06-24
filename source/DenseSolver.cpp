@@ -2,105 +2,7 @@
 #include "Logger.hpp"
 
 namespace firefly {
-
-  void calc_cofactor(const mat_ff& a, mat_ff& tmp, uint32_t p, uint32_t q, uint32_t n) {
-    int i = 0, j = 0;
-
-    // Looping for each element of the matrix
-    for (int row = 0; row < n; ++row) {
-      for (int col = 0; col < n; ++col) {
-        //  Copying into temporary matrix only those element
-        //  which are not in given row and column
-        if (row != p && col != q) {
-          tmp[i][j++] = a[row][col];
-
-          // Row is filled, so increase row index and
-          // reset col index
-          if (j == n - 1) {
-            j = 0;
-            ++i;
-          }
-        }
-      }
-    }
-  }
-
-  FFInt calc_determinant(const mat_ff& a, uint32_t n) {
-    FFInt det = 0;
-
-    //  Base case : if matrix contains single element
-    if (n == 1)
-      return a[0][0];
-
-    mat_ff tmp(n, std::vector<FFInt> (n));  // To store cofactors
-
-    int sign = 1;  // To store sign multiplier
-
-    // Iterate for each element of first row
-    for (uint32_t i = 0; i < n; ++i) {
-      // Getting cofactor of a[0][i]
-      calc_cofactor(a, tmp, 0, i, n);
-      det += sign * a[0][i] * calc_determinant(tmp, n - 1);
-
-      // terms are to be added with alternate sign
-      sign = -sign;
-    }
-
-    return det;
-  }
-
-  void calc_adjoint(const mat_ff& a, mat_ff& adj, uint32_t n) {
-    if (n == 1) {
-      adj[0][0] = 1;
-      return;
-    }
-
-    // temp is used to store cofactors of a[][]
-    int sign = 1;
-    mat_ff tmp(n, std::vector<FFInt> (n));
-
-    for (int i = 0; i < n; ++i) {
-      for (int j = 0; j < n; ++j) {
-        // Get cofactor of a[i][j]
-        calc_cofactor(a, tmp, i, j, n);
-
-        // sign of adj[j][i] positive if sum of row
-        // and column indexes is even.
-        sign = ((i + j) % 2 == 0) ? 1 : -1;
-
-        // Interchanging rows and columns to get the
-        // transpose of the cofactor matrix
-        adj[j][i] = (sign) * (calc_determinant(tmp, n - 1));
-      }
-    }
-  }
-
-  bool calc_inverse(const mat_ff& a, mat_ff& inv, uint32_t n) {
-    // Find determinant of a[][]
-    FFInt det = calc_determinant(a, n);
-
-    if (det == 0) {
-      ERROR_MSG("Singular matrix, cannot find its inverse.");
-      return false;
-    }
-
-    // Find adjoint
-    mat_ff adj(n, std::vector<FFInt> (n));
-
-    calc_adjoint(a, adj, n);
-
-    // Clear inverse
-    inv = mat_ff(n, std::vector<FFInt> (n));
-
-    // Find Inverse using formula "inverse(A) = adj(A)/det(A)"
-    for (int i = 0; i < n; ++i)
-      for (int j = 0; j < n; ++j)
-        inv[i][j] = adj[i][j] / det;
-
-    return true;
-  }
-
-  void calc_inverse_2(mat_ff& a, uint32_t n) {
+  void calc_inverse(mat_ff& a, uint32_t n) {
     // Augment a with unit matrix
     for (int i = 0; i < n; ++i) {
       std::vector<FFInt> dum(n);
@@ -165,15 +67,15 @@ namespace firefly {
     a = res;
   }
 
-  std::vector<FFInt> solve_gauss_system(mat_ff& coef_mat, uint32_t num_eqn) {
+  std::vector<FFInt> solve_gauss_system(mat_ff& a, uint32_t n) {
     // Transform the matrix in upper triangular form
-    for (uint32_t i = 0; i < num_eqn; ++i) {
+    for (uint32_t i = 0; i < n; ++i) {
       // search for maximum in this column
-      FFInt max_el = coef_mat[i][i];
+      FFInt max_el = a[i][i];
       uint32_t max_row = i;
 
-      for (uint32_t k = i + 1; k < num_eqn; ++k) {
-        FFInt tmp = coef_mat[k][i];
+      for (uint32_t k = i + 1; k < n; ++k) {
+        FFInt tmp = a[k][i];
 
         if (tmp.n > max_el.n) {
           max_el = tmp;
@@ -182,32 +84,32 @@ namespace firefly {
       }
 
       // swap maximum row with current row (column by column)
-      for (uint32_t k = i; k < num_eqn + 1; ++k) {
-        FFInt tmp = coef_mat[max_row][k];
-        coef_mat[max_row][k] = coef_mat[i][k];
-        coef_mat[i][k] = tmp;
+      for (uint32_t k = i; k < n + 1; ++k) {
+        FFInt tmp = a[max_row][k];
+        a[max_row][k] = a[i][k];
+        a[i][k] = tmp;
       }
 
       // Make all rows below this one zero in the current column
-      for (uint32_t k = i + 1; k < num_eqn; ++k) {
-        FFInt c = -coef_mat[k][i] / coef_mat[i][i];
+      for (uint32_t k = i + 1; k < n; ++k) {
+        FFInt c = -a[k][i] / a[i][i];
 
-        for (uint32_t j = i; j < num_eqn + 1; ++j) {
-          if (i == j) coef_mat[k][j] = FFInt(0);
-          else coef_mat[k][j] += c * coef_mat[i][j];
+        for (uint32_t j = i; j < n + 1; ++j) {
+          if (i == j) a[k][j] = FFInt(0);
+          else a[k][j] += c * a[i][j];
         }
       }
     }
 
-    std::vector<FFInt> results(num_eqn);
+    std::vector<FFInt> results(n);
 
-    if (coef_mat[num_eqn - 1][num_eqn - 1] != 0) {
+    if (a[n - 1][n - 1] != 0) {
       // Solve equation A * x = b for an upper triangular matrix
-      for (int i = num_eqn - 1; i >= 0; i--) {
-        results[i] = coef_mat[i][num_eqn] / coef_mat[i][i];
+      for (int i = n - 1; i >= 0; i--) {
+        results[i] = a[i][n] / a[i][i];
 
         for (int k = i - 1; k >= 0; k--) {
-          coef_mat[k][num_eqn] -= coef_mat[k][i] * results[i];
+          a[k][n] -= a[k][i] * results[i];
         }
       }
     } else {
@@ -218,6 +120,103 @@ namespace firefly {
     return results;
   }
 
+  void calc_lu_decomposition(mat_ff& a, std::vector<int>& p, uint32_t n) {
+    uint32_t i, k, j, max_row;
+    FFInt max_el;
+    std::vector<FFInt> tmp;
+    p = std::vector<int> (n + 1);
+
+    for (i = 0; i <= n; ++i)
+      p[i] = i; //Unit permutation matrix, P[N] initialized with N
+
+    for (i = 0; i < n; ++i) {
+      max_el = 0;
+      max_row = i;
+
+      for (k = i; k < n; ++k)
+        if (a[k][i] > max_el) {
+          max_el = a[k][i];
+          max_row = k;
+        }
+
+      if (max_row != i) {
+        //pivoting p
+        j = p[i];
+        p[i] = p[max_row];
+        p[max_row] = j;
+
+        //pivoting rows of A
+        tmp = a[i];
+        a[i] = a[max_row];
+        a[max_row] = tmp;
+
+        //counting pivots starting from N (for determinant)
+        p[n]++;
+      }
+
+      for (j = i + 1; j < n; ++j) {
+        a[j][i] /= a[i][i];
+
+        for (k = i + 1; k < n; ++k)
+          a[j][k] -= a[j][i] * a[i][k];
+      }
+    }
+  }
+
+  void calc_inverse_lu(const mat_ff& a, mat_ff& ia, std::vector<int>& p, uint32_t n) {
+    ia = mat_ff(n, std::vector<FFInt> (n));
+
+    for (uint32_t j = 0; j < n; ++j) {
+      for (uint32_t i = 0; i < n; ++i) {
+        if (p[i] == j)
+          ia[i][j] = 1;
+        else
+          ia[i][j] = 0;
+
+        for (uint32_t k = 0; k < i; ++k)
+          ia[i][j] -= a[i][k] * ia[k][j];
+      }
+
+      for (int i = n - 1; i >= 0; i--) {
+        for (int k = i + 1; k < n; ++k)
+          ia[i][j] -= a[i][k] * ia[k][j];
+
+        ia[i][j] = ia[i][j] / a[i][i];
+      }
+    }
+  }
+
+  FFInt calc_determinant_lu(const mat_ff& a, std::vector<int>& p, uint32_t n) {
+    FFInt det = a[0][0];
+
+    for (uint32_t i = 1; i < n; ++i)
+      det *= a[i][i];
+
+    if ((p[n] - n) % 2 == 0)
+      return det;
+    else
+      return -det;
+  }
+
+  std::vector<FFInt> solve_lu(mat_ff& a, std::vector<int>& p, const std::vector<FFInt>& b, uint32_t n) {
+    std::vector<FFInt> x(n);
+
+    for (uint32_t i = 0; i < n; ++i) {
+      x[i] = b[p[i]];
+
+      for (uint32_t k = 0; k < i; ++k)
+        x[i] -= a[i][k] * x[k];
+    }
+
+    for (int i = n - 1; i >= 0; i--) {
+      for (int k = i + 1; k < n; ++k)
+        x[i] -= a[i][k] * x[k];
+
+      x[i] = x[i] / a[i][i];
+    }
+
+    return x;
+  }
 }
 
 
