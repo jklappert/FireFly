@@ -15,7 +15,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================*)
-    
 convert[funs_, vars_, nthr_] :=
     Module[{stream,stream2,rem,tmplist,tlist,clist},	   
 	   CreateFile["ff_conv/funs.hpp"];
@@ -71,8 +70,13 @@ convert[funs_, vars_, nthr_] :=
 
 	   Do[
 	       Print["Converting function "<>ToString[ii]<>"..."];
-	       num = Expand[Numerator[ToExpression[funs[[ii]]]]];
-	       den = Expand[Denominator[ToExpression[funs[[ii]]]]];
+	       If[SameQ[Head[funs[[ii]]], String],
+		  num = Expand[Numerator[ToExpression[funs[[ii]]]]];
+		  den = Expand[Denominator[ToExpression[funs[[ii]]]]];
+		  ,
+		  num = Expand[Numerator[funs[[ii]]]];
+                  den = Expand[Denominator[funs[[ii]]]];
+		 ];
 
 	       If[SameQ[Head[num], Plus],
 		  tmplist = List@@Expand[num];
@@ -128,13 +132,17 @@ convert[funs_, vars_, nthr_] :=
 writeFuns[coefs_,vars_,strm_,suff_,ii_] :=
     Module[{sum},
 	   Do[
-	       tmpterms = Collect[Apply[Plus,coefs[[kk]]],ToExpression[vars], Simplify];
+	       If[Length[coefs[[kk]]] < 200,
+			 tmpterms = Simplify[Apply[Plus,coefs[[kk]]]];,
+			 tmpterms = Collect[Apply[Plus,coefs[[kk]]],ToExpression[vars], Simplify];
+			];
 	       tmpterms = tmpterms /. Rational[a_,b_] :> FFInt["mpz_class(",ToString[a],")"]/FFInt["mpz_class(",ToString[b],")"] /; Length[IntegerDigits[a]] > 18 && Length[IntegerDigits[b]] > 18;
 	       tmpterms = tmpterms /. Rational[a_,b_] :> FFInt["mpz_class(",ToString[a],")"]/FFInt[b] /; Length[IntegerDigits[a]] > 18;
 	       tmpterms = tmpterms /. Rational[a_,b_] :> FFInt[a]/FFInt["mpz_class(",ToString[b],")"] /; Length[IntegerDigits[b]] > 18;
 	       tmpterms = tmpterms /. Rational[a_,b_] :> FFInt[a]/FFInt[b];
 	       tmpterms = tmpterms /. a_ :> FFInt["mpz_class(",ToString[a],")"] /; Length[IntegerDigits[a]] > 18(*IntegerQ[a]*);
-	       tmpterms = tmpterms //. Power[a_,b_] :> pow[a,b] /; MemberQ[ToExpression[vars],a];
+	       (*	       tmpterms = tmpterms //. Power[a__,b_] :> pow[a,b] /; MemberQ[ToExpression[vars],a];*)
+	       tmpterms = tmpterms //. Power[a__,b_] :> pow[a,b] /; b > 0;
 (*	       tmpterms = tmpterms /. a_ :> FFInt[a] /; IntegerQ[a];*)
 	       CreateFile["ff_conv/fun"<>ToString[ii]<>suff<>ToString[kk]<>".cpp"];
 	       stream3 = OpenWrite["ff_conv/fun"<>ToString[ii]<>suff<>ToString[kk]<>".cpp"];
