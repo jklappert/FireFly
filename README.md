@@ -66,7 +66,7 @@ rec.reconstruct();
 The reconstruction will run from this point until it is finished. Additional options can be set and we refer to the `example.cpp` file and the code documentation.
 
 ## Converting Mathematica expressions to C++ code
-Sometimes the black box is not provied by a code but rather one creates it which can be useful by performing algebraic computations on large functions. For this purpose FireFly provides a script to convert Mathematica functions to compilable C++ code. The functions have to be provided as a file in which a list of functions is stored, e.g.,
+Sometimes the black box is not provied by a code but rather one creates it which can be useful by performing algebraic computations on large functions. For this purpose FireFly provides a script to convert Mathematica functions to compilable C++ code. The functions have to be provided as a file in which a list of functions (expression or string) is stored, e.g.,
 ```
 {x+y,2*x+z,...}
 ```
