@@ -279,6 +279,11 @@ namespace firefly {
     return x * 0x2545F4914F6CDD1D;
   }
 
+  void set_xorshift_seed(uint64_t seed) {
+    xorshift64star_state = seed;
+  }
+
+
 
 #ifdef DEFAULT
   /*uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {

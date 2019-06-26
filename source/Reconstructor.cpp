@@ -28,6 +28,8 @@ namespace firefly {
     }
 
     FFInt::set_new_prime(primes()[prime_it]);
+    uint64_t seed = static_cast<uint64_t> (std::time(0));
+    BaseReconst().set_seed(seed);
     tmp_rec = RatReconst(n);
   }
 

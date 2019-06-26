@@ -187,7 +187,7 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_state);
       state = seed + increment;
-      xorshift64star_state = state;
+      set_xorshift_seed(state);
     }
     pcg32();
   }
