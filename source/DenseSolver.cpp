@@ -20,7 +20,8 @@
 #include "Logger.hpp"
 
 namespace firefly {
-  void calc_inverse(mat_ff& a, uint32_t n) {
+  void calc_inverse(mat_ff& a, uint32_t n_) {
+    int n = (int) n_;
     // Augment a with unit matrix
     for (int i = 0; i < n; ++i) {
       std::vector<FFInt> dum(n);
@@ -186,7 +187,7 @@ namespace firefly {
 
     for (uint32_t j = 0; j < n; ++j) {
       for (uint32_t i = 0; i < n; ++i) {
-        if (p[i] == j)
+        if (p[i] == (int) j)
           ia[i][j] = 1;
         else
           ia[i][j] = 0;
@@ -196,7 +197,7 @@ namespace firefly {
       }
 
       for (int i = n - 1; i >= 0; i--) {
-        for (int k = i + 1; k < n; ++k)
+        for (int k = i + 1; k < (int) n; ++k)
           ia[i][j] -= a[i][k] * ia[k][j];
 
         ia[i][j] = ia[i][j] / a[i][i];
@@ -227,7 +228,7 @@ namespace firefly {
     }
 
     for (int i = n - 1; i >= 0; i--) {
-      for (int k = i + 1; k < n; ++k)
+      for (int k = i + 1; k < (int) n; ++k)
         x[i] -= a[i][k] * x[k];
 
       x[i] = x[i] / a[i][i];

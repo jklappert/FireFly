@@ -27,9 +27,9 @@ namespace firefly {
    *  Calculates the inverse of a matrix using Gauss-Jordan
    * 
    *  @param a input matrix build of FFInts
-   *  @param n the size of a
+   *  @param n_ the size of a
    */
-  void calc_inverse(mat_ff& a, uint32_t n);
+  void calc_inverse(mat_ff& a, uint32_t n_);
   /**
   *  Solves the given system of equations using a Gauss-Jordan algorithm
   *  @param a the (n x (n + 1)) matrix which represents the system of equations, e.q., (x, x^2, | f(x))

@@ -20,12 +20,15 @@
 #include "Tests.hpp"
 #include "utils.hpp"
 #include "DenseSolver.hpp"
+#include "ShuntingYardParser.hpp"
 
 using namespace firefly;
 
+// Example for Shunting Yard parser of
+static ShuntingYardParser par("../s_y_test.m", {"x","y","z"});
 int main() {
   // Example for the automatic interface
-  Reconstructor reconst(4, 1/*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(3, 1/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   reconst.enable_scan();
   // Give the paths to the intermediate results
@@ -40,9 +43,9 @@ int main() {
   //reconst.set_tags(tags);
   reconst.reconstruct();
   // Get results
-  /*std::vector<RationalFunction> results = reconst.get_result();
-  for (auto& res : results) {
-    std::cout << res << "\n";
+  //std::vector<RationalFunction> results = reconst.get_result();
+  /*for (auto& res : results) {
+    std::cout << res.to_string({"x","y","z"}) << "\n";
   }*/
 
   // Resets all statics in RatReconst to start a new reconstruction
@@ -54,7 +57,7 @@ int main() {
   // Example for the reconstruction of a polynomial
   //reconstruct_polynomial();
 
-  // Some examples of the usage of the dense solver functions
+  // Some examples of the dense solver functions
   /*
   // Initialize matrices
   mat_ff a = {{0*33,17,25},{59595, 989983749,99},{23213213, 4354354353,0*434232324}};
@@ -95,17 +98,15 @@ int main() {
 
 // Example of how one can use the black_box function for the automatic interface
 void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
+  // Get results from parsed expressions
+  result = par.evaluate(values);
   //result.emplace_back(singular_solver(values));
   //result.emplace_back(n_eq_1(values[0]));
   //result.emplace_back(n_eq_4(values));
-  result.emplace_back(gghh(values));
+  //result.emplace_back(gghh(values));
   //result.emplace_back(bench_1(values));
   //result.emplace_back(pol_n_eq_3(values));
   //result.emplace_back(ggh(values));
-  // result.emplace_back(pol_20_20(values));
-  // result.emplace_back(pol_1(values));
-  // result.emplace_back(pol_6(values));
-  // result.emplace_back(pol_7(values));
 }
 
 namespace firefly {
@@ -114,8 +115,11 @@ namespace firefly {
   void reconstruct_rational_function() {
     uint32_t n = 4;
     FFInt::set_new_prime(primes()[0]);
-    RatReconst rec(n);
+    BaseReconst br;
+    uint64_t seed = static_cast<uint64_t> (std::time(0));
+    br.set_seed(seed);
 
+    RatReconst rec(n);
     rec.set_save_interpolation();
 
     // One can set a tag to start from a previously saved run after an interpolation
@@ -170,15 +174,12 @@ namespace firefly {
           yis[j] = t_yis[j - 1];
         }
 
-        FFInt tt = yis[1];
-        FFInt d = yis[0];
-
         //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
         //FFInt num = n_eq_1(z1); // example for n = 1
         //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
-        //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
+        FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
         //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
-        FFInt num = (FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + tt + yis[1]) / (yis[1]); //(yis[0].pow(4) + 3*yis[1].pow(5) + yis[2].pow(2));// + tt;
+        //FFInt num = (FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + yis[1]) / (yis[1]);
 
         // Feed the algorithm with the current zi_order
         ++count;
@@ -239,35 +240,15 @@ namespace firefly {
         yis[j] = t_yis[j - 1];
       }
 
-      //FFInt s = yis[0];
-      //FFInt m22 = yis[1];
-      FFInt tt = yis[1];
-      FFInt d = yis[0];
-
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
       //FFInt num = n_eq_1(z1) + tt*FFInt(primes()[1]); // example for n = 1
       //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
       //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       //FFInt num = bench_3(yis);
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
-      //FFInt num = pol_7(yis);
+      FFInt num = (FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + yis[1]) / (yis[1]);
 
-      //FFInt nn = (156-148*d+47*d.pow(2)-5*d.pow(3))*s.pow(2)+(-52+32*d-5*d.pow(2))*s.pow(3)+tt*(s*(-156+148*d-47*d.pow(2)+5*d.pow(3))+(52-32*d+5*d.pow(2))*s.pow(2)+(104-116*d+42*d.pow(2)-5*d.pow(3))*s.pow(3))+m22.pow(2)*(s*(36-42*d+16*d.pow(2)-2*d.pow(3))+(-324+342*d-120*d.pow(2)+14*d.pow(3))*s.pow(2)+tt*(-36+42*d-16*d.pow(2)+s*(324-342*d+120*d.pow(2)-14*d.pow(3))+2*d.pow(3)+(72-84*d+32*d.pow(2)-4*d.pow(3))*s.pow(2))+(-72+84*d-32*d.pow(2)+4*d.pow(3))*s.pow(3))+(-104+116*d-42*d.pow(2)+5*d.pow(3))*s.pow(4)+m22*(s*(-36+42*d-16*d.pow(2)+2*d.pow(3))+(240-278*d+105*d.pow(2)-13*d.pow(3))*s.pow(2)+(-524+568*d-203*d.pow(2)+24*d.pow(3))*s.pow(3)+tt*(36-42*d+16*d.pow(2)-2*d.pow(3)+s*(-240+278*d-105*d.pow(2)+13*d.pow(3))+(524-568*d+203*d.pow(2)-24*d.pow(3))*s.pow(2)+(40-52*d+22*d.pow(2)-3*d.pow(3))*s.pow(3))+(-40+52*d-22*d.pow(2)+3*d.pow(3))*s.pow(4));
 
-      //FFInt dd = m22.pow(2)*((-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(2)+(384-320*d+88*d.pow(2)-8*d.pow(3))*s.pow(3)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(4))+m22*((192-160*d+44*d.pow(2)-4*d.pow(3))*s.pow(2)+(-576+480*d-132*d.pow(2)+12*d.pow(3))*s.pow(3)+(576-480*d+132*d.pow(2)-12*d.pow(3))*s.pow(4)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(5));
-      //FFInt nn = (9*d.pow(3)-81*d.pow(2)+242*d-240);
-
-      //FFInt dd = ((d.pow(3)-12*d.pow(2)+48*d-64)*tt.pow(2));
-
-      //FFInt num = 1/dd;
-
-      //FFInt nn = FFInt(2)/FFInt(3)*d*tt;
-      //FFInt dd = 1 + FFInt(primes()[0])*d + d.pow(2)*tt.pow(2);
-      //FFInt num = nn/dd;
-      FFInt num = (primes()[0] + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + primes()[0] * yis[0].pow(2) + tt + yis[1]) / (yis[1] + primes()[0]*yis[1].pow(20)); //(yis[0].pow(4) + 3*yis[1].pow(5) + yis[2].pow(2));// + tt;
-
-      //std::cout << num << " " << nn/(1+77959*d + d.pow(2)*tt.pow(2)) << "\n";
-      //FFInt num = (yis[0].pow(4) + 3*yis[1].pow(5) + yis[2].pow(2))/(2*yis[0]*yis[1]*yis[2].pow(2) + 3*yis[1]);
       ++kk;
       ++count;
 
@@ -319,22 +300,10 @@ namespace firefly {
 
       yis = rec_poly.get_rand_zi_vec(rec_poly.get_zi_order());
 
-      //      FFInt num = pol_20_20(yis);
-
-      //FFInt s = yis[0];
-      //FFInt m22 = yis[1];
-      //FFInt tt = yis[1];
-      //FFInt d = yis[0];
-      //FFInt num = (156-148*d+47*d.pow(2)-5*d.pow(3))*s.pow(2)+(-52+32*d-5*d.pow(2))*s.pow(3)+t*(s*(-156+148*d-47*d.pow(2)+5*d.pow(3))+(52-32*d+5*d.pow(2))*s.pow(2)+(104-116*d+42*d.pow(2)-5*d.pow(3))*s.pow(3))+m22.pow(2)*(s*(36-42*d+16*d.pow(2)-2*d.pow(3))+(-324+342*d-120*d.pow(2)+14*d.pow(3))*s.pow(2)+t*(-36+42*d-16*d.pow(2)+s*(324-342*d+120*d.pow(2)-14*d.pow(3))+2*d.pow(3)+(72-84*d+32*d.pow(2)-4*d.pow(3))*s.pow(2))+(-72+84*d-32*d.pow(2)+4*d.pow(3))*s.pow(3))+(-104+116*d-42*d.pow(2)+5*d.pow(3))*s.pow(4)+m22*(s*(-36+42*d-16*d.pow(2)+2*d.pow(3))+(240-278*d+105*d.pow(2)-13*d.pow(3))*s.pow(2)+(-524+568*d-203*d.pow(2)+24*d.pow(3))*s.pow(3)+t*(36-42*d+16*d.pow(2)-2*d.pow(3)+s*(-240+278*d-105*d.pow(2)+13*d.pow(3))+(524-568*d+203*d.pow(2)-24*d.pow(3))*s.pow(2)+(40-52*d+22*d.pow(2)-3*d.pow(3))*s.pow(3))+(-40+52*d-22*d.pow(2)+3*d.pow(3))*s.pow(4));
-
-      //FFInt num = m22.pow(2)*((-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(2)+(384-320*d+88*d.pow(2)-8*d.pow(3))*s.pow(3)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(4))+m22*((192-160*d+44*d.pow(2)-4*d.pow(3))*s.pow(2)+(-576+480*d-132*d.pow(2)+12*d.pow(3))*s.pow(3)+(576-480*d+132*d.pow(2)-12*d.pow(3))*s.pow(4)+(-192+160*d-44*d.pow(2)+4*d.pow(3))*s.pow(5));
-
-      //FFInt num = tt*primes()[0] + d*FFInt(primes()[1]);//((d.pow(3)-12*d.pow(2)+48*d-64)*t.pow(2));
+      FFInt num = pol_20_20(yis);
 
       ++kk;
       ++count;
-
-      FFInt num = FFInt(primes()[1]) + FFInt(primes()[1]) * FFInt(primes()[2]) * yis[0] + yis[0].pow(2); //yis[0]*yis[1].pow(2);//yis[0].pow(20) + 2*yis[1] + 2*yis[1].pow(2) + 2*yis[1].pow(3) + 2*yis[1].pow(4)+3*yis[2].pow(20);
 
       rec_poly.feed(num, rec_poly.get_zi_order(), primes_used);
       rec_poly.interpolate();

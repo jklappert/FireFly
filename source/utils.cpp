@@ -20,9 +20,8 @@
 #include "Logger.hpp"
 
 namespace firefly {
-  /**
-   *  zahl und p
-   */
+  static uint64_t xorshift64star_state = 0x4d595df4d0f33173;
+
   std::pair<mpz_class, mpz_class> run_chinese_remainder(
     const std::pair<mpz_class, mpz_class>& p1,
     const std::pair<mpz_class, mpz_class>& p2) {

@@ -104,9 +104,9 @@ namespace firefly {
    */
   uint64_t xorshift64star();
   /**
-   *   The state of the xorshiftstar
+   *  Changes the state of the xorshiftstar
+   *  @param seed The seed
    */
-  static uint64_t xorshift64star_state = 0x4d595df4d0f33173;
   void set_xorshift_seed(uint64_t seed);
 #ifdef DEFAULT
   uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m);

@@ -88,7 +88,8 @@ set(LIBSOURCES
   ${SOURCE_PATH}/Poly.cpp
   ${SOURCE_PATH}/FFThieleInterpolator.cpp
   ${SOURCE_PATH}/RatReconstCC.cpp
-  ${SOURCE_PATH}/DenseSolver.cpp)
+  ${SOURCE_PATH}/DenseSolver.cpp
+  ${SOURCE_PATH}/ShuntingYardParser.cpp)
 
 set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/BaseReconst.cpp
@@ -106,7 +107,8 @@ set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/Poly.cpp
   ${SOURCE_PATH}/FFThieleInterpolator.cpp
   ${SOURCE_PATH}/RatReconstCC.cpp
-  ${SOURCE_PATH}/DenseSolver.cpp)
+  ${SOURCE_PATH}/DenseSolver.cpp
+  ${SOURCE_PATH}/ShuntingYardParser.cpp)
 
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
@@ -165,6 +167,8 @@ install(FILES
   "${INCLUDE_PATH}/utils.hpp"
   "${INCLUDE_PATH}/Poly.hpp"
   "${INCLUDE_PATH}/FFThieleInterpolator.hpp"
+  "${INCLUDE_PATH}/DenseSolver.hpp"
+  "${INCLUDE_PATH}/ShuntingYardParser.hpp"
   DESTINATION "${INCLUDE_INSTALL_DIR}")
 
 # adding documentation
