@@ -38,6 +38,11 @@ namespace firefly{
      *  @return The values of the parsed functions as a vector.
      */
     std::vector<FFInt> evaluate(const std::vector<FFInt>& values);
+    /**
+     *  Returns the reverse polish notation of the parsed functions
+     *  @return A vector of all parsed functions in reverse polish notation
+     */
+    std::vector<std::vector<std::string>> get_rp_functions();
   private:
     std::vector<std::vector<std::string>> functions {};
     std::unordered_map<std::string, int> vars_map {};

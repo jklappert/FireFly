@@ -55,12 +55,19 @@ namespace firefly {
             tmp = "";
           }
 
-          while (!op_stack.empty() && op_stack.top() != '(' && get_weight(op_stack.top()) >= get_weight(*l_ptr)) {
-            pf.emplace_back(std::string(1, op_stack.top()));
-            op_stack.pop();
-          }
+          if (!op_stack.empty() && *(l_ptr - 1) == '(') {
+            tmp.insert(tmp.begin(), *l_ptr);
+          } else if (op_stack.empty() && pf.empty()) {
+            tmp.insert(tmp.begin(), *l_ptr);
+          } else {
 
-          op_stack.push(*l_ptr);
+            while (!op_stack.empty() && op_stack.top() != '(' && get_weight(op_stack.top()) >= get_weight(*l_ptr)) {
+              pf.emplace_back(std::string(1, op_stack.top()));
+              op_stack.pop();
+            }
+
+            op_stack.push(*l_ptr);
+          }
         }
         // Push all open parenthesis to the stack
         else if (*l_ptr == '(')
@@ -113,59 +120,37 @@ namespace firefly {
 
       for (const auto & token : tokens) {
         if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^") {
-          // Usual case where two numbers are connected by an operator
-          if (nums.size() > 1) {
-            // Pop two numbers
-            FFInt a = nums.top();
-            nums.pop();
-            FFInt b = nums.top();
-            nums.pop();
+          // Pop two numbers
+          FFInt a = nums.top();
+          nums.pop();
+          FFInt b = nums.top();
+          nums.pop();
 
-            // Evaluate and push the result back to the stack
-            switch (token[0]) {
-              case '+': {
-                nums.push(a + b);
-                break;
-              }
-
-              case '-': {
-                nums.push(b - a);
-                break;
-              }
-
-              case '*': {
-                nums.push(b * a);
-                break;
-              }
-
-              case '/': {
-                nums.push(b / a);
-                break;
-              }
-
-              case '^': {
-                nums.push(b.pow(a));
-                break;
-              }
+          // Evaluate and push the result back to the stack
+          switch (token[0]) {
+            case '+': {
+              nums.push(a + b);
+              break;
             }
-          }
-          // Needed for negative numbers where one number is connected with an operator
-          else {
-            // Pop a number
-            FFInt a = nums.top();
-            nums.pop();
 
-            // Evaluate and push the result back to the stack
-            switch (token[0]) {
-              case '+': {
-                nums.push(a);
-                break;
-              }
+            case '-': {
+              nums.push(b - a);
+              break;
+            }
 
-              case '-': {
-                nums.push(-a);
-                break;
-              }
+            case '*': {
+              nums.push(b * a);
+              break;
+            }
+
+            case '/': {
+              nums.push(b / a);
+              break;
+            }
+
+            case '^': {
+              nums.push(b.pow(a));
+              break;
             }
           }
         } else {
@@ -177,8 +162,15 @@ namespace firefly {
           // check then if number has more than 18 digits
           else if (token.length() > 18)
             nums.push(FFInt(mpz_class(token)));
-          else
-            nums.push(FFInt(std::stoull(token)));
+          else {
+            if(token[0] == '-'){
+              std::string tmp = token;
+              tmp.erase(0, 1);
+              nums.push(-FFInt(std::stoull(tmp)));
+            } else {
+              nums.push(FFInt(std::stoull(token)));
+            }
+          }
         }
       }
 
@@ -230,5 +222,9 @@ namespace firefly {
       return true;
 
     return false;
+  }
+
+  std::vector<std::vector<std::string>> ShuntingYardParser::get_rp_functions() {
+    return functions;
   }
 }

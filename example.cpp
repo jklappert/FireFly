@@ -43,10 +43,10 @@ int main() {
   //reconst.set_tags(tags);
   reconst.reconstruct();
   // Get results
-  //std::vector<RationalFunction> results = reconst.get_result();
-  /*for (auto& res : results) {
+  std::vector<RationalFunction> results = reconst.get_result();
+  for (auto& res : results) {
     std::cout << res.to_string({"x","y","z"}) << "\n";
-  }*/
+  }
 
   // Resets all statics in RatReconst to start a new reconstruction
   //RatReconst::reset();
