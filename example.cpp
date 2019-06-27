@@ -44,8 +44,8 @@ int main() {
   reconst.reconstruct();
   // Get results
   std::vector<RationalFunction> results = reconst.get_result();
-  for (auto& res : results) {
-    std::cout << res.to_string({"x","y","z"}) << "\n";
+  for (int i = 0; i < results.size(); ++i) {
+    std::cout << "Function " << i + 1 << ":\n" << results[i].to_string({"x","y","z"}) << "\n";
   }
 
   // Resets all statics in RatReconst to start a new reconstruction
@@ -100,6 +100,7 @@ int main() {
 void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
   // Get results from parsed expressions
   result = par.evaluate(values);
+  result.emplace_back(result[0] / result[3]);
   //result.emplace_back(singular_solver(values));
   //result.emplace_back(n_eq_1(values[0]));
   //result.emplace_back(n_eq_4(values));
