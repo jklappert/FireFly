@@ -101,6 +101,11 @@ void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFIn
   // Get results from parsed expressions
   result = par.evaluate(values);
   result.emplace_back(result[0] / result[3]);
+  mat_ff mat = {{result[0], result[1]},{result[2],result[3]}};
+  std::vector<int> p {};
+  calc_lu_decomposition(mat, p, 2);
+  // Interpolate determinat of the matrix mat
+  result.emplace_back(calc_determinant_lu(mat, p, 2));
   //result.emplace_back(singular_solver(values));
   //result.emplace_back(n_eq_1(values[0]));
   //result.emplace_back(n_eq_4(values));
