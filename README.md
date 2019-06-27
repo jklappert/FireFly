@@ -81,7 +81,7 @@ chmod u+x convert_to_ff.sh
 ./convert_to_ff.sh $PATH_TO_FUNCTION_FILE $PATH_TO_VARIABLES_FILE <number_of_threads>
 ```
 Here, `$PATH_TO_FUNCTION_FILE` defines the path to the file in which the list of functions is stored, `$PATH_TO_VARIABLES_FILE` defines the path to the file in which the list of variables is stored, and `<number_of_threads>` defines the number of threads you want to use for the reconstruction process. The latter is given as an integer. During the conversion process a directory `ff_conv` is created in which the C++ files are written. It contains an executable `exec.cpp` which has to be modified to your needs (filling the black box, doing something with the result,...) and all functions which are splitted to numerator and denominator and to subfunctions if they exceed a length of 500 terms. The functions are numbered according to their ordering in the list and can be evaluated in C++ by calling, e.g.,
-```
+```cpp
 std::vector<FFInt> values = {1, 5, 7};
 FFInt res = fun1(values) + fun2(values) + ...;
 ```
@@ -95,6 +95,30 @@ A build directory will be created (`/build`) in which the executable and the obj
 ./build/exec
 ```
 which will be performed using the number of threads defined in the conversion process.
+
+## Directly parse collections of rational functions
+When the conversion and compilation steps of the `convert_to_ff.sh` scripts are too time consuming, FireFly also provides a parser class for rational functions. The functions will be stored in reverse polish notation to be evaluated for a given parameter point. Parsing collections of rational functions can be done with the `ShuntingYardParser` class. It has to be constructed with a path to a file which contains the rational functions and a vector which sets the occurring variables:
+```cpp
+ShuntingYardParser parser(path, vars);
+```
+Here, `path` is a string containing the path to the file in which the needed functions are stored and `vars` is a vector of strings which represent the occurring variables. The collection of functions have to be seperated by new lines to be identified correctly, e.g.,
+```
+(x+y*3)/(z^2+x)
+(12132132323213213212/33*x + 12 * 3 - x^100*y^2)/(3*y^5)
+```
+The corresponding vector `vars` would thus be
+```
+std::vector<std::string> vars = {"x","y","z"};
+```
+The functions have to be parsed only once and can be evaluated afterwards calling
+```cpp
+parser.evaluate(values)
+```
+where `values` is a vector which contains the parameter point at which the functions should be evaluated. The function `evaluate` returns a vector of `FFInt` objects which is filled by the values of the evaluated functions in the same order as the functions are defined in the input file. Thus, it can be directly used in the `black_box` function of FireFly. An example file is given in `s_y_test.m`. Note that only the operators
+```
++, -, *, /, ^
+```
+are supported.
 
 ## Code Documentation
 Doxygen can be used to generate code documentation. To generate the documentation, run

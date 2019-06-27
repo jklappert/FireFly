@@ -7,6 +7,7 @@ namespace firefly {
 
   ShuntingYardParser::ShuntingYardParser(std::string file, std::vector<std::string> vars) {
 
+    INFO_MSG("Parsing functions in '" + file + "'.");
     // Check if file exists
     std::ifstream infile(file);
 
@@ -100,6 +101,7 @@ namespace firefly {
     functions.shrink_to_fit();
 
     istream.close();
+    INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions.");
   }
 
   std::vector<FFInt> ShuntingYardParser::evaluate(const std::vector<FFInt>& values) {
