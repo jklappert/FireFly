@@ -120,6 +120,12 @@ where `values` is a vector which contains the parameter point at which the funct
 ```
 are supported.
 
+For convenience, FireFly also provides a script which converts a list of rational functions (stored as an expression list of Mathematica) to FireFly's parsable format. It is located in the `mma_2_ff` directory and can be executed with
+```
+./convert_to_sy.sh $FILE
+```
+where `$FILE` contains the list of rational functions.
+
 ## Code Documentation
 Doxygen can be used to generate code documentation. To generate the documentation, run
 ```
