@@ -24,11 +24,11 @@
 
 using namespace firefly;
 
-// Example for Shunting Yard parser of
+// Example for Shunting Yard parser
 static ShuntingYardParser par("../s_y_test.m", {"x","y","z"});
 int main() {
   // Example for the automatic interface
-  Reconstructor reconst(3, 1/*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(3, 4/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   reconst.enable_scan();
   // Give the paths to the intermediate results
@@ -106,13 +106,12 @@ void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFIn
   calc_lu_decomposition(mat, p, 2);
   // Interpolate determinat of the matrix mat
   result.emplace_back(calc_determinant_lu(mat, p, 2));
-  //result.emplace_back(singular_solver(values));
-  //result.emplace_back(n_eq_1(values[0]));
-  //result.emplace_back(n_eq_4(values));
-  //result.emplace_back(gghh(values));
-  //result.emplace_back(bench_1(values));
-  //result.emplace_back(pol_n_eq_3(values));
-  //result.emplace_back(ggh(values));
+  /*result.emplace_back(singular_solver(values));
+  result.emplace_back(n_eq_1(values[0]));
+  result.emplace_back(n_eq_4(values));
+  result.emplace_back(gghh(values));
+  result.emplace_back(pol_n_eq_3(values));
+  result.emplace_back(ggh(values));*/
 }
 
 namespace firefly {
