@@ -28,9 +28,6 @@ using namespace firefly;
 // Example for Shunting Yard parser
 static ShuntingYardParser par("../s_y_test.m", {"x","y","z"});
 int main() {
-  //PolynomialFF pol(3, ff_map({{{1,0,0},4365288864471303747},{{0,1,0},3872494556559135458},{{0,0,0},0}}));
-  //pol.generate_horner();
-  //pol.calc_n_m_1({2,3});
   // Example for the automatic interface
   Reconstructor reconst(3, 1/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift

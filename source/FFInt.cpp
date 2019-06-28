@@ -343,4 +343,3 @@ namespace firefly {
 
   void firefly_exists(void) {}
 }
-
