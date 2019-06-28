@@ -31,6 +31,7 @@ int main() {
   Reconstructor reconst(3, 4/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   reconst.enable_scan();
+  //reconst.set_safe_interpolation();
   // Give the paths to the intermediate results
   //std::vector<std::string> file_paths = {"ff_save/0_3.txt","ff_save/1_2.txt","ff_save/2_3.txt","ff_save/3_4.txt","ff_save/4_1.txt","ff_save/5_2.txt"};
   //std::vector<std::string> file_paths = {"ff_save/sing_3.txt","ff_save/n1_2.txt","ff_save/n4_3.txt","ff_save/gghh_4.txt","ff_save/pol_1.txt","ff_save/ggh_2.txt"};
@@ -125,7 +126,7 @@ namespace firefly {
     br.set_seed(seed);
 
     RatReconst rec(n);
-    rec.set_save_interpolation();
+    rec.set_safe_interpolation();
 
     // One can set a tag to start from a previously saved run after an interpolation
     // over one prime field was successful
@@ -319,5 +320,3 @@ namespace firefly {
     std::cout << "--------------------------------------------------------------\n";
   }
 }
-
-

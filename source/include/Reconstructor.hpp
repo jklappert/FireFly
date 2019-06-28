@@ -26,7 +26,11 @@
 #include <tuple>
 
 namespace firefly {
-  typedef std::list<std::tuple<FFInt, std::vector<uint32_t>, std::future<std::vector<FFInt>>>> future_list;
+  enum RatReconst_status {DEFAULT, DONE, DELETED};
+
+  typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
+  typedef std::list<RatReconst_tuple> RatReconst_list;
+  typedef std::list<std::tuple<FFInt, std::vector<uint32_t>, std::future<std::pair<std::vector<FFInt>, double>>>> future_list;
   /**
    * @class Reconstructor
    * @brief A class to reconstruct functions from its values
@@ -53,6 +57,11 @@ namespace firefly {
      */
     std::vector<RationalFunction> get_result();
     /**
+     *  @return a vector of the already reconstructed rational functions and its tag;
+     *  they are removed from the internal memory afterwards
+     */
+    std::vector<std::pair<std::string, RationalFunction>> get_early_results();
+    /**
      *  The black box functions which gets called by the Reconstructor class to evaluate probes
      *  @param result a vector to be filled by the user with the probes in an immutable ordering
      *  @param values the parameter point at which the black box should be probed
@@ -72,17 +81,23 @@ namespace firefly {
      *  @param file_paths_ a vector to the absolute paths to the intermediate results of reconstruction objects
      */
     void resume_from_saved_state(const std::vector<std::string>& file_paths_);
+    /**
+     *  Activate the safe interpolation mode where the function is completely interpolated in each prime field,
+     *  no optimizations are used after the first prime field
+     */
+    void set_safe_interpolation();
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
   private:
     uint32_t n;
     uint32_t thr_n;
-    uint32_t verbosity;
-    std::vector<RatReconst> reconst {};
+    int verbosity;
+    RatReconst_list reconst {};
     bool scan = false;
     bool save_states = false;
     bool resume_from_state = false;
     std::vector<std::string> tags {};
     std::vector<std::string> file_paths {};
+    bool safe_mode = false;
     uint32_t prime_it = 0;
     ThreadPool tp;
     std::mutex future_control;
@@ -90,6 +105,7 @@ namespace firefly {
     std::mutex feed_control;
     std::mutex print_control;
     std::mutex status_control;
+    std::mutex clean;
     std::condition_variable condition_future;
     std::condition_variable condition_feed;
     // list containing the parameters and the future of the parallel tasks; t, zi_order, future
@@ -105,6 +121,8 @@ namespace firefly {
     uint32_t interpolate_jobs = 0;
     uint32_t total_iterations = 0;
     uint32_t iteration = 0;
+    bool one_done = false;
+    double average_black_box_time;
     RatReconst tmp_rec;
     std::vector<FFInt> shift {};
     /**
@@ -134,6 +152,14 @@ namespace firefly {
      *  @param probe a vector of black box probes in an immutable order
      */
     void feed_job(const std::vector<uint32_t> zi_order, const FFInt t, std::vector<FFInt>* probe);
-    void interpolate_job(RatReconst& rec);
+    /**
+     *  Interpolates a RatReconst and queues new jobs if required
+     *  @param rec a reference to the RatReconst
+     */
+    void interpolate_job(RatReconst_tuple& rec);
+    /**
+     *  Removes all RatReconst from reconst which are flagged as DELETE
+     */
+    void clean_reconst();
   };
 }

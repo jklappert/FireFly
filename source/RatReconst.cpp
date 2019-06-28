@@ -2551,7 +2551,7 @@ namespace firefly {
     PolyReconst::reset();
   }
 
-  void RatReconst::set_save_interpolation() {
+  void RatReconst::set_safe_interpolation() {
     interpolations = 100;
   }
 
@@ -2632,4 +2632,3 @@ namespace firefly {
     return res;
   }
 }
-

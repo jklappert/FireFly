@@ -120,7 +120,7 @@ namespace firefly {
     /**
      *  With this option a full interpolation is performed over all prime fields to be sensitive of unlicky primes
      */
-    void set_save_interpolation();
+    void set_safe_interpolation();
   private:
     /**
      *  Starts the real interpolation managed by the class itself
