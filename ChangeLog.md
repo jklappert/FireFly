@@ -27,11 +27,14 @@ New features
  * Added a Shunting Yard parser to parse a collection of rational functions
  for functional evaluation. This skips the compilation steps of the Mathematica
  to C++ conversion script but may be slower.
+ 
+ * Added a Horner representation of rational functions which may result in
+ faster evaluation time when needed. Check out `source/include/HornerGenerator.hpp`.
 
  * Added dense algorithms for matrix manipulation, e.g., computing the inverse,
  the determinant, or solutions for system of equations. Additionaly,
  LU decompositions are supported. Further information can be found in
- `source/DenseSolver.hpp`.
+ `source/include/DenseSolver.hpp`.
 
 Changes
 -------
