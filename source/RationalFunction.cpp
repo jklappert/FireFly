@@ -17,6 +17,7 @@
 //==================================================================================
 
 #include "RationalFunction.hpp"
+#include "HornerGenerator.hpp"
 
 namespace firefly {
 
@@ -24,10 +25,10 @@ namespace firefly {
 
   RationalFunction::RationalFunction() {}
 
-  std::string RationalFunction::to_string(const std::vector<std::string>& symbols) const {
-    std::string str = "(" + numerator.to_string(symbols) + ")/(";
+  std::string RationalFunction::to_string(const std::vector<std::string>& vars) const {
+    std::string str = "(" + numerator.to_string(vars) + ")/(";
     if(!denominator.coefs.empty())
-      str += denominator.to_string(symbols) + ")";
+      str += denominator.to_string(vars) + ")";
     else
       str += "1)";
     return str;
@@ -39,4 +40,7 @@ namespace firefly {
     return out;
   }
 
+  std::string RationalFunction::generate_horner(const std::vector<std::string>& vars) const {
+    return "(" + numerator.generate_horner(vars) + ")/(" + denominator.generate_horner(vars) + ")";
+  }
 }

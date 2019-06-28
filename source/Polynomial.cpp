@@ -19,6 +19,7 @@
 #include "Polynomial.hpp"
 #include "utils.hpp"
 #include "Logger.hpp"
+#include "HornerGenerator.hpp"
 
 namespace firefly {
 
@@ -51,13 +52,13 @@ namespace firefly {
     coefs.clear();
   }
 
-  std::string Polynomial::to_string(const std::vector<std::string>& symbols) const {
+  std::string Polynomial::to_string(const std::vector<std::string>& vars) const {
     std::string str;
 
     if (coefs.empty())
       str += "0";
     else {
-      if (symbols.size() != n) {
+      if (vars.size() != n) {
         ERROR_MSG("Symbol size does not match to number of variables of the polynomial!");
         std::exit(-1);
       }
@@ -67,9 +68,9 @@ namespace firefly {
 
         for (uint32_t i = 0; i < mono.powers.size(); ++i) {
           if (mono.powers[i] > 1) {
-            str += symbols[i] + "^" + std::to_string(mono.powers[i]) + "*";
+            str += vars[i] + "^" + std::to_string(mono.powers[i]) + "*";
           } else if (mono.powers[i] == 1) {
-            str += symbols[i] + "*";
+            str += vars[i] + "*";
           }
         }
 
@@ -137,5 +138,8 @@ namespace firefly {
     return *this;
   }
 
+  std::string Polynomial::generate_horner(std::vector<std::string> vars) const {
+    return generate_horner_mon(coefs, vars);
+  }
 }
 

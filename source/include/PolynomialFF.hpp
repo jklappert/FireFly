@@ -38,6 +38,7 @@ namespace firefly {
     /**
      *  Default constructor
      */
+    void generate_horner();
     PolynomialFF();
     /**
      *  Constructor with a given number of variables and coefficients
@@ -63,7 +64,7 @@ namespace firefly {
      *  @param x the parameter point which is of length n - 1
      *  @return f(x)
      */
-    FFInt calc_n_m_1(const std::vector<FFInt>& x) const;
+    FFInt calc_n_m_1(const std::vector<FFInt>& x);
     /**
      *  Evaluates the polynomial at a given parameter point omitting the first
      *  variable
@@ -117,6 +118,17 @@ namespace firefly {
      *  @curr_deg degree number of b which is absent in a
      */
     PolynomialFF mul_shift(const ff_map& a, const ff_map& b, uint32_t curr_deg) const;
+    /*ShuntingYardParser s_y_fun;
+    ShuntingYardParser s_y_fun_n_m_1;
+    ShuntingYardParser s_y_fun_map_n_m_1;
+    void generate_horner();*/
+    /*
+     *  Generates Horner scheme coefficients of a polynomial recursively
+     *  @param var An integer representing the current variable
+     *  @param monomials A map of monomials that build a polynomial
+     *  @return A Horner form of a polynomial
+     */
+    //std::string generate_horner_coefs(int var, const ff_map& monomials);
   };
   PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b);
   PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b);

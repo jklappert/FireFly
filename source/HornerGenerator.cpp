@@ -1,0 +1,210 @@
+#include "HornerGenerator.hpp"
+#include "Logger.hpp"
+#include <map>
+
+namespace firefly {
+
+  std::string generate_horner_ff(const ff_map& monomials, const std::vector<std::string>& vars, uint32_t index) {
+    if (!monomials.empty()) {
+      std::map<uint32_t, ff_map, std::greater<uint32_t>> tmp_coefs {};
+
+      if (monomials.begin() -> first.size() > 1) {
+        for (const auto & mon : monomials) {
+          uint32_t deg = mon.first[0];
+          // Erase first entry to promote it to a monomial with n - 1 variables
+          std::vector<uint32_t> degs = mon.first;
+          degs.erase(degs.begin());
+
+          if (tmp_coefs.find(deg) != tmp_coefs.end())
+            tmp_coefs[deg].emplace(std::make_pair(degs, mon.second));
+          else
+            tmp_coefs.emplace(std::make_pair(deg, ff_map( {{degs, mon.second}})));
+        }
+
+        std::unordered_map<uint32_t, std::string> horner_coefs {};
+
+        for (const auto & el : tmp_coefs) {
+          horner_coefs.emplace(std::make_pair(el.first, generate_horner_ff(el.second, vars, index + 1)));
+        }
+
+        uint32_t max_deg = tmp_coefs.begin() -> first;
+        std::string horner_coef = "";
+
+        if (max_deg > 0) {
+          for (uint32_t i = 0; i < max_deg - 1; ++i) {
+            horner_coef += "(";
+          }
+
+          const std::string var = vars[index];
+
+          horner_coef += var + "*(" + horner_coefs[max_deg] + ")";
+
+          for (uint32_t i = max_deg - 1; i > 0; i--) {
+            if (horner_coefs.find(i) != horner_coefs.end())
+              horner_coef += "+" + horner_coefs[i];
+
+            horner_coef += ")*" + var;
+          }
+
+          if (horner_coefs.find(0) != horner_coefs.end())
+            horner_coef += "+" + horner_coefs[0];
+        } else {
+          if (horner_coefs.find(0) != horner_coefs.end())
+            horner_coef += horner_coefs[0];
+        }
+
+        return horner_coef;
+      } else if (monomials.begin() -> first.size() == 1) {
+        uint32_t max_deg = 0;
+
+        for (const auto & el : monomials) {
+          uint32_t tmp_deg = el.first[0];
+
+          if (tmp_deg > max_deg)
+            max_deg = tmp_deg;
+        }
+
+        std::string horner_coef = "";
+
+        if (max_deg > 0) {
+          for (uint32_t i = 0; i < max_deg - 1; ++i) {
+            horner_coef += "(";
+          }
+
+          const std::string var = vars[index];
+
+          horner_coef += var;
+          horner_coef += monomials.at( {max_deg}).n != 1 ? "*" + std::to_string(monomials.at( {max_deg}).n) : "";
+
+          for (uint32_t i = max_deg - 1; i > 0; i--) {
+            if (monomials.find( {i}) != monomials.end())
+              horner_coef += "+" + std::to_string(monomials.at( {i}).n);
+
+            horner_coef += ")*" + var;
+          }
+
+          if (monomials.find( {0}) != monomials.end())
+            horner_coef += "+" + std::to_string(monomials.at( {0}).n);
+        } else {
+          if (monomials.find( {0}) != monomials.end())
+            horner_coef += std::to_string(monomials.at( {0}).n);
+        }
+
+        return horner_coef;
+      } else
+        return std::to_string((monomials.begin() -> second).n);
+    } else {
+      WARNING_MSG("Provided an empty polynomial for Horner form. Will be interpreted as zero.");
+      return "0";
+    }
+  }
+
+  std::string generate_horner_rn(const rn_map& monomials, const std::vector<std::string>& vars, uint32_t index) {
+    if (!monomials.empty()) {
+      std::map<uint32_t, rn_map, std::greater<uint32_t>> tmp_coefs {};
+
+      if (monomials.begin() -> first.size() > 1) {
+        for (const auto & mon : monomials) {
+          uint32_t deg = mon.first[0];
+          // Erase first entry to promote it to a monomial with n - 1 variables
+          std::vector<uint32_t> degs = mon.first;
+          degs.erase(degs.begin());
+
+          if (tmp_coefs.find(deg) != tmp_coefs.end())
+            tmp_coefs[deg].emplace(std::make_pair(degs, mon.second));
+          else
+            tmp_coefs.emplace(std::make_pair(deg, rn_map( {{degs, mon.second}})));
+        }
+
+        std::unordered_map<uint32_t, std::string> horner_coefs {};
+
+        for (const auto & el : tmp_coefs) {
+          horner_coefs.emplace(std::make_pair(el.first, generate_horner_rn(el.second, vars, index + 1)));
+        }
+
+        uint32_t max_deg = tmp_coefs.begin() -> first;
+        std::string horner_coef = "";
+
+        if (max_deg > 0) {
+          for (uint32_t i = 0; i < max_deg - 1; ++i) {
+            horner_coef += "(";
+          }
+
+          const std::string var = vars[index];
+
+          horner_coef += var + "*(" + horner_coefs[max_deg] + ")";
+
+          for (uint32_t i = max_deg - 1; i > 0; i--) {
+            if (horner_coefs.find(i) != horner_coefs.end())
+              horner_coef += "+" + horner_coefs[i];
+
+            horner_coef += ")*" + var;
+          }
+
+          if (horner_coefs.find(0) != horner_coefs.end())
+            horner_coef += "+" + horner_coefs[0];
+        } else if (horner_coefs.find(0) != horner_coefs.end()) {
+          horner_coef += horner_coefs[0];
+        }
+
+        return horner_coef;
+      } else if (monomials.begin() -> first.size() == 1) {
+        uint32_t max_deg = 0;
+
+        for (const auto & el : monomials) {
+          uint32_t tmp_deg = el.first[0];
+
+          if (tmp_deg > max_deg)
+            max_deg = tmp_deg;
+        }
+
+        std::string horner_coef = "";
+
+        if (max_deg > 0) {
+          for (uint32_t i = 0; i < max_deg - 1; ++i) {
+            horner_coef += "(";
+          }
+
+          const std::string var = vars[index];
+
+          horner_coef += var;
+
+          horner_coef += monomials.at( {max_deg}).numerator != 1 ? "*" + monomials.at( {max_deg}).string() : "";
+
+          for (uint32_t i = max_deg - 1; i > 0; i--) {
+            if (monomials.find( {i}) != monomials.end())
+              horner_coef += "+" + monomials.at( {i}).string();
+
+            horner_coef += ")*" + var;
+          }
+
+          if (monomials.find( {0}) != monomials.end())
+            horner_coef += "+" + monomials.at( {0}).string();
+        } else if (monomials.find( {0}) != monomials.end()) {
+          horner_coef += monomials.at( {0}).string();
+        }
+
+        return horner_coef;
+      } else
+        return (monomials.begin() -> second).string();
+    } else {
+      WARNING_MSG("Provided an empty polynomial for Horner form. Will be interpreted as zero.");
+      return "0";
+    }
+  }
+
+  std::string generate_horner_mon(const std::vector<Monomial> monomials, const std::vector<std::string>& vars, uint32_t index) {
+    if (!monomials.empty()) {
+      rn_map map {};
+
+      for (const auto & el : monomials) {
+        map.emplace(el.powers, el.coef);
+      }
+
+      return generate_horner_rn(map, vars);
+    } else {
+      WARNING_MSG("Provided an empty polynomial for Horner form. Will be interpreted as zero.");
+      return "0";
+    }
+  }
+}

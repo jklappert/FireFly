@@ -17,7 +17,7 @@
 //==================================================================================
 
 #include "PolynomialFF.hpp"
-#include <chrono>
+#include "Logger.hpp"
 
 namespace firefly {
 
@@ -26,6 +26,7 @@ namespace firefly {
   PolynomialFF::PolynomialFF() {}
 
   FFInt PolynomialFF::calc(const std::vector<FFInt>& x) const {
+
     FFInt res(0);
 
     for (const auto & term : coefs) {
@@ -41,7 +42,7 @@ namespace firefly {
     return res;
   }
 
-  FFInt PolynomialFF::calc_n_m_1(const std::vector<FFInt>& x) const {
+  FFInt PolynomialFF::calc_n_m_1(const std::vector<FFInt>& x) {
     FFInt res(0);
     uint32_t n_m_1 = n - 1;
 
@@ -413,4 +414,123 @@ namespace firefly {
     return res;
   }
 
+  /*void PolynomialFF::generate_horner() {
+    if (!coefs.empty()) {
+      std::vector<std::string> vars {};
+
+      for (int i = 0; i < n - 1; i++) {
+        vars.emplace_back(std::string(1, ShuntingYardParser::get_var(i)));
+      }
+
+      //s_y_fun.parse_function(generate_horner_coefs(0, coefs), vars);
+
+      ff_map coefs_n_m_1 {};
+
+      for (const auto & el : coefs) {
+        std::vector<uint32_t> degs = el.first;
+        degs.erase(degs.begin());
+        if(coefs_n_m_1.find(degs) == coefs_n_m_1.end())
+          coefs_n_m_1.emplace(std::make_pair(degs, el.second));
+        else
+          coefs_n_m_1[degs] += el.second;
+      }
+
+      s_y_fun_n_m_1.parse_function(generate_horner_coefs(0, coefs_n_m_1), vars);
+    } else { // Interprete an empty polynomial as zero
+      s_y_fun.parse_function("0", {"a"});
+      s_y_fun_n_m_1.parse_function("0", {"a"});
+      s_y_fun_map_n_m_1.parse_function("0", {"a"});
+    }
+  }*/
+
+  /*std::string PolynomialFF::generate_horner_coefs(int index, const ff_map& monomials) {
+    std::map<uint32_t, ff_map, std::greater<uint32_t>> tmp_coefs {};
+
+    if (monomials.begin() -> first.size() > 1) {
+      for (const auto & mon : monomials) {
+        uint32_t deg = mon.first[0];
+        // Erase first entry to promote it to a monomial with n - 1 variables
+        std::vector<uint32_t> degs = mon.first;
+        degs.erase(degs.begin());
+
+        if (tmp_coefs.find(deg) != tmp_coefs.end())
+          tmp_coefs[deg].emplace(std::make_pair(degs, mon.second));
+        else
+          tmp_coefs.emplace(std::make_pair(deg, ff_map( {{degs, mon.second}})));
+      }
+
+      std::unordered_map<uint32_t, std::string> horner_coefs {};
+
+      for (const auto & el : tmp_coefs) {
+        horner_coefs.emplace(std::make_pair(el.first, generate_horner_coefs(index + 1, el.second)));
+      }
+
+      uint32_t max_deg = tmp_coefs.begin() -> first;
+      std::string horner_coef = "";
+
+      if (max_deg > 0) {
+        for (uint32_t i = 0; i < max_deg - 1; ++i) {
+          horner_coef += "(";
+        }
+
+        const std::string var = std::string(1, ShuntingYardParser::get_var(index));
+
+        horner_coef += var + "*(" + horner_coefs[max_deg] + ")";
+
+        for (uint32_t i = max_deg - 1; i > 0; i--) {
+          if (horner_coefs.find(i) != horner_coefs.end())
+            horner_coef += "+" + horner_coefs[i];
+
+          horner_coef += ")*" + var;
+        }
+
+        if (horner_coefs.find(0) != horner_coefs.end())
+          horner_coef += "+" + horner_coefs[0];
+      } else {
+        if (horner_coefs.find(0) != horner_coefs.end())
+          horner_coef += horner_coefs[0];
+      }
+
+      return horner_coef;
+    } else if (monomials.begin() -> first.size() == 1) {
+      uint32_t max_deg = 0;
+
+      for (const auto & el : monomials) {
+        uint32_t tmp_deg = el.first[0];
+
+        if (tmp_deg > max_deg)
+          max_deg = tmp_deg;
+      }
+
+      std::string horner_coef = "";
+
+      if (max_deg > 0) {
+        for (uint32_t i = 0; i < max_deg - 1; ++i) {
+          horner_coef += "(";
+        }
+
+        const std::string var = std::string(1, ShuntingYardParser::get_var(index));
+
+        horner_coef += var;
+        horner_coef += monomials.at( {max_deg}).n != 1 ? "*" + std::to_string(monomials.at( {max_deg}).n) : "";
+
+        for (uint32_t i = max_deg - 1; i > 0; i--) {
+          if (monomials.find( {i}) != monomials.end())
+            horner_coef += "+" + std::to_string(monomials.at( {i}).n);
+
+          horner_coef += ")*" + var;
+        }
+
+        if (monomials.find( {0}) != monomials.end())
+          horner_coef += "+" + std::to_string(monomials.at( {0}).n);
+      } else {
+        if (monomials.find( {0}) != monomials.end())
+          horner_coef += std::to_string(monomials.at( {0}).n);
+      }
+
+      return horner_coef;
+    } else
+      return std::to_string((monomials.begin() -> second).n);
+  }*/
 }
+

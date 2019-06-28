@@ -21,14 +21,18 @@
 #include "utils.hpp"
 #include "DenseSolver.hpp"
 #include "ShuntingYardParser.hpp"
+#include <chrono>
 
 using namespace firefly;
 
 // Example for Shunting Yard parser
 static ShuntingYardParser par("../s_y_test.m", {"x","y","z"});
 int main() {
+  //PolynomialFF pol(3, ff_map({{{1,0,0},4365288864471303747},{{0,1,0},3872494556559135458},{{0,0,0},0}}));
+  //pol.generate_horner();
+  //pol.calc_n_m_1({2,3});
   // Example for the automatic interface
-  Reconstructor reconst(3, 4/*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(3, 1/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   reconst.enable_scan();
   // Give the paths to the intermediate results
@@ -47,6 +51,9 @@ int main() {
   for (int i = 0; i < results.size(); ++i) {
     std::cout << "Function " << i + 1 << ":\n" << results[i].to_string({"x","y","z"}) << "\n";
   }
+  // Rewrite result in Horner form
+  std::string f6_horner = results[5].generate_horner({"x","y","z"});
+  std::cout << "Function 6 in Horner form:\n" << f6_horner << "\n";
 
   // Resets all statics in RatReconst to start a new reconstruction
   //RatReconst::reset();
@@ -115,7 +122,6 @@ void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFIn
 }
 
 namespace firefly {
-
   // Example for the reconstruction of a rational function
   void reconstruct_rational_function() {
     uint32_t n = 4;
