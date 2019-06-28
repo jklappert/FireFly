@@ -15,11 +15,7 @@ New features
  probes.
 
  * Added a "safe mode" which interpolates the black box from scratch over
-<<<<<<< HEAD
  each prime field to be sensitive to unlucky primes, zeros, and other
-=======
- each prime field to be sensitive to unlicky primes, zeros and other
->>>>>>> f72c1ed86abebff0f7b7731458594ebdad796a4a
  errors. It can be used by calling the member function `set_safe_interpolation()`
  of the `Reconstructor` class.
 
