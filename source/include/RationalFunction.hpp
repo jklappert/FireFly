@@ -41,10 +41,15 @@ namespace firefly {
     /**
     *  Transforms the Polynomial object to a string where each variable
     *  is replaced by the corresponding symbol in a given vector
-    *  @param symbols a vector of symbols, e.g. {"x","y","z"}.
+    *  @param vars a vector of variables, e.g. {"x","y","z"}.
     */
-    std::string to_string(const std::vector<std::string>& symbols) const;
-
+    std::string to_string(const std::vector<std::string>& vars) const;
+    /**
+     *  Generates a Horner form for this rational function
+     *  @param vars A vector of the variables as strings
+     *  @return The horner form for this rational function
+     */
+    std::string generate_horner(const std::vector<std::string>& vars) const;
     Polynomial numerator;  /**< The coefficients of the numerator */
     Polynomial denominator; /**< The coefficients of the denominator */
   };

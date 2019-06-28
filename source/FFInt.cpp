@@ -25,8 +25,8 @@
 
 namespace firefly {
 
-  uint64_t FFInt::p;
-  uint64_t FFInt::p_inv;
+  uint64_t FFInt::p = 9223372036854775783;
+  uint64_t FFInt::p_inv = 50;
 
   FFInt::FFInt(const FFInt& ffint) : n(ffint.n) {}
 
@@ -343,4 +343,3 @@ namespace firefly {
 
   void firefly_exists(void) {}
 }
-

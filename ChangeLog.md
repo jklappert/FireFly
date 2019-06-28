@@ -15,7 +15,11 @@ New features
  probes.
 
  * Added a "safe mode" which interpolates the black box from scratch over
+<<<<<<< HEAD
  each prime field to be sensitive to unlucky primes, zeros, and other
+=======
+ each prime field to be sensitive to unlicky primes, zeros and other
+>>>>>>> f72c1ed86abebff0f7b7731458594ebdad796a4a
  errors. It can be used by calling the member function `set_safe_interpolation()`
  of the `Reconstructor` class.
 
@@ -28,10 +32,14 @@ New features
  for functional evaluation. This skips the compilation steps of the Mathematica
  to C++ conversion script but may be slower.
 
+ * Added a Horner representation of rational functions which may result in
+ faster evaluation time when needed. Check out `source/include/HornerGenerator.hpp`
+ and the new member functions of `RationalFunctions` and `Polynomial`, repectively.
+
  * Added dense algorithms for matrix manipulation, e.g., computing the inverse,
  the determinant, or solutions for system of equations. Additionaly,
  LU decompositions are supported. Further information can be found in
- `source/DenseSolver.hpp`.
+ `source/include/DenseSolver.hpp`.
 
 Changes
 -------
