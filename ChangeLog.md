@@ -23,13 +23,14 @@ New features
  to compilable C++ code to perform interpolations with them. This can be
  helpful for arithmetic with functions with many terms where other programs
  fail. The script can be found in the `mma_2_ff` directory.
- 
+
  * Added a Shunting Yard parser to parse a collection of rational functions
  for functional evaluation. This skips the compilation steps of the Mathematica
  to C++ conversion script but may be slower.
- 
+
  * Added a Horner representation of rational functions which may result in
- faster evaluation time when needed. Check out `source/include/HornerGenerator.hpp`.
+ faster evaluation time when needed. Check out `source/include/HornerGenerator.hpp`
+ and the new member functions of `RationalFunctions` and `Polynomial`, repectively.
 
  * Added dense algorithms for matrix manipulation, e.g., computing the inverse,
  the determinant, or solutions for system of equations. Additionaly,
