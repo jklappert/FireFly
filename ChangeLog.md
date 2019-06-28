@@ -14,9 +14,9 @@ New features
  are removed from the systems of equations to reduce the number of black-box
  probes.
 
- * Added a "save mode" which interpolates the black box from scratch over
+ * Added a "safe mode" which interpolates the black box from scratch over
  each prime field to be sensitive to unlicky primes, zeros and other
- errors. It can be used by calling the member function `set_save_interpolation()`
+ errors. It can be used by calling the member function `set_safe_interpolation()`
  of the `Reconstructor` class.
 
  * Added a script which converts a list of functions in Mathematica syntax
