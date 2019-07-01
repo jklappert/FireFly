@@ -369,6 +369,7 @@ namespace firefly {
         items_new_prime = 0;
 
         FFInt::set_new_prime(primes()[prime_it]);
+        bb.prime_changed();
 
         // if only a small constant is reconstructed it will not ask for new run
         if (probes_for_next_prime == 0) {

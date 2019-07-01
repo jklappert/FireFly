@@ -77,7 +77,6 @@ namespace firefly {
      *  Precomputes the tokes over the current prime field to be more efficient in evaluations
      */
     void precompute_tokens();
-    uint64_t p;
   private:
     std::vector<std::vector<std::string>> functions {};
     std::unordered_map<std::string, int> vars_map {};

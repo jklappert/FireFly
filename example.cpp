@@ -30,11 +30,6 @@ namespace firefly {
   public:
     BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
     virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
-      if (par.p != FFInt::p) {
-        par.precompute_tokens();
-        par.p = FFInt::p;
-      }
-
       // Get results from parsed expressions
       std::vector<FFInt> result = par.evaluate_pre(values);
       result.emplace_back(result[0] / result[3]);
@@ -50,6 +45,9 @@ namespace firefly {
       result.emplace_back(pol_n_eq_3(values));
       result.emplace_back(ggh(values));*/
       return result;
+    }
+    virtual void prime_changed(){
+      par.precompute_tokens();
     }
   private:
     ShuntingYardParser par;

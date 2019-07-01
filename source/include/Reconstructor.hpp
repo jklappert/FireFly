@@ -30,6 +30,7 @@ namespace firefly {
   public:
       BlackBoxBase() {};
       virtual std::vector<FFInt> operator()(const std::vector<FFInt> & values) = 0;
+      virtual void prime_changed() = 0;
   };
 
   enum RatReconst_status {DEFAULT, DONE, DELETED};
