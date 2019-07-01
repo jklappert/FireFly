@@ -26,6 +26,12 @@
 #include <tuple>
 
 namespace firefly {
+  class black_box_base {
+  public:
+      black_box_base() {};
+      virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) = 0;
+  };
+
   enum RatReconst_status {DEFAULT, DONE, DELETED};
 
   typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
@@ -43,7 +49,7 @@ namespace firefly {
      *  @param thr_n_ the number of threads being used during the reconstruction
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
-    Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t verbosity_ = IMPORTANT);
+    Reconstructor(uint32_t n_, uint32_t thr_n_, black_box_base * bb_, uint32_t verbosity_ = IMPORTANT);
     /**
      *  Enables the scan for a sparse shift at the beginning of the reconstruction
      */
@@ -61,12 +67,6 @@ namespace firefly {
      *  they are removed from the internal memory afterwards
      */
     std::vector<std::pair<std::string, RationalFunction>> get_early_results();
-    /**
-     *  The black box functions which gets called by the Reconstructor class to evaluate probes
-     *  @param result a vector to be filled by the user with the probes in an immutable ordering
-     *  @param values the parameter point at which the black box should be probed
-     */
-    void black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values);
     /**
      *  Sets user defined tags for each reconstruction object and saves intermediate results after each prime field
      *  @param tags_ a vector of user defined tags in an immutable ordering
@@ -99,6 +99,7 @@ namespace firefly {
     std::vector<std::string> file_paths {};
     bool safe_mode = false;
     uint32_t prime_it = 0;
+    black_box_base * bb;
     ThreadPool tp;
     std::mutex future_control;
     std::mutex job_control;

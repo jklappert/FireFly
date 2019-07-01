@@ -23,7 +23,7 @@
 #include <chrono>
 
 namespace firefly {
-  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t verbosity_): n(n_), thr_n(thr_n_), verbosity(verbosity_), tp(thr_n_) {
+  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, black_box_base * bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
       INFO_MSG("Launching " << thr_n_ << " thread(s).");
@@ -567,11 +567,9 @@ namespace firefly {
 
       if (ones) {
         auto future = tp.run_priority_packaged_task([this, values]() {
-          std::vector<FFInt> probe {};
-
           auto time0 = std::chrono::high_resolution_clock::now();
 
-          black_box(probe, values);
+          std::vector<FFInt> probe = (*bb)(values);
 
           auto time1 = std::chrono::high_resolution_clock::now();
 
@@ -579,17 +577,15 @@ namespace firefly {
 
           ++jobs_finished;
           condition_future.notify_one();
-          return std::make_pair(probe, std::chrono::duration<double>(time1 - time0).count());
+          return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
         });
 
         probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));
       } else {
         auto future = tp.run_packaged_task([this, values]() {
-          std::vector<FFInt> probe {};
-
           auto time0 = std::chrono::high_resolution_clock::now();
 
-          black_box(probe, values);
+          std::vector<FFInt> probe = (*bb)(values);
 
           auto time1 = std::chrono::high_resolution_clock::now();
 
@@ -597,7 +593,7 @@ namespace firefly {
 
           ++jobs_finished;
           condition_future.notify_one();
-          return std::make_pair(probe, std::chrono::duration<double>(time1 - time0).count());
+          return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
         });
 
         probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));

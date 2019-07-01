@@ -16,20 +16,48 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
+#include "DenseSolver.hpp"
 #include "Reconstructor.hpp"
+#include "ShuntingYardParser.hpp"
 #include "Tests.hpp"
 #include "utils.hpp"
-#include "DenseSolver.hpp"
-#include "ShuntingYardParser.hpp"
+
 #include <chrono>
 
 using namespace firefly;
 
 // Example for Shunting Yard parser
 static ShuntingYardParser par("../s_y_test.m", {"x","y","z"});
+
+// Example of how one can use the black_box functor for the automatic interface
+class black_box_user : public black_box_base {
+public:
+  black_box_user() {};
+  virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+    // Get results from parsed expressions
+    std::vector<FFInt> result = par.evaluate(values);
+    result.emplace_back(result[0] / result[3]);
+    mat_ff mat = {{result[0], result[1]},{result[2],result[3]}};
+    std::vector<int> p {};
+    calc_lu_decomposition(mat, p, 2);
+    // Interpolate determinat of the matrix mat
+    result.emplace_back(calc_determinant_lu(mat, p, 2));
+    /*result.emplace_back(singular_solver(values));
+    result.emplace_back(n_eq_1(values[0]));
+    result.emplace_back(n_eq_4(values));
+    result.emplace_back(gghh(values));
+    result.emplace_back(pol_n_eq_3(values));
+    result.emplace_back(ggh(values));*/
+    return result;
+  }
+};
+
 int main() {
   // Example for the automatic interface
-  Reconstructor reconst(3, 1/*, Reconstructor::CHATTY*/);
+  // Create a pointer to the user defined black_box
+  black_box_user * bb = new black_box_user();
+  // Initialize the Reconstructor
+  Reconstructor reconst(3, 1, bb/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   reconst.enable_scan();
   //reconst.set_safe_interpolation();
@@ -99,24 +127,6 @@ int main() {
   << inv[1][0] << " " << inv[1][1] << " " << inv[1][2] << "\n"
   << inv[2][0] << " " << inv[2][1] << " " << inv[2][2] << "\n";*/
   return 0;
-}
-
-// Example of how one can use the black_box function for the automatic interface
-void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
-  // Get results from parsed expressions
-  result = par.evaluate(values);
-  result.emplace_back(result[0] / result[3]);
-  mat_ff mat = {{result[0], result[1]},{result[2],result[3]}};
-  std::vector<int> p {};
-  calc_lu_decomposition(mat, p, 2);
-  // Interpolate determinat of the matrix mat
-  result.emplace_back(calc_determinant_lu(mat, p, 2));
-  /*result.emplace_back(singular_solver(values));
-  result.emplace_back(n_eq_1(values[0]));
-  result.emplace_back(n_eq_4(values));
-  result.emplace_back(gghh(values));
-  result.emplace_back(pol_n_eq_3(values));
-  result.emplace_back(ggh(values));*/
 }
 
 namespace firefly {
