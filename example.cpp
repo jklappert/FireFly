@@ -24,38 +24,39 @@
 
 #include <chrono>
 
-using namespace firefly;
-
+namespace firefly {
 // Example of how one can use the black_box functor for the automatic interface
-class BlackBoxUser : public BlackBoxBase {
-public:
-  BlackBoxUser(ShuntingYardParser par_) : par(par_) {};
-  virtual std::vector<FFInt> operator()(const std::vector<FFInt> & values) {
-    if (par.p != FFInt::p) {
-      par.precompute_tokens();
-      par.p = FFInt::p;
+  class BlackBoxUser : public BlackBoxBase {
+  public:
+    BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
+    virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+      if (par.p != FFInt::p) {
+        par.precompute_tokens();
+        par.p = FFInt::p;
+      }
+
+      // Get results from parsed expressions
+      std::vector<FFInt> result = par.evaluate_pre(values);
+      result.emplace_back(result[0] / result[3]);
+      mat_ff mat = {{result[0], result[1]}, {result[2], result[3]}};
+      std::vector<int> p {};
+      calc_lu_decomposition(mat, p, 2);
+      // Interpolate determinat of the matrix mat
+      result.emplace_back(calc_determinant_lu(mat, p, 2));
+      /*result.emplace_back(singular_solver(values));
+      result.emplace_back(n_eq_1(values[0]));
+      result.emplace_back(n_eq_4(values));
+      result.emplace_back(gghh(values));
+      result.emplace_back(pol_n_eq_3(values));
+      result.emplace_back(ggh(values));*/
+      return result;
     }
+  private:
+    ShuntingYardParser par;
+  };
+}
 
-    // Get results from parsed expressions
-    std::vector<FFInt> result = par.evaluate_pre(values);
-    result.emplace_back(result[0] / result[3]);
-    mat_ff mat = {{result[0], result[1]}, {result[2], result[3]}};
-    std::vector<int> p {};
-    calc_lu_decomposition(mat, p, 2);
-    // Interpolate determinat of the matrix mat
-    result.emplace_back(calc_determinant_lu(mat, p, 2));
-    /*result.emplace_back(singular_solver(values));
-    result.emplace_back(n_eq_1(values[0]));
-    result.emplace_back(n_eq_4(values));
-    result.emplace_back(gghh(values));
-    result.emplace_back(pol_n_eq_3(values));
-    result.emplace_back(ggh(values));*/
-    return result;
-  }
-private:
-  ShuntingYardParser par;
-};
-
+using namespace firefly;
 int main() {
   // Example of ShuntingYardParser
   ShuntingYardParser par("../s_y_test.m", {"x", "y", "z"});
@@ -79,9 +80,11 @@ int main() {
   reconst.reconstruct();
   // Get results
   std::vector<RationalFunction> results = reconst.get_result();
+
   for (int i = 0; i < results.size(); ++i) {
-    std::cout << "Function " << i + 1 << ":\n" << results[i].to_string({"x","y","z"}) << "\n";
+    std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z"}) << "\n";
   }
+
   // Rewrite result in Horner form
   //std::string f6_horner = results[5].generate_horner({"x","y","z"});
   //std::cout << "Function 6 in Horner form:\n" << f6_horner << "\n";
@@ -339,3 +342,5 @@ namespace firefly {
     std::cout << "--------------------------------------------------------------\n";
   }
 }
+
+
