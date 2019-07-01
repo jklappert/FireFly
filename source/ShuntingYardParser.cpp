@@ -48,6 +48,7 @@ namespace firefly {
 
   void ShuntingYardParser::parse(const std::string& fun_) {
     std::string fun = fun_;
+
     for (const auto & el : vars_conv_map) {
       fun = std::regex_replace(fun, std::regex(el.second), std::string(1, el.first));
     }
@@ -267,4 +268,17 @@ namespace firefly {
   bool ShuntingYardParser::empty() {
     return functions.empty();
   }
-}
+
+  void precomp_token(const std::string& token) {
+    /*if (token.length() > 18)
+      precomp.emplace(FFInt(mpz_class(token)))
+    else {
+      if (token[0] == '-') {
+        std::string tmp = token;
+        tmp.erase(0, 1);
+        nums.push(-FFInt(std::stoull(tmp)));
+      } else {
+        nums.push(FFInt(std::stoull(token)));
+      }*/
+    }
+  }

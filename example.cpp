@@ -224,6 +224,7 @@ namespace firefly {
           shift = rec.get_zi_shift_vec();
         }
 
+        if(primes_used > 7) std::exit(-1);
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
         primes_used = std::max(primes_used, rec.get_prime());
 
@@ -250,13 +251,12 @@ namespace firefly {
       }
 
       //FFInt num = singular_solver(yis); // example for n = 4 which uses the singular_solver
-      //FFInt num = n_eq_1(z1) + tt*FFInt(primes()[1]); // example for n = 1
+      //FFInt num = n_eq_1(z1); // example for n = 1
       //FFInt num = n_eq_4(yis); // example for n = 4 and the usage of the Chinese Remainder Theorem
       //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       //FFInt num = bench_3(yis);
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
-      FFInt num = (FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + yis[1]) / (yis[1]);
-
+      FFInt num = FFInt(primes()[1])*FFInt(primes()[3])*(FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + yis[1]) / (FFInt(primes()[1]) + yis[1]);
 
       ++kk;
       ++count;

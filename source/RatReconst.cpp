@@ -105,8 +105,33 @@ namespace firefly {
   void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
 
-    if (!done && fed_prime == prime_number)
-      queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
+    if (!done) {
+      if (first_feed) {
+        if (num == 0) {
+          new_prime = true;
+          ++prime_number;
+          zero_counter ++;
+
+          if (prime_number == 100) {
+            ERROR_MSG("Your interpolation requests more than 100 primes.");
+            std::exit(-1);
+          } else if (zero_counter == 3 && prime_number == 3) {
+            new_prime = false;
+            done = true;
+            g_ni[std::vector<uint32_t>(n)] = RationalNumber(0, 1);
+            g_di[std::vector<uint32_t>(n)] = RationalNumber(1, 1);
+          }
+        } else if (!done && fed_prime == prime_number) {
+          if(!check_interpolation)
+            new_prime = false;
+          first_feed = false;
+          queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
+        }
+      } else {
+        if (!done && fed_prime == prime_number)
+          queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
+      }
+    }
   }
 
   bool RatReconst::interpolate() {
@@ -505,7 +530,7 @@ namespace firefly {
               // if the denominator is just a constant, there is no corresponding
               // PolyReconst object. Thus we set the minimal degree to a zero tuple
 
-              if (prime_number == 0) {
+              if (prime_number == 0 + zero_counter) {
                 if (const_den != 1) {
                   ff_map dummy_map {};
                   terminator = FFInt(1) - const_den;
@@ -1065,6 +1090,7 @@ namespace firefly {
 
     if (!div_by_zero) {
       if (!use_chinese_remainder) {
+        combined_prime = FFInt::p;
         combined_ni = convert_to_mpz(numerator);
         combined_di = convert_to_mpz(denominator);
 
@@ -1087,7 +1113,6 @@ namespace firefly {
           else
             add_non_solved_den(c_di.first);
         }
-
 
         if (is_singular_system) {
           check_for_solved_degs(tmp_deg_num, true);
@@ -1322,6 +1347,13 @@ namespace firefly {
       queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
       saved_ti.clear();
       new_prime = true;
+      first_feed = true;
+      check_interpolation = true;
+
+      if (prime_number == 100) {
+        ERROR_MSG("Your interpolation requests more than 100 primes.");
+        std::exit(-1);
+      }
     }
     tmp_solved_coefs_den = 0;
     tmp_solved_coefs_num = 0;
@@ -2559,7 +2591,7 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-      if (!is_singular_system && set_singular_system) {
+      if (!is_singular_system && set_singular_system && prime_number >= interpolations) {
         lock_statics.unlock();
         set_singular_system_vars();
       }

@@ -65,9 +65,11 @@ namespace firefly {
      */
     bool empty();
   private:
+    std::unordered_map<std::string, FFInt> precomp {};
     std::vector<std::vector<std::string>> functions {};
     std::unordered_map<std::string, int> vars_map {};
     std::unordered_map<char, std::string> vars_conv_map {};
+    void precomp_token(const std::string& token);
     static std::unordered_map<int, char> int_var_map;
     /**
      *  Initializes the conversion map

@@ -82,6 +82,9 @@ namespace firefly {
     interpolations = other.interpolations;
     t_interpolator = other.t_interpolator;
     div_by_zero = other.div_by_zero;
+    first_feed = other.first_feed;
+    zero_counter = other.zero_counter;
+    check_interpolation = other.check_interpolation;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -159,6 +162,9 @@ namespace firefly {
     interpolations = std::move(other.interpolations);
     t_interpolator = std::move(other.t_interpolator);
     div_by_zero = std::move(other.div_by_zero);
+    first_feed = std::move(other.first_feed);
+    zero_counter = std::move(other.zero_counter);
+    check_interpolation = std::move(other.check_interpolation);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -237,6 +243,9 @@ namespace firefly {
       interpolations = other.interpolations;
       t_interpolator = other.t_interpolator;
       div_by_zero = other.div_by_zero;
+      first_feed = other.first_feed;
+      zero_counter = other.zero_counter;
+      check_interpolation = other.check_interpolation;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -318,6 +327,9 @@ namespace firefly {
       interpolations = std::move(other.interpolations);
       t_interpolator = std::move(other.t_interpolator);
       div_by_zero = std::move(other.div_by_zero);
+      first_feed = std::move(other.first_feed);
+      zero_counter = std::move(other.zero_counter);
+      check_interpolation = std::move(other.check_interpolation);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);
