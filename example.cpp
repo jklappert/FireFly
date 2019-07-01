@@ -27,17 +27,17 @@
 using namespace firefly;
 
 // Example of how one can use the black_box functor for the automatic interface
-class black_box_user : public black_box_base {
+class BlackBoxUser : public BlackBoxBase {
 public:
-  black_box_user(ShuntingYardParser par_) : par(par_) {};
-  virtual void operator()(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
+  BlackBoxUser(ShuntingYardParser par_) : par(par_) {};
+  virtual std::vector<FFInt> operator()(const std::vector<FFInt> & values) {
     if (par.p != FFInt::p) {
       par.precompute_tokens();
       par.p = FFInt::p;
     }
 
     // Get results from parsed expressions
-    /*std::vector<FFInt> */result = par.evaluate(values);
+    std::vector<FFInt> result = par.evaluate_pre(values);
     result.emplace_back(result[0] / result[3]);
     mat_ff mat = {{result[0], result[1]}, {result[2], result[3]}};
     std::vector<int> p {};
@@ -50,7 +50,7 @@ public:
     result.emplace_back(gghh(values));
     result.emplace_back(pol_n_eq_3(values));
     result.emplace_back(ggh(values));*/
-    //return result;
+    return result;
   }
 private:
   ShuntingYardParser par;
@@ -60,7 +60,7 @@ int main() {
   // Example of ShuntingYardParser
   ShuntingYardParser par("../s_y_test.m", {"x", "y", "z"});
   // Create a pointer to the user defined black_box
-  black_box_user* bb = new black_box_user(par);
+  BlackBoxUser bb(par);
   // Initialize the Reconstructor
   Reconstructor reconst(3, 1, bb/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
@@ -77,7 +77,6 @@ int main() {
   //std::vector<std::string> tags = {"sing","n1","n4","gghh","pol","ggh"};
   //reconst.set_tags(tags);
   reconst.reconstruct();
-  delete bb;
   // Get results
   std::vector<RationalFunction> results = reconst.get_result();
   for (int i = 0; i < results.size(); ++i) {

@@ -23,7 +23,7 @@
 #include <chrono>
 
 namespace firefly {
-  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, black_box_base * bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
+  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase & bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
       INFO_MSG("Launching " << thr_n_ << " thread(s).");
@@ -569,9 +569,7 @@ namespace firefly {
         auto future = tp.run_priority_packaged_task([this, values]() {
           auto time0 = std::chrono::high_resolution_clock::now();
 
-//           std::vector<FFInt> probe = (*bb)(values);
-          std::vector<FFInt> probe;
-          (*bb)(probe, values);
+          std::vector<FFInt> probe = bb(values);
 
           auto time1 = std::chrono::high_resolution_clock::now();
 
@@ -587,9 +585,7 @@ namespace firefly {
         auto future = tp.run_packaged_task([this, values]() {
           auto time0 = std::chrono::high_resolution_clock::now();
 
-                    std::vector<FFInt> probe;
-          (*bb)(probe, values);
-          //std::vector<FFInt> probe = (*bb)(values);
+          std::vector<FFInt> probe = bb(values);
 
           auto time1 = std::chrono::high_resolution_clock::now();
 

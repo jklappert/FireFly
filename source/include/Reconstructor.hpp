@@ -26,15 +26,15 @@
 #include <tuple>
 
 namespace firefly {
-  class black_box_base {
+  class BlackBoxBase {
   public:
-      black_box_base() {};
-      virtual void operator()(std::vector<FFInt>& result, const std::vector<FFInt>& values) = 0;
+      BlackBoxBase() {};
+      virtual std::vector<FFInt> operator()(const std::vector<FFInt> & values) = 0;
   };
 
   enum RatReconst_status {DEFAULT, DONE, DELETED};
 
-  typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
+  typedef std::tuple<uint64_t, std::mutex *, int, RatReconst *> RatReconst_tuple;
   typedef std::list<RatReconst_tuple> RatReconst_list;
   typedef std::list<std::tuple<FFInt, std::vector<uint32_t>, std::future<std::pair<std::vector<FFInt>, double>>>> future_list;
   /**
@@ -49,7 +49,7 @@ namespace firefly {
      *  @param thr_n_ the number of threads being used during the reconstruction
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
-    Reconstructor(uint32_t n_, uint32_t thr_n_, black_box_base * bb_, uint32_t verbosity_ = IMPORTANT);
+    Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase & bb_, uint32_t verbosity_ = IMPORTANT);
     /**
      *  Enables the scan for a sparse shift at the beginning of the reconstruction
      */
@@ -99,7 +99,7 @@ namespace firefly {
     std::vector<std::string> file_paths {};
     bool safe_mode = false;
     uint32_t prime_it = 0;
-    black_box_base * bb;
+    BlackBoxBase & bb;
     ThreadPool tp;
     std::mutex future_control;
     std::mutex job_control;
