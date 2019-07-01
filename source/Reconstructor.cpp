@@ -112,7 +112,7 @@ namespace firefly {
     if (verbosity > SILENT) {
       INFO_MSG("Reconstructed all functions successfully.");
       INFO_MSG(std::to_string(total_iterations) + " probes in total.");
-      INFO_MSG("Average time of the black-box probes: " + std::to_string(average_black_box_time) + " s.");
+      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
 
     tp.kill_all();
@@ -242,7 +242,7 @@ namespace firefly {
       }
 
       INFO_MSG("Total black-box probes for scan: " + std::to_string(total_iterations) + ".");
-      INFO_MSG("Average time of the black-box probes: " + std::to_string(average_black_box_time) + " s.");
+      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
   }
 
@@ -284,7 +284,7 @@ namespace firefly {
     ++iteration;
 
     if (verbosity > SILENT) {
-      INFO_MSG("Average time of the black-box probes: " + std::to_string(average_black_box_time) + " s.");
+      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
 
     ++fed_ones;
@@ -354,7 +354,7 @@ namespace firefly {
 
         if (verbosity > SILENT) {
           INFO_MSG("Probes for previous prime field: " + std::to_string(iteration) + ". | " + std::to_string(total_iterations) + " probes in total.");
-          INFO_MSG("Average time of the black-box probes: " + std::to_string(average_black_box_time) + " s.");
+          INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
           INFO_MSG("Reconstructed functions: " + std::to_string(items_done) + " / " + std::to_string(items) + ".");
           INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
         }
