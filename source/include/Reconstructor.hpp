@@ -91,6 +91,7 @@ namespace firefly {
   private:
     uint32_t n;
     uint32_t thr_n;
+    BlackBoxBase & bb;
     int verbosity;
     RatReconst_list reconst {};
     bool scan = false;
@@ -100,7 +101,6 @@ namespace firefly {
     std::vector<std::string> file_paths {};
     bool safe_mode = false;
     uint32_t prime_it = 0;
-    BlackBoxBase & bb;
     ThreadPool tp;
     std::mutex future_control;
     std::mutex job_control;

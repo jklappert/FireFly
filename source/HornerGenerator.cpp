@@ -219,7 +219,7 @@ namespace firefly {
         map.emplace(el.powers, el.coef);
       }
 
-      return generate_horner_rn(map, vars);
+      return generate_horner_rn(map, vars, index);
     } else {
       WARNING_MSG("Provided an empty polynomial for Horner form. Will be interpreted as zero.");
       return "0";

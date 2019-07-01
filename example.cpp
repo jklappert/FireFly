@@ -79,7 +79,7 @@ int main() {
   // Get results
   std::vector<RationalFunction> results = reconst.get_result();
 
-  for (int i = 0; i < results.size(); ++i) {
+  for (uint32_t i = 0; i < results.size(); ++i) {
     std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z"}) << "\n";
   }
 

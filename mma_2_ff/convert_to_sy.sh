@@ -22,6 +22,7 @@ file=$1
 echo "Converting $file"
 tr -d '\040\011\012\015' < $file > tmp.m
 mv tmp.m $file
+sed -i 's/"//g' $file
 sed -i 's/{//g' $file
 sed -i 's/}//g' $file
 sed -i 's/,/\n/g' $file

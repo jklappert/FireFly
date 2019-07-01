@@ -23,14 +23,14 @@
 #include <chrono>
 
 namespace firefly {
-  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase & bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
+  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
       INFO_MSG("Launching " << thr_n_ << " thread(s).");
     }
 
     FFInt::set_new_prime(primes()[prime_it]);
-    uint64_t seed = static_cast<uint64_t> (std::time(0));
+    uint64_t seed = static_cast<uint64_t>(std::time(0));
     BaseReconst().set_seed(seed);
     tmp_rec = RatReconst(n);
   }
@@ -145,10 +145,12 @@ namespace firefly {
           result.emplace_back(std::make_pair(std::to_string(std::get<0>(rec)), std::get<3>(rec)->get_result()));
         }
 
-        std::get<2>(rec) == DELETED;
+        std::get<2>(rec) = DELETED;
         delete std::get<3>(rec);
       }
     }
+
+    return result;
   }
 
   void Reconstructor::scan_for_shift() {
@@ -757,7 +759,7 @@ namespace firefly {
               }
             }
           }
-        } else /*if (std::get<2>(rec) == DEFAULT)*/ { // to be sure that no other thread does the same
+        } else { /*if (std::get<2>(rec) == DEFAULT)*/  // to be sure that no other thread does the same
           lock_exists.lock();
 
           std::get<2>(rec) = DONE;
@@ -783,6 +785,7 @@ namespace firefly {
     std::unique_lock<std::mutex> lock_clean(clean);
 
     auto it = reconst.begin();
+
     while (it != reconst.end()) {
       if (std::get<2>(*it) == DELETED) {
         // delete mutex
