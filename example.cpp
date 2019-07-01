@@ -26,18 +26,20 @@
 
 using namespace firefly;
 
-// Example for Shunting Yard parser
-static ShuntingYardParser par("../s_y_test.m", {"x","y","z"});
-
 // Example of how one can use the black_box functor for the automatic interface
 class black_box_user : public black_box_base {
 public:
-  black_box_user() {};
-  virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+  black_box_user(ShuntingYardParser par_) : par(par_) {};
+  virtual void operator()(std::vector<FFInt>& result, const std::vector<FFInt>& values) {
+    if (par.p != FFInt::p) {
+      par.precompute_tokens();
+      par.p = FFInt::p;
+    }
+
     // Get results from parsed expressions
-    std::vector<FFInt> result = par.evaluate(values);
+    /*std::vector<FFInt> */result = par.evaluate(values);
     result.emplace_back(result[0] / result[3]);
-    mat_ff mat = {{result[0], result[1]},{result[2],result[3]}};
+    mat_ff mat = {{result[0], result[1]}, {result[2], result[3]}};
     std::vector<int> p {};
     calc_lu_decomposition(mat, p, 2);
     // Interpolate determinat of the matrix mat
@@ -48,14 +50,17 @@ public:
     result.emplace_back(gghh(values));
     result.emplace_back(pol_n_eq_3(values));
     result.emplace_back(ggh(values));*/
-    return result;
+    //return result;
   }
+private:
+  ShuntingYardParser par;
 };
 
 int main() {
-  // Example for the automatic interface
+  // Example of ShuntingYardParser
+  ShuntingYardParser par("../s_y_test.m", {"x", "y", "z"});
   // Create a pointer to the user defined black_box
-  black_box_user * bb = new black_box_user();
+  black_box_user* bb = new black_box_user(par);
   // Initialize the Reconstructor
   Reconstructor reconst(3, 1, bb/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
@@ -72,14 +77,15 @@ int main() {
   //std::vector<std::string> tags = {"sing","n1","n4","gghh","pol","ggh"};
   //reconst.set_tags(tags);
   reconst.reconstruct();
+  delete bb;
   // Get results
   std::vector<RationalFunction> results = reconst.get_result();
   for (int i = 0; i < results.size(); ++i) {
     std::cout << "Function " << i + 1 << ":\n" << results[i].to_string({"x","y","z"}) << "\n";
   }
   // Rewrite result in Horner form
-  std::string f6_horner = results[5].generate_horner({"x","y","z"});
-  std::cout << "Function 6 in Horner form:\n" << f6_horner << "\n";
+  //std::string f6_horner = results[5].generate_horner({"x","y","z"});
+  //std::cout << "Function 6 in Horner form:\n" << f6_horner << "\n";
 
   // Resets all statics in RatReconst to start a new reconstruction
   //RatReconst::reset();
@@ -135,7 +141,7 @@ namespace firefly {
     uint32_t n = 4;
     FFInt::set_new_prime(primes()[0]);
     BaseReconst br;
-    uint64_t seed = static_cast<uint64_t> (std::time(0));
+    uint64_t seed = static_cast<uint64_t>(std::time(0));
     br.set_seed(seed);
 
     RatReconst rec(n);
@@ -234,7 +240,8 @@ namespace firefly {
           shift = rec.get_zi_shift_vec();
         }
 
-        if(primes_used > 7) std::exit(-1);
+        if (primes_used > 7) std::exit(-1);
+
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
         primes_used = std::max(primes_used, rec.get_prime());
 
@@ -266,7 +273,7 @@ namespace firefly {
       //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       //FFInt num = bench_3(yis);
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
-      FFInt num = FFInt(primes()[1])*FFInt(primes()[3])*(FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + yis[1]) / (FFInt(primes()[1]) + yis[1]);
+      FFInt num = FFInt(primes()[1]) * FFInt(primes()[3]) * (FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + yis[1]) / (FFInt(primes()[1]) + yis[1]);
 
       ++kk;
       ++count;

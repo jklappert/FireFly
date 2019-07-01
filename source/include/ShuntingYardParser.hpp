@@ -23,7 +23,10 @@
 #include <unordered_map>
 
 namespace firefly {
-
+  /**
+   * @class ShuntingYardParser
+   * @brief A functional parser using reverse polish notation
+   */
   class ShuntingYardParser {
   public:
     /**
@@ -49,6 +52,12 @@ namespace firefly {
      */
     std::vector<FFInt> evaluate(const std::vector<FFInt>& values) const;
     /**
+     *  Evaluates all functions for a given parameter point and returs their result using precomputed values. This is in general much faster than ShuntingYardParser::evaluate.
+     *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
+     *  @return The values of the parsed functions as a vector.
+     */
+    std::vector<FFInt> evaluate_pre(const std::vector<FFInt>& values) const;
+    /**
      *  Returns the reverse polish notation of the parsed functions
      *  @return A vector of all parsed functions in reverse polish notation with changed variable names according to int_var_map
      */
@@ -64,12 +73,16 @@ namespace firefly {
      *  @return True if no functions are stored in this class
      */
     bool empty();
+    /**
+     *  Precomputes the tokes over the current prime field to be more efficient in evaluations
+     */
+    void precompute_tokens();
+    uint64_t p;
   private:
-    std::unordered_map<std::string, FFInt> precomp {};
     std::vector<std::vector<std::string>> functions {};
     std::unordered_map<std::string, int> vars_map {};
     std::unordered_map<char, std::string> vars_conv_map {};
-    void precomp_token(const std::string& token);
+    std::vector<std::vector<std::pair<uint8_t, uint64_t>>> precomp_tokens {};
     static std::unordered_map<int, char> int_var_map;
     /**
      *  Initializes the conversion map
@@ -113,4 +126,22 @@ namespace firefly {
      */
     void parse(const std::string&);
   };
+
+  namespace operators {
+    enum operators {
+      PLUS,
+      MINUS,
+      MULT,
+      DIV,
+      POW
+    };
+  }
+
+  namespace operands {
+    enum operands {
+      OPERATOR,
+      VARIABLE,
+      NUMBER
+    };
+  }
 }

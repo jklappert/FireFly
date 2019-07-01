@@ -23,6 +23,7 @@
 #include "RationalNumber.hpp"
 #include "UintHasher.hpp"
 #include "FFInt.hpp"
+//#include "ShuntingYardParser.hpp"
 
 namespace firefly {
 
@@ -64,7 +65,7 @@ namespace firefly {
      *  @param x the parameter point which is of length n - 1
      *  @return f(x)
      */
-    FFInt calc_n_m_1(const std::vector<FFInt>& x) const;
+    FFInt calc_n_m_1(const std::vector<FFInt>& x);
     /**
      *  Evaluates the polynomial at a given parameter point omitting the first
      *  variable
@@ -121,7 +122,7 @@ namespace firefly {
     /*ShuntingYardParser s_y_fun;
     ShuntingYardParser s_y_fun_n_m_1;
     ShuntingYardParser s_y_fun_map_n_m_1;
-    void generate_horner();*/
+    void generate_hornerff();*/
     /*
      *  Generates Horner scheme coefficients of a polynomial recursively
      *  @param var An integer representing the current variable

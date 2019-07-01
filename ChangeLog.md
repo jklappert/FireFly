@@ -43,6 +43,9 @@ Changes
  * Generate 64-bit anchor points and shifts instead of 32-bit.
 
  * Many small runtime improvements and minor bug fixes.
+ 
+ * Discard prime fields over which the black box evaluates to zero on the first
+ probe. This makes the code safer regarding unlucky primes and zeros.
 
 
 FireFly 1.0.0

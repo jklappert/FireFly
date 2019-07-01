@@ -41,6 +41,7 @@ namespace firefly {
     }
 
     functions.shrink_to_fit();
+    precompute_tokens();
 
     istream.close();
     INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions.");
@@ -215,6 +216,74 @@ namespace firefly {
     return res;
   }
 
+  std::vector<FFInt> ShuntingYardParser::evaluate_pre(const std::vector<FFInt>& values) const {
+    std::vector<FFInt> res;
+    res.reserve(functions.size());
+
+    for (const auto & tokens : precomp_tokens) {
+      std::stack<FFInt> nums;
+
+      for (const auto & token : tokens) {
+        switch (token.first) {
+          case operands::OPERATOR : {
+            // Pop two numbers
+            FFInt a = nums.top();
+            nums.pop();
+            FFInt b = nums.top();
+            nums.pop();
+
+            switch (token.second) {
+              case operators::PLUS: {
+                nums.push(a + b);
+                break;
+              }
+
+              case operators::MINUS: {
+                nums.push(b - a);
+                break;
+              }
+
+              case operators::MULT: {
+                nums.push(b * a);
+                break;
+              }
+
+              case operators::DIV: {
+                nums.push(b / a);
+                break;
+              }
+
+              case operators::POW: {
+                nums.push(b.pow(a));
+                break;
+              }
+            }
+
+            break;
+          }
+
+          case operands::VARIABLE : {
+            nums.push(values[token.second]);
+            break;
+          }
+
+          case operands::NUMBER: {
+            nums.push(token.second);
+          }
+        }
+      }
+
+      if (nums.size())
+        res.emplace_back(nums.top());
+      else {
+        ERROR_MSG("Error in functional evaluation! Check your input.");
+        std::exit(-1);
+      }
+    }
+
+    return res;
+  }
+
   int ShuntingYardParser::get_weight(const char c) {
     switch (c) {
       case '^':
@@ -269,16 +338,66 @@ namespace firefly {
     return functions.empty();
   }
 
-  void precomp_token(const std::string& token) {
-    /*if (token.length() > 18)
-      precomp.emplace(FFInt(mpz_class(token)))
-    else {
-      if (token[0] == '-') {
-        std::string tmp = token;
-        tmp.erase(0, 1);
-        nums.push(-FFInt(std::stoull(tmp)));
-      } else {
-        nums.push(FFInt(std::stoull(token)));
-      }*/
+  void ShuntingYardParser::precompute_tokens() {
+    precomp_tokens.clear();
+    uint64_t size = functions.size();
+    precomp_tokens = std::vector<std::vector<std::pair<uint8_t, uint64_t>>> (size);
+
+    for (uint64_t i = 0; i < size; ++i) {
+      std::vector<std::string> tokens = functions[i];
+      uint64_t t_size = tokens.size();
+      precomp_tokens[i] = std::vector<std::pair<uint8_t, uint64_t>> (t_size);
+
+      for (uint64_t j = 0; j < t_size; ++j) {
+        std::string token = tokens[j];
+
+        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^") {
+          switch (token[0]) {
+            case '+': {
+              precomp_tokens[i][j] = {operands::OPERATOR, operators::PLUS};
+              break;
+            }
+
+            case '-': {
+              precomp_tokens[i][j] = {operands::OPERATOR, operators::MINUS};
+              break;
+            }
+
+            case '*': {
+              precomp_tokens[i][j] = {operands::OPERATOR, operators::MULT};
+              break;
+            }
+
+            case '/': {
+              precomp_tokens[i][j] = {operands::OPERATOR, operators::DIV};
+              break;
+            }
+
+            case '^': {
+              precomp_tokens[i][j] = {operands::OPERATOR, operators::POW};
+              break;
+            }
+          }
+        } else {
+          const char* var = token.c_str();
+
+          // check first if the token is a is_variable
+          if (vars_conv_map.find(var[0]) != vars_conv_map.end())
+            precomp_tokens[i][j] = {operands::VARIABLE, vars_map.at(vars_conv_map.at(var[0]))};
+          // check then if number has more than 18 digits
+          else if (token.length() > 18)
+            precomp_tokens[i][j] = {operands::NUMBER, FFInt(mpz_class(token)).n};
+          else {
+            if (token[0] == '-') {
+              std::string tmp = token;
+              tmp.erase(0, 1);
+              precomp_tokens[i][j] = {operands::NUMBER, (-FFInt(std::stoull(tmp))).n};
+            } else
+              precomp_tokens[i][j] = {operands::NUMBER, FFInt(std::stoull(token)).n};
+          }
+        }
+      }
     }
   }
+}
+

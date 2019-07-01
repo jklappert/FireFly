@@ -569,7 +569,9 @@ namespace firefly {
         auto future = tp.run_priority_packaged_task([this, values]() {
           auto time0 = std::chrono::high_resolution_clock::now();
 
-          std::vector<FFInt> probe = (*bb)(values);
+//           std::vector<FFInt> probe = (*bb)(values);
+          std::vector<FFInt> probe;
+          (*bb)(probe, values);
 
           auto time1 = std::chrono::high_resolution_clock::now();
 
@@ -585,7 +587,9 @@ namespace firefly {
         auto future = tp.run_packaged_task([this, values]() {
           auto time0 = std::chrono::high_resolution_clock::now();
 
-          std::vector<FFInt> probe = (*bb)(values);
+                    std::vector<FFInt> probe;
+          (*bb)(probe, values);
+          //std::vector<FFInt> probe = (*bb)(values);
 
           auto time1 = std::chrono::high_resolution_clock::now();
 

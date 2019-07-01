@@ -29,7 +29,7 @@ namespace firefly {
   class black_box_base {
   public:
       black_box_base() {};
-      virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) = 0;
+      virtual void operator()(std::vector<FFInt>& result, const std::vector<FFInt>& values) = 0;
   };
 
   enum RatReconst_status {DEFAULT, DONE, DELETED};

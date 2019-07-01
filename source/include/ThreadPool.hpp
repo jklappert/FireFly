@@ -34,7 +34,7 @@
 namespace firefly {
 
   /**
-   * @class Thread_pool
+   * @class ThreadPool
    * @brief A pool of threads
    *
    * Thread_pool represents a collection of threads. Tasks (callables)

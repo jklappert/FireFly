@@ -18,6 +18,8 @@
 
 #include "PolynomialFF.hpp"
 #include "Logger.hpp"
+//#include <map>
+//#include <chrono>
 
 namespace firefly {
 
@@ -41,7 +43,7 @@ namespace firefly {
     return res;
   }
 
-  FFInt PolynomialFF::calc_n_m_1(const std::vector<FFInt>& x) const {
+  FFInt PolynomialFF::calc_n_m_1(const std::vector<FFInt>& x) {
     FFInt res(0);
     uint32_t n_m_1 = n - 1;
 
@@ -413,7 +415,7 @@ namespace firefly {
     return res;
   }
 
-  /*void PolynomialFF::generate_horner() {
+  /*void PolynomialFF::generate_hornerff() {
     if (!coefs.empty()) {
       std::vector<std::string> vars {};
 
@@ -428,7 +430,8 @@ namespace firefly {
       for (const auto & el : coefs) {
         std::vector<uint32_t> degs = el.first;
         degs.erase(degs.begin());
-        if(coefs_n_m_1.find(degs) == coefs_n_m_1.end())
+
+        if (coefs_n_m_1.find(degs) == coefs_n_m_1.end())
           coefs_n_m_1.emplace(std::make_pair(degs, el.second));
         else
           coefs_n_m_1[degs] += el.second;
@@ -440,9 +443,9 @@ namespace firefly {
       s_y_fun_n_m_1.parse_function("0", {"a"});
       s_y_fun_map_n_m_1.parse_function("0", {"a"});
     }
-  }*/
+  }
 
-  /*std::string PolynomialFF::generate_horner_coefs(int index, const ff_map& monomials) {
+  std::string PolynomialFF::generate_horner_coefs(int index, const ff_map& monomials) {
     std::map<uint32_t, ff_map, std::greater<uint32_t>> tmp_coefs {};
 
     if (monomials.begin() -> first.size() > 1) {
