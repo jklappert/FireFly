@@ -25,6 +25,7 @@ mv tmp.m $file
 sed -i 's/"//g' $file
 sed -i 's/{//g' $file
 sed -i 's/}//g' $file
+sed -i 's/\\//g' $file
 sed -i 's/,/\n/g' $file
 
 
