@@ -43,7 +43,7 @@ namespace firefly {
     return res;
   }
 
-  FFInt PolynomialFF::calc_n_m_1(const std::vector<FFInt>& x) {
+  FFInt PolynomialFF::calc_n_m_1(const std::vector<FFInt>& x) const {
     FFInt res(0);
     uint32_t n_m_1 = n - 1;
 
@@ -419,11 +419,11 @@ namespace firefly {
     if (!coefs.empty()) {
       std::vector<std::string> vars {};
 
-      for (int i = 0; i < n - 1; i++) {
+      for (int i = 0; i < n; i++) {
         vars.emplace_back(std::string(1, ShuntingYardParser::get_var(i)));
       }
 
-      //s_y_fun.parse_function(generate_horner_coefs(0, coefs), vars);
+      s_y_fun.parse_function(generate_horner_coefs(0, coefs), vars);
 
       ff_map coefs_n_m_1 {};
 
@@ -437,7 +437,7 @@ namespace firefly {
           coefs_n_m_1[degs] += el.second;
       }
 
-      s_y_fun_n_m_1.parse_function(generate_horner_coefs(0, coefs_n_m_1), vars);
+      s_y_fun.parse_function(generate_horner_coefs(0, coefs_n_m_1), vars);
     } else { // Interprete an empty polynomial as zero
       s_y_fun.parse_function("0", {"a"});
       s_y_fun_n_m_1.parse_function("0", {"a"});

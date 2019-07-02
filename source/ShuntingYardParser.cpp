@@ -232,7 +232,7 @@ namespace firefly {
             FFInt b = nums.top();
             nums.pop();
 
-            switch (token.second) {
+            switch (token.second.n) {
               case operators::PLUS: {
                 nums.push(a + b);
                 break;
@@ -263,7 +263,7 @@ namespace firefly {
           }
 
           case operands::VARIABLE : {
-            nums.push(values[token.second]);
+            nums.push(values[token.second.n]);
             break;
           }
 
@@ -341,12 +341,12 @@ namespace firefly {
   void ShuntingYardParser::precompute_tokens() {
     precomp_tokens.clear();
     uint64_t size = functions.size();
-    precomp_tokens = std::vector<std::vector<std::pair<uint8_t, uint64_t>>> (size);
+    precomp_tokens = std::vector<std::vector<std::pair<uint8_t, FFInt>>> (size);
 
     for (uint64_t i = 0; i < size; ++i) {
       std::vector<std::string> tokens = functions[i];
       uint64_t t_size = tokens.size();
-      precomp_tokens[i] = std::vector<std::pair<uint8_t, uint64_t>> (t_size);
+      precomp_tokens[i] = std::vector<std::pair<uint8_t, FFInt>> (t_size);
 
       for (uint64_t j = 0; j < t_size; ++j) {
         std::string token = tokens[j];
@@ -386,14 +386,14 @@ namespace firefly {
             precomp_tokens[i][j] = {operands::VARIABLE, vars_map.at(vars_conv_map.at(var[0]))};
           // check then if number has more than 18 digits
           else if (token.length() > 18)
-            precomp_tokens[i][j] = {operands::NUMBER, FFInt(mpz_class(token)).n};
+            precomp_tokens[i][j] = {operands::NUMBER, FFInt(mpz_class(token))};
           else {
             if (token[0] == '-') {
               std::string tmp = token;
               tmp.erase(0, 1);
-              precomp_tokens[i][j] = {operands::NUMBER, (-FFInt(std::stoull(tmp))).n};
+              precomp_tokens[i][j] = {operands::NUMBER, (-FFInt(std::stoull(tmp)))};
             } else
-              precomp_tokens[i][j] = {operands::NUMBER, FFInt(std::stoull(token)).n};
+              precomp_tokens[i][j] = {operands::NUMBER, FFInt(std::stoull(token))};
           }
         }
       }

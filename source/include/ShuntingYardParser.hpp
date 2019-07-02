@@ -81,7 +81,7 @@ namespace firefly {
     std::vector<std::vector<std::string>> functions {};
     std::unordered_map<std::string, int> vars_map {};
     std::unordered_map<char, std::string> vars_conv_map {};
-    std::vector<std::vector<std::pair<uint8_t, uint64_t>>> precomp_tokens {};
+    std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {};
     static std::unordered_map<int, char> int_var_map;
     /**
      *  Initializes the conversion map
