@@ -22,8 +22,6 @@
 #include "Tests.hpp"
 #include "utils.hpp"
 
-#include <chrono>
-
 namespace firefly {
 // Example of how one can use the black_box functor for the automatic interface
   class BlackBoxUser : public BlackBoxBase {
@@ -38,7 +36,8 @@ namespace firefly {
       calc_lu_decomposition(mat, p, 2);
       // Interpolate determinat of the matrix mat
       result.emplace_back(calc_determinant_lu(mat, p, 2));
-      /*result.emplace_back(singular_solver(values));
+      /*std::vector<FFInt> result {};
+      result.emplace_back(singular_solver(values));
       result.emplace_back(n_eq_1(values[0]));
       result.emplace_back(n_eq_4(values));
       result.emplace_back(gghh(values));
@@ -46,7 +45,7 @@ namespace firefly {
       result.emplace_back(ggh(values));*/
       return result;
     }
-    virtual void prime_changed(){
+    virtual void prime_changed() {
       par.precompute_tokens();
     }
   private:
@@ -240,8 +239,6 @@ namespace firefly {
           shift = rec.get_zi_shift_vec();
         }
 
-        if (primes_used > 7) std::exit(-1);
-
         std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
         primes_used = std::max(primes_used, rec.get_prime());
 
@@ -291,7 +288,7 @@ namespace firefly {
   // Example for the reconstruction of a polynomial
   void reconstruct_polynomial() {
     FFInt::set_new_prime(primes()[0]);
-    uint32_t n = 1;
+    uint32_t n = 20;
     PolyReconst rec_poly(n);
     PolyReconst::set_newton(true);
     PolyReconst::set_bt(true);
