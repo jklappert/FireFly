@@ -122,8 +122,9 @@ namespace firefly {
             g_di[std::vector<uint32_t>(n)] = RationalNumber(1, 1);
           }
         } else if (!done && fed_prime == prime_number) {
-          if(!check_interpolation)
+          if (!check_interpolation)
             new_prime = false;
+
           first_feed = false;
           queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
         }
