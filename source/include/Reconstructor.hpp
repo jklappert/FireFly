@@ -29,13 +29,13 @@ namespace firefly {
   class BlackBoxBase {
   public:
       BlackBoxBase() {};
-      virtual std::vector<FFInt> operator()(const std::vector<FFInt> & values) = 0;
+      virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) = 0;
       virtual void prime_changed() = 0;
   };
 
   enum RatReconst_status {DEFAULT, DONE, DELETED};
 
-  typedef std::tuple<uint64_t, std::mutex *, int, RatReconst *> RatReconst_tuple;
+  typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
   typedef std::list<RatReconst_tuple> RatReconst_list;
   typedef std::list<std::tuple<FFInt, std::vector<uint32_t>, std::future<std::pair<std::vector<FFInt>, double>>>> future_list;
   /**
@@ -50,7 +50,7 @@ namespace firefly {
      *  @param thr_n_ the number of threads being used during the reconstruction
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
-    Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase & bb_, uint32_t verbosity_ = IMPORTANT);
+    Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_ = IMPORTANT);
     /**
      *  Enables the scan for a sparse shift at the beginning of the reconstruction
      */
@@ -59,6 +59,10 @@ namespace firefly {
      *  Starts the reconstruction
      */
     void reconstruct();
+    /**
+     *  @return true if all interpolations are finished else false
+     */
+    bool finished();
     /**
      *  @return the vector of reconstructed rational functions
      */
@@ -91,7 +95,7 @@ namespace firefly {
   private:
     uint32_t n;
     uint32_t thr_n;
-    BlackBoxBase & bb;
+    BlackBoxBase& bb;
     int verbosity;
     RatReconst_list reconst {};
     bool scan = false;
@@ -101,6 +105,7 @@ namespace firefly {
     std::vector<std::string> file_paths {};
     bool safe_mode = false;
     uint32_t prime_it = 0;
+    bool all_done = false;
     ThreadPool tp;
     std::mutex future_control;
     std::mutex job_control;
@@ -108,6 +113,7 @@ namespace firefly {
     std::mutex print_control;
     std::mutex status_control;
     std::mutex clean;
+    std::mutex mutex_external;
     std::condition_variable condition_future;
     std::condition_variable condition_feed;
     // list containing the parameters and the future of the parallel tasks; t, zi_order, future
@@ -124,7 +130,7 @@ namespace firefly {
     uint32_t total_iterations = 0;
     uint32_t iteration = 0;
     bool one_done = false;
-    double average_black_box_time;
+    double average_black_box_time = 0;
     RatReconst tmp_rec;
     std::vector<FFInt> shift {};
     /**

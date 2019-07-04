@@ -115,13 +115,25 @@ namespace firefly {
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
 
+    {
+      std::unique_lock<std::mutex> lock(mutex_external);
+
+      all_done = true;
+    }
+
     tp.kill_all();
+  }
+
+  bool Reconstructor::finished() {
+    std::unique_lock<std::mutex> lock(mutex_external);
+
+    return all_done;
   }
 
   std::vector<RationalFunction> Reconstructor::get_result() {
     std::vector<RationalFunction> result {};
 
-    for (auto & rec : reconst) {
+    for (auto& rec : reconst) {
       if (std::get<2>(rec) == DONE) {
         result.emplace_back(std::get<3>(rec)->get_result());
       }
@@ -131,12 +143,20 @@ namespace firefly {
   }
 
   std::vector<std::pair<std::string, RationalFunction>> Reconstructor::get_early_results() {
+    {
+      std::unique_lock<std::mutex> lock(mutex_external);
+
+      if (scan) {
+        return std::vector<std::pair<std::string, RationalFunction>> {};
+      }
+    }
+
     std::unique_lock<std::mutex> lock_clean(clean);
 
     std::vector<std::pair<std::string, RationalFunction>> result;
 
-    for (auto & rec : reconst) {
-      std::unique_lock<std::mutex> lock_exists(*std::get<1>(rec));
+    for (auto& rec : reconst) {
+      std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
       if (std::get<2>(rec) == DONE) {
         if (tags.size() > 0) {
@@ -187,10 +207,10 @@ namespace firefly {
 
       found_shift = true;
 
-      for (auto & rec : reconst) {
+      for (auto& rec : reconst) {
         std::get<2>(rec) = DEFAULT;
 
-        if (!std::get<3>(rec)->is_shift_working()) {
+        if (!(std::get<3>(rec)->is_shift_working())) {
           found_shift = false;
         }
       }
@@ -220,12 +240,16 @@ namespace firefly {
 
     shift = tmp_rec.get_zi_shift_vec();
 
-    for (auto & rec : reconst) {
+    for (auto& rec : reconst) {
       std::get<2>(rec) = DEFAULT;
       std::get<3>(rec)->accept_shift();
     }
 
-    scan = false;
+    {
+      std::unique_lock<std::mutex> lock(mutex_external);
+
+      scan = false;
+    }
 
     if (verbosity > SILENT) {
       if (found_shift) {
@@ -517,8 +541,8 @@ namespace firefly {
           // no jobs are running anymore, check if done or new_prime else throw error
           uint32_t items_new_prime_tmp = 0;
 
-          for (auto & rec : reconst) {
-            std::unique_lock<std::mutex> lock_exists(*std::get<1>(rec));
+          for (auto& rec : reconst) {
+            std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
             if (std::get<2>(rec) == DEFAULT) {
               if (!std::get<3>(rec)->is_done()) {
@@ -614,8 +638,8 @@ namespace firefly {
     uint32_t items_new_prime_tmp = 0;
     uint32_t counter = 0;
 
-    for (auto & rec : reconst) {
-      std::unique_lock<std::mutex> lock_exists(*std::get<1>(rec));
+    for (auto& rec : reconst) {
+      std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
       if (std::get<2>(rec) == DEFAULT) {
         lock_exists.unlock();
@@ -664,7 +688,7 @@ namespace firefly {
   }
 
   void Reconstructor::interpolate_job(RatReconst_tuple& rec) {
-    std::unique_lock<std::mutex> lock_exists(*std::get<1>(rec));
+    std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
     if (std::get<2>(rec) == DEFAULT) {
       lock_exists.unlock();
