@@ -2,6 +2,7 @@
 #include "Logger.hpp"
 #include <fstream>
 #include <regex>
+#include <chrono>
 
 namespace firefly {
 
@@ -18,6 +19,7 @@ namespace firefly {
       int_var_map = init_int_var_map();
 
     INFO_MSG("Parsing functions in '" + file + "'.");
+    auto time0 = std::chrono::high_resolution_clock::now();
     // Check if file exists
     std::ifstream infile(file);
 
@@ -44,7 +46,8 @@ namespace firefly {
     precompute_tokens();
 
     istream.close();
-    INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions.");
+    auto time1 = std::chrono::high_resolution_clock::now();
+    INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s.");
   }
 
   void ShuntingYardParser::parse(const std::string& fun_) {

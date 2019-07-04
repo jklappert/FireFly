@@ -1610,7 +1610,7 @@ namespace firefly {
       uint32_t tmp_key = el.first;
 
       if (tmp_key == 0 && tmp_sol_const_den == 1) {
-        res += saved_num_den.at(std::vector<uint32_t> (n - 1, 1)).at( {0, 2}).first* tmp_num;
+        res += saved_num_den.at(std::vector<uint32_t> (n - 1, 1)).at( {0, 2}).first * tmp_num;
 
         if (curr_deg_den < max_deg_den)
           res -= sub_den[0].front().calc(yis) * tmp_num;
