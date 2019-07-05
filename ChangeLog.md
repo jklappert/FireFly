@@ -19,6 +19,15 @@ New features
  errors. It can be used by calling the member function `set_safe_interpolation()`
  of the `Reconstructor` class.
 
+ * The black box is no longer a function of `Reconstructor` but instead a functor.
+ `source/include/Reconstructor.hpp` contains the base class `BlackBoxBase`.
+ The user has to define his black box as a derived class and provide a constructor,
+ the evaluation `std::vector<FFInt> operator()(const std::vector<FFInt>& values)`,
+ and the function `void prime_changed()` which allows the user to change class
+ variables when the prime field changes. `Reconstructor` has to be initialized with
+ a reference to the black box. The example class `BlackBoxUser` can be found in
+ `example.cpp`
+
  * Added a script which converts a list of functions in Mathematica syntax
  to compilable C++ code to perform interpolations with them. This can be
  helpful for arithmetic with functions with many terms where other programs
@@ -30,10 +39,10 @@ New features
 
  * Added a Horner representation of rational functions which may result in
  faster evaluation time when needed. Check out `source/include/HornerGenerator.hpp`
- and the new member functions of `RationalFunctions` and `Polynomial`, repectively.
+ and the new member functions of `RationalFunctions` and `Polynomial`, respectively.
 
  * Added dense algorithms for matrix manipulation, e.g., computing the inverse,
- the determinant, or solutions for system of equations. Additionaly,
+ the determinant, or solutions for system of equations. Additionally,
  LU decompositions are supported. Further information can be found in
  `source/include/DenseSolver.hpp`.
 
@@ -43,7 +52,7 @@ Changes
  * Generate 64-bit anchor points and shifts instead of 32-bit.
 
  * Many small runtime improvements and minor bug fixes.
- 
+
  * Discard prime fields over which the black box evaluates to zero on the first
  probe. This makes the code safer regarding unlucky primes and zeros.
 

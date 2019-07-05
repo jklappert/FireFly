@@ -26,18 +26,33 @@
 #include <tuple>
 
 namespace firefly {
+  /**
+   * @class BlackBoxBase
+   * @brief The base class of the black box
+   */
   class BlackBoxBase {
   public:
-      BlackBoxBase() {};
-      virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) = 0;
-      virtual void prime_changed() = 0;
+    /**
+     *  A constructor for the BlackBoxBase class
+     */
+    BlackBoxBase() {};
+    /**
+     *  The evaluation of the black box. This function is called from Reconstructor.
+     *  @param values the values to be inserted for the variables
+     *  @return the result vector
+     */
+    virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) = 0;
+    /**
+     *  Update internal variables of the black box when the prime field changes.
+     *  This function is called from Reconstructor.
+     */
+    virtual void prime_changed() = 0;
   };
-
-  enum RatReconst_status {DEFAULT, DONE, DELETED};
 
   typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
   typedef std::list<RatReconst_tuple> RatReconst_list;
   typedef std::list<std::tuple<FFInt, std::vector<uint32_t>, std::future<std::pair<std::vector<FFInt>, double>>>> future_list;
+
   /**
    * @class Reconstructor
    * @brief A class to reconstruct functions from its values
@@ -52,17 +67,9 @@ namespace firefly {
      */
     Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_ = IMPORTANT);
     /**
-     *  Enables the scan for a sparse shift at the beginning of the reconstruction
-     */
-    void enable_scan();
-    /**
      *  Starts the reconstruction
      */
     void reconstruct();
-    /**
-     *  @return true if all interpolations are finished else false
-     */
-    bool finished();
     /**
      *  @return the vector of reconstructed rational functions
      */
@@ -72,6 +79,15 @@ namespace firefly {
      *  they are removed from the internal memory afterwards
      */
     std::vector<std::pair<std::string, RationalFunction>> get_early_results();
+    /**
+     *  Enables the scan for a sparse shift at the beginning of the reconstruction
+     */
+    void enable_scan();
+    /**
+     *  Activate the safe interpolation mode where the function is completely interpolated in each prime field,
+     *  no optimizations are used after the first prime field
+     */
+    void set_safe_interpolation();
     /**
      *  Sets user defined tags for each reconstruction object and saves intermediate results after each prime field
      *  @param tags_ a vector of user defined tags in an immutable ordering
@@ -86,12 +102,9 @@ namespace firefly {
      *  @param file_paths_ a vector to the absolute paths to the intermediate results of reconstruction objects
      */
     void resume_from_saved_state(const std::vector<std::string>& file_paths_);
-    /**
-     *  Activate the safe interpolation mode where the function is completely interpolated in each prime field,
-     *  no optimizations are used after the first prime field
-     */
-    void set_safe_interpolation();
+
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
+    enum RatReconst_status {DEFAULT, DONE, DELETED};
   private:
     uint32_t n;
     uint32_t thr_n;
@@ -105,7 +118,6 @@ namespace firefly {
     std::vector<std::string> file_paths {};
     bool safe_mode = false;
     uint32_t prime_it = 0;
-    bool all_done = false;
     ThreadPool tp;
     std::mutex future_control;
     std::mutex job_control;
@@ -138,6 +150,9 @@ namespace firefly {
     *  @param file_name the file name
     */
     uint32_t parse_prime_number(std::string& file_name);
+    /**
+    *  Scan the black-box functions for a sparse shift
+    */
     void scan_for_shift();
     /**
      *  Initializes vector of reconstruction objects and starts first probes

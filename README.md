@@ -41,29 +41,45 @@ If FLINT is used for modular arithmetic and it cannot be found in the default sy
 where `FLINT_LIB_PATH` is the absolute path pointing to the shared library of FLINT.
 
 ## Reconstructing functions
-To reconstruct functions with FireFly it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionaly, black-box probes are calculated parallelized.
+To reconstruct functions with FireFly it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
 
-The reconstruction starts with initializing a `Reconstructor` object
-
-```cpp
-Reconstructor rec(n_var, n_thr);
-```
-
-with `n_var` being the number of variables and `n_thr` are the number of threads that should be used. Since the black-box function is called inside the `Reconstructor` class, it should be defined as
+The black box is implemented as functor. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor, the evaluation of the black box, and a function which allows the user to change class variables when the prime field changes:
 
 ```cpp
-void Reconstructor::black_box(vector<FFInt> result, const vector<FFInt>& values){
+class BlackBoxUser : public BlackBoxBase {
+public:
+  BlackBoxUser(...) {
     ...
+  }
+  virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+    ...
+  }
+  virtual void prime_changed() {
+    ...
+  }
 }
 ```
 
-The `FFInt` object is used for all modular arithmetic operations. The STL vector `result` represents the black-box probes for a given tuple of values which are given in the STL vector `values`. It has to provide an immutable ordering and is filled by the user. After defining the black-box function, one could start the reconstruction by 
+The actual reconstruction is done by the `Reconstructor` object which is initialized with the number of variables `n_var`, the number of threads `n_thr` that should be used, and the `BlackBoxUser` object `bb`:
+
+```cpp
+BlackBoxUser bb(...);
+Reconstructor rec(n_var, n_thr, bb);
+```
+
+The reconstruction is then started by
 
 ```cpp
 rec.reconstruct();
 ```
 
-The reconstruction will run from this point until it is finished. Additional options can be set and we refer to the `example.cpp` file and the code documentation.
+The reconstruction will run from this point until it is finished. The results can be obtained with
+
+```cpp
+rec.get_result();
+```
+
+Additional options can be set and we refer to the `example.cpp` file and the code documentation.
 
 ## Converting Mathematica expressions to C++ code
 Sometimes the black box is not provied by a code but rather one creates it which can be useful by performing algebraic computations on large functions. For this purpose FireFly provides a script to convert Mathematica functions to compilable C++ code. The functions have to be provided as a file in which a list of functions (expression or string) is stored, e.g.,

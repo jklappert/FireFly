@@ -115,19 +115,7 @@ namespace firefly {
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
 
-    {
-      std::unique_lock<std::mutex> lock(mutex_external);
-
-      all_done = true;
-    }
-
     tp.kill_all();
-  }
-
-  bool Reconstructor::finished() {
-    std::unique_lock<std::mutex> lock(mutex_external);
-
-    return all_done;
   }
 
   std::vector<RationalFunction> Reconstructor::get_result() {
