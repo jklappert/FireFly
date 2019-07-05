@@ -164,16 +164,16 @@ namespace firefly{
     BaseReconst br;
     uint64_t seed = static_cast<uint64_t>(std::time(0));
     br.set_seed(seed);
-  ShuntingYardParser par("../s_y_test.m", {"x", "y", "z"});
+    ShuntingYardParser par("../s_y_test.m", {"x", "y", "z"});
 
     RatReconst rec(n);
     //rec.set_safe_interpolation();
 
     // One can set a tag to start from a previously saved run after an interpolation
     // over one prime field was successful
-    //rec.set_tag("rf");
+    //rec.set_tag("");
     // Read in a previously saved file to resume a run from this point
-    rec.start_from_saved_file("ff_save/5_2.txt");
+    //rec.start_from_saved_file("ff_save/1_1.txt");
 
     std::cout << "--------------------------------------------------------------\n";
     std::cout << "Interpolating rational function\n";
@@ -268,6 +268,8 @@ namespace firefly{
         FFInt::set_new_prime(primes()[rec.get_prime()]);
         rec.generate_anchor_points();
         kk = 0;
+
+        par.precompute_tokens();
       }
 
       // Always set the scaling variable to a random value
@@ -294,7 +296,7 @@ namespace firefly{
       //FFInt num = bench_3(yis);
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
       //FFInt num = FFInt(primes()[1]) * FFInt(primes()[3]) * (FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + yis[1]) / (FFInt(primes()[1]) + yis[1]);
-      FFInt num = par.evaluate_pre(yis)[4];
+      FFInt num = par.evaluate_pre(yis)[1];
       ++kk;
       ++count;
 

@@ -104,6 +104,7 @@ namespace firefly {
 
   void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
+
     if (!done) {
       if (first_feed) {
         if (num == 0) {
@@ -809,6 +810,8 @@ namespace firefly {
               if (solved_den.coefs.find(std::vector<uint32_t> (n, 0)) != solved_den.coefs.end() && solved_den.coefs[std::vector<uint32_t> (n, 0)] == 0) {
                 solved_den.coefs.erase(std::vector<uint32_t> (n, 0));
               }
+
+              std::cout << PolynomialFF(3, solved_num.coefs) << PolynomialFF(3, solved_den.coefs);
 
               combine_primes(solved_num.coefs, solved_den.coefs);
               {
@@ -2209,8 +2212,8 @@ namespace firefly {
     if (prime_number > 0) {
       std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
 
-      if (std::remove(old_file_name.c_str()) != 0)
-        WARNING_MSG("The previously saved file could not be deleted.");
+      //if (std::remove(old_file_name.c_str()) != 0)
+      //  WARNING_MSG("The previously saved file could not be deleted.");
     }
   }
 

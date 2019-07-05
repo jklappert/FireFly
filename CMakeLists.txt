@@ -74,43 +74,43 @@ include_directories(${FLINT_INCLUDE_DIR}/flint)
 # Firefly library files
 set(LIBSOURCES
   ${SOURCE_PATH}/BaseReconst.cpp
+  ${SOURCE_PATH}/DenseSolver.cpp
   ${SOURCE_PATH}/FFInt.cpp
+  ${SOURCE_PATH}/FFThieleInterpolator.cpp
+  ${SOURCE_PATH}/HornerGenerator.cpp
   ${SOURCE_PATH}/Monomial.cpp
+  ${SOURCE_PATH}/Poly.cpp
   ${SOURCE_PATH}/Polynomial.cpp
   ${SOURCE_PATH}/PolynomialFF.cpp
   ${SOURCE_PATH}/PolyReconst.cpp
   ${SOURCE_PATH}/RationalFunction.cpp
   ${SOURCE_PATH}/RationalNumber.cpp
   ${SOURCE_PATH}/RatReconst.cpp
+#  ${SOURCE_PATH}/RatReconstCC.cpp
   ${SOURCE_PATH}/ReconstHelper.cpp
   ${SOURCE_PATH}/Reconstructor.cpp
-  ${SOURCE_PATH}/utils.cpp
-  ${SOURCE_PATH}/Poly.cpp
-  ${SOURCE_PATH}/FFThieleInterpolator.cpp
-  ${SOURCE_PATH}/RatReconstCC.cpp
-  ${SOURCE_PATH}/DenseSolver.cpp
   ${SOURCE_PATH}/ShuntingYardParser.cpp
-  ${SOURCE_PATH}/HornerGenerator.cpp)
+  ${SOURCE_PATH}/utils.cpp)
 
 set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/BaseReconst.cpp
+  ${SOURCE_PATH}/DenseSolver.cpp
   ${SOURCE_PATH}/FFInt.cpp
+  ${SOURCE_PATH}/FFThieleInterpolator.cpp
+  ${SOURCE_PATH}/HornerGenerator.cpp
   ${SOURCE_PATH}/Monomial.cpp
+  ${SOURCE_PATH}/Poly.cpp
   ${SOURCE_PATH}/Polynomial.cpp
   ${SOURCE_PATH}/PolynomialFF.cpp
   ${SOURCE_PATH}/PolyReconst.cpp
   ${SOURCE_PATH}/RationalFunction.cpp
   ${SOURCE_PATH}/RationalNumber.cpp
   ${SOURCE_PATH}/RatReconst.cpp
+#  ${SOURCE_PATH}/RatReconstCC.cpp
   ${SOURCE_PATH}/ReconstHelper.cpp
   ${SOURCE_PATH}/Reconstructor.cpp
-  ${SOURCE_PATH}/utils.cpp
-  ${SOURCE_PATH}/Poly.cpp
-  ${SOURCE_PATH}/FFThieleInterpolator.cpp
-  ${SOURCE_PATH}/RatReconstCC.cpp
-  ${SOURCE_PATH}/DenseSolver.cpp
   ${SOURCE_PATH}/ShuntingYardParser.cpp
-  ${SOURCE_PATH}/HornerGenerator.cpp)
+  ${SOURCE_PATH}/utils.cpp)
 
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
@@ -152,9 +152,13 @@ DESTINATION "${LIB_INSTALL_DIR}/pkgconfig")
 # install public headers
 install(FILES
   "${INCLUDE_PATH}/BaseReconst.hpp"
+  "${INCLUDE_PATH}/DenseSolver.hpp"
   "${INCLUDE_PATH}/FFInt.hpp"
+  "${INCLUDE_PATH}/FFThieleInterpolator.hpp"
+  "${INCLUDE_PATH}/HornerGenerator.hpp"
   "${INCLUDE_PATH}/Logger.hpp"
   "${INCLUDE_PATH}/Monomial.hpp"
+  "${INCLUDE_PATH}/Poly.hpp"
   "${INCLUDE_PATH}/Polynomial.hpp"
   "${INCLUDE_PATH}/PolynomialFF.hpp"
   "${INCLUDE_PATH}/PolyReconst.hpp"
@@ -163,15 +167,11 @@ install(FILES
   "${INCLUDE_PATH}/RatReconst.hpp"
   "${INCLUDE_PATH}/ReconstHelper.hpp"
   "${INCLUDE_PATH}/Reconstructor.hpp"
+  "${INCLUDE_PATH}/ShuntingYardParser.hpp"
   "${INCLUDE_PATH}/ThreadPool.hpp"
   "${INCLUDE_PATH}/UintHasher.hpp"
-  "${INCLUDE_PATH}/version.hpp"
   "${INCLUDE_PATH}/utils.hpp"
-  "${INCLUDE_PATH}/Poly.hpp"
-  "${INCLUDE_PATH}/FFThieleInterpolator.hpp"
-  "${INCLUDE_PATH}/DenseSolver.hpp"
-  "${INCLUDE_PATH}/ShuntingYardParser.hpp"
-  "${INCLUDE_PATH}/HornerGenerator.hpp"
+  "${INCLUDE_PATH}/version.hpp"
   DESTINATION "${INCLUDE_INSTALL_DIR}")
 
 # adding documentation
