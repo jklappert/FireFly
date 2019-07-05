@@ -33,16 +33,16 @@ New features
  helpful for arithmetic with functions with many terms where other programs
  fail. The script can be found in the `mma_2_ff` directory.
 
- * Added a Shunting Yard parser to parse a collection of rational functions
+ * Added a shunting-yard parser to parse a collection of rational functions
  for functional evaluation. This skips the compilation steps of the Mathematica
- to C++ conversion script but may be slower.
+ to C++ conversion script.
 
  * Added a Horner representation of rational functions which may result in
- faster evaluation time when needed. Check out `source/include/HornerGenerator.hpp`
+ faster evaluation times when needed. Check out `source/include/HornerGenerator.hpp`
  and the new member functions of `RationalFunctions` and `Polynomial`, respectively.
 
  * Added dense algorithms for matrix manipulation, e.g., computing the inverse,
- the determinant, or solutions for system of equations. Additionally,
+ the determinant, or the solution of a system of equations. Additionally,
  LU decompositions are supported. Further information can be found in
  `source/include/DenseSolver.hpp`.
 
@@ -53,12 +53,12 @@ Changes
 
  * Many small runtime improvements and minor bug fixes.
 
- * Discard prime fields over which the black box evaluates to zero on the first
+ * Discard prime fields over which the black box evaluates to zero in the first
  probe. This makes the code safer regarding unlucky primes and zeros.
 
 
 FireFly 1.0.0
 =============
 
-This is the initial release of the FireFly library. The FireFly
-interpolates rational functions over finite fields Z_p.
+This is the initial release of the FireFly library. FireFly interpolates rational
+functions over finite (prime) fields Z_p.
