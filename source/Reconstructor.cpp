@@ -66,11 +66,18 @@ namespace firefly {
       RatReconst* rec = new RatReconst(n);
       rec->start_from_saved_file(file_paths[i]);
 
-      probes_for_next_prime = std::max(probes_for_next_prime, rec->get_num_eqn());
+      if (rec->is_done()) {
+        ++items_done;
+        std::mutex* mut = new std::mutex;
 
-      std::mutex* mut = new std::mutex;
+        reconst.emplace_back(std::make_tuple(i, mut, DONE, rec));
+      } else {
+        probes_for_next_prime = std::max(probes_for_next_prime, rec->get_num_eqn());
 
-      reconst.emplace_back(std::make_tuple(i, mut, DEFAULT, rec));
+        std::mutex* mut = new std::mutex;
+
+        reconst.emplace_back(std::make_tuple(i, mut, DEFAULT, rec));
+      }
     }
   }
 
@@ -88,6 +95,7 @@ namespace firefly {
 
   void Reconstructor::reconstruct() {
     start = std::chrono::high_resolution_clock::now();
+
     if (!resume_from_state) {
       if (verbosity > SILENT) {
         INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
@@ -109,6 +117,7 @@ namespace firefly {
     run_until_done();
 
     end = std::chrono::high_resolution_clock::now();
+
     if (verbosity > SILENT) {
       INFO_MSG("Reconstructed all functions successfully in " + std::to_string(std::chrono::duration<double>(end - start).count()) + " s.");
       INFO_MSG(std::to_string(total_iterations) + " probes in total.");
@@ -121,7 +130,7 @@ namespace firefly {
   std::vector<RationalFunction> Reconstructor::get_result() {
     std::vector<RationalFunction> result {};
 
-    for (auto& rec : reconst) {
+    for (auto & rec : reconst) {
       if (std::get<2>(rec) == DONE) {
         result.emplace_back(std::get<3>(rec)->get_result());
       }
@@ -143,7 +152,7 @@ namespace firefly {
 
     std::vector<std::pair<std::string, RationalFunction>> result;
 
-    for (auto& rec : reconst) {
+    for (auto & rec : reconst) {
       std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
       if (std::get<2>(rec) == DONE) {
@@ -194,7 +203,7 @@ namespace firefly {
 
       found_shift = true;
 
-      for (auto& rec : reconst) {
+      for (auto & rec : reconst) {
         std::get<2>(rec) = DEFAULT;
 
         if (!(std::get<3>(rec)->is_shift_working())) {
@@ -227,7 +236,7 @@ namespace firefly {
 
     shift = tmp_rec.get_zi_shift_vec();
 
-    for (auto& rec : reconst) {
+    for (auto & rec : reconst) {
       std::get<2>(rec) = DEFAULT;
       std::get<3>(rec)->accept_shift();
     }
@@ -318,10 +327,6 @@ namespace firefly {
           rec->set_tag(tags[i]);
         else
           rec->set_tag(std::to_string(i));
-      }
-
-      if (resume_from_state) {
-        rec->start_from_saved_file(file_paths[i]);
       }
 
       rec->feed(t, probe[i], zi_order, prime_it);
@@ -528,7 +533,7 @@ namespace firefly {
           // no jobs are running anymore, check if done or new_prime else throw error
           uint32_t items_new_prime_tmp = 0;
 
-          for (auto& rec : reconst) {
+          for (auto & rec : reconst) {
             std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
             if (std::get<2>(rec) == DEFAULT) {
@@ -625,13 +630,13 @@ namespace firefly {
     uint32_t items_new_prime_tmp = 0;
     uint32_t counter = 0;
 
-    for (auto& rec : reconst) {
+    for (auto & rec : reconst) {
       std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
       if (std::get<2>(rec) == DEFAULT) {
         lock_exists.unlock();
 
-        if (!std::get<3>(rec)->is_done()) {
+        if (!(std::get<3>(rec)->is_done())) {
           if (std::get<3>(rec)->get_prime() == prime_it) {
             ++counter;
 

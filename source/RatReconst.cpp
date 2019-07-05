@@ -104,7 +104,6 @@ namespace firefly {
 
   void RatReconst::feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
-
     if (!done) {
       if (first_feed) {
         if (num == 0) {
@@ -1348,6 +1347,10 @@ namespace firefly {
 
     const_den = 0;
     {
+      // Check if the state should be written out after this prime
+      if (tag.size() > 0)
+        save_state();
+
       std::unique_lock<std::mutex> lock(mutex_status);
       ++prime_number;
       queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
@@ -1356,17 +1359,13 @@ namespace firefly {
       first_feed = true;
       check_interpolation = true;
 
-      if (prime_number == 100) {
+      if (prime_number == 99) {
         ERROR_MSG("Your interpolation requests more than 100 primes.");
         std::exit(-1);
       }
     }
     tmp_solved_coefs_den = 0;
     tmp_solved_coefs_num = 0;
-
-    // Check if the state should be written out after this prime
-    if (tag.size() > 0)
-      save_state();
   }
 
   RationalFunction RatReconst::get_result() {
@@ -2220,6 +2219,7 @@ namespace firefly {
     std::ifstream file(file_name.c_str());
     bool first = true;
     parse_prime_number(file_name);
+    check_interpolation = true;
 
     if (file.is_open()) {
       while (std::getline(file, line)) {

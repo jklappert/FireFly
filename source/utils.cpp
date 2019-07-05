@@ -18,6 +18,7 @@
 
 #include "utils.hpp"
 #include "Logger.hpp"
+#include "Reconstructor.hpp"
 
 namespace firefly {
   static uint64_t xorshift64star_state = 0x4d595df4d0f33173;
@@ -354,4 +355,59 @@ namespace firefly {
     return t < 0 ? t + m : t;
   }
 #endif
+
+// Example for the reconstruction of a rational function
+  
+
+  // Example for the reconstruction of a polynomial
+  void reconstruct_polynomial() {
+    FFInt::set_new_prime(primes()[0]);
+    uint32_t n = 2;
+    PolyReconst rec_poly(n);
+    PolyReconst::set_newton(true);
+    PolyReconst::set_bt(true);
+
+    // Initialize some counters
+    int count = 0;
+    int kk = 0;
+    uint primes_used = 0;
+
+    std::cout << "Interpolating polynomial\n";
+    std::cout << "--------------------------------------------------------------\n";
+    std::vector<FFInt> yis(n);
+    rec_poly.generate_anchor_points();
+
+    // Initialize some counters
+    count = 0;
+    kk = 0;
+    primes_used = 0;
+
+    // Reconstruction loop
+    while (!rec_poly.is_done()) {
+      // If a new prime is needed, set it, generate new random variables
+      // and reset counters
+      if (primes_used != rec_poly.get_prime()) {
+        std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
+        primes_used = std::max(primes_used, rec_poly.get_prime());
+
+        FFInt::set_new_prime(primes()[rec_poly.get_prime()]);
+        rec_poly.generate_anchor_points();
+        kk = 0;
+      }
+
+      yis = rec_poly.get_rand_zi_vec(rec_poly.get_zi_order());
+
+      FFInt num = yis[0] + 3 * yis[0].pow(2) + yis[1];
+
+      ++kk;
+      ++count;
+
+      rec_poly.feed(num, rec_poly.get_zi_order(), primes_used);
+      rec_poly.interpolate();
+    }
+
+    std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
+    std::cout << rec_poly.get_result();
+    std::cout << "--------------------------------------------------------------\n";
+  }
 }

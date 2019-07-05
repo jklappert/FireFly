@@ -85,34 +85,30 @@ int main() {
   ShuntingYardParser par("../s_y_test.m", {"x", "y", "z"});
 
   // Create the user defined black box
-  BlackBoxUser bb(par);
+  //BlackBoxUser bb(par);
 
   // Initialize the Reconstructor
-  Reconstructor reconst(3, 4, bb/*, Reconstructor::CHATTY*/);
+  //Reconstructor reconst(3, 4, bb/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
-  reconst.enable_scan();
+  //reconst.enable_scan();
   // Set the safe mode
   //reconst.set_safe_interpolation();
 
   // Give the paths to the intermediate results
-  //std::vector<std::string> file_paths = {"ff_save/0_3.txt","ff_save/1_2.txt","ff_save/2_3.txt","ff_save/3_4.txt","ff_save/4_1.txt","ff_save/5_2.txt"};
-  //std::vector<std::string> file_paths = {"ff_save/sing_3.txt","ff_save/n1_2.txt","ff_save/n4_3.txt","ff_save/gghh_4.txt","ff_save/pol_1.txt","ff_save/ggh_2.txt"};
+  //std::vector<std::string> file_paths = {"ff_save/0_0.txt","ff_save/1_0.txt","ff_save/2_0.txt","ff_save/3_0.txt","ff_save/4_0.txt","ff_save/5_0.txt"};
   // Enables to resume from a saved state
   //reconst.resume_from_saved_state(file_paths);
   // Write the state of all reconstruction objects after each interpolation over a prime field
   //reconst.set_tags();
-  // Write the state of all reconstruction objects after each interpolation over a prime field to specified tags
-  //std::vector<std::string> tags = {"sing","n1","n4","gghh","pol","ggh"};
-  //reconst.set_tags(tags);
 
   // Reconstruct the black box
-  reconst.reconstruct();
+  //reconst.reconstruct();
   // Get results
-  std::vector<RationalFunction> results = reconst.get_result();
+  /*std::vector<RationalFunction> results = reconst.get_result();
 
   for (uint32_t i = 0; i < results.size(); ++i) {
     std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z"}) << "\n";
-  }
+  }*/
 
   // Rewrite result in Horner form
   //std::string f6_horner = results[5].generate_horner({"x","y","z"});
@@ -120,12 +116,6 @@ int main() {
 
   // Resets all statics in RatReconst to start a new reconstruction
   //RatReconst::reset();
-
-  // Example for the reconstruction of a rational function
-  //reconstruct_rational_function();
-
-  // Example for the reconstruction of a polynomial
-  //reconstruct_polynomial();
 
   // Some examples of the dense solver functions
 
@@ -163,26 +153,27 @@ int main() {
   std::cout << "Inverse LU\n" << inv[0][0] << " " << inv[0][1] << " " << inv[0][2] << "\n"
   << inv[1][0] << " " << inv[1][1] << " " << inv[1][2] << "\n"
   << inv[2][0] << " " << inv[2][1] << " " << inv[2][2] << "\n";*/
+  reconstruct_rational_function();
   return 0;
 }
 
-namespace firefly {
-  // Example for the reconstruction of a rational function
+namespace firefly{
   void reconstruct_rational_function() {
-    uint32_t n = 4;
+    uint32_t n = 3;
     FFInt::set_new_prime(primes()[0]);
     BaseReconst br;
     uint64_t seed = static_cast<uint64_t>(std::time(0));
     br.set_seed(seed);
+  ShuntingYardParser par("../s_y_test.m", {"x", "y", "z"});
 
     RatReconst rec(n);
-    rec.set_safe_interpolation();
+    //rec.set_safe_interpolation();
 
     // One can set a tag to start from a previously saved run after an interpolation
     // over one prime field was successful
     //rec.set_tag("rf");
     // Read in a previously saved file to resume a run from this point
-    //rec.start_from_saved_file("ff_save/rf_1.txt");
+    rec.start_from_saved_file("ff_save/5_2.txt");
 
     std::cout << "--------------------------------------------------------------\n";
     std::cout << "Interpolating rational function\n";
@@ -283,7 +274,7 @@ namespace firefly {
       t = rec.get_rand();
 
       // Add the shift to the scaling variable
-      FFInt z1 = t + shift[0];
+      FFInt z1 = t + shift[5];
 
       for (uint j = 2; j <= n; ++j) {
         t_yis[j - 2] = t * rec.get_rand_zi(j, rec.get_zi_order()[j - 2]) + shift[j - 1];
@@ -302,8 +293,8 @@ namespace firefly {
       //FFInt num = gghh(yis); // example for a large interpolation problem augmented with large coefficients
       //FFInt num = bench_3(yis);
       //FFInt num = ggh(yis); // example for a three loop gg -> h integral coefficient
-      FFInt num = FFInt(primes()[1]) * FFInt(primes()[3]) * (FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + yis[1]) / (FFInt(primes()[1]) + yis[1]);
-
+      //FFInt num = FFInt(primes()[1]) * FFInt(primes()[3]) * (FFInt(primes()[0]) + FFInt(primes()[2]) * FFInt(primes()[1]) * yis[0] + 3 * yis[0].pow(2) + yis[1]) / (FFInt(primes()[1]) + yis[1]);
+      FFInt num = par.evaluate_pre(yis)[4];
       ++kk;
       ++count;
 
@@ -314,58 +305,6 @@ namespace firefly {
 
     std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
     std::cout << rec.get_result();
-    std::cout << "--------------------------------------------------------------\n";
-  }
-
-  // Example for the reconstruction of a polynomial
-  void reconstruct_polynomial() {
-    FFInt::set_new_prime(primes()[0]);
-    uint32_t n = 20;
-    PolyReconst rec_poly(n);
-    PolyReconst::set_newton(true);
-    PolyReconst::set_bt(true);
-
-    // Initialize some counters
-    int count = 0;
-    int kk = 0;
-    uint primes_used = 0;
-
-    std::cout << "Interpolating polynomial\n";
-    std::cout << "--------------------------------------------------------------\n";
-    std::vector<FFInt> yis(n);
-    rec_poly.generate_anchor_points();
-
-    // Initialize some counters
-    count = 0;
-    kk = 0;
-    primes_used = 0;
-
-    // Reconstruction loop
-    while (!rec_poly.is_done()) {
-      // If a new prime is needed, set it, generate new random variables
-      // and reset counters
-      if (primes_used != rec_poly.get_prime()) {
-        std::cout << "Set new prime. Iterations for last prime: " << kk << ".\n";
-        primes_used = std::max(primes_used, rec_poly.get_prime());
-
-        FFInt::set_new_prime(primes()[rec_poly.get_prime()]);
-        rec_poly.generate_anchor_points();
-        kk = 0;
-      }
-
-      yis = rec_poly.get_rand_zi_vec(rec_poly.get_zi_order());
-
-      FFInt num = pol_20_20(yis);
-
-      ++kk;
-      ++count;
-
-      rec_poly.feed(num, rec_poly.get_zi_order(), primes_used);
-      rec_poly.interpolate();
-    }
-
-    std::cout << "Total numerical runs: " << count << ", primes used: " << primes_used + 1 << ".\n";
-    std::cout << rec_poly.get_result();
     std::cout << "--------------------------------------------------------------\n";
   }
 }
