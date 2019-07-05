@@ -20,8 +20,6 @@
 #include "utils.hpp"
 #include "version.hpp"
 
-#include <chrono>
-
 namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     if (verbosity > SILENT) {
@@ -89,6 +87,7 @@ namespace firefly {
   }
 
   void Reconstructor::reconstruct() {
+    start = std::chrono::high_resolution_clock::now();
     if (!resume_from_state) {
       if (verbosity > SILENT) {
         INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
@@ -109,8 +108,9 @@ namespace firefly {
 
     run_until_done();
 
+    end = std::chrono::high_resolution_clock::now();
     if (verbosity > SILENT) {
-      INFO_MSG("Reconstructed all functions successfully.");
+      INFO_MSG("Reconstructed all functions successfully in " + std::to_string(std::chrono::duration<double>(end - start).count()) + " s.");
       INFO_MSG(std::to_string(total_iterations) + " probes in total.");
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
@@ -162,9 +162,8 @@ namespace firefly {
   }
 
   void Reconstructor::scan_for_shift() {
-    if (verbosity > SILENT) {
+    if (verbosity > SILENT)
       INFO_MSG("Scanning for a sparse shift.");
-    }
 
     // Generate all possible combinations of shifting variables
     const auto shift_vec = generate_possible_shifts(n);

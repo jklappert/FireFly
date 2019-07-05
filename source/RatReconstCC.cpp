@@ -64,8 +64,6 @@ namespace firefly {
     sub_den = other.sub_den;
     parsed_variables = other.parsed_variables;
     curr_parsed_variable = other.curr_parsed_variable;
-    sub_count_num = other.sub_count_num;
-    sub_count_den = other.sub_count_den;
     scan = other.scan;
     all_shift_max_degs = other.all_shift_max_degs;
     shift_works = other.shift_works;
@@ -144,8 +142,6 @@ namespace firefly {
     sub_den = std::move(other.sub_den);
     parsed_variables = std::move(other.parsed_variables);
     curr_parsed_variable = std::move(other.curr_parsed_variable);
-    sub_count_num = std::move(other.sub_count_num);
-    sub_count_den = std::move(other.sub_count_den);
     scan = std::move(other.scan);
     all_shift_max_degs = std::move(other.all_shift_max_degs);
     shift_works = std::move(other.shift_works);
@@ -225,8 +221,6 @@ namespace firefly {
       sub_den = other.sub_den;
       parsed_variables = other.parsed_variables;
       curr_parsed_variable = other.curr_parsed_variable;
-      sub_count_num = other.sub_count_num;
-      sub_count_den = other.sub_count_den;
       scan = other.scan;
       all_shift_max_degs = other.all_shift_max_degs;
       shift_works = other.shift_works;
@@ -309,8 +303,6 @@ namespace firefly {
       sub_den = std::move(other.sub_den);
       parsed_variables = std::move(other.parsed_variables);
       curr_parsed_variable = std::move(other.curr_parsed_variable);
-      sub_count_num = std::move(other.sub_count_num);
-      sub_count_den = std::move(other.sub_count_den);
       scan = std::move(other.scan);
       all_shift_max_degs = std::move(other.all_shift_max_degs);
       shift_works = std::move(other.shift_works);
