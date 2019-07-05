@@ -200,7 +200,7 @@ namespace firefly {
   }
 
   PolynomialFF solve_vandermonde_system(std::vector<std::vector<uint32_t>>& degs,
-                                        const std::vector<FFInt>& nums,
+                                        const std::vector<std::pair<FFInt, uint32_t>>& nums,
   const std::vector<FFInt> val) {
     uint32_t num_eqn = degs.size();
     std::vector<FFInt> result(num_eqn);
@@ -248,11 +248,11 @@ namespace firefly {
     for (uint32_t i = 0; i < num_eqn; ++i) {
       FFInt t = 1;
       FFInt b = 1;
-      FFInt s = nums[num_eqn - 1];
+      FFInt s = nums[num_eqn - 1].first;
 
       for (int j = num_eqn - 1; j > 0; j--) {
         b = cis[j] + vis[i] * b;
-        s += nums[j - 1] * b;
+        s += nums[j - 1].first * b;
         t = vis[i] * t + b;
       }
 

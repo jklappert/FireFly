@@ -83,6 +83,10 @@ namespace firefly {
     first_feed = other.first_feed;
     zero_counter = other.zero_counter;
     check_interpolation = other.check_interpolation;
+    sub_count_num = other.sub_count_num;
+    sub_count_den = other.sub_count_den;
+    shifted_const = other.is_singular_system;
+    remove_const = other.remove_const;
 
     done = other.done;
     new_prime = other.new_prime;
@@ -161,6 +165,10 @@ namespace firefly {
     first_feed = std::move(other.first_feed);
     zero_counter = std::move(other.zero_counter);
     check_interpolation = std::move(other.check_interpolation);
+    sub_count_num = std::move(other.sub_count_num);
+    sub_count_den = std::move(other.sub_count_den);
+    shifted_const = std::move(other.is_singular_system);
+    remove_const = std::move(other.remove_const);
 
     done = std::move(other.done);
     new_prime = std::move(other.new_prime);
@@ -240,6 +248,10 @@ namespace firefly {
       first_feed = other.first_feed;
       zero_counter = other.zero_counter;
       check_interpolation = other.check_interpolation;
+      sub_count_num = other.sub_count_num;
+      sub_count_den = other.sub_count_den;
+      shifted_const = other.is_singular_system;
+      remove_const = other.remove_const;
 
       done = other.done;
       new_prime = other.new_prime;
@@ -322,6 +334,10 @@ namespace firefly {
       first_feed = std::move(other.first_feed);
       zero_counter = std::move(other.zero_counter);
       check_interpolation = std::move(other.check_interpolation);
+      sub_count_num = std::move(other.sub_count_num);
+      sub_count_den = std::move(other.sub_count_den);
+      shifted_const = std::move(other.is_singular_system);
+      remove_const = std::move(other.remove_const);
 
       done = std::move(other.done);
       new_prime = std::move(other.new_prime);

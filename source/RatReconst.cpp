@@ -381,12 +381,12 @@ namespace firefly {
                 if (deg == 0) {
                   // this saves some memory since we only need one numerical value
                   // for the constant coefficient
-                  saved_num_num[curr_zi_order][ {deg, zi}] = el.second;
+                  saved_num_num[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_num);
                 }
               }
 
               if ((int) deg <= curr_deg_num && deg > 0 && curr_zi_order[zi - 2] < deg + 3) {
-                saved_num_num[curr_zi_order][ {deg, zi}] = el.second;
+                saved_num_num[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_num);
               }
             }
 
@@ -401,11 +401,11 @@ namespace firefly {
                 coef_d.emplace(std::make_pair(deg, std::move(rec)));
 
                 if (deg == 0)
-                  saved_num_den[curr_zi_order][ {deg, zi}] = el.second;
+                  saved_num_den[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_den);
               }
 
               if ((int) deg <= curr_deg_den && deg > 0 && curr_zi_order[zi - 2] < deg + 3) {
-                saved_num_den[curr_zi_order][ {deg, zi}] = el.second;
+                saved_num_den[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_den);
               }
             }
 
@@ -662,7 +662,7 @@ namespace firefly {
                 uint32_t key = sol.first[0];
 
                 if (coef_mat_num[key].size() < non_solved_degs_num[key].size())
-                  coef_mat_num[key].emplace_back(sol.second);
+                  coef_mat_num[key].emplace_back(std::make_pair(sol.second, 0));
 
                 // Solve multivariate Vandermonde system for corresponding degree,
                 // remove entry from non_solved_degs and add it to solve_degs
@@ -677,7 +677,7 @@ namespace firefly {
                 uint32_t key = sol.first[0];
 
                 if (coef_mat_den[key].size() < non_solved_degs_den[key].size())
-                  coef_mat_den[key].emplace_back(sol.second);
+                  coef_mat_den[key].emplace_back(std::make_pair(sol.second, 0));
 
                 if (coef_mat_den[key].size() == non_solved_degs_den[key].size()) {
                   solved_den += solve_vandermonde_system(non_solved_degs_den[key], coef_mat_den[key], get_anchor_points());
@@ -696,7 +696,7 @@ namespace firefly {
                 for (uint32_t i = start_deg_num; i <= tmp_deg; ++i) {
                   if (coef_mat_num.find(i) != coef_mat_num.end()) {
                     if (coef_mat_num[i].size() < non_solved_degs_num[i].size())
-                      coef_mat_num[i].emplace_back(canonical.first[ {i}]);
+                      coef_mat_num[i].emplace_back(std::make_pair(canonical.first[ {i}], sub_count_num));
 
                     if (i == (uint32_t)curr_deg_num && coef_mat_num[i].size() == non_solved_degs_num[i].size()) {
                       set_new_curr_deg_num_singular(i);
@@ -733,7 +733,7 @@ namespace firefly {
                 for (uint32_t i = start_deg_den; i <= tmp_deg; ++i) {
                   if (coef_mat_den.find(i) != coef_mat_den.end()) {
                     if (coef_mat_den[i].size() < non_solved_degs_den[i].size())
-                      coef_mat_den[i].emplace_back(canonical.second[ {i}]);
+                      coef_mat_den[i].emplace_back(std::make_pair(canonical.second[ {i}], sub_count_den));
 
                     if (i == (uint32_t)curr_deg_den && coef_mat_den[i].size() == non_solved_degs_den[i].size()) {
                       set_new_curr_deg_den_singular(i);
@@ -860,14 +860,16 @@ namespace firefly {
 
   std::tuple<int, uint32_t, std::vector<uint32_t>> RatReconst::feed_poly(int curr_deg,
                                                                          uint32_t max_deg, std::unordered_map<uint32_t, PolyReconst>& coef,
-  PolyReconst& rec, ff_map_map& saved_num, polff_map& sub_save, bool is_num) {
+  PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num) {
     uint32_t tmp_zi = rec.get_zi() + 1;
     std::vector<uint32_t> tmp_zi_ord = curr_zi_order;
 
     while (!rec.is_new_prime()) {
       try {
         std::vector<uint32_t> key = {(uint32_t) curr_deg, tmp_zi};
-        FFInt food = saved_num.at(tmp_zi_ord).at(key);
+        auto food_pair = saved_num.at(tmp_zi_ord).at(key);
+        FFInt food = food_pair.first;
+        uint32_t sub_count = food_pair.second;
         // delete unused saved data
         saved_num[tmp_zi_ord].erase(key);
         // set random values for the yis
@@ -883,8 +885,8 @@ namespace firefly {
           while (!rec.is_new_prime()) {
             FFInt sub = 0;
 
-            if (curr_deg != (int)max_deg) {
-              sub = sub_save[curr_deg].calc_n_m_1(yis);
+            if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size()) {
+              sub = sub_save[curr_deg][sub_count].calc_n_m_1(yis);
             }
 
             rec.feed(yis, food - sub);
@@ -892,8 +894,8 @@ namespace firefly {
         } else {
           FFInt sub = 0;
 
-          if (curr_deg != (int)max_deg) {
-            sub = sub_save[curr_deg].calc_n_m_1(yis);
+          if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size()) {
+            sub = sub_save[curr_deg][sub_count].calc_n_m_1(yis);
           }
 
           rec.feed(yis, food - sub);
@@ -919,11 +921,14 @@ namespace firefly {
             PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
             //todo only save needed shifts
-            for (int i = 0; i <= curr_deg; ++i) {
-              if (sub_save[(uint32_t)i].zero()) {
-                sub_save[(uint32_t)i] = zero_poly;
-              }
+            for (int i = 0; i < curr_deg; ++i) {
+              if (sub_save[(uint32_t)i].size() == 0)
+                sub_save[(uint32_t)i] = {zero_poly};
+              else
+                sub_save[(uint32_t)i].emplace_back(zero_poly);
             }
+
+            PolynomialFF res = rec.get_result_ff();
 
             std::vector<FFInt> tmp_shift;
             {
@@ -933,30 +938,37 @@ namespace firefly {
 
             PolynomialFF sub_pol = rec.get_result_ff().add_shift(tmp_shift);
 
-            for (const auto & el : sub_pol.coefs) {
+            for (auto & el : sub_pol.coefs) {
               int tmp_deg = 0;
 
               for (const auto & deg : el.first) tmp_deg += deg;
 
-              if (tmp_deg < curr_deg)
-                sub_save[(uint32_t)tmp_deg] += PolynomialFF(n, {{el.first, el.second}});
+              if (tmp_deg < curr_deg) {
+                for (auto & tmp_sub : sub_save[(uint32_t)tmp_deg]) {
+                  tmp_sub += PolynomialFF(n, {{el.first, el.second}});
+                }
+              }
             }
 
             if (!is_num) {
+              sub_count_den ++;
+
               if (normalize_to_den) {
                 std::vector<FFInt> tmp_yis(n - 1, 0);
-                const_den = sub_save[0].calc_n_m_1(tmp_yis);
+                const_den += sub_save[0].back().calc_n_m_1(tmp_yis);
               }
             } else {
+              sub_count_num ++;
+
               if (!normalize_to_den) {
                 std::vector<FFInt> tmp_yis(n - 1, 0);
-                const_den = sub_save[0].calc_n_m_1(tmp_yis);
+                const_den += sub_save[0].back().calc_n_m_1(tmp_yis);
               }
             }
           }
         }
 
-        //sub_save[curr_deg] = PolynomialFF();
+        sub_save[curr_deg] = std::vector<PolynomialFF>();
 
         /*
          * Remove already solved coefficients from Gauss eliminiation
@@ -1055,9 +1067,11 @@ namespace firefly {
     std::vector<uint32_t> tmp_deg_num {};
     std::vector<uint32_t> tmp_deg_den {};
 
+    sub_count_den = 0;
+    sub_count_num = 0;
     saved_ti = ff_vec_map();
-    sub_num.clear();
-    sub_den.clear();
+    sub_num = polff_vec_map();
+    sub_den = polff_vec_map();
     tmp_sol_const_num = 0;
     tmp_sol_const_den = 0;
 
@@ -1073,8 +1087,8 @@ namespace firefly {
 
     non_solved_degs_den.clear();
     non_solved_degs_num.clear();
-    sub_num = polff_map();
-    sub_den = polff_map();
+    sub_num = polff_vec_map();
+    sub_den = polff_vec_map();
     saved_num_num = ff_map_map();
     saved_num_den = ff_map_map();
     coef_d = std::unordered_map<uint32_t, PolyReconst>();
@@ -1317,9 +1331,9 @@ namespace firefly {
         }
       }
 
-      for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<FFInt> {};
+      for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
 
-      for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<FFInt> {};
+      for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
     } else {
       div_by_zero = false;
       interpolations ++;
@@ -1584,75 +1598,56 @@ namespace firefly {
     std::vector<FFInt> eq;
     eq.reserve(num_eqn + 1);
 
-    if (curr_deg_num > -1) {
-      for (auto & el : coef_n) {
-        uint32_t tmp_key = el.first;
-
-        if ((int) el.first <= curr_deg_num && !(tmp_key == 0 && tmp_sol_const_num == 1))
-          eq.emplace_back(tmp_ti.pow(tmp_key));
-      }
-    }
-
-    if (curr_deg_den > -1) {
-      for (auto & el : coef_d) {
-        uint32_t tmp_key = el.first;
-
-        if ((int) tmp_key <= curr_deg_den && !(tmp_key == 0 && tmp_sol_const_den == 1))
-          eq.emplace_back(-tmp_ti.pow(tmp_key) * tmp_num);
-      }
-    }
-
-    // Evaluate subtraction terms only once
-    if (coef_mat.size() == 0) {
-      yis.erase(yis.begin());
-      int start_num = curr_deg_num + 1;
-      int start_den = curr_deg_den + 1;
-
-      if (normalize_to_den)
-        start_den = std::max(start_den, 1);
-      else
-        start_num = std::max(start_num, 1);
-
-      for (int i = start_num; i <= max_deg_num; ++i) {
-        if (coef_n.find(i) != coef_n.end())
-          num_sub_num[i] = coef_n[i].get_result_ff().calc_n_m_1(yis) + sub_num[i].calc_n_m_1(yis);
-      }
-
-      for (int i = start_den; i <= max_deg_den; ++i) {
-        if (coef_d.find(i) != coef_d.end())
-          num_sub_den[i] = coef_d[i].get_result_ff().calc_n_m_1(yis) + sub_den[i].calc_n_m_1(yis);
-      }
-
-      if (tmp_sol_const_num == 1)
-        num_sub_num[0] = saved_num_num.at(std::vector<uint32_t> (n - 1, 1)).at( {0, 2});
-      else if (tmp_sol_const_den == 1) {
-        num_sub_den[0] = saved_num_den.at(std::vector<uint32_t> (n - 1, 1)).at( {0, 2});
+    for (uint32_t i = 0; i < n; ++i) {
+      {
+        std::unique_lock<std::mutex> lock_statics(mutex_statics);
+        yis[i] = yis[i] * tmp_ti + shift[i];
       }
     }
 
     FFInt res;
 
     if (normalize_to_den)
-      res = tmp_num;
+      res = (1 - const_den) * tmp_num;
     else
-      res = -FFInt(1);
+      res = -(1 - const_den);
 
-    for (const auto & el : num_sub_num) {
-      res -= el.second * tmp_ti.pow(el.first);
+    for (auto & el : coef_n) {
+      uint32_t tmp_key = el.first;
+
+      if (tmp_key == 0 && tmp_sol_const_num == 1) {
+        res -= saved_num_num.at(std::vector<uint32_t> (n - 1, 1)).at( {0, 2}).first;
+
+        if (curr_deg_num < max_deg_num)
+          res += sub_num[0].front().calc(yis);
+      } else if ((int) tmp_key > curr_deg_num)
+        res -= el.second.get_result_ff().calc(yis);
+      else
+        eq.emplace_back(tmp_ti.pow(tmp_key));
     }
 
-    for (const auto & el : num_sub_den) {
-      res += el.second * tmp_ti.pow(el.first) * tmp_num;
+    for (auto & el : coef_d) {
+      uint32_t tmp_key = el.first;
+
+      if (tmp_key == 0 && tmp_sol_const_den == 1) {
+        res += saved_num_den.at(std::vector<uint32_t> (n - 1, 1)).at( {0, 2}).first* tmp_num;
+
+        if (curr_deg_den < max_deg_den)
+          res -= sub_den[0].front().calc(yis) * tmp_num;
+      } else if ((int) tmp_key > curr_deg_den)
+        res += el.second.get_result_ff().calc(yis) * tmp_num;
+      else
+        eq.emplace_back(-tmp_ti.pow(tmp_key) * tmp_num);
     }
 
     eq.emplace_back(res);
+
     coef_mat.emplace_back(std::move(eq));
   }
 
   void RatReconst::build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis) {
     std::vector<FFInt> eq;
     eq.reserve(num_eqn + 1);
-    FFInt res(0);
 
     if (!is_singular_system) {
       // Build system of equations; in combined_.. are the non-solved coefficients
@@ -1661,80 +1656,78 @@ namespace firefly {
       }
 
       for (const auto & pow_vec : non_solved_degs_den) {
-        eq.emplace_back(-tmp_num * tmp_ti.pow(pow_vec.first));
+        eq.emplace_back(FFInt(0) - tmp_num * tmp_ti.pow(pow_vec.first));
       }
 
       // Build result vector including subtracted coefficients which have already
       // been solved
+      eq.emplace_back(0);
+
       if (coef_mat.size() == 0) {
         yis.erase(yis.begin());
         num_sub_num = solved_num.calc_n_m_1_map(yis);
         num_sub_den = solved_den.calc_n_m_1_map(yis);
       }
+
+      for (const auto & el : num_sub_num) {
+        eq.back() -= el.second * tmp_ti.pow(el.first);
+      }
+
+      for (const auto & el : num_sub_den) {
+        eq.back() += el.second * tmp_ti.pow(el.first) * tmp_num;
+      }
+
+      coef_mat.emplace_back(std::move(eq));
     } else {
-      if (curr_deg_num > -1) {
-        for (const auto & el : shifted_degs_num) {
-          uint32_t tmp_key = el;
+      FFInt res;
 
-          if ((int) tmp_key <= curr_deg_num && !(tmp_key == 0 && tmp_sol_const_num == 1))
-            eq.emplace_back(tmp_ti.pow(tmp_key));
+      for (uint32_t i = 0; i < n; ++i) {
+        {
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+          yis[i] = yis[i] * tmp_ti + shift[i];
         }
-      }
-
-      if (curr_deg_den > -1) {
-        for (const auto & el : shifted_degs_den) {
-          uint32_t tmp_key = el;
-
-          if ((int) tmp_key <= curr_deg_den && !(tmp_key == 0 && tmp_sol_const_den == 1))
-            eq.emplace_back(-tmp_ti.pow(tmp_key) * tmp_num);
-        }
-      }
-
-      // Evaluate subtraction terms only once
-      if (coef_mat.size() == 0) {
-        yis.erase(yis.begin());
-        int shift_deg_num = normalize_to_den == true ? 0 : 1;
-        int start_num = curr_deg_num + 1;
-        int start_den = curr_deg_den + 1;
-
-        if (normalize_to_den)
-          start_den = std::max(start_den, 1);
-        else
-          start_num = std::max(start_num, 1);
-
-        for (int i = start_num; i <= max_deg_num; ++i) {
-          if (shifted_degs_num.find(i) != shifted_degs_num.end())
-            num_sub_num[i] = solved_degs_num[i].calc_n_m_1(yis) + sub_num[i].calc_n_m_1(yis);
-          else if (sub_num.find(i) != sub_num.end())
-            num_sub_num[i] = sub_num[i].calc_n_m_1(yis);
-        }
-
-        for (int i = start_den; i <= max_deg_den; ++i) {
-          if (shifted_degs_den.find(i) != shifted_degs_den.end())
-            num_sub_den[i] = solved_degs_den[i].calc_n_m_1(yis) + sub_den[i].calc_n_m_1(yis);
-          else if (sub_den.find(i) != sub_den.end())
-            num_sub_den[i] = sub_den[i].calc_n_m_1(yis);
-        }
-
-        if (tmp_sol_const_num == 1)
-          num_sub_num[0] = shifted_const;
-        else if (tmp_sol_const_den == 1)
-          num_sub_den[0] = shifted_const;
       }
 
       if (normalize_to_den)
-        res = tmp_num;
+        res = (1 - const_den) * tmp_num;
       else
-        res = -FFInt(1);
+        res = -(1 - const_den);
+
+      for (const auto & el : shifted_degs_num) {
+        uint32_t tmp_key = el;
+
+        if (tmp_key == 0 && tmp_sol_const_num == 1) {
+          res -= shifted_const;
+
+          if (curr_deg_num < max_deg_num) {
+            res += sub_num[0].front().calc(yis);
+          }
+
+        } else if ((int) tmp_key > curr_deg_num)
+          res -= solved_degs_num[tmp_key].calc(yis);
+        else
+          eq.emplace_back(tmp_ti.pow(tmp_key));
+      }
+
+      for (const auto & el : shifted_degs_den) {
+        uint32_t tmp_key = el;
+
+        if (tmp_key == 0 && tmp_sol_const_den == 1) {
+          res += shifted_const * tmp_num;
+
+          if (curr_deg_den < max_deg_den)
+            res -= sub_den[0].front().calc(yis) * tmp_num;
+
+        } else if ((int) tmp_key > curr_deg_den)
+          res += solved_degs_den[tmp_key].calc(yis) * tmp_num;
+        else
+          eq.emplace_back(-tmp_ti.pow(tmp_key) * tmp_num);
+      }
+
+      eq.emplace_back(res);
+
+      coef_mat.emplace_back(std::move(eq));
     }
-
-    for (const auto & el : num_sub_num) res -= el.second * tmp_ti.pow(el.first);
-
-    for (const auto & el : num_sub_den) res += el.second * tmp_ti.pow(el.first) * tmp_num;
-
-    eq.emplace_back(res);
-
-    coef_mat.emplace_back(std::move(eq));
   }
 
   void RatReconst::generate_anchor_points() {
@@ -1843,14 +1836,16 @@ namespace firefly {
   void RatReconst::set_new_curr_deg_num_singular(uint32_t key) {
     if (curr_deg_num < max_deg_num) {
       for (uint32_t i = 0; i < coef_mat_num[key].size(); ++i) {
-        std::vector<uint32_t> tmp_zi_ord(n - 1, i + 1);
-        std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
-        coef_mat_num[key][i] -= sub_num[key].calc_n_m_1(yis);
+        auto tmp_pair = coef_mat_num[key][i];
+
+        if (tmp_pair.second < sub_num[key].size()) {
+          std::vector<uint32_t> tmp_zi_ord(n - 1, i + 1);
+          std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
+          tmp_pair.first -= sub_num[key][tmp_pair.second].calc_n_m_1(yis);
+          coef_mat_num[key][i] = tmp_pair;
+        }
       }
     }
-
-    if (key == 0)
-      tmp_sol_const_num = 0;
 
     solved_degs_num[key] = solve_vandermonde_system(non_solved_degs_num[key], coef_mat_num[key], get_anchor_points());
 
@@ -1860,14 +1855,19 @@ namespace firefly {
     for (const auto & el : coef_mat_num) {
       uint32_t tmp_key = el.first;
 
-      if (sub_num[tmp_key].zero())
-        sub_num[tmp_key] = zero_poly;
+      if (sub_num[tmp_key].size() == 0)
+        sub_num[tmp_key] = {zero_poly};
+      else
+        sub_num[tmp_key].emplace_back(zero_poly);
     }
 
     if (!normalize_to_den) {
-      if (sub_num[0].zero())
-        sub_num[0] = zero_poly;
-    }
+      if (sub_num[0].empty())
+        sub_num[0] = {zero_poly};
+      else
+        sub_num[0].emplace_back(zero_poly);
+    } else if (sub_num[0].empty() && remove_const && tmp_sol_const_num == 1)
+      sub_num[0] = {zero_poly};
 
     if (key > 0) {
       std::vector<FFInt> tmp_shift;
@@ -1882,15 +1882,16 @@ namespace firefly {
 
         for (const auto & deg : el.first) tmp_deg += deg;
 
-        if (tmp_deg < curr_deg_num) {
-          if (sub_num.find(tmp_deg) == sub_num.end())
-            sub_num[(uint32_t)tmp_deg] = PolynomialFF(n, {{el.first, el.second}});
-          else
-            sub_num[(uint32_t)tmp_deg] += PolynomialFF(n, {{el.first, el.second}});
+        if (tmp_deg < curr_deg_num && (coef_mat_num.find(tmp_deg) != coef_mat_num.end() || tmp_deg == 0)) {
+          for (auto & tmp_sub : sub_num[(uint32_t)tmp_deg]) {
+            tmp_sub += PolynomialFF(n, {{el.first, el.second}});
+          }
         }
       }
     }
 
+    sub_num[key] = std::vector<PolynomialFF>();
+    sub_count_num ++;
     bool found = false;
     curr_deg_num --;
 
@@ -1911,7 +1912,7 @@ namespace firefly {
       }
     } else {
       std::vector<FFInt> tmp_yis(n - 1, 0);
-      const_den = sub_num[0].calc_n_m_1(tmp_yis);
+      const_den += sub_num[0].back().calc_n_m_1(tmp_yis);
 
       if (curr_deg_num > 0) {
         while (!found) {
@@ -1934,6 +1935,9 @@ namespace firefly {
         curr_deg_num = -1;
     }
 
+    if (curr_deg_num <= 0)
+      tmp_sol_const_num = 0;
+
     tmp_solved_coefs_num ++;
     {
       std::unique_lock<std::mutex> lock(mutex_status);
@@ -1944,14 +1948,16 @@ namespace firefly {
   void RatReconst::set_new_curr_deg_den_singular(uint32_t key) {
     if (curr_deg_den < max_deg_den) {
       for (uint32_t i = 0; i < coef_mat_den[key].size(); ++i) {
-        std::vector<uint32_t> tmp_zi_ord(n - 1, i + 1);
-        std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
-        coef_mat_den[key][i] -= sub_den[key].calc_n_m_1(yis);
+        auto tmp_pair = coef_mat_den[key][i];
+
+        if (tmp_pair.second < sub_den[key].size()) {
+          std::vector<uint32_t> tmp_zi_ord(n - 1, i + 1);
+          std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
+          tmp_pair.first -= sub_den[key][tmp_pair.second].calc_n_m_1(yis);
+          coef_mat_den[key][i] = tmp_pair;
+        }
       }
     }
-
-    if (key == 0)
-      tmp_sol_const_den = 0;
 
     solved_degs_den[key] = solve_vandermonde_system(non_solved_degs_den[key], coef_mat_den[key], get_anchor_points());
 
@@ -1962,14 +1968,19 @@ namespace firefly {
     for (const auto & el : coef_mat_den) {
       uint32_t tmp_key = el.first;
 
-      if (sub_den[tmp_key].zero())
-        sub_den[tmp_key] = zero_poly;
+      if (sub_den[tmp_key].size() == 0)
+        sub_den[tmp_key] = {zero_poly};
+      else
+        sub_den[tmp_key].emplace_back(zero_poly);
     }
 
     if (normalize_to_den) {
-      if (sub_den[0].zero())
-        sub_den[0] = zero_poly;
-    }
+      if (sub_den[0].empty())
+        sub_den[0] = {zero_poly};
+      else
+        sub_den[0].emplace_back(zero_poly);
+    } else if (sub_den[0].empty() && remove_const && tmp_sol_const_den == 1)
+      sub_den[0] = {zero_poly};
 
     if (curr_deg_den > 0) {
       std::vector<FFInt> tmp_shift;
@@ -1977,7 +1988,6 @@ namespace firefly {
         std::unique_lock<std::mutex> lock_statics(mutex_statics);
         tmp_shift = shift;
       }
-
       PolynomialFF sub_pol = solved_degs_den[key].add_shift(tmp_shift);
 
       for (auto & el : sub_pol.coefs) {
@@ -1985,21 +1995,23 @@ namespace firefly {
 
         for (const auto & deg : el.first) tmp_deg += deg;
 
-        if (tmp_deg < curr_deg_den) {
-          if (sub_den.find(tmp_deg) == sub_den.end())
-            sub_den[(uint32_t)tmp_deg] = PolynomialFF(n, {{el.first, el.second}});
-          else
-            sub_den[(uint32_t)tmp_deg] += PolynomialFF(n, {{el.first, el.second}});;
+        if (tmp_deg < curr_deg_den && (coef_mat_den.find(tmp_deg) != coef_mat_den.end() || tmp_deg == 0)) {
+          for (auto & tmp_sub : sub_den[(uint32_t)tmp_deg]) {
+            tmp_sub += PolynomialFF(n, {{el.first, el.second}});
+          }
         }
       }
     }
+
+    sub_den[key] = std::vector<PolynomialFF>();
+    sub_count_den ++;
 
     bool found = false;
     curr_deg_den --;
 
     if (normalize_to_den) {
       std::vector<FFInt> tmp_yis(n - 1, 0);
-      const_den = sub_den[0].calc_n_m_1(tmp_yis);
+      const_den += sub_den[0].back().calc_n_m_1(tmp_yis);
 
       if (curr_deg_den > 0) {
         while (!found) {
@@ -2036,6 +2048,9 @@ namespace firefly {
         }
       }
     }
+
+    if (curr_deg_den <= 0)
+      tmp_sol_const_den = 0;
 
     tmp_solved_coefs_den ++;
     {
@@ -2513,9 +2528,9 @@ namespace firefly {
         }
       }
 
-      for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<FFInt> {};
+      for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
 
-      for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<FFInt> {};
+      for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
     } else {
       ERROR_MSG("The file '" + file_name + "' could not be found!");
       std::exit(-1);
@@ -2595,9 +2610,9 @@ namespace firefly {
       num_eqn = shifted_max_num_eqn;
     }
 
-    for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<FFInt> {};
+    for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
 
-    for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<FFInt> {};
+    for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
   }
 
   void RatReconst::reset() {
@@ -2691,4 +2706,3 @@ namespace firefly {
     return res;
   }
 }
-
