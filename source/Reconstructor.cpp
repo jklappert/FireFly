@@ -76,7 +76,7 @@ namespace firefly {
 
         std::mutex* mut = new std::mutex;
 
-        reconst.emplace_back(std::make_tuple(i, mut, DEFAULT, rec));
+        reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
       }
     }
   }
@@ -208,7 +208,7 @@ namespace firefly {
       found_shift = true;
 
       for (auto & rec : reconst) {
-        std::get<2>(rec) = DEFAULT;
+        std::get<2>(rec) = RECONSTRUCTING;
 
         if (!(std::get<3>(rec)->is_shift_working())) {
           found_shift = false;
@@ -241,7 +241,7 @@ namespace firefly {
     shift = tmp_rec.get_zi_shift_vec();
 
     for (auto & rec : reconst) {
-      std::get<2>(rec) = DEFAULT;
+      std::get<2>(rec) = RECONSTRUCTING;
       std::get<3>(rec)->accept_shift();
     }
 
@@ -338,7 +338,7 @@ namespace firefly {
 
       std::mutex* mut = new std::mutex;
 
-      reconst.emplace_back(std::make_tuple(i, mut, DEFAULT, rec));
+      reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
     }
 
     probe.clear();
@@ -540,7 +540,7 @@ namespace firefly {
           for (auto & rec : reconst) {
             std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
-            if (std::get<2>(rec) == DEFAULT) {
+            if (std::get<2>(rec) == RECONSTRUCTING) {
               if (!std::get<3>(rec)->is_done()) {
                 if (std::get<3>(rec)->get_prime() != prime_it) {
                   ++items_new_prime_tmp;
@@ -637,7 +637,7 @@ namespace firefly {
     for (auto & rec : reconst) {
       std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
-      if (std::get<2>(rec) == DEFAULT) {
+      if (std::get<2>(rec) == RECONSTRUCTING) {
         lock_exists.unlock();
 
         if (!(std::get<3>(rec)->is_done())) {
@@ -686,7 +686,7 @@ namespace firefly {
   void Reconstructor::interpolate_job(RatReconst_tuple& rec) {
     std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
-    if (std::get<2>(rec) == DEFAULT) {
+    if (std::get<2>(rec) == RECONSTRUCTING) {
       lock_exists.unlock();
 
       if (!std::get<3>(rec)->interpolate()) {
@@ -779,7 +779,7 @@ namespace firefly {
               }
             }
           }
-        } else { /*if (std::get<2>(rec) == DEFAULT)*/  // to be sure that no other thread does the same
+        } else { /*if (std::get<2>(rec) == RECONSTRUCTING)*/  // to be sure that no other thread does the same
           lock_exists.lock();
 
           std::get<2>(rec) = DONE;

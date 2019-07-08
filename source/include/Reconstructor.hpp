@@ -105,7 +105,7 @@ namespace firefly {
     void resume_from_saved_state(const std::vector<std::string>& file_paths_);
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
-    enum RatReconst_status {DEFAULT, DONE, DELETED};
+    enum RatReconst_status {RECONSTRUCTING, DONE, DELETED};
   private:
     std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
     std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
