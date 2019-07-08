@@ -31,7 +31,9 @@ convert[funs_, vars_, nthr_] :=
 	   WriteString[stream2, "  reconst.enable_scan();\n"];
 	   WriteString[stream2, "  reconst.reconstruct();\n"];
 	   WriteString[stream2, "  return 0;\n}\n\n"];
-	   WriteString[stream2, "void Reconstructor::black_box(std::vector<FFInt>& result, const std::vector<FFInt>& values) {\n\n}\n"];
+	   WriteString[stream2, "class BlackBoxUser : public BlackBoxBase{\npublic:\nBlackBoxUser(){};\n"];
+	   WriteString[stream2, "  virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values){\n  }\n"];
+	   WriteString[stream2, "  virtual void prime_changed(){\n  }\n}\;"];
 	   Close[stream2];
 	   
 	   stream = OpenWrite["ff_conv/funs.hpp"];

@@ -20,7 +20,6 @@
 #include "Reconstructor.hpp"
 #include "ShuntingYardParser.hpp"
 #include "Tests.hpp"
-#include "utils.hpp"
 
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
