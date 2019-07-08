@@ -112,6 +112,16 @@ namespace firefly {
           ++prime_number;
           zero_counter ++;
 
+          if (prime_number == 1)
+            combined_prime = primes()[1];
+
+          if (tag.size() > 0) {
+            if (prime_number > 1)
+              save_zero_consecutive_prime();
+            else
+              save_zero_state();
+          }
+
           if (prime_number == 100) {
             ERROR_MSG("Your interpolation requests more than 100 primes.");
             std::exit(-1);
@@ -602,18 +612,16 @@ namespace firefly {
 
                 shifted_max_num_eqn = coef_n.size() + coef_d.size();
               } else {
+
                 if (const_den != 1) {
                   ff_map dummy_map {};
                   terminator = FFInt(1) - const_den;
                   dummy_map.emplace(std::make_pair(std::vector<uint32_t> (n, 0), terminator));
 
-                  if (normalize_to_den) {
+                  if (normalize_to_den)
                     denominator += PolynomialFF(n, dummy_map);
-                    normalizer_den_num = true;
-                  } else {
+                  else
                     numerator += PolynomialFF(n, dummy_map);
-                    normalizer_den_num = false;
-                  }
                 }
 
                 if (normalizer_den_num)
@@ -810,8 +818,6 @@ namespace firefly {
               if (solved_den.coefs.find(std::vector<uint32_t> (n, 0)) != solved_den.coefs.end() && solved_den.coefs[std::vector<uint32_t> (n, 0)] == 0) {
                 solved_den.coefs.erase(std::vector<uint32_t> (n, 0));
               }
-
-              std::cout << PolynomialFF(3, solved_num.coefs) << PolynomialFF(3, solved_den.coefs);
 
               combine_primes(solved_num.coefs, solved_den.coefs);
               {
@@ -2065,6 +2071,24 @@ namespace firefly {
     tag = tag_;
   }
 
+  void RatReconst::save_zero_state() {
+    mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    std::ofstream file;
+    std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
+    file.open(file_name.c_str());
+    file << "ZERO\n";
+    file.close();
+  }
+
+  void RatReconst::save_zero_consecutive_prime() {
+    mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    std::string file_name_old = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
+    std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
+
+    if (std::rename(file_name_old.c_str(), file_name_new.c_str()) != 0)
+      WARNING_MSG("The previously saved file could not be renamed.");
+  }
+
   void RatReconst::save_state() {
     mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     std::ofstream file;
@@ -2212,8 +2236,8 @@ namespace firefly {
     if (prime_number > 0) {
       std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
 
-      //if (std::remove(old_file_name.c_str()) != 0)
-      //  WARNING_MSG("The previously saved file could not be deleted.");
+      if (std::remove(old_file_name.c_str()) != 0)
+        WARNING_MSG("The previously saved file could not be deleted.");
     }
   }
 
@@ -2229,7 +2253,18 @@ namespace firefly {
         if (first) {
           first = false;
 
-          if (line != "combined_prime") {
+          if (line == "ZERO") {
+            set_safe_interpolation();
+            check_interpolation = false;
+            zero_counter ++;
+            {
+              std::unique_lock<std::mutex> lock(mutex_status);
+              std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
+              new_prime = true;
+            }
+            file.close();
+            return;
+          } else if (line != "combined_prime") {
             ERROR_MSG("Wrong input format! Has to start with 'combined_prime'!");
             std::exit(-1);
           }
@@ -2294,6 +2329,7 @@ namespace firefly {
           } else {
             switch (curr_parsed_variable) {
               case COMBINED_PRIME: {
+                std::unique_lock<std::mutex> lock_statics(mutex_status);
                 combined_prime = mpz_class(line);
                 break;
               }
@@ -2323,6 +2359,8 @@ namespace firefly {
 
               case NORMALIZER_DEG: {
                 normalizer_deg = parse_vector(line);
+                std::unique_lock<std::mutex> lock_statics(mutex_status);
+
                 n = normalizer_deg.size();
                 break;
               }
@@ -2461,7 +2499,6 @@ namespace firefly {
                 break;
               }
             }
-
           }
         }
       }
@@ -2485,8 +2522,11 @@ namespace firefly {
         is_singular_system = need_prime_shift;
       }
 
-      std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
-      new_prime = true;
+      {
+        std::unique_lock<std::mutex> lock(mutex_status);
+        std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
+        new_prime = true;
+      }
 
       if (prime_number >= interpolations) {
         if (is_singular_system) {

@@ -56,6 +56,12 @@ Changes
  * Discard prime fields over which the black box evaluates to zero in the first
  probe. This makes the code safer regarding unlucky primes and zeros.
 
+Bug fixes
+---------
+
+ * When the member function `to_string` of the `RationalFunction` class was called
+ on a zero polynomial an error was thrown which was actually not an error. Thanks
+ to Long Chen.
 
 FireFly 1.0.0
 =============

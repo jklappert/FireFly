@@ -257,6 +257,14 @@ namespace firefly {
      *  Saves the state of the current object and writes it to the specified file
      */
     void save_state();
+    /**
+     *  Saves the state of the current object when it encountered a zero in a consecutive prime field
+     */
+    void save_zero_consecutive_prime();
+    /**
+     *  Saves the state of the current object when it encountered a zero in the first prime field
+     */
+    void save_zero_state();
     polff_map solved_degs_num {};
     polff_map solved_degs_den {};
     std::vector<uint32_t> normalizer_deg {};
@@ -310,6 +318,7 @@ namespace firefly {
     bool first_feed = true;
     size_t zero_counter = 0;
     bool check_interpolation = false;
+    bool is_zero = false;
     std::unordered_set<uint32_t> shifted_degs_num {};
     std::unordered_set<uint32_t> shifted_degs_den {};
     std::unordered_set<uint32_t> zero_degs_num {};

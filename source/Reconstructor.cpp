@@ -103,6 +103,10 @@ namespace firefly {
 
       if (safe_mode) {
         tmp_rec.set_safe_interpolation();
+        if(scan){
+          WARNING_MSG("Disabled shift scan in safe mode!");
+          scan = false;
+        }
       }
 
       if (scan) {
@@ -394,7 +398,7 @@ namespace firefly {
           probes_for_next_prime = thr_n;
         }
 
-        if (!tmp_rec.need_shift()) {
+        if (!safe_mode && !tmp_rec.need_shift()) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             if (verbosity > SILENT)
               INFO_MSG("Disable shift.");
@@ -815,3 +819,5 @@ namespace firefly {
     }
   }
 }
+
+
