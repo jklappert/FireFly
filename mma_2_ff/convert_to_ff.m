@@ -27,7 +27,8 @@ convert[funs_, vars_, nthr_] :=
 	   WriteString[stream2, "#include \"funs.hpp\"\n\n"];
 	   WriteString[stream2, "using namespace firefly;\n\n"];
 	   WriteString[stream2, "int main() {\n"];
-	   WriteString[stream2, "  Reconstructor reconst("<>ToString[Length[vars]]<>","<>ToString[nthr]<>");\n"];
+	   WriteString[stream2, "  BlackBoxUser bb();\n"];
+	   WriteString[stream2, "  Reconstructor reconst("<>ToString[Length[vars]]<>","<>ToString[nthr]<>",bb);\n"];
 	   WriteString[stream2, "  reconst.enable_scan();\n"];
 	   WriteString[stream2, "  reconst.reconstruct();\n"];
 	   WriteString[stream2, "  return 0;\n}\n\n"];
