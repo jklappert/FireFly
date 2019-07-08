@@ -26,15 +26,15 @@ convert[funs_, vars_, nthr_] :=
 	   WriteString[stream2, "#include \"Reconstructor.hpp\"\n"];
 	   WriteString[stream2, "#include \"funs.hpp\"\n\n"];
 	   WriteString[stream2, "using namespace firefly;\n\n"];
+           WriteString[stream2, "class BlackBoxUser : public BlackBoxBase{\npublic:\n  BlackBoxUser(){};\n"];
+	   WriteString[stream2, "  virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values){\n  }\n"];
+	   WriteString[stream2, "  virtual void prime_changed(){\n  }\n};\n"];
 	   WriteString[stream2, "int main() {\n"];
-	   WriteString[stream2, "  BlackBoxUser bb();\n"];
+	   WriteString[stream2, "  BlackBoxUser bb;\n"];
 	   WriteString[stream2, "  Reconstructor reconst("<>ToString[Length[vars]]<>","<>ToString[nthr]<>",bb);\n"];
 	   WriteString[stream2, "  reconst.enable_scan();\n"];
 	   WriteString[stream2, "  reconst.reconstruct();\n"];
 	   WriteString[stream2, "  return 0;\n}\n\n"];
-	   WriteString[stream2, "class BlackBoxUser : public BlackBoxBase{\npublic:\nBlackBoxUser(){};\n"];
-	   WriteString[stream2, "  virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values){\n  }\n"];
-	   WriteString[stream2, "  virtual void prime_changed(){\n  }\n};\n"];
 	   Close[stream2];
 	   
 	   stream = OpenWrite["ff_conv/funs.hpp"];
