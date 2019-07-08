@@ -37,10 +37,6 @@ namespace firefly {
      *    @param n_ the number of parameters
      */
     RatReconst(uint32_t n_);
-    /*RatReconst(const RatReconst& other);
-    RatReconst(RatReconst && other);
-    RatReconst& operator=(const RatReconst& other);
-    RatReconst& operator=(RatReconst && other);*/
     /**
      *  Resets all static variables of the object
      */

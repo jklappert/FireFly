@@ -86,7 +86,6 @@ set(LIBSOURCES
   ${SOURCE_PATH}/RationalFunction.cpp
   ${SOURCE_PATH}/RationalNumber.cpp
   ${SOURCE_PATH}/RatReconst.cpp
-#  ${SOURCE_PATH}/RatReconstCC.cpp
   ${SOURCE_PATH}/ReconstHelper.cpp
   ${SOURCE_PATH}/Reconstructor.cpp
   ${SOURCE_PATH}/ShuntingYardParser.cpp
@@ -106,7 +105,6 @@ set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/RationalFunction.cpp
   ${SOURCE_PATH}/RationalNumber.cpp
   ${SOURCE_PATH}/RatReconst.cpp
-#  ${SOURCE_PATH}/RatReconstCC.cpp
   ${SOURCE_PATH}/ReconstHelper.cpp
   ${SOURCE_PATH}/Reconstructor.cpp
   ${SOURCE_PATH}/ShuntingYardParser.cpp
