@@ -103,7 +103,8 @@ namespace firefly {
 
       if (safe_mode) {
         tmp_rec.set_safe_interpolation();
-        if(scan){
+
+        if (scan) {
           WARNING_MSG("Disabled shift scan in safe mode!");
           scan = false;
         }
@@ -308,7 +309,7 @@ namespace firefly {
     ++iteration;
 
     if (verbosity > SILENT) {
-      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
+      INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
 
     ++fed_ones;
@@ -343,9 +344,10 @@ namespace firefly {
 
     probe.clear();
 
-    if (verbosity == CHATTY) {
+    if (verbosity == CHATTY)
       INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: 0 / " + std::to_string(items));
-    }
+    else if (verbosity > SILENT)
+      INFO_MSG("Functions to be reconstructed: " + std::to_string(items) + ".");
 
     start_probe_jobs(zi_order, 1);
     ++started_probes.at(zi_order);
@@ -691,7 +693,6 @@ namespace firefly {
 
       if (!std::get<3>(rec)->interpolate()) {
         //lock_exists.lock();
-
         // start new jobs if required
         if (!std::get<3>(rec)->is_done()) {
           if (std::get<3>(rec)->get_prime() > prime_it) {

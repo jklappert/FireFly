@@ -106,11 +106,12 @@ namespace firefly {
     std::unique_lock<std::mutex> lock(mutex_status);
 
     if (!done) {
-      if (first_feed) {
+      if (first_feed && !scan) {
         if (num == 0) {
           new_prime = true;
           ++prime_number;
           zero_counter ++;
+          fed_zero = true;
 
           if (prime_number == 1)
             combined_prime = primes()[1];
@@ -126,7 +127,7 @@ namespace firefly {
             ERROR_MSG("Your interpolation requests more than 100 primes.");
             std::exit(-1);
           } else if (zero_counter == 3 && prime_number == 3) {
-            new_prime = false;
+            new_prime = true;
             done = true;
             g_ni[std::vector<uint32_t>(n)] = RationalNumber(0, 1);
             g_di[std::vector<uint32_t>(n)] = RationalNumber(1, 1);
@@ -148,7 +149,10 @@ namespace firefly {
   bool RatReconst::interpolate() {
     std::unique_lock<std::mutex> lock(mutex_status);
 
-    if (is_interpolating || queue.empty()) return true;
+    if (fed_zero) {
+      fed_zero = false;
+      return false;
+    } else if (is_interpolating || queue.empty()) return true;
     else {
       is_interpolating = true;
 

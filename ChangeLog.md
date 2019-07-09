@@ -1,3 +1,12 @@
+FireFly 1.1.1
+=============
+
+Bug fixes
+---------
+
+ * The `Reconstructor` class can reconstruct zeros again.
+ 
+
 FireFly 1.1.0
 =============
 

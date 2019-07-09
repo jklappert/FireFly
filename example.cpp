@@ -37,7 +37,7 @@ namespace firefly {
     // In this example we compute functions which are parsed from a file with a
     // ShuntingYardParser object and the determinant of a matrix.
     virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
-      //std::vector<FFInt> result {};
+      //std::vector<FFInt> result;
 
       // Get results from parsed expressions
       std::vector<FFInt> result = par.evaluate_pre(values);

@@ -315,6 +315,7 @@ namespace firefly {
     size_t zero_counter = 0;
     bool check_interpolation = false;
     bool is_zero = false;
+    bool fed_zero = false;
     std::unordered_set<uint32_t> shifted_degs_num {};
     std::unordered_set<uint32_t> shifted_degs_den {};
     std::unordered_set<uint32_t> zero_degs_num {};
