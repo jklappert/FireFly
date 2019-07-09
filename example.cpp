@@ -31,11 +31,11 @@ namespace firefly {
     BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
 
     // The evaluation of the black box
-    // Return a vector of FFInt, which are the results of the black-box evaluation
+    // Return a vector of FFInt objects, which are the results of the black-box evaluation
     // with values inserted for the variables. The orderings of both vectors should
     // be fixed for all evaluations.
     // In this example we compute functions which are parsed from a file with a
-    // ShuntingYardParser and the determinant of a matrix.
+    // ShuntingYardParser object and the determinant of a matrix.
     virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
       //std::vector<FFInt> result {};
 

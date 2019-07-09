@@ -43,7 +43,7 @@ where `FLINT_LIB_PATH` is the absolute path pointing to the shared library of FL
 ## Reconstructing functions
 To reconstruct functions with FireFly it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
 
-The black box is implemented as functor. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor, the evaluation of the black box, and a function which allows the user to change class variables when the prime field changes:
+The black box is implemented as functor. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor, the evaluation of the black box, and a function which allows the user to change member variables when the prime field changes:
 
 ```cpp
 class BlackBoxUser : public BlackBoxBase {
@@ -84,7 +84,7 @@ Additional options can be set and we refer to the `example.cpp` file and the cod
 
 
 ## Converting Mathematica expressions to C++ code
-Sometimes the black box is not provided by a code but some Mathematica expressions. For this purpose FireFly provides a script to convert Mathematica functions to compilable C++ code. This can be useful by performing algebraic computations on large functions. The functions have to be provided as a file in which a list of functions (expression or string) is stored, e.g.,
+Sometimes the black box is not provided by a code but some Mathematica expressions. For this purpose FireFly provides a script to convert Mathematica functions to compilable C++ code. This can be useful by performing algebraic computations on large functions (see also the parser of FireFly). The functions have to be provided as a file in which a list of functions (expression or string) is stored, e.g.,
 
 ```
 {x+y,2*x+z,...}
@@ -149,6 +149,7 @@ The functions have to be parsed only once and can be evaluated afterwards callin
 
 ```cpp
 parser.evaluate(values)
+//parser.evaluate_pre(values) // Evaluates the black-box functions with precomputed values (faster than evaluate). Requires parser.precompute_tokens() after a the field has changed.
 ```
 
 where `values` is a vector which contains the parameter point at which the functions should be evaluated. The function `evaluate` returns a vector of `FFInt` objects which is filled by the values of the evaluated functions in the same order as the functions are defined in the input file. Thus, it can be directly used in the `BlackBox` functor of FireFly. An example file is given in `s_y_test.m`. Note that only the operators
