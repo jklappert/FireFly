@@ -149,7 +149,7 @@ The functions have to be parsed only once and can be evaluated afterwards callin
 
 ```cpp
 parser.evaluate(values);
-//parser.evaluate_pre(values); // Evaluates the black-box functions with precomputed values (faster than evaluate). Requires parser.precompute_tokens() after a the field has changed.
+//parser.evaluate_pre(values); // Evaluates the black-box functions with precomputed values (faster than evaluate()). Requires parser.precompute_tokens() after the field has changed.
 ```
 
 where `values` is a vector which contains the parameter point at which the functions should be evaluated. The function `evaluate` returns a vector of `FFInt` objects which is filled by the values of the evaluated functions in the same order as the functions are defined in the input file. Thus, it can be directly used in the `BlackBox` functor of FireFly. An example file is given in `s_y_test.m`. Note that only the operators
