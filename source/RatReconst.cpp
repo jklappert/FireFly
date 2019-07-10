@@ -1947,8 +1947,8 @@ namespace firefly {
         curr_deg_num = -1;
     }
 
-    if (curr_deg_num <= 0)
-      tmp_sol_const_num = 0;
+    if (curr_deg_num <= 0 && tmp_sol_const_num == 1)
+      tmp_solved_coefs_num--;
 
     tmp_solved_coefs_num ++;
     {
@@ -2061,8 +2061,8 @@ namespace firefly {
       }
     }
 
-    if (curr_deg_den <= 0)
-      tmp_sol_const_den = 0;
+    if (curr_deg_den <= 0 && tmp_sol_const_den == 1)
+      tmp_solved_coefs_den--;
 
     tmp_solved_coefs_den ++;
     {

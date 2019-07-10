@@ -80,14 +80,14 @@ namespace firefly {
 using namespace firefly;
 int main() {
   // Example of ShuntingYardParser
-  // Parse the functions from "../s_y_test.m" with the variables x, y, z
-  ShuntingYardParser par("../s_y_test.m", {"x", "y", "z"});
+  // Parse the functions from "../s_y_test.m" with the variables x, y, z, w
+  ShuntingYardParser par("../s_y_test.m", {"x", "y", "z", "w"});
 
   // Create the user defined black box
   BlackBoxUser bb(par);
 
   // Initialize the Reconstructor
-  Reconstructor reconst(3, 4, bb/*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(4, 4, bb/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   reconst.enable_scan();
   // Set the safe mode
@@ -106,12 +106,14 @@ int main() {
   /*std::vector<RationalFunction> results = reconst.get_result();
 
   for (uint32_t i = 0; i < results.size(); ++i) {
-    std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z"}) << "\n";
-  }*/
+    if(i == 4 || i == 5)
+      continue;
+    std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
+  }
 
   // Rewrite result in Horner form
-  //std::string f6_horner = results[5].generate_horner({"x","y","z"});
-  //std::cout << "Function 6 in Horner form:\n" << f6_horner << "\n";
+  std::string f8_horner = results[7].generate_horner({"x", "y", "z", "w"});
+  std::cout << "Function 8 in Horner form:\n" << f8_horner << "\n";*/
 
   // Resets all statics in RatReconst to start a new reconstruction
   //RatReconst::reset();
