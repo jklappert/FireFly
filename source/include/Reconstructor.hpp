@@ -117,12 +117,12 @@ namespace firefly {
     uint32_t thr_n;
     BlackBoxBase& bb;
     int verbosity;
-    RatReconst_list reconst {};
+    RatReconst_list reconst;
     bool scan = false;
     bool save_states = false;
     bool resume_from_state = false;
-    std::vector<std::string> tags {};
-    std::vector<std::string> file_paths {};
+    std::vector<std::string> tags;
+    std::vector<std::string> file_paths;
     bool safe_mode = false;
     uint32_t prime_it = 0;
     ThreadPool tp;
@@ -136,9 +136,9 @@ namespace firefly {
     std::condition_variable condition_future;
     std::condition_variable condition_feed;
     // list containing the parameters and the future of the parallel tasks; t, zi_order, future
-    future_list probes {};
+    future_list probes;
     uint32_t jobs_finished = 0;
-    std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes {};
+    std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes;
     uint32_t fed_ones = 0;
     uint32_t probes_for_next_prime = 0;
     uint32_t items = 0;
@@ -151,7 +151,7 @@ namespace firefly {
     bool one_done = false;
     double average_black_box_time = 0;
     RatReconst tmp_rec;
-    std::vector<FFInt> shift {};
+    std::vector<FFInt> shift;
     /**
     *  Parses a prime number counter from a file
     *  @param file_name the file name
