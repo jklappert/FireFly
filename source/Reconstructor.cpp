@@ -33,6 +33,31 @@ namespace firefly {
     tmp_rec = RatReconst(n);
   }
 
+  Reconstructor::~Reconstructor() {
+    tp.kill_all();
+
+    auto it = reconst.begin();
+
+    while (it != reconst.end()) {
+      if (std::get<2>(*it) == DELETED) {
+        // delete mutex
+        delete std::get<1>(*it);
+
+        // remove from list
+        it = reconst.erase(it);
+      } else {
+        // delete mutex
+        delete std::get<1>(*it);
+
+        // delete RatReconst
+        delete std::get<3>(*it);
+
+        // remove from list
+        it = reconst.erase(it);
+      }
+    }
+  }
+
   void Reconstructor::enable_scan() {
     scan = true;
   }
@@ -344,10 +369,9 @@ namespace firefly {
 
     probe.clear();
 
-    if (verbosity == CHATTY)
+    if (verbosity > SILENT) {
       INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: 0 / " + std::to_string(items));
-    else if (verbosity > SILENT)
-      INFO_MSG("Functions to be reconstructed: " + std::to_string(items) + ".");
+    }
 
     start_probe_jobs(zi_order, 1);
     ++started_probes.at(zi_order);
@@ -672,7 +696,7 @@ namespace firefly {
 
         std::unique_lock<std::mutex> lock_print(print_control);
 
-        if (verbosity == CHATTY) {
+        if (verbosity > SILENT) {
           INFO_MSG("Probe: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) + " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
         }
       }
@@ -820,5 +844,3 @@ namespace firefly {
     }
   }
 }
-
-

@@ -68,6 +68,10 @@ namespace firefly {
      */
     Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_ = IMPORTANT);
     /**
+     *  A destructor for the Reconstructor class
+     */
+    ~Reconstructor();
+    /**
      *  Starts the reconstruction
      */
     void reconstruct();

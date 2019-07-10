@@ -1,3 +1,13 @@
+FireFly 1.1.2
+=============
+
+Bug fixes
+---------
+
+ * The `Reconstructor` class now has a destructor which deletes all dynamically
+ allocated memory.
+
+
 FireFly 1.1.1
 =============
 
@@ -5,7 +15,7 @@ Bug fixes
 ---------
 
  * The `Reconstructor` class can reconstruct zeros again.
- 
+
 
 FireFly 1.1.0
 =============
@@ -71,6 +81,7 @@ Bug fixes
  * When the member function `to_string` of the `RationalFunction` class was called
  on a zero polynomial an error was thrown which was actually not an error. Thanks
  to Long Chen.
+
 
 FireFly 1.0.0
 =============
