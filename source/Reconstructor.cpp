@@ -697,7 +697,7 @@ namespace firefly {
         std::unique_lock<std::mutex> lock_print(print_control);
 
         if (verbosity > SILENT) {
-          INFO_MSG("Probe: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) + " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
+          INFO_MSG("Probe: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) + " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
         }
       }
     }
