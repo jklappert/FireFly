@@ -144,10 +144,16 @@ namespace firefly {
 
   PolynomialFF& PolynomialFF::operator-=(const PolynomialFF& b) {
     for (const auto & coef_b : b.coefs) {
-      if (coefs.find(coef_b.first) == coefs.end())
-        coefs[coef_b.first] = FFInt(0) - coef_b.second;
-      else
-        coefs[coef_b.first] -= coef_b.second;
+      if (coef_b.second != 0) {
+        if (coefs.find(coef_b.first) == coefs.end())
+          coefs[coef_b.first] = -coef_b.second;
+        else {
+          coefs[coef_b.first] -= coef_b.second;
+
+          if (coefs[coef_b.first] == 0)
+            coefs.erase(coef_b.first);
+        }
+      }
     }
 
     return *this;
@@ -155,10 +161,16 @@ namespace firefly {
 
   PolynomialFF& PolynomialFF::operator+=(const PolynomialFF& b) {
     for (const auto & coef_b : b.coefs) {
-      if (coefs.find(coef_b.first) == coefs.end())
-        coefs[coef_b.first] = coef_b.second;
-      else
-        coefs[coef_b.first] += coef_b.second;
+      if (coef_b.second != 0) {
+        if (coefs.find(coef_b.first) == coefs.end())
+          coefs[coef_b.first] = coef_b.second;
+        else {
+          coefs[coef_b.first] += coef_b.second;
+
+          if (coefs[coef_b.first] == 0)
+            coefs.erase(coef_b.first);
+        }
+      }
     }
 
     return *this;
@@ -251,7 +263,7 @@ namespace firefly {
     return *this;
   }
 
-  bool PolynomialFF::zero() {
+  bool PolynomialFF::zero() const {
     if (coefs.empty())
       return true;
     else if (coefs.size() == 1 && coefs.begin()->second == 0)

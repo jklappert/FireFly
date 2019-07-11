@@ -77,7 +77,7 @@ namespace firefly {
     /**
      *  @return true if the PolynomialFF object has no coefficients or only one which is zero
      */
-    bool zero();
+    bool zero() const;
     /**
      *  Adds an additional functional dependence of a new variable with respect to
      *  a given degree. The sum of each variable degree is thus filled up to a

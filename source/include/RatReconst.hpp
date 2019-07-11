@@ -240,16 +240,6 @@ namespace firefly {
      */
     void check_for_solved_degs(const std::vector<uint32_t>& uni_degs, const bool is_num);
     /**
-     *  Solves a transposed Vandermonde system and calculates the terms originating from the shift after the first prime for the numerator
-     *  @param key the current degree which has to be solved
-     */
-    void set_new_curr_deg_num_singular(uint32_t key);
-    /**
-     *  Solves a transposed Vandermonde system and calculates the terms originating from the shift after the first prime for the denominator
-     *  @param key the current degree which has to be solved
-     */
-    void set_new_curr_deg_den_singular(uint32_t key);
-    /**
      *  Saves the state of the current object and writes it to the specified file
      */
     void save_state();
@@ -316,10 +306,21 @@ namespace firefly {
     bool check_interpolation = false;
     bool is_zero = false;
     bool fed_zero = false;
+    std::pair<uint32_t, uint32_t> max_num_coef_num = std::make_pair(0, 0); // deg and number of terms
+    std::pair<uint32_t, uint32_t> max_num_coef_den = std::make_pair(0, 0); // deg and number of terms
+    std::unordered_set<uint32_t> dense_solve_degs_num {};
+    std::unordered_set<uint32_t> dense_solve_degs_den {};
     std::unordered_set<uint32_t> shifted_degs_num {};
     std::unordered_set<uint32_t> shifted_degs_den {};
     std::unordered_set<uint32_t> zero_degs_num {};
     std::unordered_set<uint32_t> zero_degs_den {};
+    /**
+     *  Calculates the polynomials emerging from a parameter shift effecting lower degrees
+     *  @param poly the seed polynomial
+     *  @param deg the degree of the polynomial
+     *  @return A map with a degree as the key and the polynomial emerging from the shift as its value
+     */
+    polff_map calculate_shift_polynomials(const PolynomialFF& poly, uint32_t deg);
     bool normalizer_den_num = false;
     ThieleInterpolator t_interpolator;
     uint32_t interpolations = 1;
