@@ -39,7 +39,7 @@ namespace firefly {
     /**
      *  Default constructor
      */
-    void generate_horner();
+    //void generate_horner();
     PolynomialFF();
     /**
      *  Constructor with a given number of variables and coefficients
@@ -103,6 +103,10 @@ namespace firefly {
      *  @param shift the shift of each variable
      */
     PolynomialFF add_shift(const std::vector<FFInt>& shift) const;
+    /**
+     *  Removes any zero coefficient
+     */
+    void remove_zero_coefs();
   private:
     std::vector<uint32_t> min_degree {};
     std::vector<uint32_t> max_degree {};

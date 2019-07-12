@@ -195,6 +195,8 @@ namespace firefly {
     std::unordered_map<uint32_t, PolyReconst> coef_d {};
     std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_num {};// a vector entry should be just a pointer to save memory
     std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_den {};
+    std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_num_copy {};// a vector entry should be just a pointer to save memory
+    std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_den_copy {};
     std::unordered_map<uint32_t, FFInt> num_sub_num {};
     std::unordered_map<uint32_t, FFInt> num_sub_den {};
     polff_vec_map sub_num {};

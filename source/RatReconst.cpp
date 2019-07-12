@@ -703,12 +703,17 @@ namespace firefly {
 
                 if (coef_mat_num[key].size() < non_solved_degs_num[key].size())
                   coef_mat_num[key].emplace_back(std::make_pair(sol.second, 0));
+              }
+
+              // Need to iterate two times trhough this map to ensure that any equation has all terms
+              for (const auto & sol : canonical.first) {
+                uint32_t key = sol.first[0];
 
                 // Solve multivariate Vandermonde system for corresponding degree,
                 // remove entry from non_solved_degs and add it to solve_degs
                 if ((dense_solve_degs_num.find(key) != dense_solve_degs_num.end() || key == max_num_coef_num.first) && coef_mat_num[key].size() == non_solved_degs_num[key].size()) {
                   // When we reach this point, we can solve all remaining polynomials sparsely
-                  std::cout << "solve num " << key << " " << coef_mat_num[key].size() << "\n";
+
                   if (key == max_num_coef_num.first) {
                     for (uint32_t i = max_deg_num; i > 0; i--) {
                       if (coef_mat_num.find(i) != coef_mat_num.end()) {
@@ -726,7 +731,6 @@ namespace firefly {
                           for (uint32_t j = 0; j < coef_mat_num[i].size(); ++j) {
                             std::vector<uint32_t> tmp_zi_ord(n - 1 , j + 1);
                             coef_mat_num[i][j].first -= sub_num[i][0].calc_n_m_1(get_rand_zi_vec(tmp_zi_ord));
-                            std::cout << "test\n" << sub_num[i][0];
                           }
                         }
 
@@ -735,19 +739,46 @@ namespace firefly {
                         coef_mat_num.erase(i);
                         tmp_solved_coefs_num ++;
 
+                        PolynomialFF tmp_poly = solved_degs_num[i];
+
                         // Calculate shift and combine with previous
                         for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_num[i], i)) {
                           sub_num[tmp_shift.first][0] += tmp_shift.second;
                         }
-                      } else if (solved_degs_num.find(i) != solved_degs_num.end() && zero_degs_num.find(i) == zero_degs_num.end()) { // when already solved we just need to calculate the shift
+                      } else if (i > 0 && solved_degs_num.find(i) != solved_degs_num.end() && zero_degs_num.find(i) == zero_degs_num.end()) { // when already solved we just need to calculate the shift
                         PolynomialFF tmp_poly = solved_degs_num[i];
                         tmp_poly -= sub_num[i][0];
-                        std::cout << "tmp poly\n" << tmp_poly;
 
                         // Calculate shift and combine with previous
                         for (const auto & tmp_shift : calculate_shift_polynomials(tmp_poly, i)) {
                           sub_num[tmp_shift.first][0] += tmp_shift.second;
                         }
+                      } else if (i != max_deg_num && !sub_num[i][0].zero() && solved_degs_num.find(i) == solved_degs_num.end()) {
+                        solved_degs_num[i] = sub_num[i][0];
+                        non_solved_degs_num.erase(i);
+                        tmp_solved_coefs_num ++;
+                      }
+                    }
+
+                    if (coef_mat_num.find(0) != coef_mat_num.end()) {
+                      // Check if this is a zero polynomial
+                      if (zero_degs_num.find(0) != zero_degs_num.end()) {
+                        solved_degs_num[0] = PolynomialFF(n, {{std::vector<uint32_t> (n), 0}});
+                        non_solved_degs_num.erase(0);
+                        coef_mat_num.erase(0);
+                        tmp_solved_coefs_num ++;
+                      } else {
+
+                        // Remove shift
+                        if (0 < max_deg_num) {
+                          std::vector<FFInt> zero_vec(n - 1 , 0);
+                          coef_mat_num[0][0].first -= sub_num[0][0].calc_n_m_1(zero_vec);
+                        }
+
+                        solved_degs_num[0] = solve_vandermonde_system(non_solved_degs_num[0], coef_mat_num[0], get_anchor_points());
+                        non_solved_degs_num.erase(0);
+                        coef_mat_num.erase(0);
+                        tmp_solved_coefs_num ++;
                       }
                     }
 
@@ -766,12 +797,17 @@ namespace firefly {
 
                 if (coef_mat_den[key].size() < non_solved_degs_den[key].size())
                   coef_mat_den[key].emplace_back(std::make_pair(sol.second, 0));
+              }
+
+              for (const auto & sol : canonical.second) {
+                uint32_t key = sol.first[0];
 
                 if ((dense_solve_degs_den.find(key) != dense_solve_degs_den.end() || key == max_num_coef_den.first) && coef_mat_den[key].size() == non_solved_degs_den[key].size()) {
-                  std::cout << "solve den " << key << " " << coef_mat_den[key].size() << "\n";
+
                   // When we reach this point, we can solve all remaining polynomials sparsely
                   if (key == max_num_coef_den.first) {
                     for (uint32_t i = max_deg_den; i > 0; i--) {
+
                       if (coef_mat_den.find(i) != coef_mat_den.end()) {
                         // Check if this is a zero polynomial
                         if (zero_degs_den.find(i) != zero_degs_den.end()) {
@@ -799,13 +835,39 @@ namespace firefly {
                         for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_den[i], i)) {
                           sub_den[tmp_shift.first][0] += tmp_shift.second;
                         }
-                      } else if (solved_degs_den.find(i) != solved_degs_den.end() && zero_degs_den.find(i) == zero_degs_den.end()) { // when already solved we just need to calculate the shift
+                      } else if (i > 0 && solved_degs_den.find(i) != solved_degs_den.end() && zero_degs_den.find(i) == zero_degs_den.end()) { // when already solved we just need to calculate the shift
                         PolynomialFF tmp_poly = solved_degs_den[i];
                         tmp_poly -= sub_den[i][0];
 
                         // Calculate shift and combine with previous
                         for (const auto & tmp_shift : calculate_shift_polynomials(tmp_poly, i)) {
                           sub_den[tmp_shift.first][0] += tmp_shift.second;
+                        }
+                      } else if (i != max_deg_den && !sub_den[i][0].zero() && solved_degs_den.find(i) == solved_degs_den.end()) {
+                        solved_degs_den[i] = sub_den[i][0];
+                        non_solved_degs_den.erase(i);
+                        tmp_solved_coefs_den ++;
+                      }
+
+                      if (coef_mat_den.find(0) != coef_mat_den.end()) {
+                        // Check if this is a zero polynomial
+                        if (zero_degs_den.find(0) != zero_degs_den.end()) {
+                          solved_degs_den[0] = PolynomialFF(n, {{std::vector<uint32_t> (n), 0}});
+                          non_solved_degs_den.erase(0);
+                          coef_mat_den.erase(0);
+                          tmp_solved_coefs_den ++;
+                        } else {
+
+                          // Remove shift
+                          if (0 < max_deg_den) {
+                            std::vector<FFInt> zero_vec(n - 1 , 0);
+                            coef_mat_den[0][0].first -= sub_den[0][0].calc_n_m_1(zero_vec);
+                          }
+
+                          solved_degs_den[0] = solve_vandermonde_system(non_solved_degs_den[0], coef_mat_den[0], get_anchor_points());
+                          non_solved_degs_den.erase(0);
+                          coef_mat_den.erase(0);
+                          tmp_solved_coefs_den ++;
                         }
                       }
                     }
@@ -826,14 +888,22 @@ namespace firefly {
               if (is_singular_system) {
                 for (const auto & el : solved_degs_num) {
                   // Only add polynomials which are not zero when the shift is subtracted
-                  if (zero_degs_num.find(el.first) == zero_degs_num.end())
-                    solved_num += el.second - sub_num[el.first][0];
+                  if (zero_degs_num.find(el.first) == zero_degs_num.end()) {
+                    if (dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end())
+                      solved_num += el.second - sub_num[el.first][0];
+                    else
+                      solved_num += el.second;
+                  }
                 }
 
                 for (const auto & el : solved_degs_den) {
                   // Only add polynomials which are not zero when the shift is subtracted
-                  if (zero_degs_den.find(el.first) == zero_degs_den.end())
-                    solved_den += el.second - sub_den[el.first][0];
+                  if (zero_degs_den.find(el.first) == zero_degs_den.end()) {
+                    if (dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end())
+                      solved_den += el.second - sub_den[el.first][0];
+                    else
+                      solved_den += el.second;
+                  }
                 }
 
                 // normalize
@@ -869,9 +939,13 @@ namespace firefly {
 
                 solved_num = solved_num * equalizer;
                 solved_den = solved_den * equalizer;
+                non_solved_degs_num = non_solved_degs_num_copy;
+                non_solved_degs_den = non_solved_degs_den_copy;
               }
 
               // remove the constant if it is zero
+              //solved_num.remove_zero_coefs();
+              //solved_den.remove_zero_coefs();
               if (solved_num.coefs.find(std::vector<uint32_t> (n, 0)) != solved_num.coefs.end() && solved_num.coefs[std::vector<uint32_t> (n, 0)] == 0) {
                 solved_num.coefs.erase(std::vector<uint32_t> (n, 0));
               }
@@ -912,7 +986,6 @@ namespace firefly {
                   num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
                 else
                   num_eqn = shifted_max_num_eqn - tmp_solved_coefs_num - tmp_solved_coefs_den;
-                std::cout << "num eqn " << num_eqn << "\n";
               }
             }
           }
@@ -1360,177 +1433,25 @@ namespace firefly {
 
       if (prime_number + 1 >= interpolations) {
         if (is_singular_system) {
+          set_singular_system_vars();
           {
             std::unique_lock<std::mutex> lock_statics(mutex_statics);
             need_prime_shift = true;
           }
 
-          for (const auto & el : g_ni) {
-            if (normalize_to_den)
-              add_non_solved_num(el.first);
-            else if (el.first != std::vector<uint32_t> (n))
-              add_non_solved_num(el.first);
-          }
-
-          for (const auto & el : g_di) {
-            if (!normalize_to_den)
-              add_non_solved_den(el.first);
-            else if (el.first != std::vector<uint32_t> (n))
-              add_non_solved_den(el.first);
-          }
-
-          if (normalize_to_den) {
-            curr_deg_num = max_deg_num;
-
-            if (max_deg_den > 0)
-              curr_deg_den = max_deg_den;
-          } else {
-            curr_deg_den = max_deg_den;
-
-            if (max_deg_num > 0)
-              curr_deg_num = max_deg_num;
-          }
-
           std::unique_lock<std::mutex> lock(mutex_status);
           num_eqn = shifted_max_num_eqn;
         } else {
+          for (const auto & el : non_solved_degs_num) {
+            coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
+          }
+
+          for (const auto & el : non_solved_degs_den) {
+            coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
+          }
+
           std::unique_lock<std::mutex> lock(mutex_status);
           num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
-        }
-      }
-
-      for (const auto & el : non_solved_degs_num) {
-        coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
-        const uint32_t size = el.second.size();
-
-        if (size > max_num_coef_num.second || (size == max_num_coef_num.second && el.first > max_num_coef_num.first))
-          max_num_coef_num = std::make_pair(el.first, size);
-      }
-
-      for (const auto & el : non_solved_degs_den) {
-        coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
-        const uint32_t size = el.second.size();
-
-        if (size > max_num_coef_den.second || (size == max_num_coef_den.second && el.first > max_num_coef_den.first))
-          max_num_coef_den = std::make_pair(el.first, size);
-      }
-//TODO first prime sub_num/den zero for max degree
-      // Set all degrees which can be solved densly before the first degree is solved sparsely
-      // This has to be done only once since nothing will change for consecutive singular system runs
-      if (is_singular_system) {
-        for (const auto & el : sub_num) {
-          if (el.first != max_num_coef_num.first) {
-            if (non_solved_degs_num.find(el.first) != non_solved_degs_num.end()) {
-              std::unordered_set<std::vector<uint32_t>, UintHasher> tmp_set;
-              std::vector<std::vector<uint32_t>> tmp_vec = non_solved_degs_num[el.first];
-
-              for (const auto & vec_deg : non_solved_degs_num[el.first]) {
-                tmp_set.emplace(vec_deg);
-              }
-
-              std::vector<uint32_t> zero_vec(n);
-
-              for (const auto & el2 : el.second[0].coefs) {
-                if (tmp_set.find(el2.first) == tmp_set.end() && el2.first != zero_vec)
-                  tmp_vec.emplace_back(el2.first);
-              }
-
-              if (tmp_vec.size() > 0 && tmp_vec.size() <= max_num_coef_num.second) {
-                dense_solve_degs_num.emplace(el.first);
-
-                non_solved_degs_num[el.first] = tmp_vec;
-              }
-            } else {
-              if (!(!normalize_to_den && el.first == 0) && !el.second[0].zero() && el.second[0].coefs.size() <= max_num_coef_num.second) {
-                dense_solve_degs_num.emplace(el.first);
-                std::vector<std::vector<uint32_t>> tmp_vec;
-
-                std::vector<uint32_t> zero_vec(n);
-
-                if (el.first != 0) {
-                  for (const auto & el2 : el.second[0].coefs) {
-                    if (el2.first != zero_vec)
-                      tmp_vec.emplace_back(el2.first);
-                  }
-                } else {
-                  for (const auto & el2 : el.second[0].coefs) {
-                    tmp_vec.emplace_back(el2.first);
-                  }
-                }
-
-                non_solved_degs_num[el.first] = tmp_vec;
-                coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
-              }
-            }
-          }
-        }
-
-        for (const auto & el : sub_den) {
-          if (el.first != max_num_coef_den.first) {
-            if (non_solved_degs_den.find(el.first) != non_solved_degs_den.end()) {
-              std::unordered_set<std::vector<uint32_t>, UintHasher> tmp_set;
-              std::vector<std::vector<uint32_t>> tmp_vec = non_solved_degs_den[el.first];
-
-              for (const auto & vec_deg : non_solved_degs_den[el.first]) {
-                tmp_set.emplace(vec_deg);
-              }
-
-              std::vector<uint32_t> zero_vec(n);
-
-              for (const auto & el2 : el.second[0].coefs) {
-                if (tmp_set.find(el2.first) == tmp_set.end() && el2.first != zero_vec)
-                  tmp_vec.emplace_back(el2.first);
-              }
-
-              if (tmp_vec.size() > 0 && tmp_vec.size() <= max_num_coef_den.second) {
-                dense_solve_degs_den.emplace(el.first);
-
-                non_solved_degs_den[el.first] = tmp_vec;
-              }
-            } else {
-              if (!(normalize_to_den && el.first == 0) && !el.second[0].zero() && el.second[0].coefs.size() <= max_num_coef_den.second) {
-                dense_solve_degs_den.emplace(el.first);
-                std::vector<std::vector<uint32_t>> tmp_vec;
-
-                std::vector<uint32_t> zero_vec(n);
-
-                if (el.first != 0) {
-                  for (const auto & el2 : el.second[0].coefs) {
-                    if (el2.first != zero_vec)
-                      tmp_vec.emplace_back(el2.first);
-                  }
-                } else {
-                  for (const auto & el2 : el.second[0].coefs) {
-                    tmp_vec.emplace_back(el2.first);
-                  }
-                }
-
-                non_solved_degs_den[el.first] = tmp_vec;
-                coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
-              }
-            }
-          }
-        }
-        if(prime_number > 0){
-          std::cout << sub_num[7][0] << sub_num[2][0];
-                    std::cout << solved_degs_num[2];
-                    std::cout << solved_degs_num[2] - sub_num[2][0];
-        }
-        else {
-          std::cout << sub_num[2][0];
-        }
-
-        sub_num = polff_vec_map();
-        sub_den = polff_vec_map();
-        PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
-
-        // Initialize subtraction terms with zero
-        for (uint32_t i = 0; i <= max_deg_num; ++i) {
-          sub_num[i] = {zero_poly};
-        }
-
-        for (uint32_t i = 0; i <= max_deg_den; ++i) {
-          sub_den[i] = {zero_poly};
         }
       }
     } else {
@@ -1563,11 +1484,6 @@ namespace firefly {
         ERROR_MSG("Your interpolation requests more than 100 primes.");
         std::exit(-1);
       }
-    }
-
-    if (!is_singular_system) {
-      sub_num = polff_vec_map();
-      sub_den = polff_vec_map();
     }
 
     tmp_solved_coefs_den = 0;
@@ -1848,19 +1764,19 @@ namespace firefly {
         for (const auto el : solved_degs_num) {
           uint32_t tmp_deg = el.first;
 
-          if (dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end()) {
-            num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis) + sub_num[tmp_deg][0].calc_n_m_1(yis);
-          } else
+          if (dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end())
             num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis);
+          else
+            num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis) + sub_num[tmp_deg][0].calc_n_m_1(yis);
         }
 
         for (const auto el : solved_degs_den) {
           uint32_t tmp_deg = el.first;
 
-          if (dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end()) {
-            num_sub_den[tmp_deg] = el.second.calc_n_m_1(yis) + sub_den[tmp_deg][0].calc_n_m_1(yis);
-          } else
+          if (dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end())
             num_sub_den[tmp_deg] = el.second.calc_n_m_1(yis);
+          else
+            num_sub_den[tmp_deg] = el.second.calc_n_m_1(yis) + sub_den[tmp_deg][0].calc_n_m_1(yis);
         }
       }
     }
@@ -1895,6 +1811,11 @@ namespace firefly {
     }
 
     rec.set_anchor_points(anchor_points, true);
+
+    if (!shift.empty() && n > 1) {
+
+      for (auto & el : shift) el = FFInt(el.n);
+    }
   }
 
   void RatReconst::add_non_solved_num(const std::vector<uint32_t>& deg) {
@@ -2002,8 +1923,8 @@ namespace firefly {
 
       for (const auto & deg : el.first) tmp_deg += deg;
 
-      if (tmp_deg < deg){
-        if(el.second > 0)
+      if (tmp_deg < deg) {
+        if (el.second > 0)
           res[(uint32_t)tmp_deg] += PolynomialFF(n, {{el.first, el.second}});
       }
     }
@@ -2580,26 +2501,149 @@ namespace firefly {
         add_non_solved_den(el.first);
     }
 
-    if (normalize_to_den) {
-      curr_deg_num = max_deg_num;
+    for (const auto & el : non_solved_degs_num) {
+      coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
+      const uint32_t size = el.second.size();
 
-      if (max_deg_den > 0)
-        curr_deg_den = max_deg_den;
-    } else {
-      curr_deg_den = max_deg_den;
+      if (size > max_num_coef_num.second || (size == max_num_coef_num.second && el.first > max_num_coef_num.first))
+        max_num_coef_num = std::make_pair(el.first, size);
+    }
 
-      if (max_deg_num > 0)
-        curr_deg_num = max_deg_num;
+    for (const auto & el : non_solved_degs_den) {
+      coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
+      const uint32_t size = el.second.size();
+
+      if (size > max_num_coef_den.second || (size == max_num_coef_den.second && el.first > max_num_coef_den.first))
+        max_num_coef_den = std::make_pair(el.first, size);
+    }
+
+    PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
+
+    // Initialize subtraction terms with zero
+    for (uint32_t i = 0; i <= max_deg_num; ++i) {
+      if (sub_num[i].empty())
+        sub_num[i] = {zero_poly};
+    }
+
+    for (uint32_t i = 0; i <= max_deg_den; ++i) {
+      if (sub_den[i].empty())
+        sub_den[i] = {zero_poly};
+    }
+
+    non_solved_degs_num_copy = non_solved_degs_num;
+    non_solved_degs_den_copy = non_solved_degs_den;
+    std::vector<uint32_t> zero_vec(n);
+
+    for (const auto & el : sub_num) {
+      if (el.first != max_num_coef_num.first) {
+        if (non_solved_degs_num.find(el.first) != non_solved_degs_num.end()) {
+          std::unordered_set<std::vector<uint32_t>, UintHasher> tmp_set;
+          std::vector<std::vector<uint32_t>> tmp_vec = non_solved_degs_num[el.first];
+
+          for (const auto & vec_deg : non_solved_degs_num[el.first]) {
+            tmp_set.emplace(vec_deg);
+          }
+
+          for (const auto & el2 : el.second[0].coefs) {
+            if (tmp_set.find(el2.first) == tmp_set.end() && el2.first != zero_vec)
+              tmp_vec.emplace_back(el2.first);
+          }
+
+          if (tmp_vec.size() > 0 && tmp_vec.size() < max_num_coef_num.second) {
+            dense_solve_degs_num.emplace(el.first);
+
+            non_solved_degs_num[el.first] = tmp_vec;
+          }
+        } else {
+          if (!(!normalize_to_den && el.first == 0) && !el.second[0].zero()) {
+            if (el.second[0].coefs.size() < max_num_coef_num.second) {
+              dense_solve_degs_num.emplace(el.first);
+              std::vector<std::vector<uint32_t>> tmp_vec;
+
+              if (el.first != 0) {
+                for (const auto & el2 : el.second[0].coefs) {
+                  if (el2.first != zero_vec)
+                    tmp_vec.emplace_back(el2.first);
+                }
+              } else {
+                for (const auto & el2 : el.second[0].coefs) {
+                  tmp_vec.emplace_back(el2.first);
+                }
+              }
+
+              non_solved_degs_num[el.first] = tmp_vec;
+              coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
+            } else {
+              non_solved_degs_num[el.first] = {zero_vec};
+            }
+          }
+        }
+      }
+    }
+
+    for (const auto & el : sub_den) {
+      if (el.first != max_num_coef_den.first) {
+        if (non_solved_degs_den.find(el.first) != non_solved_degs_den.end()) {
+          std::unordered_set<std::vector<uint32_t>, UintHasher> tmp_set;
+          std::vector<std::vector<uint32_t>> tmp_vec = non_solved_degs_den[el.first];
+
+          for (const auto & vec_deg : non_solved_degs_den[el.first]) {
+            tmp_set.emplace(vec_deg);
+          }
+
+          for (const auto & el2 : el.second[0].coefs) {
+            if (tmp_set.find(el2.first) == tmp_set.end() && el2.first != zero_vec)
+              tmp_vec.emplace_back(el2.first);
+          }
+
+          if (tmp_vec.size() > 0 && tmp_vec.size() < max_num_coef_den.second) {
+            dense_solve_degs_den.emplace(el.first);
+
+            non_solved_degs_den[el.first] = tmp_vec;
+          }
+        } else {
+          if (!(normalize_to_den && el.first == 0) && !el.second[0].zero()) {
+            if (el.second[0].coefs.size() < max_num_coef_den.second) {
+              dense_solve_degs_den.emplace(el.first);
+              std::vector<std::vector<uint32_t>> tmp_vec;
+
+              if (el.first != 0) {
+                for (const auto & el2 : el.second[0].coefs) {
+                  if (el2.first != zero_vec)
+                    tmp_vec.emplace_back(el2.first);
+                }
+              } else {
+                for (const auto & el2 : el.second[0].coefs) {
+                  tmp_vec.emplace_back(el2.first);
+                }
+              }
+
+              non_solved_degs_den[el.first] = tmp_vec;
+              coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
+            } else {
+              non_solved_degs_den[el.first] = {zero_vec};
+            }
+          }
+        }
+      }
+    }
+
+    sub_num = polff_vec_map();
+    sub_den = polff_vec_map();
+
+    // Initialize subtraction terms with zero
+    for (uint32_t i = 0; i <= max_deg_num; ++i) {
+      sub_num[i] = {zero_poly};
+    }
+
+    for (uint32_t i = 0; i <= max_deg_den; ++i) {
+      sub_den[i] = {zero_poly};
     }
 
     {
       std::unique_lock<std::mutex> lock(mutex_status);
       num_eqn = shifted_max_num_eqn;
     }
-
-    for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
-
-    for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<std::pair<FFInt, uint32_t>> {};
   }
 
   void RatReconst::reset() {
@@ -2624,6 +2668,19 @@ namespace firefly {
         lock_statics.unlock();
         set_singular_system_vars();
       }
+    }
+
+    sub_num = polff_vec_map();
+    sub_den = polff_vec_map();
+    PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
+
+    // Initialize subtraction terms with zero
+    for (uint32_t i = 0; i <= max_deg_num; ++i) {
+      sub_num[i] = {zero_poly};
+    }
+
+    for (uint32_t i = 0; i <= max_deg_den; ++i) {
+      sub_den[i] = {zero_poly};
     }
 
     if (rec_rat_coef()) {
@@ -2693,3 +2750,4 @@ namespace firefly {
     return res;
   }
 }
+

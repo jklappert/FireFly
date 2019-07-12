@@ -427,6 +427,19 @@ namespace firefly {
     return res;
   }
 
+  void PolynomialFF::remove_zero_coefs() {
+    std::vector<std::vector<uint32_t>> zero_degs;
+
+    for (const auto & el : coefs) {
+      if (el.second == 0)
+        zero_degs.emplace_back(el.first);
+    }
+
+    for (const auto & el : zero_degs) {
+      coefs.erase(el);
+    }
+  }
+
   /*void PolynomialFF::generate_hornerff() {
     if (!coefs.empty()) {
       std::vector<std::string> vars {};
