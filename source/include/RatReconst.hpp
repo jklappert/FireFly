@@ -306,7 +306,6 @@ namespace firefly {
     bool first_feed = true;
     size_t zero_counter = 0;
     bool check_interpolation = false;
-    bool is_zero = false;
     bool fed_zero = false;
     std::pair<uint32_t, uint32_t> max_num_coef_num = std::make_pair(0, 0); // deg and number of terms
     std::pair<uint32_t, uint32_t> max_num_coef_den = std::make_pair(0, 0); // deg and number of terms
