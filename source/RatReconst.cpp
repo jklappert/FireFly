@@ -293,8 +293,10 @@ namespace firefly {
             max_deg_num = numerator.max_deg()[0];
             max_deg_den = denominator.max_deg()[0];
 
-            if (n == 1)
+            if (n == 1) {
               normalizer_deg = denominator.min_deg();
+              normalizer_den_num = true;
+            }
 
             if (normalize_to_den) {
               curr_deg_num = max_deg_num;
@@ -400,7 +402,7 @@ namespace firefly {
                 }
               }
 
-              if ((int) deg <= curr_deg_num && deg > 0 && curr_zi_order[zi - 2] < deg + 3) {
+              if ((int) deg <= curr_deg_num && deg > 0 && curr_zi_order[zi - 2] < deg + 2) {
                 saved_num_num[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_num);
               }
             }
@@ -419,7 +421,7 @@ namespace firefly {
                   saved_num_den[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_den);
               }
 
-              if ((int) deg <= curr_deg_den && deg > 0 && curr_zi_order[zi - 2] < deg + 3) {
+              if ((int) deg <= curr_deg_den && deg > 0 && curr_zi_order[zi - 2] < deg + 2) {
                 saved_num_den[curr_zi_order][ {deg, zi}] = std::make_pair(el.second, sub_count_den);
               }
             }
@@ -1019,16 +1021,19 @@ namespace firefly {
         if (saved_ti.find(feed_zi_ord) == saved_ti.end()) {
           std::vector<std::pair<FFInt, FFInt>> tmp_ti = {std::make_pair(new_ti, num)};
           saved_ti[feed_zi_ord] = tmp_ti;
-        } else {
+        } else
           saved_ti[feed_zi_ord].emplace_back(std::make_pair(new_ti, num));
-        }
       }
     }
   }
 
   std::tuple<int, uint32_t, std::vector<uint32_t>> RatReconst::feed_poly(int curr_deg,
-                                                                         uint32_t max_deg, std::unordered_map<uint32_t, PolyReconst>& coef,
-  PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num) {
+                                                                         uint32_t max_deg,
+                                                                         std::unordered_map<uint32_t,PolyReconst>& coef,
+                                                                         PolyReconst& rec,
+                                                                         ff_map_map& saved_num,
+                                                                         polff_vec_map& sub_save,
+                                                                         bool is_num) {
     uint32_t tmp_zi = rec.get_zi() + 1;
     std::vector<uint32_t> tmp_zi_ord = curr_zi_order;
 
@@ -1678,6 +1683,7 @@ namespace firefly {
     ff_map g_ff_di = convert_to_ffint(g_di);
     PolynomialFF g_ny(n, g_ff_ni);
     PolynomialFF g_dy(n, g_ff_di);
+
     std::vector<FFInt> yis = std::vector<FFInt> (n);
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);

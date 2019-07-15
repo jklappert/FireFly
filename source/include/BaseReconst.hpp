@@ -58,27 +58,27 @@ namespace firefly {
     /**
      *  @return the number of equations needed for the current zi_order
      */
-    uint32_t get_num_eqn();
+    uint32_t get_num_eqn() const;
     /**
      *  @return a bool if the current reconstruction is done
      */
-    bool is_done();
+    bool is_done() const;
     /**
      *  @return a bool if the current reconstruction needs a new prime
      */
-    bool is_new_prime();
+    bool is_new_prime() const;
     /**
      *  @return the counter of the currently used prime
      */
-    uint32_t get_prime();
+    uint32_t get_prime() const;
     /**
      *  @returns the currently used zi_order
      */
-    std::vector<uint32_t> get_zi_order();
+    std::vector<uint32_t> get_zi_order() const;
     /**
      *  @return returns the currently interpoleded i of the corresponding zi
      */
-    uint32_t get_zi();
+    uint32_t get_zi() const;
     /**
      *  Sets a new seed for the random number generator
      */

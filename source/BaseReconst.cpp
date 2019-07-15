@@ -109,12 +109,12 @@ namespace firefly {
     return *this;
   }
 
-  uint32_t BaseReconst::get_num_eqn() {
+  uint32_t BaseReconst::get_num_eqn() const {
     std::unique_lock<std::mutex> lock(mutex_status);
     return num_eqn;
   }
 
-  uint32_t BaseReconst::get_prime() {
+  uint32_t BaseReconst::get_prime() const {
     std::unique_lock<std::mutex> lock(mutex_status);
     return prime_number;
   }
@@ -137,22 +137,22 @@ namespace firefly {
     pc32_init(seed);
   }
 
-  uint32_t BaseReconst::get_zi() {
+  uint32_t BaseReconst::get_zi() const {
     std::unique_lock<std::mutex> lock(mutex_status);
     return zi;
   }
 
-  std::vector<uint32_t> BaseReconst::get_zi_order() {
+  std::vector<uint32_t> BaseReconst::get_zi_order() const {
     std::unique_lock<std::mutex> lock(mutex_status);
     return std::vector<uint32_t>(curr_zi_order.begin(), curr_zi_order.end());
   }
 
-  bool BaseReconst::is_done() {
+  bool BaseReconst::is_done() const {
     std::unique_lock<std::mutex> lock(mutex_status);
     return done;
   }
 
-  bool BaseReconst::is_new_prime() {
+  bool BaseReconst::is_new_prime() const {
     std::unique_lock<std::mutex> lock(mutex_status);
     return new_prime;
   }
