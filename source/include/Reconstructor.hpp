@@ -38,6 +38,10 @@ namespace firefly {
      */
     BlackBoxBase() {};
     /**
+     *  A destructor for the BlackBoxBase class
+     */
+    virtual ~BlackBoxBase() {};
+    /**
      *  The evaluation of the black box. This function is called from Reconstructor.
      *  @param values the values to be inserted for the variables
      *  @return the result vector
