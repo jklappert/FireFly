@@ -94,7 +94,8 @@ int main() {
   //reconst.set_safe_interpolation();
 
   // Give the paths to the intermediate results
-  //std::vector<std::string> file_paths = {"ff_save/0_1.txt","ff_save/1_2.txt","ff_save/2_2.txt","ff_save/3_1.txt","ff_save/4_1.txt","ff_save/5_3.txt"};
+  /*std::vector<std::string> file_paths = {"ff_save/0_1.txt","ff_save/1_2.txt","ff_save/2_2.txt"
+    ,"ff_save/3_1.txt","ff_save/4_2.txt","ff_save/5_2.txt","ff_save/6_1.txt","ff_save/7_3.txt"};*/
   // Enables to resume from a saved state
   //reconst.resume_from_saved_state(file_paths);
   // Write the state of all reconstruction objects after each interpolation over a prime field

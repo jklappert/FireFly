@@ -109,25 +109,26 @@ namespace firefly {
       if (first_feed && !scan) {
         if (num == 0) {
           new_prime = true;
-          ++prime_number;
           zero_counter ++;
           fed_zero = true;
 
-          if (prime_number == 1)
-            combined_prime = primes()[1];
+          if (zero_counter == prime_number + 1)
+            combined_prime = primes()[prime_number + 1];
 
           if (tag.size() > 0) {
-            if (prime_number > 1)
+            if (prime_number > 0)
               save_zero_consecutive_prime();
             else
               save_zero_state();
           }
 
+          ++prime_number;
+
           if (prime_number == 100) {
             ERROR_MSG("Your interpolation requests more than 100 primes.");
             std::exit(-1);
           } else if (zero_counter == 3 && prime_number == 3) {
-            new_prime = true;
+            new_prime = false;
             done = true;
             g_ni[std::vector<uint32_t>(n)] = RationalNumber(0, 1);
             g_di[std::vector<uint32_t>(n)] = RationalNumber(1, 1);
@@ -522,7 +523,6 @@ namespace firefly {
 
               for (auto & el : coef_n) {
                 PolynomialFF res = el.second.get_result_ff();
-                shifted_degs_num.emplace(el.first);
 
                 // TODO: define empty/zero polynomials uniquely
                 if (!(res.coefs.size() == 0) && !(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
@@ -533,7 +533,6 @@ namespace firefly {
 
               for (auto & el : coef_d) {
                 PolynomialFF res = el.second.get_result_ff();
-                shifted_degs_den.emplace(el.first);
 
                 // TODO: define empty/zero polynomials uniquely
                 if (!(res.coefs.size() == 0) && !(res.coefs.size() == 1 && res.coefs.begin()->second == 0))
@@ -886,23 +885,51 @@ namespace firefly {
             // promote to next prime and combine results
             if (coef_mat_num.empty() && coef_mat_den.empty()) {
               if (is_singular_system) {
+                non_solved_degs_den.clear();
+                non_solved_degs_num.clear();
+
                 for (const auto & el : solved_degs_num) {
                   // Only add polynomials which are not zero when the shift is subtracted
                   if (zero_degs_num.find(el.first) == zero_degs_num.end()) {
-                    if (dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end())
-                      solved_num += el.second - sub_num[el.first][0];
-                    else
+                    if (dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end()) {
+                      PolynomialFF tmp_poly = el.second - sub_num[el.first][0];
+                      solved_num += tmp_poly;
+
+                      for (const auto & coef : tmp_poly.coefs) {
+                        if (coef.second != 0)
+                          non_solved_degs_num[el.first].emplace_back(coef.first);
+                      }
+                    } else {
                       solved_num += el.second;
+
+                      for (const auto & coef : el.second.coefs) {
+                        if (coef.second != 0)
+
+                          non_solved_degs_num[el.first].emplace_back(coef.first);
+                      }
+                    }
                   }
                 }
 
                 for (const auto & el : solved_degs_den) {
                   // Only add polynomials which are not zero when the shift is subtracted
                   if (zero_degs_den.find(el.first) == zero_degs_den.end()) {
-                    if (dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end())
-                      solved_den += el.second - sub_den[el.first][0];
-                    else
+                    if (dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end()) {
+                      PolynomialFF tmp_poly = el.second - sub_den[el.first][0];
+                      solved_den += tmp_poly;
+
+                      for (const auto & coef : tmp_poly.coefs) {
+                        if (coef.second != 0)
+                          non_solved_degs_den[el.first].emplace_back(coef.first);
+                      }
+                    } else {
                       solved_den += el.second;
+
+                      for (const auto & coef : el.second.coefs) {
+                        if (coef.second != 0)
+                          non_solved_degs_den[el.first].emplace_back(coef.first);
+                      }
+                    }
                   }
                 }
 
@@ -939,8 +966,6 @@ namespace firefly {
 
                 solved_num = solved_num * equalizer;
                 solved_den = solved_den * equalizer;
-                non_solved_degs_num = non_solved_degs_num_copy;
-                non_solved_degs_den = non_solved_degs_den_copy;
               }
 
               // remove the constant if it is zero
@@ -1432,6 +1457,10 @@ namespace firefly {
       }
 
       if (prime_number + 1 >= interpolations) {
+        // Check if the state should be written out after this prime
+        if (tag.size() > 0)
+          save_state();
+
         if (is_singular_system) {
           set_singular_system_vars();
           {
@@ -1464,14 +1493,14 @@ namespace firefly {
       first_run = true;
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
       need_prime_shift = true;
+
+      // Check if the state should be written out after this prime
+      if (tag.size() > 0)
+        save_state();
     }
 
     const_den = 0;
     {
-      // Check if the state should be written out after this prime
-      if (tag.size() > 0)
-        save_state();
-
       std::unique_lock<std::mutex> lock(mutex_status);
       ++prime_number;
       queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
@@ -1939,9 +1968,10 @@ namespace firefly {
   void RatReconst::save_zero_state() {
     mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     std::ofstream file;
-    std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
+    std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
     file.open(file_name.c_str());
     file << "ZERO\n";
+    interpolations > 1 ? file << "1\n" : file << "0\n";
     file.close();
   }
 
@@ -1951,7 +1981,7 @@ namespace firefly {
     std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
 
     if (std::rename(file_name_old.c_str(), file_name_new.c_str()) != 0)
-      WARNING_MSG("The previously saved file could not be renamed.");
+      WARNING_MSG("The previously saved file '" + file_name_old + "' could not be renamed.");
   }
 
   void RatReconst::save_state() {
@@ -1998,31 +2028,51 @@ namespace firefly {
 
     file << tmp_shift;
 
-    file << "shifted_degs_num\n";
+    file << "sub_num\n";
     std::string tmp_str = "";
 
-    for (const auto & el : shifted_degs_num) {
-      tmp_str += std::to_string(el) + " ";
+    for (const auto & el : sub_num) {
+      if (!el.second.empty()) {
+        for (const auto & monomial : el.second[0].coefs) {
+          if (monomial.second != 0) {
+            tmp_str += std::to_string(el.first) + " ";
+
+            for (const auto & tmp_deg : monomial.first) {
+              tmp_str += std::to_string(tmp_deg) + " ";
+            }
+
+            tmp_str.substr(0, tmp_str.size() - 1);
+            tmp_str += std::string("\n");
+          }
+        }
+      }
     }
 
-    if (shifted_degs_num.size() > 0) {
-      tmp_str.substr(0, tmp_str.size() - 1);
-      tmp_str += std::string("\n");
+    if (tmp_str.size() > 0)
       file << tmp_str;
-    }
 
-    file << "shifted_degs_den\n";
+    file << "sub_den\n";
     tmp_str = "";
 
-    for (const auto & el : shifted_degs_den) {
-      tmp_str += std::to_string(el) + " ";
+    for (const auto & el : sub_den) {
+      if (!el.second.empty()) {
+        for (const auto & monomial : el.second[0].coefs) {
+          if (monomial.second != 0) {
+            tmp_str += std::to_string(el.first) + " ";
+
+            for (const auto & tmp_deg : monomial.first) {
+              tmp_str += std::to_string(tmp_deg) + " ";
+            }
+
+            tmp_str.substr(0, tmp_str.size() - 1);
+            tmp_str += std::string("\n");
+          }
+        }
+      }
     }
 
-    if (shifted_degs_den.size() > 0) {
-      tmp_str.substr(0, tmp_str.size() - 1);
-      tmp_str += std::string("\n");
+    if (tmp_str.size() > 0)
       file << tmp_str;
-    }
 
     file << "zero_degs_num\n";
     tmp_str = "";
@@ -2102,7 +2152,7 @@ namespace firefly {
       std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
 
       if (std::remove(old_file_name.c_str()) != 0)
-        WARNING_MSG("The previously saved file could not be deleted.");
+        WARNING_MSG("The previously saved file '" + old_file_name + "' could not be removed.");
     }
   }
 
@@ -2113,29 +2163,45 @@ namespace firefly {
     parse_prime_number(file_name);
     check_interpolation = true;
 
+    bool is_zero = false;
+
     if (file.is_open()) {
       while (std::getline(file, line)) {
         if (first) {
           first = false;
 
-          if (line == "ZERO") {
-            set_safe_interpolation();
-            check_interpolation = false;
-            zero_counter ++;
-            {
-              std::unique_lock<std::mutex> lock(mutex_status);
-              std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
-              new_prime = true;
-            }
-            file.close();
-            return;
-          } else if (line != "combined_prime") {
+          if (line == "ZERO")
+            is_zero = true;
+          else if (line != "combined_prime") {
             ERROR_MSG("Wrong input format! Has to start with 'combined_prime'!");
             std::exit(-1);
           }
 
           curr_parsed_variable = COMBINED_PRIME;
           parsed_variables[COMBINED_PRIME] = true;
+        } else if (is_zero) {
+          if (prime_number >= 2) {
+            std::unique_lock<std::mutex> lock_statics(mutex_status);
+            new_prime = false;
+            done = true;
+            g_ni[std::vector<uint32_t>(n)] = RationalNumber(0, 1);
+            g_di[std::vector<uint32_t>(n)] = RationalNumber(1, 1);
+          } else {
+            if (line == "1") {
+              set_safe_interpolation();
+            }
+
+            check_interpolation = false;
+            zero_counter = prime_number;
+            {
+              std::unique_lock<std::mutex> lock(mutex_status);
+              std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
+              new_prime = true;
+            }
+          }
+
+          file.close();
+          return;
         } else {
           if (line == "is_done") {
             curr_parsed_variable = IS_DONE;
@@ -2164,12 +2230,12 @@ namespace firefly {
           } else if (line == "shift") {
             curr_parsed_variable = SHIFT;
             parsed_variables[SHIFT] = true;
-          } else if (line == "shifted_degs_num") {
-            curr_parsed_variable = SHIFTED_DEGS_NUM;
-            parsed_variables[SHIFTED_DEGS_NUM] = true;
-          } else if (line == "shifted_degs_den") {
-            curr_parsed_variable = SHIFTED_DEGS_DEN;
-            parsed_variables[SHIFTED_DEGS_DEN] = true;
+          } else if (line == "sub_num") {
+            curr_parsed_variable = SUB_NUM;
+            parsed_variables[SUB_NUM] = true;
+          } else if (line == "sub_den") {
+            curr_parsed_variable = SUB_DEN;
+            parsed_variables[SUB_DEN] = true;
           } else if (line == "zero_degs_num") {
             curr_parsed_variable = ZERO_DEGS_NUM;
             parsed_variables[ZERO_DEGS_NUM] = true;
@@ -2261,22 +2327,36 @@ namespace firefly {
                 break;
               }
 
-              case SHIFTED_DEGS_NUM: {
-                std::vector<uint32_t> tmp_vec = parse_vector(line);
-
-                for (const auto & el : tmp_vec) {
-                  shifted_degs_num.emplace(el);
+              case SUB_NUM: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(-1);
                 }
+
+                uint32_t tmp_deg = parse_vector(line, 1)[0];
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+
+                if (sub_num[tmp_deg].empty())
+                  sub_num[tmp_deg].emplace_back(PolynomialFF(n, {{tmp_vec, 1}}));
+                else
+                  sub_num[tmp_deg][0] += PolynomialFF(n, {{tmp_vec, 1}});
 
                 break;
               }
 
-              case SHIFTED_DEGS_DEN: {
-                std::vector<uint32_t> tmp_vec = parse_vector(line);
-
-                for (const auto & el : tmp_vec) {
-                  shifted_degs_den.emplace(el);
+              case SUB_DEN: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(-1);
                 }
+
+                uint32_t tmp_deg = parse_vector(line, 1)[0];
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+
+                if (sub_den[tmp_deg].empty())
+                  sub_den[tmp_deg].emplace_back(PolynomialFF(n, {{tmp_vec, 1}}));
+                else
+                  sub_den[tmp_deg][0] += PolynomialFF(n, {{tmp_vec, 1}});
 
                 break;
               }
@@ -2392,7 +2472,7 @@ namespace firefly {
         std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
         new_prime = true;
       }
-      //todo anpassen
+
       if (prime_number >= interpolations) {
         if (is_singular_system) {
           tmp_solved_coefs_den = 0;
@@ -2401,35 +2481,8 @@ namespace firefly {
             std::unique_lock<std::mutex> lock_statics(mutex_statics);
             need_prime_shift = true;
           }
+          set_singular_system_vars();
 
-          for (const auto & el : g_ni) {
-            if (normalize_to_den)
-              add_non_solved_num(el.first);
-            else if (el.first != std::vector<uint32_t> (n))
-              add_non_solved_num(el.first);
-          }
-
-          for (const auto & el : g_di) {
-            if (!normalize_to_den)
-              add_non_solved_den(el.first);
-            else if (el.first != std::vector<uint32_t> (n))
-              add_non_solved_den(el.first);
-          }
-
-          if (normalize_to_den) {
-            curr_deg_num = max_deg_num;
-
-            if (max_deg_den > 0)
-              curr_deg_den = max_deg_den;
-          } else {
-            curr_deg_den = max_deg_den;
-
-            if (max_deg_num > 0)
-              curr_deg_num = max_deg_num;
-          }
-
-          std::unique_lock<std::mutex> lock(mutex_status);
-          num_eqn = shifted_max_num_eqn;
         } else {
           std::unique_lock<std::mutex> lock(mutex_status);
           num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
@@ -2530,8 +2583,6 @@ namespace firefly {
         sub_den[i] = {zero_poly};
     }
 
-    non_solved_degs_num_copy = non_solved_degs_num;
-    non_solved_degs_den_copy = non_solved_degs_den;
     std::vector<uint32_t> zero_vec(n);
 
     for (const auto & el : sub_num) {
@@ -2672,16 +2723,6 @@ namespace firefly {
 
     sub_num = polff_vec_map();
     sub_den = polff_vec_map();
-    PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
-
-    // Initialize subtraction terms with zero
-    for (uint32_t i = 0; i <= (uint32_t)max_deg_num; ++i) {
-      sub_num[i] = {zero_poly};
-    }
-
-    for (uint32_t i = 0; i <= (uint32_t)max_deg_den; ++i) {
-      sub_den[i] = {zero_poly};
-    }
 
     if (rec_rat_coef()) {
       bool tmp_done = test_guess(num, ti);
@@ -2708,6 +2749,17 @@ namespace firefly {
           g_di.erase(ci.first);
         }
       }
+    }
+
+    PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
+
+    // Initialize subtraction terms with zero
+    for (uint32_t i = 0; i <= (uint32_t)max_deg_num; ++i) {
+      sub_num[i] = {zero_poly};
+    }
+
+    for (uint32_t i = 0; i <= (uint32_t)max_deg_den; ++i) {
+      sub_den[i] = {zero_poly};
     }
 
     if (!use_chinese_remainder) use_chinese_remainder = true;

@@ -195,8 +195,6 @@ namespace firefly {
     std::unordered_map<uint32_t, PolyReconst> coef_d {};
     std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_num {};// a vector entry should be just a pointer to save memory
     std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_den {};
-    std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_num_copy {};// a vector entry should be just a pointer to save memory
-    std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_den_copy {};
     std::unordered_map<uint32_t, FFInt> num_sub_num {};
     std::unordered_map<uint32_t, FFInt> num_sub_den {};
     polff_vec_map sub_num {};
@@ -311,8 +309,6 @@ namespace firefly {
     std::pair<uint32_t, uint32_t> max_num_coef_den = std::make_pair(0, 0); // deg and number of terms
     std::unordered_set<uint32_t> dense_solve_degs_num {};
     std::unordered_set<uint32_t> dense_solve_degs_den {};
-    std::unordered_set<uint32_t> shifted_degs_num {};
-    std::unordered_set<uint32_t> shifted_degs_den {};
     std::unordered_set<uint32_t> zero_degs_num {};
     std::unordered_set<uint32_t> zero_degs_den {};
     /**
@@ -327,7 +323,7 @@ namespace firefly {
     uint32_t interpolations = 1;
     enum save_variables {COMBINED_PRIME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
-                         SHIFTED_DEGS_NUM, SHIFTED_DEGS_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
+                         SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
                          COMBINED_NI, COMBINED_DI, INTERPOLATIONS
                         };
   };
