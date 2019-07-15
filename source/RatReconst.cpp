@@ -1029,11 +1029,11 @@ namespace firefly {
 
   std::tuple<int, uint32_t, std::vector<uint32_t>> RatReconst::feed_poly(int curr_deg,
                                                                          uint32_t max_deg,
-                                                                         std::unordered_map<uint32_t,PolyReconst>& coef,
+                                                                         std::unordered_map<uint32_t, PolyReconst>& coef,
                                                                          PolyReconst& rec,
                                                                          ff_map_map& saved_num,
                                                                          polff_vec_map& sub_save,
-                                                                         bool is_num) {
+  bool is_num) {
     uint32_t tmp_zi = rec.get_zi() + 1;
     std::vector<uint32_t> tmp_zi_ord = curr_zi_order;
 
@@ -2757,15 +2757,17 @@ namespace firefly {
       }
     }
 
-    PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
+    if (n > 1 && prime_number >= interpolations) {
+      PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
 
-    // Initialize subtraction terms with zero
-    for (uint32_t i = 0; i <= (uint32_t)max_deg_num; ++i) {
-      sub_num[i] = {zero_poly};
-    }
+      // Initialize subtraction terms with zero
+      for (uint32_t i = 0; i <= (uint32_t)max_deg_num; ++i) {
+        sub_num[i] = {zero_poly};
+      }
 
-    for (uint32_t i = 0; i <= (uint32_t)max_deg_den; ++i) {
-      sub_den[i] = {zero_poly};
+      for (uint32_t i = 0; i <= (uint32_t)max_deg_den; ++i) {
+        sub_den[i] = {zero_poly};
+      }
     }
 
     if (!use_chinese_remainder) use_chinese_remainder = true;
