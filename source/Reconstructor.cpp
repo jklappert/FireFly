@@ -59,7 +59,11 @@ namespace firefly {
   }
 
   void Reconstructor::enable_scan() {
-    scan = true;
+    if (n == 1) {
+      WARNING_MSG("Scan was not enabled for a univariate rational function.");
+    } else {
+      scan = true;
+    }
   }
 
   void Reconstructor::set_tags() {
