@@ -150,6 +150,8 @@ namespace firefly {
 
     run_until_done();
 
+    tp.kill_all();
+
     end = std::chrono::high_resolution_clock::now();
 
     if (verbosity > SILENT) {
@@ -157,8 +159,6 @@ namespace firefly {
       INFO_MSG(std::to_string(total_iterations) + " probes in total.");
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
-
-    tp.kill_all();
   }
 
   std::vector<RationalFunction> Reconstructor::get_result() {

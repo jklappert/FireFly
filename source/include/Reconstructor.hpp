@@ -51,7 +51,7 @@ namespace firefly {
      *  Update internal variables of the black box when the prime field changes.
      *  This function is called from Reconstructor.
      */
-    virtual void prime_changed() = 0;
+    virtual void prime_changed() {};
   };
 
   typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
