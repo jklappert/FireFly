@@ -680,7 +680,11 @@ namespace firefly {
                 // Solve multivariate Vandermonde system for corresponding degree,
                 // remove entry from non_solved_degs and add it to solve_degs
                 if (coef_mat_num[key].size() == non_solved_degs_num[key].size()) {
-                  solved_num += solve_vandermonde_system(non_solved_degs_num[key], coef_mat_num[key], get_anchor_points());
+                  if (solved_degs_num[key].zero())
+                    solved_degs_num[key] = solve_vandermonde_system(non_solved_degs_num[key], coef_mat_num[key], get_anchor_points());
+                  else
+                    solved_degs_num[key] += solve_vandermonde_system(non_solved_degs_num[key], coef_mat_num[key], get_anchor_points());
+
                   non_solved_degs_num.erase(key);
                   coef_mat_num.erase(key);
                 }
@@ -693,7 +697,11 @@ namespace firefly {
                   coef_mat_den[key].emplace_back(std::make_pair(sol.second, 0));
 
                 if (coef_mat_den[key].size() == non_solved_degs_den[key].size()) {
-                  solved_den += solve_vandermonde_system(non_solved_degs_den[key], coef_mat_den[key], get_anchor_points());
+                  if (solved_degs_den[key].zero())
+                    solved_degs_den[key] = solve_vandermonde_system(non_solved_degs_den[key], coef_mat_den[key], get_anchor_points());
+                  else
+                    solved_degs_den[key] += solve_vandermonde_system(non_solved_degs_den[key], coef_mat_den[key], get_anchor_points());
+
                   non_solved_degs_den.erase(key);
                   coef_mat_den.erase(key);
                 }
@@ -968,6 +976,14 @@ namespace firefly {
 
                 solved_num = solved_num * equalizer;
                 solved_den = solved_den * equalizer;
+              } else {
+                for (const auto & el : solved_degs_num) {
+                  solved_num += el.second;
+                }
+
+                for (const auto & el : solved_degs_den) {
+                  solved_den += el.second;
+                }
               }
 
               // remove the constant if it is zero
@@ -1782,8 +1798,17 @@ namespace firefly {
       // been solved
       if (coef_mat.size() == 0) {
         yis.erase(yis.begin());
-        num_sub_num = solved_num.calc_n_m_1_map(yis);
-        num_sub_den = solved_den.calc_n_m_1_map(yis);
+
+        for (const auto & el : solved_degs_num) {
+          num_sub_num[el.first] = el.second.calc_n_m_1(yis);
+        }
+
+        for (const auto & el : solved_degs_den) {
+          num_sub_den[el.first] = el.second.calc_n_m_1(yis);
+        }
+
+        //num_sub_num = solved_num.calc_n_m_1_map(yis);
+        //num_sub_den = solved_den.calc_n_m_1_map(yis);
       }
     } else {
       if (normalize_to_den)
@@ -1796,7 +1821,7 @@ namespace firefly {
       if (coef_mat.size() == 0) {
         yis.erase(yis.begin());
 
-        for (const auto el : solved_degs_num) {
+        for (auto el : solved_degs_num) {
           uint32_t tmp_deg = el.first;
 
           if (dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end())
@@ -1805,7 +1830,7 @@ namespace firefly {
             num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis) + sub_num[tmp_deg][0].calc_n_m_1(yis);
         }
 
-        for (const auto el : solved_degs_den) {
+        for (auto el : solved_degs_den) {
           uint32_t tmp_deg = el.first;
 
           if (dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end())
@@ -2793,8 +2818,30 @@ namespace firefly {
         tmp_den[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
       }
 
-      solved_num = PolynomialFF(n, tmp_num);
-      solved_den = PolynomialFF(n, tmp_den);
+      for (const auto & el : tmp_num) {
+        uint32_t deg = 0;
+
+        for (const auto & tmp_deg : el.first) deg += tmp_deg;
+
+        if (solved_degs_num[deg].zero())
+          solved_degs_num[deg] = PolynomialFF(n, {{el.first, el.second}});
+        else
+          solved_degs_num[deg].coefs.emplace(std::make_pair(el.first, el.second));
+      }
+
+      for (const auto & el : tmp_den) {
+        uint32_t deg = 0;
+
+        for (const auto & tmp_deg : el.first) deg += tmp_deg;
+
+        if (solved_degs_den[deg].zero())
+          solved_degs_den[deg] = PolynomialFF(n, {{el.first, el.second}});
+        else
+          solved_degs_den[deg].coefs.emplace(std::make_pair(el.first, el.second));
+      }
+
+      //solved_num = PolynomialFF(n, tmp_num);
+      //solved_den = PolynomialFF(n, tmp_den);
     }
 
     return false;
