@@ -23,7 +23,7 @@
 #include "RationalNumber.hpp"
 #include "UintHasher.hpp"
 #include "FFInt.hpp"
-//#include "ShuntingYardParser.hpp"
+#include "ShuntingYardParser.hpp"
 
 namespace firefly {
 
@@ -66,13 +66,6 @@ namespace firefly {
      *  @return f(x)
      */
     FFInt calc_n_m_1(const std::vector<FFInt>& x) const;
-    /**
-     *  Evaluates the polynomial at a given parameter point omitting the first
-     *  variable
-     *  @param x the parameter point which is of length n - 1
-     *  @return f(x) splitted to univariate degrees
-     */
-    std::unordered_map<uint32_t, FFInt> calc_n_m_1_map(const std::vector<FFInt>& x) const;
     ff_map coefs {};
     /**
      *  @return true if the PolynomialFF object has no coefficients or only one which is zero
@@ -123,17 +116,18 @@ namespace firefly {
      *  @curr_deg degree number of b which is absent in a
      */
     PolynomialFF mul_shift(const ff_map& a, const ff_map& b, uint32_t curr_deg) const;
-    /*ShuntingYardParser s_y_fun;
-    ShuntingYardParser s_y_fun_n_m_1;
-    ShuntingYardParser s_y_fun_map_n_m_1;
-    void generate_hornerff();*/
+    void generate_hornerff();
     /*
      *  Generates Horner scheme coefficients of a polynomial recursively
      *  @param var An integer representing the current variable
      *  @param monomials A map of monomials that build a polynomial
      *  @return A Horner form of a polynomial
      */
-    //std::string generate_horner_coefs(int var, const ff_map& monomials);
+    void generate_horner_coefs(uint32_t var, uint64_t id, const ff_map& monomials);
+    std::unordered_map<uint32_t, std::vector<std::tuple<std::unordered_map<uint32_t, uint64_t>, uint64_t, uint32_t>>> h_polys {};
+    std::unordered_map<uint64_t, FFInt> h_coefs {};
+    uint64_t id_counter = 0;
+    FFInt eval_horner(const std::vector<FFInt>& x);
   };
   PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b);
   PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b);

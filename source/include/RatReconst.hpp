@@ -157,16 +157,11 @@ namespace firefly {
     /**
      *  Feeds a PolyReconst object with the results of the univariate system of equations
      *  @param curr_deg the degree of the polynomial
-     *  @param max_deg the maximal degree of the numerator (denominator)
-     *  @param coef the map of corresponding PolyReconst objects
      *  @param rec the PolyReconst object which should be fed
      *  @param saved_num the container of saved probes for the polynomial
-     *  @param sub_save the container of subtraction terms due to the shift
      *  @param is_num a bool which indicates if the polynomial is in the numerator (true) or denominator (false)
      */
-    std::tuple<int, uint32_t, std::vector<uint32_t>> feed_poly(int curr_deg,
-                                                               uint32_t max_deg, std::unordered_map<uint32_t, PolyReconst>& coef,
-                                                               PolyReconst& rec, ff_map_map& saved_num, polff_vec_map& sub_save, bool is_num);
+    void feed_poly(int curr_deg, PolyReconst& rec, ff_map_map& saved_num, bool is_num);
     void combine_primes(ff_map& numerator, ff_map& denominator);
     /**
      *  Builds a univariate system of equations for a rational function in the first prime
@@ -174,22 +169,21 @@ namespace firefly {
      *  @param tmp_num the currently probed value of the black box
      *  @param yis the currently used tuple of yis
      */
-    void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
+    void build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
     /**
      *  Builds a univariate system of equations for a rational function for additional primes
      *  @param tmp_ti the currently used value of t
      *  @param tmp_num the currently probed value of the black box
      *  @param yis the currently used tuple of yis
      */
-    void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, std::vector<FFInt>& yis);
+    void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
     bool first_run = true;
     std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> queue;
     std::vector<std::vector<FFInt>> coef_mat {};
-    std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> coef_mat_num {};
-    std::unordered_map<uint32_t, std::vector<std::pair<FFInt, uint32_t>>> coef_mat_den {};
+    std::unordered_map<uint32_t, std::vector<FFInt>> coef_mat_num {};
+    std::unordered_map<uint32_t, std::vector<FFInt>> coef_mat_den {};
     PolynomialFF solved_num;
     PolynomialFF solved_den;
-    uint32_t curr_zi = 2;
     ff_vec_map saved_ti {};
     std::unordered_map<uint32_t, PolyReconst> coef_n {};
     std::unordered_map<uint32_t, PolyReconst> coef_d {};
@@ -197,24 +191,14 @@ namespace firefly {
     std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_den {};
     std::unordered_map<uint32_t, FFInt> num_sub_num {};
     std::unordered_map<uint32_t, FFInt> num_sub_den {};
-    polff_vec_map sub_num {};
-    polff_vec_map sub_den {};
+    polff_map sub_num {};
+    polff_map sub_den {};
     ff_map_map saved_num_num {};
     ff_map_map saved_num_den {};
     int max_deg_num = -1;
     int max_deg_den = -1;
-    int curr_deg_num = -1;
-    int curr_deg_den = -1;
-    uint32_t tmp_sol_const_num = 0;
-    uint32_t tmp_sol_const_den = 0;
-    std::vector<uint32_t> curr_zi_order_num {};
-    std::vector<uint32_t> curr_zi_order_den {};
-    FFInt shifted_const = 0;
-    bool remove_const = false;
     uint32_t tmp_solved_coefs_num = 0;
     uint32_t tmp_solved_coefs_den = 0;
-    uint32_t sub_count_num = 0;
-    uint32_t sub_count_den = 0;
     void remove_ni(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn);
     void remove_di(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn);
     RationalFunction result;
@@ -297,8 +281,6 @@ namespace firefly {
     static std::vector<uint32_t> curr_shift;
     bool shift_works = false;
     bool normalize_to_den = true;
-    int start_deg_num = 0;
-    int start_deg_den = 1;
     uint32_t shifted_max_num_eqn = 0;
     bool div_by_zero = false;
     bool first_feed = true;

@@ -63,7 +63,7 @@ namespace firefly {
   *  @return the polynomial
   */
   PolynomialFF solve_vandermonde_system(std::vector<std::vector<uint32_t>>& degs,
-                                        const std::vector<std::pair<FFInt, uint32_t>>& nums,
+                                        const std::vector<FFInt>& nums,
                                         const std::vector<FFInt>& val);
   /**
    *  Compares two vetors colexographically, i.e. (1,0,0) < (0,1,0), and returns
