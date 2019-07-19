@@ -38,7 +38,7 @@ namespace firefly {
   RatReconst::RatReconst(uint32_t n_) {
     n = n_;
     type = RAT;
-    const_den = 0;
+
     std::unique_lock<std::mutex> lock_status(mutex_status);
 
     combined_prime = FFInt::p;
@@ -475,7 +475,7 @@ namespace firefly {
             if (coef_n.size() == 0 && coef_d.size() == 0) {
               saved_num_num.clear();
               saved_num_den.clear();
-
+              FFInt const_den = 0;
               // Calculate shift polynomials and combine with previous ones if there is any shift
               // To do so, we have to remove the shift from all solved degrees
               if (shift != std::vector<FFInt> (n)) {
@@ -937,6 +937,7 @@ namespace firefly {
                 // normalize
                 FFInt terminator = 0;
 
+                FFInt const_den = 0;
                 if (normalize_to_den)
                   const_den = sub_den[0].coefs[std::vector<uint32_t> (n)];
                 else
@@ -1351,7 +1352,6 @@ namespace firefly {
         save_state();
     }
 
-    const_den = 0;
     {
       std::unique_lock<std::mutex> lock(mutex_status);
       ++prime_number;
@@ -2289,7 +2289,6 @@ namespace firefly {
 
       for (const auto & el : combined_di) add_non_solved_den(el.first);
 
-      const_den = 0;
       {
         std::unique_lock<std::mutex> lock_statics(mutex_statics);
         is_singular_system = need_prime_shift;

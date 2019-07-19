@@ -238,7 +238,6 @@ namespace firefly {
     polff_map solved_degs_num {};
     polff_map solved_degs_den {};
     std::vector<uint32_t> normalizer_deg {};
-    FFInt const_den;
     std::string tag = "";
     bool is_singular_system = false;
     static std::vector<FFInt> shift;
