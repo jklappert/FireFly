@@ -61,7 +61,7 @@ namespace firefly {
      *  Returns the reverse polish notation of the parsed functions
      *  @return A vector of all parsed functions in reverse polish notation with changed variable names according to int_var_map
      */
-    std::vector<std::vector<std::string>> get_rp_functions();
+    std::vector<std::vector<std::string>> get_rp_functions() const;
     /**
      *  Returns the mapped variable to a given index
      *  @param index The index of the variable
@@ -72,7 +72,7 @@ namespace firefly {
      *  Checks if functions are stored in this class
      *  @return True if no functions are stored in this class
      */
-    bool empty();
+    bool empty() const;
     /**
      *  Precomputes the tokes over the current prime field to be more efficient in evaluations
      */
@@ -100,25 +100,25 @@ namespace firefly {
      *  @param c The operator as a character
      *  @return An integer which marks the weight
      */
-    int get_weight(const char c);
+    int get_weight(const char c) const;
     /**
      *  Checks if a character is an operator
      *  @param c The character which should be checked
      *  @return True if the charater is an operator
      */
-    bool is_operator(char c);
+    bool is_operator(const char c) const;
     /**
      *  Checks if a character is an operand
      *  @param c The character which should be checked
      *  @return True if the charater is an operand
      */
-    bool is_operand(char c);
+    bool is_operand(const char c) const;
     /**
      *  Checks if a character is a variable
      *  @param c The character which should be checked
      *  @return True if the charater is a variable
      */
-    bool is_variable(char c);
+    bool is_variable(const char c) const;
     /**
      *  Converts a function in reverse polish notation
      *  @param fun The function which should be converted

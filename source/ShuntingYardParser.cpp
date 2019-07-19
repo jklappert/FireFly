@@ -53,9 +53,9 @@ namespace firefly {
   void ShuntingYardParser::parse(const std::string& fun_, bool use_regex) {
     std::string fun = fun_;
 
-    if(use_regex){
+    if (use_regex) {
       for (const auto & el : vars_conv_map) {
-	fun = std::regex_replace(fun, std::regex(el.second), std::string(1, el.first));
+        fun = std::regex_replace(fun, std::regex(el.second), std::string(1, el.first));
       }
     }
 
@@ -289,7 +289,7 @@ namespace firefly {
     return res;
   }
 
-  int ShuntingYardParser::get_weight(const char c) {
+  int ShuntingYardParser::get_weight(const char c) const {
     switch (c) {
       case '^':
         return 3;
@@ -307,28 +307,28 @@ namespace firefly {
     }
   }
 
-  bool ShuntingYardParser::is_operand(char c) {
+  bool ShuntingYardParser::is_operand(const char c) const {
     if (!is_operator(c) && c != '(' && c != ')' && vars_conv_map.find(c) == vars_conv_map.end() && c != ' ')
       return true;
 
     return false;
   }
 
-  bool ShuntingYardParser::is_operator(char c) {
+  bool ShuntingYardParser::is_operator(const char c) const {
     if (c == '+' || c == '-' || c == '*' || c == '/' || c == '^')
       return true;
 
     return false;
   }
 
-  bool ShuntingYardParser::is_variable(char c) {
+  bool ShuntingYardParser::is_variable(const char c) const {
     if (vars_conv_map.find(c) != vars_conv_map.end())
       return true;
 
     return false;
   }
 
-  std::vector<std::vector<std::string>> ShuntingYardParser::get_rp_functions() {
+  std::vector<std::vector<std::string>> ShuntingYardParser::get_rp_functions() const {
     return functions;
   }
 
@@ -339,7 +339,7 @@ namespace firefly {
     return int_var_map.at(index);
   }
 
-  bool ShuntingYardParser::empty() {
+  bool ShuntingYardParser::empty() const {
     return functions.empty();
   }
 

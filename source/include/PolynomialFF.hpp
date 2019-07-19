@@ -116,14 +116,17 @@ namespace firefly {
      *  @curr_deg degree number of b which is absent in a
      */
     PolynomialFF mul_shift(const ff_map& a, const ff_map& b, uint32_t curr_deg) const;
+    /**
+     *  Executes prerequired steps to generate a Horner form
+     */
     void generate_hornerff();
-    /*
+    ShuntingYardParser s_y_fun;
+    /**
      *  Generates Horner scheme coefficients of a polynomial recursively
      *  @param var An integer representing the current variable
      *  @param monomials A map of monomials that build a polynomial
      *  @return A Horner form of a polynomial
      */
-    ShuntingYardParser s_y_fun;
     std::string generate_horner_coefs(int var, const ff_map& monomials);
     bool generate_new_horner = true;
     bool eval_horner = false;

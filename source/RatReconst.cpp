@@ -1610,9 +1610,6 @@ namespace firefly {
         for (auto & el : solved_degs_den) {
           num_sub_den[el.first] = el.second.calc_n_m_1(yis);
         }
-
-        //num_sub_num = solved_num.calc_n_m_1_map(yis);
-        //num_sub_den = solved_den.calc_n_m_1_map(yis);
       }
     } else {
       if (normalize_to_den)
