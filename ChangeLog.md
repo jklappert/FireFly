@@ -27,7 +27,7 @@ Bug fixes
  * The `Reconstructor` class now has a destructor which deletes all dynamically
  allocated memory.
  
- * The safe mode is again usable.
+ * The safe mode is usable again.
  
  * If the number of variables was set to 1 and the black box was just a constant,
  the interpolation failed. This has been fixed and constants for one variable
