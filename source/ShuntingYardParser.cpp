@@ -50,11 +50,13 @@ namespace firefly {
     INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s.");
   }
 
-  void ShuntingYardParser::parse(const std::string& fun_) {
+  void ShuntingYardParser::parse(const std::string& fun_, bool use_regex) {
     std::string fun = fun_;
 
-    for (const auto & el : vars_conv_map) {
-      fun = std::regex_replace(fun, std::regex(el.second), std::string(1, el.first));
+    if(use_regex){
+      for (const auto & el : vars_conv_map) {
+	fun = std::regex_replace(fun, std::regex(el.second), std::string(1, el.first));
+      }
     }
 
     char const* l_ptr = fun.c_str();
@@ -140,7 +142,7 @@ namespace firefly {
       vars_conv_map.emplace(std::make_pair(int_var_map.at(i), vars[i]));
     }
 
-    parse(fun);
+    parse(fun, false);
 
     functions.shrink_to_fit();
   }

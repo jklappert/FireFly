@@ -1,59 +1,11 @@
-//==================================================================================
-//    FireFly - Reconstructing rational functions and polynomial over finite fields.
-//    Copyright (C) 2019  Jonas Klappert and Fabian Lange
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-//==================================================================================
 
-#include "PolynomialFF.hpp"
-#include "Logger.hpp"
-#include <map>
-#include <chrono>
-
-namespace firefly {
-
-  PolynomialFF::PolynomialFF(uint32_t n_, ff_map coefs_) : n(n_), coefs(coefs_) {}
-
-  PolynomialFF::PolynomialFF() {}
-
-  FFInt PolynomialFF::calc(const std::vector<FFInt>& x) const {
-    FFInt res(0);
-
-    for (const auto & term : coefs) {
-      FFInt product(1);
-
-      for (uint32_t i = 0; i < n; ++i) {
-        product *= x[i].pow(term.first[i]);
-      }
-
-      res += term.second * product;
+	  std::cout << res << "  " << s_y_fun.evaluate_pre(x)[0] << "\n";*/
+      return s_y_fun.evaluate_pre(x)[0];
+      end = std::chrono::high_resolution_clock::now();
+      std::cout << coefs.size() << " horner " << std::chrono::duration<double>(end - start).count() << "s\n";
+    } else if(coefs.size() > 100) {
+      return s_y_fun.evaluate_pre(x)[0];
     }
-
-    return res;
-  }
-
-  FFInt PolynomialFF::calc_n_m_1(const std::vector<FFInt>& x) {
-    FFInt res(0);
-    uint32_t n_m_1 = n - 1;
-    
-    if (generate_new_horner && coefs.size() > 50) {
-      generate_new_horner = false;
-      eval_horner = true;
-      generate_hornerff();
-      return s_y_fun.evaluate_pre(x)[0];
-    } else if(eval_horner)
-      return s_y_fun.evaluate_pre(x)[0];
     
     for (const auto & term : coefs) {
       FFInt product(1);

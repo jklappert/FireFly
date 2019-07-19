@@ -1564,11 +1564,11 @@ namespace firefly {
     // Build result vector including subtracted coefficients which have already
     // been solved
     if (coef_mat.size() == 0) {
-      for (auto el : solved_degs_num) {
+      for (auto& el : solved_degs_num) {
         num_sub_num[el.first] = el.second.calc_n_m_1(yis);
       }
 
-      for (auto el : solved_degs_den) {
+      for (auto& el : solved_degs_den) {
         num_sub_den[el.first] = el.second.calc_n_m_1(yis);
       }
     }
@@ -1603,11 +1603,11 @@ namespace firefly {
       // Build result vector including subtracted coefficients which have already
       // been solved
       if (coef_mat.size() == 0) {
-        for (const auto & el : solved_degs_num) {
+        for (auto & el : solved_degs_num) {
           num_sub_num[el.first] = el.second.calc_n_m_1(yis);
         }
 
-        for (const auto & el : solved_degs_den) {
+        for (auto & el : solved_degs_den) {
           num_sub_den[el.first] = el.second.calc_n_m_1(yis);
         }
 

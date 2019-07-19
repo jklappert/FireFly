@@ -65,7 +65,7 @@ namespace firefly {
      *  @param x the parameter point which is of length n - 1
      *  @return f(x)
      */
-    FFInt calc_n_m_1(const std::vector<FFInt>& x) const;
+    FFInt calc_n_m_1(const std::vector<FFInt>& x);
     ff_map coefs {};
     /**
      *  @return true if the PolynomialFF object has no coefficients or only one which is zero
@@ -123,11 +123,10 @@ namespace firefly {
      *  @param monomials A map of monomials that build a polynomial
      *  @return A Horner form of a polynomial
      */
-    void generate_horner_coefs(uint32_t var, uint64_t id, const ff_map& monomials);
-    std::unordered_map<uint32_t, std::vector<std::tuple<std::unordered_map<uint32_t, uint64_t>, uint64_t, uint32_t>>> h_polys {};
-    std::unordered_map<uint64_t, FFInt> h_coefs {};
-    uint64_t id_counter = 0;
-    FFInt eval_horner(const std::vector<FFInt>& x);
+    ShuntingYardParser s_y_fun;
+    std::string generate_horner_coefs(int var, const ff_map& monomials);
+    bool generate_new_horner = true;
+    bool eval_horner = false;
   };
   PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b);
   PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b);

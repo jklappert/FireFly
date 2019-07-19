@@ -122,8 +122,9 @@ namespace firefly {
     /**
      *  Converts a function in reverse polish notation
      *  @param fun The function which should be converted
+     *  @param use_regex determines whether one replaces variables with regex
      */
-    void parse(const std::string&);
+    void parse(const std::string&, bool use_regex = true);
   };
 
   namespace operators {
