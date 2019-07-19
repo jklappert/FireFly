@@ -1623,7 +1623,7 @@ namespace firefly {
       // Build result vector including subtracted coefficients which have already
       // been solved
       if (coef_mat.size() == 0) {
-        for (auto el : solved_degs_num) {
+        for (auto& el : solved_degs_num) {
           uint32_t tmp_deg = el.first;
           if (dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end())
             num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis);
@@ -1631,7 +1631,7 @@ namespace firefly {
             num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis) + sub_num[tmp_deg].calc_n_m_1(yis);
         }
 
-        for (auto el : solved_degs_den) {
+        for (auto& el : solved_degs_den) {
           uint32_t tmp_deg = el.first;
           if (dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end())
             num_sub_den[tmp_deg] = el.second.calc_n_m_1(yis);
