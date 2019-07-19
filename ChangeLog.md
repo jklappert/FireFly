@@ -8,7 +8,7 @@ Changes
  We try to find a sparsest shift and then interpolate the rational function
  including this shift. Thus, we need at worst the maximal number of terms of
  the rational function as black-box probes while also utilizing the sparsity
- of a function to some extend. This sould lead for the average case for a
+ of a function to some extend. This sould lead for the average case to a
  drastical reduction of needed black-box probes and overall increased runtime.
  
  * When we need a shift in additional prime fields without the useage of the
