@@ -23,6 +23,7 @@
 #include "FFThieleInterpolator.hpp"
 #include <unordered_set>
 #include <queue>
+#include <list>
 
 namespace firefly {
   /**
@@ -167,8 +168,9 @@ namespace firefly {
      *  @param rec the PolyReconst object which should be fed
      *  @param saved_num the container of saved probes for the polynomial
      *  @param is_num a bool which indicates if the polynomial is in the numerator (true) or denominator (false)
+     *  @return true if the polymoial interpolation is done
      */
-    void feed_poly(int curr_deg, PolyReconst& rec, ff_map_map& saved_num, bool is_num);
+    bool feed_poly(int curr_deg, PolyReconst& rec, ff_map_map& saved_num, bool is_num);
     /**
      *  Combines the results of two different prime fields
      *  @param numerator the interpolated numerator of the current prime field
@@ -197,8 +199,8 @@ namespace firefly {
     PolynomialFF solved_num;
     PolynomialFF solved_den;
     ff_vec_map saved_ti {};
-    std::unordered_map<uint32_t, PolyReconst> coef_n {};
-    std::unordered_map<uint32_t, PolyReconst> coef_d {};
+    std::list<std::pair<uint32_t, PolyReconst>> coef_n {};
+    std::list<std::pair<uint32_t, PolyReconst>> coef_d {};
     std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_num {};// a vector entry should be just a pointer to save memory
     std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_den {};
     std::unordered_map<uint32_t, FFInt> num_sub_num {};

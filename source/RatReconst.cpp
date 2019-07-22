@@ -308,9 +308,8 @@ namespace firefly {
             canonical.second = (denominator * equalizer).coefs;
 
             if (n > 1) {
-
               // Remove constants and vanishing degrees from system of equations
-              for (uint32_t i = 0; i < (uint32_t) max_deg_num; ++i) {
+              for (uint32_t i = 0; i <= (uint32_t) max_deg_num; ++i) {
                 if (canonical.first.find( {i}) == canonical.first.end())
                   tmp_solved_coefs_num ++;
                 else if (i == 0 && canonical.first.find( {0}) != canonical.first.end()) {
@@ -320,9 +319,11 @@ namespace firefly {
                   canonical.first.erase(zero_deg);
                   dense_solve_degs_num.emplace(0);
                 }
+                else
+                  dense_solve_degs_num.emplace(i); // First write all in dense and remove if required
               }
 
-              for (uint32_t i = 0; i < (uint32_t) max_deg_den; ++i) {
+              for (uint32_t i = 0; i <= (uint32_t) max_deg_den; ++i) {
                 if (canonical.second.find( {i}) == canonical.second.end())
                   tmp_solved_coefs_den ++;
                 else if (i == 0 && canonical.second.find( {0}) != canonical.second.end()) {
@@ -332,6 +333,8 @@ namespace firefly {
                   canonical.second.erase(zero_deg);
                   dense_solve_degs_den.emplace(0);
                 }
+                else
+                  dense_solve_degs_den.emplace(i); // First write all in dense and remove if required
               }
 
               // set number of equations needed for univariate rational function
@@ -356,21 +359,42 @@ namespace firefly {
             if (first_run) {
               ff_map num_coef = canonical.first;
               ff_map den_coef = canonical.second;
+              std::vector<uint32_t> degs;
 
-              if (num_coef.size() > 1) {
-                for (const auto & el : num_coef) {
-                  if (el.second == 0) {
-                    canonical.first.erase(el.first);
-                    tmp_solved_coefs_num ++;
-                  }
-                }
+              for (const auto & el : num_coef) {
+                if (el.second == 0) {
+                  canonical.first.erase(el.first);
+                  tmp_solved_coefs_num ++;
+                } else
+                  degs.emplace_back(el.first[0]);
               }
+
+              std::sort(degs.begin(), degs.end(),
+              [](const uint32_t & l, const uint32_t & r) {
+                return l > r;
+              });
+
+              for (const auto & deg : degs) {
+                coef_n.emplace_back(std::make_pair(deg, PolyReconst(n - 1, deg, true)));
+              }
+
+              degs.clear();
 
               for (const auto & el : den_coef) {
                 if (el.second == 0) {
                   canonical.second.erase(el.first);
                   tmp_solved_coefs_den ++;
-                }
+                } else
+                  degs.emplace_back(el.first[0]);
+              }
+
+              std::sort(degs.begin(), degs.end(),
+              [](const uint32_t & l, const uint32_t & r) {
+                return l > r;
+              });
+
+              for (const auto & deg : degs) {
+                coef_d.emplace_back(std::make_pair(deg, PolyReconst(n - 1, deg, true)));
               }
 
               std::unique_lock<std::mutex> lock(mutex_status);
@@ -382,11 +406,6 @@ namespace firefly {
             for (const auto & el : canonical.first) {
               uint32_t deg = el.first[0];
 
-              if (first_run) {
-                PolyReconst rec(n - 1, deg, true);
-                coef_n.emplace(std::make_pair(deg, std::move(rec)));
-              }
-
               if (curr_zi_order[zi - 2] < deg + 2)
                 saved_num_num[curr_zi_order][ {deg, zi}] = el.second;
             }
@@ -394,11 +413,6 @@ namespace firefly {
             // Denominator
             for (const auto & el : canonical.second) {
               uint32_t deg = el.first[0];
-
-              if (first_run) {
-                PolyReconst rec(n - 1, deg, true);
-                coef_d.emplace(std::make_pair(deg, std::move(rec)));
-              }
 
               if (curr_zi_order[zi - 2] < deg + 2)
                 saved_num_den[curr_zi_order][ {deg, zi}] = el.second;
@@ -410,29 +424,26 @@ namespace firefly {
             // Prefer higher zi and zi_order to remove as many degrees as possible
             // from the system of equations. When a higher degree is interpolated,
             // try to interpolate the missing degrees sparsely.
-            for (auto & p_rec : coef_n) {
-              if (p_rec.second.get_zi_order() == curr_zi_order) {
-                feed_poly(p_rec.first, p_rec.second, saved_num_num, true);
-                coef_n[p_rec.first] = p_rec.second;
+            for (auto it = coef_n.begin(); it != coef_n.end(); ++it) {
+              if (it->second.get_zi_order() == curr_zi_order) {
+                bool poly_done = feed_poly(it->first, it->second, saved_num_num, true);
+
+                if (poly_done) {
+                  it = coef_n.erase(it);
+                  --it;
+                }
               }
             }
 
-            for (auto & p_rec : coef_d) {
-              if (p_rec.second.get_zi_order() == curr_zi_order) {
-                feed_poly(p_rec.first, p_rec.second, saved_num_den, false);
-                coef_d[p_rec.first] = p_rec.second;
+            for (auto it = coef_d.begin(); it != coef_d.end(); ++it) {
+              if (it->second.get_zi_order() == curr_zi_order) {
+                bool poly_done = feed_poly(it->first, it->second, saved_num_den, false);
+
+                if (poly_done) {
+                  it = coef_d.erase(it);
+                  --it;
+                }
               }
-            }
-
-            // Check which interpolation objects can be removed
-            for (const auto & el : solved_degs_num) {
-              if (coef_n.find(el.first) != coef_n.end())
-                coef_n.erase(el.first);
-            }
-
-            for (const auto & el : solved_degs_den) {
-              if (coef_d.find(el.first) != coef_d.end())
-                coef_d.erase(el.first);
             }
 
             // First reset values to give a starting point for comparison
@@ -1040,7 +1051,7 @@ namespace firefly {
     }
   }
 
-  void RatReconst::feed_poly(int curr_deg,
+  bool RatReconst::feed_poly(int curr_deg,
                              PolyReconst& rec,
                              ff_map_map& saved_num,
                              bool is_num) {
@@ -1067,30 +1078,24 @@ namespace firefly {
         tmp_zi = rec.get_zi() + 1;
         tmp_zi_ord = rec.get_zi_order();
       } catch (std::out_of_range& e) {
-        return;
-      }
-
-      /*
-       * Check for new prime & save subtraction term
-       */
-      if (rec.is_new_prime()) {
-        //coef[curr_deg] = rec;
-        if (is_num) {
-          solved_degs_num[curr_deg] = rec.get_result_ff();
-          dense_solve_degs_num.emplace(curr_deg);
-          tmp_solved_coefs_num ++;
-        } else {
-          solved_degs_den[curr_deg] = rec.get_result_ff();
-          dense_solve_degs_den.emplace(curr_deg);
-          tmp_solved_coefs_den ++;
-        }
-
-        {
-          std::unique_lock<std::mutex> lock(mutex_status);
-          num_eqn = max_deg_den + max_deg_num + 2 - tmp_solved_coefs_num - tmp_solved_coefs_den;
-        }
+        return false;
       }
     }
+
+    if (is_num) {
+      solved_degs_num[curr_deg] = rec.get_result_ff();
+      tmp_solved_coefs_num ++;
+    } else {
+      solved_degs_den[curr_deg] = rec.get_result_ff();
+      tmp_solved_coefs_den ++;
+    }
+
+    {
+      std::unique_lock<std::mutex> lock(mutex_status);
+      num_eqn = max_deg_den + max_deg_num + 2 - tmp_solved_coefs_num - tmp_solved_coefs_den;
+    }
+
+    return true;
   }
 
   void RatReconst::combine_primes(ff_map& numerator, ff_map& denominator) {
@@ -1115,8 +1120,6 @@ namespace firefly {
     non_solved_degs_num.clear();
     saved_num_num = ff_map_map();
     saved_num_den = ff_map_map();
-    coef_d = std::unordered_map<uint32_t, PolyReconst>();
-    coef_n = std::unordered_map<uint32_t, PolyReconst>();
 
     if (!div_by_zero) {
       if (!use_chinese_remainder) {
