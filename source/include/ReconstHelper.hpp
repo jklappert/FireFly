@@ -25,7 +25,7 @@
 namespace firefly {
 
   /**
-   *    A collection of 63-bit primes
+   *    A collection of 63-bit primes in descending order
    */
   const std::vector<uint64_t>& primes();
 

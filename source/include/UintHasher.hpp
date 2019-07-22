@@ -21,6 +21,10 @@
 #include <vector>
 
 namespace firefly {
+  /**
+  * @class UintHasher
+  * @brief A hasher for vectors of uint32_t
+  */
   class UintHasher {
   public:
     std::size_t operator()(std::vector<uint32_t> const& vec) const {
@@ -34,6 +38,10 @@ namespace firefly {
     }
   };
 
+  /**
+  * @class UintPairHasher
+  * @brief A hasher for pairs of uint32_t
+  */
   class UintPairHasher {
   public:
     std::size_t operator()(std::pair<uint32_t, uint32_t> const& pair) const {

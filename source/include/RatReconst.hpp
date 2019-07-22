@@ -211,7 +211,17 @@ namespace firefly {
     int max_deg_den = -1;
     uint32_t tmp_solved_coefs_num = 0;
     uint32_t tmp_solved_coefs_den = 0;
+    /**
+     *  Adds a coefficient for the numerator which appears to be correctly reconstructed
+     *  @param deg_vec the degree of the coefficient
+     *  @param rn the coefficient
+     */
     void remove_ni(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn);
+    /**
+     *  Adds a coefficient for the denominator which appears to be correctly reconstructed
+     *  @param deg_vec the degree of the coefficient
+     *  @param rn the coefficient
+     */
     void remove_di(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn);
     RationalFunction result;
     rn_map g_ni {}; /**< rational coefficient guesses for the numerator*/
@@ -256,6 +266,9 @@ namespace firefly {
     static ff_pair_map rand_zi;
     static bool need_prime_shift;
     static bool set_singular_system;
+    /**
+     *  Sets all required variables of this class in the "singular system" mode
+     */
     void set_singular_system_vars();
     std::vector<bool> parsed_variables {std::vector<bool>(19, false)};
     int curr_parsed_variable = -1;
