@@ -184,11 +184,11 @@ namespace firefly {
 
   void RatReconst::interpolate(const FFInt& new_ti,
                                const FFInt& num,
-                               const std::vector<uint32_t>& feed_zi_ord) {
+                               const std::vector<uint32_t>& fed_zi_ord) {
     if (!done) {
 
       // Compare if the food is the expected food; if not, store it for later use
-      if (feed_zi_ord == curr_zi_order) {
+      if (fed_zi_ord == curr_zi_order) {
         // first check if we are done. If not start the interpolation again using
         // the chinese remainder theorem in combining the previous results
         if (new_prime)
@@ -1026,11 +1026,11 @@ namespace firefly {
           }
         }
       } else {
-        if (saved_ti.find(feed_zi_ord) == saved_ti.end()) {
+        if (saved_ti.find(fed_zi_ord) == saved_ti.end()) {
           std::vector<std::pair<FFInt, FFInt>> tmp_ti = {std::make_pair(new_ti, num)};
-          saved_ti[feed_zi_ord] = tmp_ti;
+          saved_ti[fed_zi_ord] = tmp_ti;
         } else
-          saved_ti[feed_zi_ord].emplace_back(std::make_pair(new_ti, num));
+          saved_ti[fed_zi_ord].emplace_back(std::make_pair(new_ti, num));
       }
     }
   }

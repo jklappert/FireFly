@@ -41,7 +41,14 @@ namespace firefly {
      *  Resets all static variables of the object
      */
     static void reset();
-    void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime);
+    /**
+     *  Feeds a black-box probe which will be processed by the class.
+     *  @param new_ti the value of t for the current feed
+     *  @param num the black-box probe
+     *  @param fed_zi_ord the corresponding zi_order to this feed
+     *  @param fed_prime the corresponding prime number to this feed
+     */
+    void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord, const uint32_t fed_prime);
     /**
      *  @return the result of the reconstruction as a RationalFunction object
      */
@@ -122,9 +129,9 @@ namespace firefly {
      *  Starts the real interpolation managed by the class itself
      *  @param new_ti the currently used value of the homogenization variable
      *  @param num the black box probe
-     *  @param feed_zi_ord the corresponding zi_order
+     *  @param fed_zi_ord the corresponding zi_order
      */
-    void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& feed_zi_ord);
+    void interpolate(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord);
     /**
      *    Normalize the rational function such that the first non-zero coefficient
      *    of the denominator is normalized to 1
@@ -162,6 +169,11 @@ namespace firefly {
      *  @param is_num a bool which indicates if the polynomial is in the numerator (true) or denominator (false)
      */
     void feed_poly(int curr_deg, PolyReconst& rec, ff_map_map& saved_num, bool is_num);
+    /**
+     *  Combines the results of two different prime fields
+     *  @param numerator the interpolated numerator of the current prime field
+     *  @param denominator the interpolated denominator of the current prime field
+     */
     void combine_primes(ff_map& numerator, ff_map& denominator);
     /**
      *  Builds a univariate system of equations for a rational function in the first prime
