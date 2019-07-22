@@ -83,7 +83,7 @@ int main() {
   // Parse the functions from "../s_y_test.m" with the variables x, y, z, w
   ShuntingYardParser par("../parser_test/s_y_test.m", {"x","y","z","w"});
   // Parse the functions from "../s_y_1_v_test.m" with the variables x
-  //ShuntingYardParser par("../s_y_1_v_test.m", {"x"});
+  //ShuntingYardParser par("../parser_test/s_y_1_v_test.m", {"x"});
 
   // Create the user defined black box
   BlackBoxUser bb(par);
