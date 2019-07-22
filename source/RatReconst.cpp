@@ -307,36 +307,39 @@ namespace firefly {
             canonical.first = (numerator * equalizer).coefs;
             canonical.second = (denominator * equalizer).coefs;
 
-            // Remove constants and vanishing degrees from system of equations
-            for (uint32_t i = 0; i < (uint32_t) max_deg_num; ++i) {
-              if (canonical.first.find( {i}) == canonical.first.end())
-                tmp_solved_coefs_num ++;
-              else if (i == 0 && canonical.first.find( {0}) != canonical.first.end()) {
-                tmp_solved_coefs_num ++;
-                std::vector<uint32_t> zero_deg(1);
-                solved_degs_num[0] = PolynomialFF(n, {{std::vector<uint32_t> (n), canonical.first[zero_deg]}});
-                canonical.first.erase(zero_deg);
-                dense_solve_degs_num.emplace(0);
-              }
-            }
+            if (n > 1) {
 
-            for (uint32_t i = 0; i < (uint32_t) max_deg_den; ++i) {
-              if (canonical.second.find( {i}) == canonical.second.end())
-                tmp_solved_coefs_den ++;
-              else if (i == 0 && canonical.second.find( {0}) != canonical.second.end()) {
-                tmp_solved_coefs_den ++;
-                std::vector<uint32_t> zero_deg(1);
-                solved_degs_den[0] = PolynomialFF(n, {{std::vector<uint32_t> (n), canonical.second[zero_deg]}});
-                canonical.second.erase(zero_deg);
-                dense_solve_degs_den.emplace(0);
+              // Remove constants and vanishing degrees from system of equations
+              for (uint32_t i = 0; i < (uint32_t) max_deg_num; ++i) {
+                if (canonical.first.find( {i}) == canonical.first.end())
+                  tmp_solved_coefs_num ++;
+                else if (i == 0 && canonical.first.find( {0}) != canonical.first.end()) {
+                  tmp_solved_coefs_num ++;
+                  std::vector<uint32_t> zero_deg(1);
+                  solved_degs_num[0] = PolynomialFF(n, {{std::vector<uint32_t> (n), canonical.first[zero_deg]}});
+                  canonical.first.erase(zero_deg);
+                  dense_solve_degs_num.emplace(0);
+                }
               }
-            }
 
-            // set number of equations needed for univariate rational function
-            // reconstruction needed for multivariate polynomial feed
-            {
-              std::unique_lock<std::mutex> lock(mutex_status);
-              num_eqn = max_deg_den + max_deg_num + 2 - tmp_solved_coefs_num - tmp_solved_coefs_den;
+              for (uint32_t i = 0; i < (uint32_t) max_deg_den; ++i) {
+                if (canonical.second.find( {i}) == canonical.second.end())
+                  tmp_solved_coefs_den ++;
+                else if (i == 0 && canonical.second.find( {0}) != canonical.second.end()) {
+                  tmp_solved_coefs_den ++;
+                  std::vector<uint32_t> zero_deg(1);
+                  solved_degs_den[0] = PolynomialFF(n, {{std::vector<uint32_t> (n), canonical.second[zero_deg]}});
+                  canonical.second.erase(zero_deg);
+                  dense_solve_degs_den.emplace(0);
+                }
+              }
+
+              // set number of equations needed for univariate rational function
+              // reconstruction needed for multivariate polynomial feed
+              {
+                std::unique_lock<std::mutex> lock(mutex_status);
+                num_eqn = max_deg_den + max_deg_num + 2 - tmp_solved_coefs_num - tmp_solved_coefs_den;
+              }
             }
 
             t_interpolator = ThieleInterpolator();
@@ -476,6 +479,7 @@ namespace firefly {
               saved_num_num.clear();
               saved_num_den.clear();
               FFInt const_den = 0;
+
               // Calculate shift polynomials and combine with previous ones if there is any shift
               // To do so, we have to remove the shift from all solved degrees
               if (shift != std::vector<FFInt> (n)) {
@@ -938,6 +942,7 @@ namespace firefly {
                 FFInt terminator = 0;
 
                 FFInt const_den = 0;
+
                 if (normalize_to_den)
                   const_den = sub_den[0].coefs[std::vector<uint32_t> (n)];
                 else
@@ -1564,11 +1569,11 @@ namespace firefly {
     // Build result vector including subtracted coefficients which have already
     // been solved
     if (coef_mat.size() == 0) {
-      for (auto& el : solved_degs_num) {
+      for (auto & el : solved_degs_num) {
         num_sub_num[el.first] = el.second.calc_n_m_1(yis);
       }
 
-      for (auto& el : solved_degs_den) {
+      for (auto & el : solved_degs_den) {
         num_sub_den[el.first] = el.second.calc_n_m_1(yis);
       }
     }
@@ -1620,16 +1625,18 @@ namespace firefly {
       // Build result vector including subtracted coefficients which have already
       // been solved
       if (coef_mat.size() == 0) {
-        for (auto& el : solved_degs_num) {
+        for (auto & el : solved_degs_num) {
           uint32_t tmp_deg = el.first;
+
           if (dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end())
             num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis);
           else
             num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis) + sub_num[tmp_deg].calc_n_m_1(yis);
         }
 
-        for (auto& el : solved_degs_den) {
+        for (auto & el : solved_degs_den) {
           uint32_t tmp_deg = el.first;
+
           if (dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end())
             num_sub_den[tmp_deg] = el.second.calc_n_m_1(yis);
           else
