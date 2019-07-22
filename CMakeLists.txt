@@ -139,6 +139,12 @@ install(
   LIBRARY DESTINATION lib
 )
 
+if("${WITH_FLINT}" STREQUAL "true")
+  set(PKG_LIBS "-lfirefly -lgmp -lflint")
+else()
+  set(PKG_LIBS "-lfirefly -lgmp")
+endif()
+
 configure_file("cmake/pc.in" "firefly.pc" @ONLY)
 
 # install pkgconfig file

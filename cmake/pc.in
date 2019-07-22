@@ -7,5 +7,5 @@ Name: FireFly
 Description: Library for the reconstruction of rational functions over finite fields.
 Version: @PROJECT_VERSION@
 
-Libs: -L${libdir} -lfirefly -lgmp -lflint
+Libs: -L${libdir} @PKG_LIBS@
 Cflags: -I${includedir}
