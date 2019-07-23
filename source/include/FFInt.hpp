@@ -98,7 +98,7 @@ namespace firefly {
   template<typename T>
   FFInt::FFInt(const T n_) {
     if (n_ >= 0) {
-      if ((uint64_t) n_ < p) {
+      if (static_cast<uint64_t>(n_) < p) {
         n = n_;
       } else {
         n = n_ % p;

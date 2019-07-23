@@ -185,7 +185,7 @@ namespace firefly {
               combine_res = true;
               ais[zero_element].pop_back();
               finished = true;
-            } else if (deg != -1 && (uint32_t) deg == i) {
+            } else if (deg != -1 && static_cast<uint32_t>(deg) == i) {
               combine_res = true;
               finished = true;
             }

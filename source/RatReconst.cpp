@@ -210,7 +210,7 @@ namespace firefly {
 
           // Iterate through all feeds and build the uni/multivariate Gauss
           // system
-          for (auto food : t_food) {
+          for (auto& food : t_food) {
             FFInt tmp_ti = food.first;
             FFInt tmp_num = food.second;
 
@@ -283,11 +283,11 @@ namespace firefly {
               PolynomialFF zero_poly(n, {{std::vector<uint32_t> (n), 0}});
 
               // Initialize subtraction terms with zero
-              for (uint32_t i = 0; i <= (uint32_t)max_deg_num; ++i) {
+              for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_num); ++i) {
                 sub_num[i] = zero_poly;
               }
 
-              for (uint32_t i = 0; i <= (uint32_t)max_deg_den; ++i) {
+              for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_den); ++i) {
                 sub_den[i] = zero_poly;
               }
             }
@@ -309,7 +309,7 @@ namespace firefly {
 
             if (n > 1) {
               // Remove constants and vanishing degrees from system of equations
-              for (uint32_t i = 0; i <= (uint32_t) max_deg_num; ++i) {
+              for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_num); ++i) {
                 if (canonical.first.find( {i}) == canonical.first.end())
                   tmp_solved_coefs_num ++;
                 else if (i == 0 && canonical.first.find( {0}) != canonical.first.end()) {
@@ -323,7 +323,7 @@ namespace firefly {
                   dense_solve_degs_num.emplace(i); // First write all in dense and remove if required
               }
 
-              for (uint32_t i = 0; i <= (uint32_t) max_deg_den; ++i) {
+              for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_den); ++i) {
                 if (canonical.second.find( {i}) == canonical.second.end())
                   tmp_solved_coefs_den ++;
                 else if (i == 0 && canonical.second.find( {0}) != canonical.second.end()) {
@@ -515,7 +515,7 @@ namespace firefly {
               // To do so, we have to remove the shift from all solved degrees
               if (shift != std::vector<FFInt> (n)) {
                 for (int i = max_deg_num; i > -1; i--) {
-                  if (dense_solve_degs_num.find((uint32_t) i) != dense_solve_degs_num.end()) {
+                  if (dense_solve_degs_num.find(static_cast<uint32_t>(i)) != dense_solve_degs_num.end()) {
                     solved_degs_num[i] -= sub_num[i];
 
                     if (i != 0) {
@@ -527,7 +527,7 @@ namespace firefly {
                 }
 
                 for (int i = max_deg_den; i > -1; i--) {
-                  if (dense_solve_degs_den.find((uint32_t) i) != dense_solve_degs_den.end()) {
+                  if (dense_solve_degs_den.find(static_cast<uint32_t>(i)) != dense_solve_degs_den.end()) {
                     solved_degs_den[i] -= sub_den[i];
 
                     if (i != 0) {
@@ -761,7 +761,7 @@ namespace firefly {
                         }
 
                         // Remove shift
-                        if (i < (uint32_t)max_deg_num) {
+                        if (i < static_cast<uint32_t>(max_deg_num)) {
                           for (uint32_t j = 0; j < coef_mat_num[i].size(); ++j) {
                             std::vector<uint32_t> tmp_zi_ord(n - 1 , j + 1);
                             coef_mat_num[i][j] -= sub_num[i].calc_n_m_1(get_rand_zi_vec(tmp_zi_ord));
@@ -787,7 +787,7 @@ namespace firefly {
                         for (const auto & tmp_shift : calculate_shift_polynomials(tmp_poly, i)) {
                           sub_num[tmp_shift.first] += tmp_shift.second;
                         }
-                      } else if (i != (uint32_t)max_deg_num && !sub_num[i].zero() && solved_degs_num.find(i) == solved_degs_num.end()) {
+                      } else if (i != static_cast<uint32_t>(max_deg_num) && !sub_num[i].zero() && solved_degs_num.find(i) == solved_degs_num.end()) {
                         solved_degs_num[i] = sub_num[i];
                         non_solved_degs_num.erase(i);
                         tmp_solved_coefs_num ++;
@@ -852,7 +852,7 @@ namespace firefly {
                         }
 
                         // Remove shift
-                        if (i < (uint32_t)max_deg_den) {
+                        if (i < static_cast<uint32_t>(max_deg_den)) {
                           for (uint32_t j = 0; j < coef_mat_den[i].size(); ++j) {
                             std::vector<uint32_t> tmp_zi_ord(n - 1 , j + 1);
                             coef_mat_den[i][j] -= sub_den[i].calc_n_m_1(get_rand_zi_vec(tmp_zi_ord));
@@ -876,7 +876,7 @@ namespace firefly {
                         for (const auto & tmp_shift : calculate_shift_polynomials(tmp_poly, i)) {
                           sub_den[tmp_shift.first] += tmp_shift.second;
                         }
-                      } else if (i != (uint32_t)max_deg_den && !sub_den[i].zero() && solved_degs_den.find(i) == solved_degs_den.end()) {
+                      } else if (i != static_cast<uint32_t>(max_deg_den) && !sub_den[i].zero() && solved_degs_den.find(i) == solved_degs_den.end()) {
                         solved_degs_den[i] = sub_den[i];
                         non_solved_degs_den.erase(i);
                         tmp_solved_coefs_den ++;
@@ -1069,7 +1069,7 @@ namespace firefly {
     }
   }
 
-  bool RatReconst::feed_poly(int curr_deg,
+  bool RatReconst::feed_poly(uint32_t curr_deg,
                              PolyReconst& rec,
                              ff_map_map& saved_num,
                              bool is_num,
@@ -1080,7 +1080,7 @@ namespace firefly {
 
     while (!rec.is_new_prime()) {
       try {
-        std::vector<uint32_t> key = {(uint32_t) curr_deg, tmp_zi};
+        std::vector<uint32_t> key = {curr_deg, tmp_zi};
         FFInt food = saved_num.at(tmp_zi_ord).at(key);
         // delete unused saved data
         //saved_num[tmp_zi_ord].erase(key);
@@ -2504,12 +2504,12 @@ namespace firefly {
     PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
 
     // Initialize subtraction terms with zero
-    for (uint32_t i = 0; i <= (uint32_t)max_deg_num; ++i) {
+    for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_num); ++i) {
       if (sub_num.find(i) == sub_num.end())
         sub_num[i] = zero_poly;
     }
 
-    for (uint32_t i = 0; i <= (uint32_t)max_deg_den; ++i) {
+    for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_den); ++i) {
       if (sub_den.find(i) == sub_den.end())
         sub_den[i] = zero_poly;
     }
@@ -2612,11 +2612,11 @@ namespace firefly {
     sub_den = polff_map();
 
     // Initialize subtraction terms with zero
-    for (uint32_t i = 0; i <= (uint32_t)max_deg_num; ++i) {
+    for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_num); ++i) {
       sub_num[i] = zero_poly;
     }
 
-    for (uint32_t i = 0; i <= (uint32_t)max_deg_den; ++i) {
+    for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_den); ++i) {
       sub_den[i] = zero_poly;
     }
 
@@ -2686,11 +2686,11 @@ namespace firefly {
       PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
 
       // Initialize subtraction terms with zero
-      for (uint32_t i = 0; i <= (uint32_t)max_deg_num; ++i) {
+      for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_num); ++i) {
         sub_num[i] = zero_poly;
       }
 
-      for (uint32_t i = 0; i <= (uint32_t)max_deg_den; ++i) {
+      for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_den); ++i) {
         sub_den[i] = zero_poly;
       }
     }

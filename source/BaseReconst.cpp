@@ -198,11 +198,11 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_state);
       x = state;
-      count = (uint32_t)(x >> 59);
+      count = static_cast<uint32_t>((x >> 59));
       state = x * multiplier + increment;
     }
 
     x ^= x >> 18;
-    return rotr32((uint32_t)(x >> 27), count);
+    return rotr32(static_cast<uint32_t>((x >> 27)), count);
   }
 }

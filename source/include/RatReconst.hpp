@@ -171,7 +171,7 @@ namespace firefly {
      *  @param sparse indicates whether the polynomial interpolation shoud be done sparsely
      *  @return true if the polymoial interpolation is done
      */
-    bool feed_poly(int curr_deg, PolyReconst& rec, ff_map_map& saved_num, bool is_num, bool sparse = false);
+    bool feed_poly(uint32_t curr_deg, PolyReconst& rec, ff_map_map& saved_num, bool is_num, bool sparse = false);
     /**
      *  Combines the results of two different prime fields
      *  @param numerator the interpolated numerator of the current prime field

@@ -432,7 +432,7 @@ namespace firefly {
     if (!coefs.empty()) {
       std::vector<std::string> vars {};
 
-      for (int i = 0; i < n - 1; i++) {
+      for (uint32_t i = 0; i < n - 1; i++) {
         vars.emplace_back(std::string(1, ShuntingYardParser::get_var(i)));
       }
 
