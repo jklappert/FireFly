@@ -168,9 +168,10 @@ namespace firefly {
      *  @param rec the PolyReconst object which should be fed
      *  @param saved_num the container of saved probes for the polynomial
      *  @param is_num a bool which indicates if the polynomial is in the numerator (true) or denominator (false)
+     *  @param sparse indicates whether the polynomial interpolation shoud be done sparsely
      *  @return true if the polymoial interpolation is done
      */
-    bool feed_poly(int curr_deg, PolyReconst& rec, ff_map_map& saved_num, bool is_num);
+    bool feed_poly(int curr_deg, PolyReconst& rec, ff_map_map& saved_num, bool is_num, bool sparse = false);
     /**
      *  Combines the results of two different prime fields
      *  @param numerator the interpolated numerator of the current prime field
@@ -319,6 +320,7 @@ namespace firefly {
     std::unordered_set<uint32_t> dense_solve_degs_den {};
     std::unordered_set<uint32_t> zero_degs_num {};
     std::unordered_set<uint32_t> zero_degs_den {};
+    bool restart_sparse_interpolation = false;
     /**
      *  Calculates the polynomials emerging from a parameter shift effecting lower degrees
      *  @param poly the seed polynomial

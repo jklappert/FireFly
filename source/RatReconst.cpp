@@ -425,8 +425,18 @@ namespace firefly {
             // from the system of equations. When a higher degree is interpolated,
             // try to interpolate the missing degrees sparsely.
             for (auto it = coef_n.begin(); it != coef_n.end(); ++it) {
-              if (it->second.get_zi_order() == curr_zi_order) {
-                bool poly_done = feed_poly(it->first, it->second, saved_num_num, true);
+              if (it->second.get_zi_order() == curr_zi_order || restart_sparse_interpolation) {
+                bool poly_done = false;
+
+                if (restart_sparse_interpolation) {
+                  it -> second = PolyReconst(n - 1, it->first, true);
+                  restart_sparse_interpolation = false;
+                }
+
+                if (dense_solve_degs_num.find(it->first) != dense_solve_degs_num.end())
+                  poly_done = feed_poly(it->first, it->second, saved_num_num, true);
+                else
+                  poly_done = feed_poly(it->first, it->second, saved_num_num, true, true);
 
                 if (poly_done) {
                   it = coef_n.erase(it);
@@ -436,8 +446,18 @@ namespace firefly {
             }
 
             for (auto it = coef_d.begin(); it != coef_d.end(); ++it) {
-              if (it->second.get_zi_order() == curr_zi_order) {
-                bool poly_done = feed_poly(it->first, it->second, saved_num_den, false);
+              if (it->second.get_zi_order() == curr_zi_order || restart_sparse_interpolation) {
+                bool poly_done = false;
+
+                if (restart_sparse_interpolation) {
+                  it -> second = PolyReconst(n - 1, it->first, true);
+                  restart_sparse_interpolation = false;
+                }
+
+                if (dense_solve_degs_den.find(it->first) != dense_solve_degs_den.end())
+                  poly_done = feed_poly(it->first, it->second, saved_num_den, false);
+                else
+                  poly_done = feed_poly(it->first, it->second, saved_num_den, false, true);
 
                 if (poly_done) {
                   it = coef_d.erase(it);
@@ -495,9 +515,8 @@ namespace firefly {
               // To do so, we have to remove the shift from all solved degrees
               if (shift != std::vector<FFInt> (n)) {
                 for (int i = max_deg_num; i > -1; i--) {
-                  if (solved_degs_num.find((uint32_t) i) != solved_degs_num.end()) {
-                    if (i != max_deg_num)
-                      solved_degs_num[i] -= sub_num[i];
+                  if (dense_solve_degs_num.find((uint32_t) i) != dense_solve_degs_num.end()) {
+                    solved_degs_num[i] -= sub_num[i];
 
                     if (i != 0) {
                       for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_num[i], i)) {
@@ -508,9 +527,8 @@ namespace firefly {
                 }
 
                 for (int i = max_deg_den; i > -1; i--) {
-                  if (solved_degs_den.find((uint32_t) i) != solved_degs_den.end()) {
-                    if (i != max_deg_den)
-                      solved_degs_den[i] -= sub_den[i];
+                  if (dense_solve_degs_den.find((uint32_t) i) != dense_solve_degs_den.end()) {
+                    solved_degs_den[i] -= sub_den[i];
 
                     if (i != 0) {
                       for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_den[i], i)) {
@@ -1054,9 +1072,11 @@ namespace firefly {
   bool RatReconst::feed_poly(int curr_deg,
                              PolyReconst& rec,
                              ff_map_map& saved_num,
-                             bool is_num) {
+                             bool is_num,
+                             bool sparse
+                            ) {
     uint32_t tmp_zi = rec.get_zi() + 1;
-    std::vector<uint32_t> tmp_zi_ord = curr_zi_order;
+    std::vector<uint32_t> tmp_zi_ord = rec.get_zi_order();
 
     while (!rec.is_new_prime()) {
       try {
@@ -1068,13 +1088,18 @@ namespace firefly {
         std::vector<FFInt> yis = get_rand_zi_vec(tmp_zi_ord);
 
         // feed to PolyReconst
-        //FFInt sub = 0;
+        if (sparse && shift != std::vector<FFInt> (n)) {
+          FFInt sub = 0;
 
-        // Check if one needs to subtract the shift
-        //if (curr_deg != (int)max_deg && sub_count < sub_save[curr_deg].size())
-        //  sub = sub_save[curr_deg][sub_count].calc_n_m_1(yis);
+          if (is_num)
+            sub = sub_num[curr_deg].calc_n_m_1(yis);
+          else
+            sub = sub_den[curr_deg].calc_n_m_1(yis);
 
-        rec.feed(yis, food/* - sub*/);
+          rec.feed(yis, food - sub);
+        } else
+          rec.feed(yis, food);
+
         tmp_zi = rec.get_zi() + 1;
         tmp_zi_ord = rec.get_zi_order();
       } catch (std::out_of_range& e) {
@@ -1085,9 +1110,68 @@ namespace firefly {
     if (is_num) {
       solved_degs_num[curr_deg] = rec.get_result_ff();
       tmp_solved_coefs_num ++;
+
+      if (curr_deg == coef_n.front().first) {
+        for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_num[curr_deg], curr_deg)) {
+          sub_num[tmp_shift.first] += tmp_shift.second;
+        }
+
+        if (dense_solve_degs_num.find(curr_deg) != dense_solve_degs_num.end())
+          dense_solve_degs_num.erase(curr_deg);
+
+        // Reset the polynomial interplolation and to it sparsely
+        if (coef_n.size() > 1) {
+          uint32_t tmp_deg = (++coef_n.begin()) -> first;
+          dense_solve_degs_num.erase(tmp_deg);
+          restart_sparse_interpolation = true;
+
+          for (uint32_t tmp_deg_2 = curr_deg - 1; tmp_deg_2 > tmp_deg; tmp_deg_2--) {
+            if (solved_degs_num.find(tmp_deg_2) != solved_degs_num.end()) {
+              solved_degs_num[tmp_deg_2] -= sub_num[tmp_deg_2];
+
+              if (dense_solve_degs_num.find(tmp_deg_2) != dense_solve_degs_num.end())
+                dense_solve_degs_num.erase(tmp_deg_2);
+
+              for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_num[tmp_deg_2], tmp_deg_2)) {
+                sub_num[tmp_shift.first] += tmp_shift.second;
+              }
+            }
+          }
+        }
+      }
     } else {
       solved_degs_den[curr_deg] = rec.get_result_ff();
       tmp_solved_coefs_den ++;
+
+      if (curr_deg == coef_d.front().first) {
+        for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_den[curr_deg], curr_deg)) {
+          sub_den[tmp_shift.first] += tmp_shift.second;
+        }
+
+        if (dense_solve_degs_den.find(curr_deg) != dense_solve_degs_den.end())
+          dense_solve_degs_den.erase(curr_deg);
+
+        // Reset the polynomial interplolation and to it sparsely
+        if (coef_d.size() > 1) {
+          uint32_t tmp_deg = (++coef_d.begin()) -> first;
+          dense_solve_degs_den.erase(tmp_deg);
+          restart_sparse_interpolation = true;
+
+          for (uint32_t tmp_deg_2 = curr_deg - 1; tmp_deg_2 > tmp_deg; tmp_deg_2--) {
+            if (solved_degs_den.find(tmp_deg_2) != solved_degs_den.end()) {
+
+              solved_degs_den[tmp_deg_2] -= sub_den[tmp_deg_2];
+
+              if (dense_solve_degs_den.find(tmp_deg_2) != dense_solve_degs_den.end())
+                dense_solve_degs_den.erase(tmp_deg_2);
+
+              for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_den[tmp_deg_2], tmp_deg_2)) {
+                sub_den[tmp_shift.first] += tmp_shift.second;
+              }
+            }
+          }
+        }
+      }
     }
 
     {
@@ -1573,11 +1657,21 @@ namespace firefly {
     // been solved
     if (coef_mat.size() == 0) {
       for (auto & el : solved_degs_num) {
-        num_sub_num[el.first] = el.second.calc_n_m_1(yis);
+        uint32_t tmp_deg = el.first;
+
+        if (dense_solve_degs_num.find(tmp_deg) != dense_solve_degs_num.end())
+          num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis);
+        else
+          num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis) + sub_num[tmp_deg].calc_n_m_1(yis);
       }
 
       for (auto & el : solved_degs_den) {
-        num_sub_den[el.first] = el.second.calc_n_m_1(yis);
+        uint32_t tmp_deg = el.first;
+
+        if (dense_solve_degs_den.find(tmp_deg) != dense_solve_degs_den.end())
+          num_sub_den[tmp_deg] = el.second.calc_n_m_1(yis);
+        else
+          num_sub_den[tmp_deg] = el.second.calc_n_m_1(yis) + sub_den[tmp_deg].calc_n_m_1(yis);
       }
     }
 
@@ -1631,7 +1725,7 @@ namespace firefly {
         for (auto & el : solved_degs_num) {
           uint32_t tmp_deg = el.first;
 
-          if (dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end())
+          if (dense_solve_degs_num.find(tmp_deg) != dense_solve_degs_num.end())
             num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis);
           else
             num_sub_num[tmp_deg] = el.second.calc_n_m_1(yis) + sub_num[tmp_deg].calc_n_m_1(yis);
@@ -1640,7 +1734,7 @@ namespace firefly {
         for (auto & el : solved_degs_den) {
           uint32_t tmp_deg = el.first;
 
-          if (dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end())
+          if (dense_solve_degs_den.find(tmp_deg) != dense_solve_degs_den.end())
             num_sub_den[tmp_deg] = el.second.calc_n_m_1(yis);
           else
             num_sub_den[tmp_deg] = el.second.calc_n_m_1(yis) + sub_den[tmp_deg].calc_n_m_1(yis);
