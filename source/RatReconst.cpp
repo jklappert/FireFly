@@ -1435,8 +1435,10 @@ namespace firefly {
     if (prime_number + 1 < interpolations) {
       max_deg_num = -1;
       first_run = true;
-      std::unique_lock<std::mutex> lock_statics(mutex_statics);
-      need_prime_shift = true;
+      {
+        std::unique_lock<std::mutex> lock_statics(mutex_statics);
+        need_prime_shift = true;
+      }
 
       // Check if the state should be written out after this prime
       if (tag.size() > 0)
