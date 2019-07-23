@@ -19,10 +19,7 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
-#include <vector>
 
-#include "UintHasher.hpp"
 #include "PolynomialFF.hpp"
 #include "Monomial.hpp"
 

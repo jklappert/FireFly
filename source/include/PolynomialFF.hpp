@@ -18,11 +18,8 @@
 
 #pragma once
 
-#include <iostream>
-#include <unordered_map>
 #include "RationalNumber.hpp"
 #include "UintHasher.hpp"
-#include "FFInt.hpp"
 #include "ShuntingYardParser.hpp"
 
 namespace firefly {

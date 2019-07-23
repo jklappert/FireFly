@@ -23,7 +23,6 @@
 #include "FFThieleInterpolator.hpp"
 #include <unordered_set>
 #include <queue>
-#include <list>
 
 namespace firefly {
   /**

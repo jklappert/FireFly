@@ -19,8 +19,6 @@
 
 #include <iostream>
 #include <math.h>
-#include <string>
-#include <vector>
 #include <random>
 #include <limits>
 #include "FFInt.hpp"

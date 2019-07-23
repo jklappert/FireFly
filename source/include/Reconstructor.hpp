@@ -23,7 +23,6 @@
 #include "ThreadPool.hpp"
 
 #include <chrono>
-#include <list>
 #include <tuple>
 
 namespace firefly {

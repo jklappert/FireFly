@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include <gmpxx.h>
 #include "RationalNumber.hpp"
 #include "PolynomialFF.hpp"
 #include "BaseReconst.hpp"

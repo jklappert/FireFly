@@ -19,7 +19,6 @@
 #include "PolynomialFF.hpp"
 #include "Logger.hpp"
 #include <map>
-#include <chrono>
 
 namespace firefly {
 

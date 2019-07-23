@@ -1,6 +1,5 @@
 #pragma once
 
-#include "FFInt.hpp"
 #include "PolynomialFF.hpp"
 
 namespace firefly {

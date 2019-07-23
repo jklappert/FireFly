@@ -18,12 +18,10 @@
 
 #pragma once
 
-#include <vector>
-#include <mutex>
-#include <unordered_map>
 #include "RationalNumber.hpp"
 #include "PolynomialFF.hpp"
 #include "UintHasher.hpp"
+#include <mutex>
 #include <stdint.h>
 
 namespace firefly {

@@ -18,10 +18,6 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
-#include "RationalNumber.hpp"
 #include "Polynomial.hpp"
 
 namespace firefly {
