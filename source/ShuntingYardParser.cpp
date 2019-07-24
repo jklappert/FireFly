@@ -57,6 +57,12 @@ namespace firefly {
       for (const auto & el : vars_conv_map) {
         fun = std::regex_replace(fun, std::regex(el.second), std::string(1, el.first));
       }
+
+    }
+
+    // Check for global signs
+    if (fun.size() > 2 && ((fun[0] == '+' || fun[0] == '-') && fun[1] == '(')) {
+        fun.insert(fun.begin(), '0');
     }
 
     char const* l_ptr = fun.c_str();
@@ -78,11 +84,11 @@ namespace firefly {
           tmp = "";
         }
 
-        if (!op_stack.empty() && *(l_ptr - 1) == '(') {
+        if (!op_stack.empty() && *(l_ptr - 1) == '(')
           tmp.insert(tmp.begin(), *l_ptr);
-        } else if (op_stack.empty() && pf.empty()) {
+        else if (op_stack.empty() && pf.empty())
           tmp.insert(tmp.begin(), *l_ptr);
-        } else {
+        else {
 
           while (!op_stack.empty() && op_stack.top() != '(' && get_weight(op_stack.top()) >= get_weight(*l_ptr)) {
             pf.emplace_back(std::string(1, op_stack.top()));
