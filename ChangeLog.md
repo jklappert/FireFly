@@ -39,6 +39,8 @@ Bug fixes
  * If the number of variables was set to 1 and the black box was just a constant,
  the interpolation failed. This has been fixed and constants for one variable
  are interpolatable again.
+ 
+ * The `ShuntingYardParser` could not parse negative variables. That has been fixed.
 
 
 FireFly 1.1.1
