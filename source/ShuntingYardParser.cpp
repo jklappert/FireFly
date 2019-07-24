@@ -70,14 +70,9 @@ namespace firefly {
       // If operator pop operators off the stack until it is empty
       if (is_operand(*l_ptr))
         tmp += *l_ptr;
-      else if (is_variable(*l_ptr)) {
-        if (tmp.length() > 0) {
-          pf.emplace_back(tmp);
-          tmp = "";
-        }
-
-        pf.emplace_back(std::string(1, *l_ptr));
-      } else if (is_operator(*l_ptr)) {
+      else if (is_variable(*l_ptr))
+        tmp += *l_ptr;
+      else if (is_operator(*l_ptr)) {
         if (tmp.length() > 0) {
           pf.emplace_back(tmp);
           tmp = "";
@@ -190,21 +185,35 @@ namespace firefly {
             }
           }
         } else {
-          const char* var = token.c_str();
-
-          // check first if the token is a is_variable
-          if (vars_conv_map.find(var[0]) != vars_conv_map.end())
-            nums.push(values[vars_map.at(vars_conv_map.at(var[0]))]);
           // check then if number has more than 18 digits
-          else if (token.length() > 18)
+          if (token.length() > 18)
             nums.push(FFInt(mpz_class(token)));
           else {
             if (token[0] == '-') {
               std::string tmp = token;
               tmp.erase(0, 1);
-              nums.push(-FFInt(std::stoull(tmp)));
+              const char* var = tmp.c_str();
+
+              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
+                nums.push(-values[vars_map.at(vars_conv_map.at(var[0]))]);
+              else
+                nums.push(-FFInt(std::stoull(tmp)));
+            } else if (token[0] == '+') {
+              std::string tmp = token;
+              tmp.erase(0, 1);
+              const char* var = tmp.c_str();
+
+              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
+                nums.push(values[vars_map.at(vars_conv_map.at(var[0]))]);
+              else
+                nums.push(FFInt(std::stoull(tmp)));
             } else {
-              nums.push(FFInt(std::stoull(token)));
+              const char* var = token.c_str();
+
+              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
+                nums.push(values[vars_map.at(vars_conv_map.at(var[0]))]);
+              else
+                nums.push(FFInt(std::stoull(token)));
             }
           }
         }
@@ -269,6 +278,11 @@ namespace firefly {
 
           case operands::VARIABLE : {
             nums.push(values[token.second.n]);
+            break;
+          }
+
+          case operands::NEG_VARIABLE : {
+            nums.push(-values[token.second.n]);
             break;
           }
 
@@ -384,25 +398,39 @@ namespace firefly {
             }
           }
         } else {
-          const char* var = token.c_str();
-
-          // check first if the token is a is_variable
-          if (vars_conv_map.find(var[0]) != vars_conv_map.end())
-            precomp_tokens[i][j] = {operands::VARIABLE, vars_map.at(vars_conv_map.at(var[0]))};
           // check then if number has more than 18 digits
-          else if (token.length() > 18)
+          if (token.length() > 18)
             precomp_tokens[i][j] = {operands::NUMBER, FFInt(mpz_class(token))};
           else {
             if (token[0] == '-') {
               std::string tmp = token;
               tmp.erase(0, 1);
-              precomp_tokens[i][j] = {operands::NUMBER, (-FFInt(std::stoull(tmp)))};
-            } else
-              precomp_tokens[i][j] = {operands::NUMBER, FFInt(std::stoull(token))};
+              const char* var = tmp.c_str();
+
+              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
+                precomp_tokens[i][j] = {operands::NEG_VARIABLE, vars_map.at(vars_conv_map.at(var[0]))};
+              else
+                precomp_tokens[i][j] = {operands::NUMBER, (-FFInt(std::stoull(tmp)))};
+            } else if (token[0] == '+') {
+              std::string tmp = token;
+              tmp.erase(0, 1);
+              const char* var = tmp.c_str();
+
+              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
+                precomp_tokens[i][j] = {operands::VARIABLE, vars_map.at(vars_conv_map.at(var[0]))};
+              else
+                precomp_tokens[i][j] = {operands::NUMBER, (FFInt(std::stoull(tmp)))};
+            } else {
+              const char* var = token.c_str();
+
+              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
+                precomp_tokens[i][j] = {operands::VARIABLE, vars_map.at(vars_conv_map.at(var[0]))};
+              else
+                precomp_tokens[i][j] = {operands::NUMBER, (FFInt(std::stoull(token)))};
+            }
           }
         }
       }
     }
   }
 }
-

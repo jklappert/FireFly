@@ -141,6 +141,7 @@ namespace firefly {
     enum operands {
       OPERATOR,
       VARIABLE,
+      NEG_VARIABLE,
       NUMBER
     };
   }
