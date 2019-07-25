@@ -621,6 +621,16 @@ namespace firefly {
       }
     }
 
+    if (save_states && prime_it) {
+      for (auto & tag : tags) {
+        mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        std::string file_name_old = "ff_save/" + tag + "_" + std::to_string(prime_it - 1) + ".txt";
+        std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_it) + ".txt";
+
+        std::rename(file_name_old.c_str(), file_name_new.c_str());
+      }
+    }
+
     total_iterations += iteration;
   }
 
