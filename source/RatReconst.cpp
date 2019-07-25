@@ -2084,8 +2084,8 @@ namespace firefly {
     if (prime_number > 0) {
       std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
 
-      //if (std::remove(old_file_name.c_str()) != 0)
-      //  WARNING_MSG("The previously saved file '" + old_file_name + "' could not be removed.");
+      if (std::remove(old_file_name.c_str()) != 0)
+        WARNING_MSG("The previously saved file '" + old_file_name + "' could not be removed.");
     }
   }
 
@@ -2670,6 +2670,7 @@ namespace firefly {
       }
 
       if (done) {
+        is_singular_system = false;
         if (tag.size() > 0)
           save_state();
 
