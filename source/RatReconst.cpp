@@ -126,7 +126,7 @@ namespace firefly {
           if (prime_number == 100) {
             ERROR_MSG("Your interpolation requests more than 100 primes.");
             std::exit(-1);
-          } else if (zero_counter == 3 && prime_number == 3) {
+          } else if (zero_counter >= 3 && prime_number >= 3) {
             new_prime = false;
             done = true;
             g_ni[std::vector<uint32_t>(n)] = RationalNumber(0, 1);
@@ -209,7 +209,7 @@ namespace firefly {
 
           // Iterate through all feeds and build the uni/multivariate Gauss
           // system
-          for (auto& food : t_food) {
+          for (auto & food : t_food) {
             FFInt tmp_ti = food.first;
             FFInt tmp_num = food.second;
 
@@ -1401,6 +1401,13 @@ namespace firefly {
       }
 
       if (prime_number + 1 >= interpolations) {
+        if (is_singular_system) {
+          {
+            std::unique_lock<std::mutex> lock_statics(mutex_statics);
+            need_prime_shift = true;
+          }
+        }
+
         // Check if the state should be written out after this prime
         if (tag.size() > 0)
           save_state();
@@ -1926,7 +1933,7 @@ namespace firefly {
     file << "is_done\n" << is_done() << "\n";
     file << "max_deg_num\n" << max_deg_num << "\n";
     file << "max_deg_den\n" << max_deg_den << "\n";
-    file << "need_prime_shift\n" << need_prime_shift << "\n";
+    file << "need_prime_shift\n" << is_singular_system << "\n";
     file << "normalizer_deg\n";
     std::string tmp_vec = "";
 
@@ -2084,8 +2091,8 @@ namespace firefly {
     if (prime_number > 0) {
       std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
 
-      if (std::remove(old_file_name.c_str()) != 0)
-        WARNING_MSG("The previously saved file '" + old_file_name + "' could not be removed.");
+      //if (std::remove(old_file_name.c_str()) != 0)
+      //  WARNING_MSG("The previously saved file '" + old_file_name + "' could not be removed.");
     }
   }
 
@@ -2215,7 +2222,7 @@ namespace firefly {
               }
 
               case NEED_PRIME_SHIFT: {
-                if (!is_done())
+                if (!is_done() && !need_prime_shift)
                   need_prime_shift = std::stoi(line);
 
                 break;
@@ -2763,3 +2770,5 @@ namespace firefly {
     return res;
   }
 }
+
+
