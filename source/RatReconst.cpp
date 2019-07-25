@@ -2218,6 +2218,7 @@ namespace firefly {
               case NEED_PRIME_SHIFT: {
                 tmp_need_shift = std::stoi(line);
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
                 if (!is_done() && !need_prime_shift)
                   need_prime_shift = std::stoi(line);
 
