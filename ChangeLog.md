@@ -41,6 +41,8 @@ Bug fixes
  are interpolatable again.
  
  * The `ShuntingYardParser` could not parse negative variables. That has been fixed.
+ 
+ * The `ShuntingYardParser` could not handel global signs. That has been fixed.
 
 
 FireFly 1.1.1
