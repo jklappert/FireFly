@@ -2089,12 +2089,13 @@ namespace firefly {
     }
   }
 
-  void RatReconst::start_from_saved_file(std::string file_name) {
+  std::pair<bool, uint32_t> RatReconst::start_from_saved_file(std::string file_name) {
     std::string line;
     std::ifstream file(file_name.c_str());
     bool first = true;
     parse_prime_number(file_name);
     check_interpolation = true;
+    bool tmp_need_shift = false;
 
     bool is_zero = false;
 
@@ -2114,7 +2115,7 @@ namespace firefly {
           parsed_variables[COMBINED_PRIME] = true;
         } else if (is_zero) {
           if (prime_number >= 2) {
-            std::unique_lock<std::mutex> lock_statics(mutex_status);
+            std::unique_lock<std::mutex> lock_status(mutex_status);
             new_prime = false;
             done = true;
             g_ni[std::vector<uint32_t>(n)] = RationalNumber(0, 1);
@@ -2134,7 +2135,7 @@ namespace firefly {
           }
 
           file.close();
-          return;
+          return std::make_pair(false, prime_number);
         } else {
           if (line == "is_done") {
             curr_parsed_variable = IS_DONE;
@@ -2193,13 +2194,13 @@ namespace firefly {
           } else {
             switch (curr_parsed_variable) {
               case COMBINED_PRIME: {
-                std::unique_lock<std::mutex> lock_statics(mutex_status);
+                std::unique_lock<std::mutex> lock_status(mutex_status);
                 combined_prime = mpz_class(line);
                 break;
               }
 
               case IS_DONE: {
-                std::unique_lock<std::mutex> lock_statics(mutex_status);
+                std::unique_lock<std::mutex> lock_status(mutex_status);
                 done = std::stoi(line);
                 break;
               }
@@ -2215,6 +2216,8 @@ namespace firefly {
               }
 
               case NEED_PRIME_SHIFT: {
+                tmp_need_shift = std::stoi(line);
+                std::unique_lock<std::mutex> lock_statics(mutex_statics);
                 if (!is_done() && !need_prime_shift)
                   need_prime_shift = std::stoi(line);
 
@@ -2223,7 +2226,7 @@ namespace firefly {
 
               case NORMALIZER_DEG: {
                 normalizer_deg = parse_vector(line);
-                std::unique_lock<std::mutex> lock_statics(mutex_status);
+                std::unique_lock<std::mutex> lock_status(mutex_status);
 
                 n = normalizer_deg.size();
                 break;
@@ -2424,6 +2427,8 @@ namespace firefly {
       for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<FFInt> {};
 
       for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<FFInt> {};
+
+      return std::make_pair(tmp_need_shift, prime_number);
     } else {
       ERROR_MSG("The file '" + file_name + "' could not be found!");
       std::exit(-1);

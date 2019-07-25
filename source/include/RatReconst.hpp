@@ -97,8 +97,9 @@ namespace firefly {
     /**
      *  If called, the reconstruction will start from the state saved in a file
      *  @param file_name the absolute path to the saved state file
+     *  @return a pair of a bool which indicates if the current objects needs a shift and an uint32_t for the prime number
      */
-    void start_from_saved_file(std::string file_name);
+    std::pair<bool, uint32_t> start_from_saved_file(std::string file_name);
     /**
      *  Enables the scan for a sparsest shift
      */
