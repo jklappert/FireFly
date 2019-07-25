@@ -19,6 +19,7 @@
 #include "Reconstructor.hpp"
 #include "utils.hpp"
 #include "version.hpp"
+#include <sys/stat.h>
 
 namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
@@ -79,21 +80,33 @@ namespace firefly {
     resume_from_state = true;
     file_paths = file_paths_;
     items = file_paths.size();
-    uint32_t counter = 0;
+    prime_it = 200; // increase so that the minimum is the mininmum of the files
 
     for (uint32_t i = 0; i != items; ++i) {
       uint32_t old_it = prime_it;
       prime_it = std::min(prime_it, parse_prime_number(file_paths[i]));
-
-      if (prime_it > old_it)
-        counter = i;
     }
 
-    tmp_rec.start_from_saved_file(file_paths[counter]);
+    tmp_rec.start_from_saved_file(file_paths[0]);
+
+    size_t tag_size = tags.size();
 
     for (uint32_t i = 0; i != items; ++i) {
       RatReconst* rec = new RatReconst(n);
-      rec->start_from_saved_file(file_paths[i]);
+      std::pair<bool, uint32_t> shift_prime = rec->start_from_saved_file(file_paths[i]);
+
+      if (shift_prime.first && shift_prime.second > min_prime_keep_shift) {
+        min_prime_keep_shift = shift_prime.second;
+      }
+
+      if (save_states) {
+        if (tag_size > 0)
+          rec->set_tag(tags[i]);
+        else {
+          rec->set_tag(std::to_string(i));
+          tags.emplace_back(std::to_string(i));
+        }
+      }
 
       if (rec->is_done()) {
         ++items_done;
@@ -146,6 +159,8 @@ namespace firefly {
       } else {
         start_first_runs();
       }
+    } else {
+      scan = false;
     }
 
     run_until_done();
@@ -359,8 +374,10 @@ namespace firefly {
       if (save_states) {
         if (tag_size > 0)
           rec->set_tag(tags[i]);
-        else
+        else {
           rec->set_tag(std::to_string(i));
+          tags.emplace_back(std::to_string(i));
+        }
       }
 
       rec->feed(t, probe[i], zi_order, prime_it);
@@ -399,6 +416,16 @@ namespace firefly {
 
         clean_reconst();
 
+        if (save_states && prime_it) {
+          for (auto & tag : tags) {
+            mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            std::string file_name_old = "ff_save/" + tag + "_" + std::to_string(prime_it - 1) + ".txt";
+            std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_it) + ".txt";
+
+            std::rename(file_name_old.c_str(), file_name_new.c_str());
+          }
+        }
+
         total_iterations += iteration;
         ++prime_it;
 
@@ -428,7 +455,7 @@ namespace firefly {
           probes_for_next_prime = thr_n;
         }
 
-        if (!safe_mode && !tmp_rec.need_shift()) {
+        if (!safe_mode && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             if (verbosity > SILENT)
               INFO_MSG("Disable shift.");
