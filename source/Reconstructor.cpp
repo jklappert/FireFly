@@ -83,7 +83,7 @@ namespace firefly {
 
     for (uint32_t i = 0; i != items; ++i) {
       uint32_t old_it = prime_it;
-      prime_it = std::max(prime_it, parse_prime_number(file_paths[i]));
+      prime_it = std::min(prime_it, parse_prime_number(file_paths[i]));
 
       if (prime_it > old_it)
         counter = i;
