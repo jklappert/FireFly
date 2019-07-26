@@ -83,7 +83,6 @@ namespace firefly {
     prime_it = 200; // increase so that the minimum is the mininmum of the files
 
     for (uint32_t i = 0; i != items; ++i) {
-      uint32_t old_it = prime_it;
       prime_it = std::min(prime_it, parse_prime_number(file_paths[i]));
     }
 
