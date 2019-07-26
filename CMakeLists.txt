@@ -42,7 +42,7 @@ endif()
 # set the build type to release. If one needs debugging symbols, compile
 # with "-DCMAKE_BUILD_TYPE=Debug"
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 # set the C++ standard

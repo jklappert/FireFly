@@ -47,6 +47,20 @@ namespace firefly {
      */
     virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) = 0;
     /**
+     *  TODO
+     *  @param
+     *  @return
+     */
+    virtual std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>>& values_vec) {
+      std::vector<std::vector<FFInt>> results_vec(values_vec.size());
+
+      for (const auto & values : values_vec) {
+        results_vec.emplace_back(values);
+      }
+
+      return results_vec;
+    }
+    /**
      *  Update internal variables of the black box when the prime field changes.
      *  This function is called from Reconstructor.
      */
@@ -70,6 +84,14 @@ namespace firefly {
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
     Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_ = IMPORTANT);
+    /**
+     * TODO
+     *  A constructor for the Reconstructor class
+     *  @param n_ the number of parameters
+     *  @param thr_n_ the number of threads being used during the reconstruction
+     *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
+     */
+    Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_, uint32_t verbosity_ = IMPORTANT);
     /**
      *  A destructor for the Reconstructor class
      */
@@ -118,6 +140,7 @@ namespace firefly {
     std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
     uint32_t n;
     uint32_t thr_n;
+    uint32_t bunch_size = 1;
     BlackBoxBase& bb;
     int verbosity;
     RatReconst_list reconst;
