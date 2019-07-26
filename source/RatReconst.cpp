@@ -126,7 +126,7 @@ namespace firefly {
           if (prime_number == 100) {
             ERROR_MSG("Your interpolation requests more than 100 primes.");
             std::exit(-1);
-          } else if (zero_counter >= 3 && prime_number >= 3) {
+          } else if (zero_counter == 3 && prime_number == 3) {
             new_prime = false;
             done = true;
             g_ni[std::vector<uint32_t>(n)] = RationalNumber(0, 1);
