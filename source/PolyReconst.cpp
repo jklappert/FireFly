@@ -23,7 +23,6 @@
 #include "utils.hpp"
 #include "Poly.hpp"
 
-
 namespace firefly {
   // TODO check if this interpolates in combination with RatReconst to use the
   // static rand_zi of RatReconst to save additional memory -> note that
@@ -760,7 +759,7 @@ namespace firefly {
     bt_threshold = threshold;
   }
 
-  bool PolyReconst::berlekamp_massey_step(std::vector<uint32_t>& key) {
+  bool PolyReconst::berlekamp_massey_step(const std::vector<uint32_t>& key) {
     FFInt delta_r = 0;
 
     for (size_t i = 0; i < lambda[key].size(); i++) {
@@ -831,7 +830,7 @@ namespace firefly {
     return false;
   }
 
-  std::pair<std::vector<FFInt>, std::vector<size_t>> PolyReconst::rootsexponents(std::vector<uint32_t>& key, const FFInt& base) {
+  std::pair<std::vector<FFInt>, std::vector<size_t>> PolyReconst::rootsexponents(const std::vector<uint32_t>& key, const FFInt& base) {
     std::pair<std::vector<FFInt>, std::vector<size_t>> roots;
     FFInt a(1);
     size_t count = 0;
@@ -871,7 +870,7 @@ namespace firefly {
     return roots;
   }
 
-  std::pair<std::vector<FFInt>, std::vector<size_t>> PolyReconst::rootsexponents_with_poly_class(std::vector<uint32_t>& key, const FFInt& base) {
+  std::pair<std::vector<FFInt>, std::vector<size_t>> PolyReconst::rootsexponents_with_poly_class(const std::vector<uint32_t>& key, const FFInt& base) {
     std::pair<std::vector<FFInt>, std::vector<size_t>> rootsexponent;
     Poly lambdapoly(lambda[key]);
     lambdapoly.rev();
@@ -901,7 +900,7 @@ namespace firefly {
     return rootsexponent;
   }
 
-  std::vector<FFInt> PolyReconst::solve_transposed_vandermonde(std::vector<FFInt>& vis, std::vector<FFInt>& fis) {
+  std::vector<FFInt> PolyReconst::solve_transposed_vandermonde(const std::vector<FFInt>& vis, const std::vector<FFInt>& fis) const {
     uint32_t num_eqn = vis.size();
 
     if (num_eqn == 0) {
@@ -948,7 +947,7 @@ namespace firefly {
     return result;
   }
 
-  void PolyReconst::check_for_tmp_solved_degs_for_bt(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& coeffs, std::vector<size_t>& exponents) {
+  void PolyReconst::check_for_tmp_solved_degs_for_bt(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& coeffs, const std::vector<size_t>& exponents) {
     ff_map tmp;
 
     for (size_t i = 0; i < exponents.size(); i++) {

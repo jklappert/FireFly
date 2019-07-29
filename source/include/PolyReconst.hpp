@@ -25,8 +25,8 @@
 
 namespace firefly {
   /**
-   * @class PolyReconst
-   * @brief A class to reconstruct a polynomial from its values
+   *  @class PolyReconst
+   *  @brief A class to reconstruct a polynomial from its values
    */
   class PolyReconst : public BaseReconst {
   public:
@@ -94,21 +94,20 @@ namespace firefly {
      */
     static void reset();
     /**
-    * Sets the threshold for the Ben-Or and Tiwari univariate interpolations
-    * @param threshold the value of the threshold
-    */
+     *  Sets the threshold for the Ben-Or and Tiwari univariate interpolations
+     *  @param threshold the value of the threshold
+     */
     static void set_bt_threshold(size_t threshold);
     /**
-    * Turns the Newton Interpolation on/off. Default is on.
-    * @param use_newton_new if true Newton Interpolation is used, if false it is not used
-    */
+     *  Turns the Newton Interpolation on/off. Default is on.
+     *  @param use_newton_new if true Newton Interpolation is used, if false it is not used
+     */
     static void set_newton(bool use_newton_new);
     /**
-    * Turns the Ben-Or and Tiwari Interpolation on/off. Default is on.
-    * @param use_bt_new if true Newton Interpolation is used, if false it is not used
-    */
+     *  Turns the Ben-Or and Tiwari Interpolation on/off. Default is on.
+     *  @param use_bt_new if true Newton Interpolation is used, if false it is not used
+     */
     static void set_bt(bool use_bt_new);
-
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -150,38 +149,38 @@ namespace firefly {
      */
     ff_map build_and_solve_transposed_vandermonde();
     /**
-    * updates the minimal polynomial with the Berlekamp-Massey algorithm for the new numerical
-    * @param key the key of the corresponding Polynomials/Variables one wants to update
-    * @return true if the termination condition is fulfilled and false otherwise
-    */
-    bool berlekamp_massey_step(std::vector<uint32_t>& key);
+     *  updates the minimal polynomial with the Berlekamp-Massey algorithm for the new numerical
+     *  @param key the key of the corresponding Polynomials/Variables one wants to update
+     *  @return true if the termination condition is fulfilled and false otherwise
+     */
+    bool berlekamp_massey_step(const std::vector<uint32_t>& key);
     /**
-    * calculates the roots of the minimal polynomial (lambda) and the corresponding exponents to the anchor points
-    * @param key the key of the Polynomial lambda on wich to find the roots on
-    * @param base the base of wich the roots are powers of
-    * @return a vector of the roots. They are stored as a pair where the first entry is the root itself and the second entry is the power to wich the anchor point equals aforementioned root
-    */
-    std::pair<std::vector<FFInt>, std::vector<size_t>> rootsexponents(std::vector<uint32_t>& key, const FFInt& base);
+     *  calculates the roots of the minimal polynomial (lambda) and the corresponding exponents to the anchor points
+     *  @param key the key of the Polynomial lambda on wich to find the roots on
+     *  @param base the base of wich the roots are powers of
+     *  @return a vector of the roots. They are stored as a pair where the first entry is the root itself and the second entry is the power to wich the anchor point equals aforementioned root
+     */
+    std::pair<std::vector<FFInt>, std::vector<size_t>> rootsexponents(const std::vector<uint32_t>& key, const FFInt& base);
     /**
-    * calculates the roots of the minimal polynomial (lambda) and the corresponding exponents to the anchor points, with the help of the Poly-Class; is not used, only exists for debugging
-    * @param key the key of the Polynomial lambda on wich to find the roots on
-    * @param base the base of wich the roots are powers of
-    * @return a vector of the roots. They are stored as a pair where the first entry is the root itself and the second entry is the power to wich the anchor point equals aforementioned root
-    */
-    std::pair<std::vector<FFInt>, std::vector<size_t>> rootsexponents_with_poly_class(std::vector<uint32_t>& key, const FFInt& base);
+     *  calculates the roots of the minimal polynomial (lambda) and the corresponding exponents to the anchor points, with the help of the Poly-Class; is not used, only exists for debugging
+     *  @param key the key of the Polynomial lambda on wich to find the roots on
+     *  @param base the base of wich the roots are powers of
+     *  @return a vector of the roots. They are stored as a pair where the first entry is the root itself and the second entry is the power to wich the anchor point equals aforementioned root
+     */
+    std::pair<std::vector<FFInt>, std::vector<size_t>> rootsexponents_with_poly_class(const std::vector<uint32_t>& key, const FFInt& base);
     /**
-    * solves the transposed shifted Vandermonde System
-    * @param vis the evaluation point
-    * @param fis the numerical values
-    * @return a map with a degree as key and FFInt as value of the solved transposed Vandermonde system
-    */
-    std::vector<FFInt> solve_transposed_vandermonde(std::vector<FFInt>& vis, std::vector<FFInt>& fis);
+     *  solves the transposed shifted Vandermonde System
+     *  @param vis the evaluation point
+     *  @param fis the numerical values
+     *  @return a map with a degree as key and FFInt as value of the solved transposed Vandermonde system
+     */
+    std::vector<FFInt> solve_transposed_vandermonde(const std::vector<FFInt>& vis, const std::vector<FFInt>& fis) const;
     /**
-    * if a Ben-Or and Tiwari interpolation suceeds, remove the degree from the vandermonde system
-    * @param deg_vec the degree vector of the monomial of which the coefficient polynomial was successfully interpolated
-    * @param coeffs the coefficients of the interpolated polynomial
-    */
-    void check_for_tmp_solved_degs_for_bt(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& coeffs, std::vector<size_t>& exponents);
+     *  if a Ben-Or and Tiwari interpolation suceeds, remove the degree from the vandermonde system
+     *  @param deg_vec the degree vector of the monomial of which the coefficient polynomial was successfully interpolated
+     *  @param coeffs the coefficients of the interpolated polynomial
+     */
+    void check_for_tmp_solved_degs_for_bt(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& coeffs, const std::vector<size_t>& exponents);
     std::list<std::tuple<FFInt, std::vector<uint32_t>>> queue;
     int deg = -1;
     bool with_rat_reconst = false;
