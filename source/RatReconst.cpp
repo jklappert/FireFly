@@ -1805,7 +1805,7 @@ namespace firefly {
     }
   }
 
-  FFInt RatReconst::get_rand_zi(uint32_t zi, uint32_t order) {
+  FFInt RatReconst::get_rand_zi(uint32_t zi, uint32_t order) const {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return rand_zi.at(std::make_pair(zi, order));
   }
@@ -1830,7 +1830,7 @@ namespace firefly {
     return res;
   }
 
-  FFInt RatReconst::get_zi_shift(uint32_t zi) {
+  FFInt RatReconst::get_zi_shift(uint32_t zi) const {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return shift[zi - 1];
   }
@@ -1847,12 +1847,12 @@ namespace firefly {
     scan = false;
   }
 
-  bool RatReconst::get_is_interpolating() {
+  bool RatReconst::get_is_interpolating() const {
     std::unique_lock<std::mutex> lock(mutex_status);
     return is_interpolating;
   }
 
-  std::vector<FFInt> RatReconst::get_zi_shift_vec() {
+  std::vector<FFInt> RatReconst::get_zi_shift_vec() const {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return shift;
   }

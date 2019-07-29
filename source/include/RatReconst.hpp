@@ -70,7 +70,7 @@ namespace firefly {
      *  @param order the order of zi, i.e. zi^order
      *  @returns the random number of zi at a given order
      */
-    FFInt get_rand_zi(uint32_t zi, uint32_t order);
+    FFInt get_rand_zi(uint32_t zi, uint32_t order) const;
     /**
      *  @param orders a vector of all zi orders
      *  @param generate generates the random values if they are not already generated
@@ -81,11 +81,11 @@ namespace firefly {
      *  @param zi the zi of which one wants to get the shift
      *  @return the corresponding shift as an FFInt
      */
-    FFInt get_zi_shift(uint32_t zi);
+    FFInt get_zi_shift(uint32_t zi) const;
     /**
      *  @return a vector which holds all shifts for each variable ordered like {z1_s, z2_s,...}, where zi_s is the shift of zi
      */
-    std::vector<FFInt> get_zi_shift_vec();
+    std::vector<FFInt> get_zi_shift_vec() const;
     /**
      *  @return true if the reconstruction object still needs a shift
      */
@@ -121,7 +121,7 @@ namespace firefly {
     /**
      *  @return is_interpolating
      */
-    bool get_is_interpolating();
+    bool get_is_interpolating() const;
     /**
      *  With this option a full interpolation is performed over all prime fields to be sensitive of unlicky primes
      */
