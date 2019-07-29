@@ -1,3 +1,13 @@
+FireFly 1.2.1
+=============
+
+Bug fixes
+---------
+
+ * A minor oversampling could happen if the singular system case was present.
+ This has been fixed.
+
+
 FireFly 1.2.0
 =============
 
