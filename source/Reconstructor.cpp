@@ -646,7 +646,7 @@ namespace firefly {
       FFInt t = tmp_rec.get_rand();
       values[0] = t + shift[0];
 
-      std::vector<firefly::FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order);
+      std::vector<firefly::FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
 
       for (uint32_t i = 1; i != n; ++i) {
         values[i] = rand_zi[i - 1] * t + shift[i];

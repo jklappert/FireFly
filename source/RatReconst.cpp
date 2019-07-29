@@ -1043,14 +1043,6 @@ namespace firefly {
                 std::transform(curr_zi_order.begin(), curr_zi_order.end(),
                 curr_zi_order.begin(), [](uint32_t x) {return x + 1;});
 
-                for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
-                  auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
-                  std::unique_lock<std::mutex> lock_statics(mutex_statics);
-
-                  if (rand_zi.find(key) == rand_zi.end())
-                    rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
-                }
-
                 if (!is_singular_system)
                   num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
                 else
@@ -1818,9 +1810,18 @@ namespace firefly {
     return rand_zi.at(std::make_pair(zi, order));
   }
 
-  std::vector<FFInt> RatReconst::get_rand_zi_vec(const std::vector<uint32_t>& order) {
+  std::vector<FFInt> RatReconst::get_rand_zi_vec(const std::vector<uint32_t>& order, bool generate) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> res {};
+
+    if (generate) {
+      for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
+        auto key = std::make_pair(tmp_zi, order[tmp_zi - 2]);
+
+        if (rand_zi.find(key) == rand_zi.end())
+          rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
+      }
+    }
 
     for (uint32_t i = 2; i <= n; ++i) {
       res.emplace_back(rand_zi.at(std::make_pair(i, order[i - 2])));
