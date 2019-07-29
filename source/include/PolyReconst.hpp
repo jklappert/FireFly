@@ -62,16 +62,16 @@ namespace firefly {
      *  @param order the order of zi, i.e. zi^order
      *  @returns the random number of zi at a given order
      */
-    FFInt get_rand_zi(uint32_t zi, uint32_t order);
+    FFInt get_rand_zi(uint32_t zi, uint32_t order) const;
     /**
      *  @param orders a vector of all zi orders
      *  @return a vector of all random numbers of the given orders
      */
-    std::vector<FFInt> get_rand_zi_vec(const std::vector<uint32_t>& orders);
+    std::vector<FFInt> get_rand_zi_vec(const std::vector<uint32_t>& orders) const;
     /**
      *  @return true if the rand_zi container is empty
      */
-    bool is_rand_zi_empty();
+    bool is_rand_zi_empty() const;
     /**
      *  @return a Polynomial object if the reconstruction finished succesfully
      */

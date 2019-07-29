@@ -687,12 +687,12 @@ namespace firefly {
     }
   }
 
-  FFInt PolyReconst::get_rand_zi(uint32_t zi, uint32_t order) {
+  FFInt PolyReconst::get_rand_zi(uint32_t zi, uint32_t order) const {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return rand_zi.at(std::make_pair(zi, order));
   }
 
-  std::vector<FFInt> PolyReconst::get_rand_zi_vec(const std::vector<uint32_t>& orders) {
+  std::vector<FFInt> PolyReconst::get_rand_zi_vec(const std::vector<uint32_t>& orders) const {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> yis {};
 
@@ -703,7 +703,7 @@ namespace firefly {
     return yis;
   }
 
-  bool PolyReconst::is_rand_zi_empty() {
+  bool PolyReconst::is_rand_zi_empty() const {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     return rand_zi.empty();
   }
