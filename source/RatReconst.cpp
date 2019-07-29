@@ -1040,7 +1040,6 @@ namespace firefly {
               {
                 std::unique_lock<std::mutex> lock(mutex_status);
                 saved_ti.erase(curr_zi_order);
-                //TODO not needed anymore
                 std::transform(curr_zi_order.begin(), curr_zi_order.end(),
                 curr_zi_order.begin(), [](uint32_t x) {return x + 1;});
 
