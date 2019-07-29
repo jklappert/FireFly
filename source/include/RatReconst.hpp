@@ -125,6 +125,11 @@ namespace firefly {
      *  With this option a full interpolation is performed over all prime fields to be sensitive of unlicky primes
      */
     void set_safe_interpolation();
+    /**
+     *  Returns the required feeds for new primes
+     *  @return the vector of required feeds where the first entry is the multiplicity and the second entry is the number of different t, e.g, (3,4) means this object needs for 3 different zi order 4 black-box probes with different t
+     */
+    std::vector<std::pair<uint32_t, uint32_t>> get_needed_feed_vec() const;
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -320,6 +325,7 @@ namespace firefly {
     std::unordered_set<uint32_t> dense_solve_degs_den {};
     std::unordered_set<uint32_t> zero_degs_num {};
     std::unordered_set<uint32_t> zero_degs_den {};
+    std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec {};
     bool restart_sparse_interpolation = false;
     /**
      *  Calculates the polynomials emerging from a parameter shift effecting lower degrees

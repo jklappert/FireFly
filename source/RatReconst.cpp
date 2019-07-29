@@ -25,6 +25,7 @@
 #include <cmath>
 #include <fstream>
 #include <sys/stat.h>
+#include <map>
 
 namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
@@ -1039,6 +1040,7 @@ namespace firefly {
               {
                 std::unique_lock<std::mutex> lock(mutex_status);
                 saved_ti.erase(curr_zi_order);
+                //TODO not needed anymore
                 std::transform(curr_zi_order.begin(), curr_zi_order.end(),
                 curr_zi_order.begin(), [](uint32_t x) {return x + 1;});
 
@@ -1926,7 +1928,12 @@ namespace firefly {
     file << "is_done\n" << is_done() << "\n";
     file << "max_deg_num\n" << max_deg_num << "\n";
     file << "max_deg_den\n" << max_deg_den << "\n";
-    file << "need_prime_shift\n" << is_singular_system << "\n";
+
+    if (interpolations > 1)
+      file << "need_prime_shift\n" << "1" << "\n";
+    else
+      file << "need_prime_shift\n" << is_singular_system << "\n";
+
     file << "normalizer_deg\n";
     std::string tmp_vec = "";
 
@@ -2523,9 +2530,10 @@ namespace firefly {
 
     std::vector<uint32_t> zero_vec(n);
 
-    for (const auto & el : sub_num) {
+    for (auto & el : sub_num) {
       if (el.first != max_num_coef_num.first) {
         if (non_solved_degs_num.find(el.first) != non_solved_degs_num.end()) {
+          el.second.remove_zero_coefs();
           std::unordered_set<std::vector<uint32_t>, UintHasher> tmp_set;
           std::vector<std::vector<uint32_t>> tmp_vec = non_solved_degs_num[el.first];
 
@@ -2545,6 +2553,8 @@ namespace firefly {
           }
         } else {
           if (!(!normalize_to_den && el.first == 0) && !el.second.zero()) {
+            el.second.remove_zero_coefs();
+
             if (el.second.coefs.size() < max_num_coef_num.second) {
               dense_solve_degs_num.emplace(el.first);
               std::vector<std::vector<uint32_t>> tmp_vec;
@@ -2569,9 +2579,10 @@ namespace firefly {
       }
     }
 
-    for (const auto & el : sub_den) {
+    for (auto & el : sub_den) {
       if (el.first != max_num_coef_den.first) {
         if (non_solved_degs_den.find(el.first) != non_solved_degs_den.end()) {
+          el.second.remove_zero_coefs();
           std::unordered_set<std::vector<uint32_t>, UintHasher> tmp_set;
           std::vector<std::vector<uint32_t>> tmp_vec = non_solved_degs_den[el.first];
 
@@ -2591,6 +2602,8 @@ namespace firefly {
           }
         } else {
           if (!(normalize_to_den && el.first == 0) && !el.second.zero()) {
+            el.second.remove_zero_coefs();
+
             if (el.second.coefs.size() < max_num_coef_den.second) {
               dense_solve_degs_den.emplace(el.first);
               std::vector<std::vector<uint32_t>> tmp_vec;
@@ -2657,6 +2670,7 @@ namespace firefly {
       }
     }
 
+    needed_feed_vec.clear();
     sub_num = polff_map();
     sub_den = polff_map();
     solved_degs_num.clear();
@@ -2671,6 +2685,7 @@ namespace firefly {
 
       if (done) {
         is_singular_system = false;
+
         if (tag.size() > 0)
           save_state();
 
@@ -2755,9 +2770,132 @@ namespace firefly {
     if (prime_number < interpolations) {
       std::unique_lock<std::mutex> lock(mutex_status);
       zi = 1;
+    } else { // Get total amount of needed feeds to interpolate this function over the current prime
+
+      std::map<uint32_t, uint32_t> r_map {};
+
+      if (is_singular_system) {
+        // Check when we can remove functions from the sytem of equations
+        for (const auto & el : coef_mat_num) {
+          bool is_dense = dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end();
+
+          if (is_dense) {
+            uint32_t size = non_solved_degs_num[el.first].size();
+
+            if (r_map.find(size) != r_map.end())
+              r_map[size] ++;
+            else
+              r_map[size] = 1;
+          } else if (el.first == max_num_coef_num.first)
+            r_map[non_solved_degs_num[el.first].size()] = 1;
+        }
+
+        for (const auto & el : coef_mat_den) {
+          bool is_dense = dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end();
+
+          if (is_dense) {
+            uint32_t size = non_solved_degs_den[el.first].size();
+
+            if (r_map.find(size) != r_map.end())
+              r_map[size] ++;
+            else
+              r_map[size] = 1;
+          } else if (el.first == max_num_coef_den.first) {
+            uint32_t size = non_solved_degs_den[el.first].size();
+
+            if (r_map.find(size) != r_map.end())
+              r_map[size] ++;
+            else
+              r_map[size] = 1;
+          }
+        }
+
+        // Fill the feed vector
+        uint32_t last_number_of_terms = 0;
+        uint32_t tmp_max_num_eqn = num_eqn;
+        bool num_done = false;
+        bool den_done = false;
+
+        for (const auto & el : r_map) {
+          uint32_t multiplicity;
+          uint32_t tmp_num_eqn = tmp_max_num_eqn;
+
+          if (last_number_of_terms == 0)
+            multiplicity = el.first;
+          else {
+            multiplicity = el.first - last_number_of_terms;
+
+            tmp_num_eqn -= r_map[last_number_of_terms];
+
+            if (num_done) {
+              tmp_num_eqn -= non_solved_degs_num.size() - dense_solve_degs_num.size() - 1; // correct for already removed degrees
+              num_done = false;
+            }
+
+            if (den_done) {
+              tmp_num_eqn -= non_solved_degs_den.size() - dense_solve_degs_den.size() - 1; // correct for already removed degrees
+              den_done = false;
+            }
+
+            if (!num_done && el.first == max_num_coef_num.second)
+              num_done = true;
+
+            if (!den_done && el.first == max_num_coef_den.second)
+              den_done = true;
+          }
+
+          needed_feed_vec.emplace_back(std::make_pair(multiplicity, tmp_num_eqn));
+          last_number_of_terms = el.first;
+          tmp_max_num_eqn = tmp_num_eqn;
+        }
+      } else {
+        // Check when we can remove functions from the sytem of equations
+        for (const auto & el : coef_mat_num) {
+          uint32_t size = non_solved_degs_num[el.first].size();
+
+          if (r_map.find(size) != r_map.end())
+            r_map[size] ++;
+          else
+            r_map[size] = 1;
+        }
+
+        for (const auto & el : coef_mat_den) {
+          uint32_t size = non_solved_degs_den[el.first].size();
+
+          if (r_map.find(size) != r_map.end())
+            r_map[size] ++;
+          else
+            r_map[size] = 1;
+        }
+
+        // Fill the feed vector
+        uint32_t last_number_of_terms = 0;
+        uint32_t tmp_max_num_eqn = num_eqn;
+
+        for (const auto & el : r_map) {
+          uint32_t multiplicity;
+          uint32_t tmp_num_eqn = tmp_max_num_eqn;
+
+          if (last_number_of_terms == 0)
+            multiplicity = el.first;
+          else {
+            multiplicity = el.first - last_number_of_terms;
+
+            tmp_num_eqn -= r_map[last_number_of_terms];
+          }
+
+          needed_feed_vec.emplace_back(std::make_pair(multiplicity, tmp_num_eqn));
+          last_number_of_terms = el.first;
+          tmp_max_num_eqn = tmp_num_eqn;
+        }
+      }
     }
 
     return false;
+  }
+
+  std::vector<std::pair<uint32_t, uint32_t>> RatReconst::get_needed_feed_vec() const {
+    return needed_feed_vec;
   }
 
   std::vector<FFInt> RatReconst::get_anchor_points() {
@@ -2770,5 +2908,3 @@ namespace firefly {
     return res;
   }
 }
-
-
