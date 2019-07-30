@@ -1043,6 +1043,14 @@ namespace firefly {
                 std::transform(curr_zi_order.begin(), curr_zi_order.end(),
                 curr_zi_order.begin(), [](uint32_t x) {return x + 1;});
 
+                for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
+                  auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
+
+                  std::unique_lock<std::mutex> lock_statics(mutex_statics);
+                  if (rand_zi.find(key) == rand_zi.end())
+                    rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
+                }
+
                 if (!is_singular_system)
                   num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
                 else
@@ -1103,29 +1111,31 @@ namespace firefly {
       solved_degs_num[curr_deg] = rec.get_result_ff();
       tmp_solved_coefs_num ++;
 
-      if (curr_deg == coef_n.front().first) {
-        for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_num[curr_deg], curr_deg)) {
-          sub_num[tmp_shift.first] += tmp_shift.second;
-        }
+      if (shift != std::vector<FFInt> (n)) {
+        if (curr_deg == coef_n.front().first) {
+          for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_num[curr_deg], curr_deg)) {
+            sub_num[tmp_shift.first] += tmp_shift.second;
+          }
 
-        if (dense_solve_degs_num.find(curr_deg) != dense_solve_degs_num.end())
-          dense_solve_degs_num.erase(curr_deg);
+          if (dense_solve_degs_num.find(curr_deg) != dense_solve_degs_num.end())
+            dense_solve_degs_num.erase(curr_deg);
 
-        // Reset the polynomial interplolation and to it sparsely
-        if (coef_n.size() > 1) {
-          uint32_t tmp_deg = (++coef_n.begin()) -> first;
-          dense_solve_degs_num.erase(tmp_deg);
-          restart_sparse_interpolation = true;
+          // Reset the polynomial interplolation and do it sparsely
+          if (coef_n.size() > 1) {
+            uint32_t tmp_deg = (++coef_n.begin()) -> first;
+            dense_solve_degs_num.erase(tmp_deg);
+            restart_sparse_interpolation = true;
 
-          for (uint32_t tmp_deg_2 = curr_deg - 1; tmp_deg_2 > tmp_deg; tmp_deg_2--) {
-            if (solved_degs_num.find(tmp_deg_2) != solved_degs_num.end()) {
-              solved_degs_num[tmp_deg_2] -= sub_num[tmp_deg_2];
+            for (uint32_t tmp_deg_2 = curr_deg - 1; tmp_deg_2 > tmp_deg; tmp_deg_2--) {
+              if (solved_degs_num.find(tmp_deg_2) != solved_degs_num.end()) {
+                solved_degs_num[tmp_deg_2] -= sub_num[tmp_deg_2];
 
-              if (dense_solve_degs_num.find(tmp_deg_2) != dense_solve_degs_num.end())
-                dense_solve_degs_num.erase(tmp_deg_2);
+                if (dense_solve_degs_num.find(tmp_deg_2) != dense_solve_degs_num.end())
+                  dense_solve_degs_num.erase(tmp_deg_2);
 
-              for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_num[tmp_deg_2], tmp_deg_2)) {
-                sub_num[tmp_shift.first] += tmp_shift.second;
+                for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_num[tmp_deg_2], tmp_deg_2)) {
+                  sub_num[tmp_shift.first] += tmp_shift.second;
+                }
               }
             }
           }
@@ -1135,30 +1145,32 @@ namespace firefly {
       solved_degs_den[curr_deg] = rec.get_result_ff();
       tmp_solved_coefs_den ++;
 
-      if (curr_deg == coef_d.front().first) {
-        for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_den[curr_deg], curr_deg)) {
-          sub_den[tmp_shift.first] += tmp_shift.second;
-        }
+      if (shift != std::vector<FFInt> (n)) {
+        if (curr_deg == coef_d.front().first) {
+          for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_den[curr_deg], curr_deg)) {
+            sub_den[tmp_shift.first] += tmp_shift.second;
+          }
 
-        if (dense_solve_degs_den.find(curr_deg) != dense_solve_degs_den.end())
-          dense_solve_degs_den.erase(curr_deg);
+          if (dense_solve_degs_den.find(curr_deg) != dense_solve_degs_den.end())
+            dense_solve_degs_den.erase(curr_deg);
 
-        // Reset the polynomial interplolation and to it sparsely
-        if (coef_d.size() > 1) {
-          uint32_t tmp_deg = (++coef_d.begin()) -> first;
-          dense_solve_degs_den.erase(tmp_deg);
-          restart_sparse_interpolation = true;
+          // Reset the polynomial interplolation and do it sparsely
+          if (coef_d.size() > 1) {
+            uint32_t tmp_deg = (++coef_d.begin()) -> first;
+            dense_solve_degs_den.erase(tmp_deg);
+            restart_sparse_interpolation = true;
 
-          for (uint32_t tmp_deg_2 = curr_deg - 1; tmp_deg_2 > tmp_deg; tmp_deg_2--) {
-            if (solved_degs_den.find(tmp_deg_2) != solved_degs_den.end()) {
+            for (uint32_t tmp_deg_2 = curr_deg - 1; tmp_deg_2 > tmp_deg; tmp_deg_2--) {
+              if (solved_degs_den.find(tmp_deg_2) != solved_degs_den.end()) {
 
-              solved_degs_den[tmp_deg_2] -= sub_den[tmp_deg_2];
+                solved_degs_den[tmp_deg_2] -= sub_den[tmp_deg_2];
 
-              if (dense_solve_degs_den.find(tmp_deg_2) != dense_solve_degs_den.end())
-                dense_solve_degs_den.erase(tmp_deg_2);
+                if (dense_solve_degs_den.find(tmp_deg_2) != dense_solve_degs_den.end())
+                  dense_solve_degs_den.erase(tmp_deg_2);
 
-              for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_den[tmp_deg_2], tmp_deg_2)) {
-                sub_den[tmp_shift.first] += tmp_shift.second;
+                for (const auto & tmp_shift : calculate_shift_polynomials(solved_degs_den[tmp_deg_2], tmp_deg_2)) {
+                  sub_den[tmp_shift.first] += tmp_shift.second;
+                }
               }
             }
           }
@@ -1814,14 +1826,14 @@ namespace firefly {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> res {};
 
-    if (generate) {
+    /*if (generate) {
       for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
         auto key = std::make_pair(tmp_zi, order[tmp_zi - 2]);
 
         if (rand_zi.find(key) == rand_zi.end())
           rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
       }
-    }
+    }*/
 
     for (uint32_t i = 2; i <= n; ++i) {
       res.emplace_back(rand_zi.at(std::make_pair(i, order[i - 2])));
