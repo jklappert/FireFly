@@ -4,12 +4,12 @@ FireFly 1.2.1
 Bug fixes
 ---------
 
- * A minor oversampling could happen if the singular system case was present.
- This has been fixed.
+ * Fixed a minor oversampling which occurred in some cases.
 
- * Using the `ShuntingYardParser` with variables that were also used internally,
- (a,b,c,...,z), could lead to wrongly parsed functions. Now only the user defined
- variables are parsed without replacing them. Thanks to Rob Schabinger.
+ * The `ShuntingYardParser` could parse functions wrongly if the variables
+ coincided with internal variables (a,b,c,...,z) which were used for
+ replacements. Now, only the user-defined variables are parsed without replacing
+ them. We thank Robert Schabinger for noticing.
 
 
 FireFly 1.2.0
