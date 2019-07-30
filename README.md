@@ -1,6 +1,6 @@
 # FireFly
 
-[![Build Status](https://travis-ci.org/jklappert/FireFly.svg?branch=master)](https://travis-ci.org/jklappert/FireFly) [![](https://img.shields.io/github/tag/jklappert/firefly)](https://gitlab.com/firefly-library/firefly/-/tags/1.2.0)
+[![Build Status](https://travis-ci.org/jklappert/FireFly.svg?branch=master)](https://travis-ci.org/jklappert/FireFly) [![](https://img.shields.io/github/tag/jklappert/firefly)](https://gitlab.com/firefly-library/firefly/-/tags/1.2.1)
 
 FireFly is a reconstruction library for rational functions and polynomials written in C++.
 
@@ -39,6 +39,7 @@ If FLINT is used for modular arithmetic and it cannot be found in the default sy
 ```
 
 where `FLINT_LIB_PATH` is the absolute path pointing to the shared library of FLINT.
+
 
 ## Reconstructing functions
 To reconstruct functions with FireFly it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
@@ -81,6 +82,49 @@ rec.get_result();
 
 Additional options can be set and we refer to the `example.cpp` file and the code documentation.
 
+
+## Directly parse collections of rational functions
+When the conversion and compilation steps of the `convert_to_ff.sh` scripts are too time consuming, FireFly also provides a parser class for rational functions. The functions will be stored in reverse polish notation to be evaluated for a given parameter point. Parsing collections of rational functions can be done with the `ShuntingYardParser` class. It has to be constructed with a path to a file which contains the rational functions and a vector which sets the occurring variables:
+
+```cpp
+ShuntingYardParser parser(path, vars);
+```
+
+Here, `path` is a string containing the path to the file in which the needed functions are stored and `vars` is a vector of strings which represent the occurring variables. The collection of functions have to be separated by new lines to be identified correctly, e.g.,
+
+```
+(x+y*3)/(z^2+x)
+(12132132323213213212/33*x + 12 * 3 - x^100*y^2)/(3*y^5)
+```
+
+The corresponding vector `vars` would thus be
+
+```
+std::vector<std::string> vars = {"x","y","z"};
+```
+
+The functions have to be parsed only once and can be evaluated afterwards calling
+
+```cpp
+parser.evaluate(values);
+//parser.evaluate_pre(values); // Evaluates the black-box functions with precomputed values (faster than evaluate()). Requires parser.precompute_tokens() after the field has changed.
+```
+
+where `values` is a vector which contains the parameter point at which the functions should be evaluated. The function `evaluate` returns a vector of `FFInt` objects which is filled by the values of the evaluated functions in the same order as the functions are defined in the input file. Thus, it can be directly used in the `BlackBox` functor of FireFly. An example file is given in `s_y_test.m`. Note that only the operators
+
+```
++, -, *, /, ^
+```
+
+are supported.
+
+For convenience, FireFly also provides a script which converts a list of rational functions (stored as an expression list of Mathematica) to FireFly's parsable format. It is located in the `mma_2_ff` directory and can be executed with
+
+```
+./convert_to_sy.sh $FILE
+```
+
+where `$FILE` contains the list of rational functions.
 
 
 ## Converting Mathematica expressions to C++ code
@@ -125,48 +169,6 @@ A build directory will be created (`/build`) in which the executable and the obj
 
 which will be performed using the number of threads defined in the conversion process.
 
-## Directly parse collections of rational functions
-When the conversion and compilation steps of the `convert_to_ff.sh` scripts are too time consuming, FireFly also provides a parser class for rational functions. The functions will be stored in reverse polish notation to be evaluated for a given parameter point. Parsing collections of rational functions can be done with the `ShuntingYardParser` class. It has to be constructed with a path to a file which contains the rational functions and a vector which sets the occurring variables:
-
-```cpp
-ShuntingYardParser parser(path, vars);
-```
-
-Here, `path` is a string containing the path to the file in which the needed functions are stored and `vars` is a vector of strings which represent the occurring variables. The collection of functions have to be separated by new lines to be identified correctly, e.g.,
-
-```
-(x+y*3)/(z^2+x)
-(12132132323213213212/33*x + 12 * 3 - x^100*y^2)/(3*y^5)
-```
-
-The corresponding vector `vars` would thus be
-
-```
-std::vector<std::string> vars = {"x","y","z"};
-```
-
-The functions have to be parsed only once and can be evaluated afterwards calling
-
-```cpp
-parser.evaluate(values);
-//parser.evaluate_pre(values); // Evaluates the black-box functions with precomputed values (faster than evaluate()). Requires parser.precompute_tokens() after the field has changed.
-```
-
-where `values` is a vector which contains the parameter point at which the functions should be evaluated. The function `evaluate` returns a vector of `FFInt` objects which is filled by the values of the evaluated functions in the same order as the functions are defined in the input file. Thus, it can be directly used in the `BlackBox` functor of FireFly. An example file is given in `s_y_test.m`. Note that only the operators
-
-```
-+, -, *, /, ^
-```
-
-are supported.
-
-For convenience, FireFly also provides a script which converts a list of rational functions (stored as an expression list of Mathematica) to FireFly's parsable format. It is located in the `mma_2_ff` directory and can be executed with
-
-```
-./convert_to_sy.sh $FILE
-```
-
-where `$FILE` contains the list of rational functions.
 
 ## Code Documentation
 Doxygen can be used to generate code documentation. To generate the documentation, run

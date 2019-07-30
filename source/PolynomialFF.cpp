@@ -428,10 +428,11 @@ namespace firefly {
 
   void PolynomialFF::generate_hornerff() {
     if (!coefs.empty()) {
-      std::vector<std::string> vars {};
 
-      for (uint32_t i = 0; i < n - 1; i++) {
-        vars.emplace_back("a" + std::to_string(i));
+      if (vars.empty()) {
+        for (uint32_t i = 0; i < n - 1; i++) {
+          vars.emplace_back("a" + std::to_string(i));
+        }
       }
 
       ff_map coefs_n_m_1 {};
