@@ -6,18 +6,9 @@
 
 namespace firefly {
 
-  std::unordered_map<int, char> ShuntingYardParser::int_var_map;
-
-  ShuntingYardParser::ShuntingYardParser() {
-    if (int_var_map.empty())
-      int_var_map = init_int_var_map();
-  }
+  ShuntingYardParser::ShuntingYardParser() {}
 
   ShuntingYardParser::ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars) {
-
-    if (int_var_map.empty())
-      int_var_map = init_int_var_map();
-
     INFO_MSG("Parsing functions in '" + file + "'.");
     auto time0 = std::chrono::high_resolution_clock::now();
     // Check if file exists
@@ -35,7 +26,6 @@ namespace firefly {
 
     for (uint32_t i = 0; i < vars.size(); ++i) {
       vars_map.emplace(std::make_pair(vars[i], i));
-      vars_conv_map.emplace(std::make_pair(int_var_map.at(i), vars[i]));
     }
 
     while (std::getline(istream, line)) {
@@ -50,19 +40,12 @@ namespace firefly {
     INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s.");
   }
 
-  void ShuntingYardParser::parse(const std::string& fun_, bool use_regex) {
+  void ShuntingYardParser::parse(const std::string& fun_) {
     std::string fun = fun_;
-
-    if (use_regex) {
-      for (const auto & el : vars_conv_map) {
-        fun = std::regex_replace(fun, std::regex(el.second), std::string(1, el.first));
-      }
-
-    }
 
     // Check for global signs
     if (fun.size() > 2 && ((fun[0] == '+' || fun[0] == '-') && fun[1] == '(')) {
-        fun.insert(fun.begin(), '0');
+      fun.insert(fun.begin(), '0');
     }
 
     char const* l_ptr = fun.c_str();
@@ -135,15 +118,11 @@ namespace firefly {
   }
 
   void ShuntingYardParser::parse_function(const std::string& fun, const std::vector<std::string>& vars) {
-    if (int_var_map.empty())
-      int_var_map = init_int_var_map();
-
     for (uint32_t i = 0; i < vars.size(); ++i) {
       vars_map.emplace(std::make_pair(vars[i], i));
-      vars_conv_map.emplace(std::make_pair(int_var_map.at(i), vars[i]));
     }
 
-    parse(fun, false);
+    parse(fun);
 
     functions.shrink_to_fit();
   }
@@ -198,26 +177,22 @@ namespace firefly {
             if (token[0] == '-') {
               std::string tmp = token;
               tmp.erase(0, 1);
-              const char* var = tmp.c_str();
 
-              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
-                nums.push(-values[vars_map.at(vars_conv_map.at(var[0]))]);
+              if (vars_map.find(tmp) != vars_map.end())
+                nums.push(-values[vars_map.at(tmp)]);
               else
                 nums.push(-FFInt(std::stoull(tmp)));
             } else if (token[0] == '+') {
               std::string tmp = token;
               tmp.erase(0, 1);
-              const char* var = tmp.c_str();
 
-              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
-                nums.push(values[vars_map.at(vars_conv_map.at(var[0]))]);
+              if (vars_map.find(tmp) != vars_map.end())
+                nums.push(values[vars_map.at(tmp)]);
               else
                 nums.push(FFInt(std::stoull(tmp)));
             } else {
-              const char* var = token.c_str();
-
-              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
-                nums.push(values[vars_map.at(vars_conv_map.at(var[0]))]);
+              if (vars_map.find(token) != vars_map.end())
+                nums.push(values[vars_map.at(token)]);
               else
                 nums.push(FFInt(std::stoull(token)));
             }
@@ -328,7 +303,7 @@ namespace firefly {
   }
 
   bool ShuntingYardParser::is_operand(const char c) const {
-    if (!is_operator(c) && c != '(' && c != ')' && vars_conv_map.find(c) == vars_conv_map.end() && c != ' ')
+    if (!is_operator(c) && c != '(' && c != ')' && chars.find(c) == chars.end() && c != ' ')
       return true;
 
     return false;
@@ -342,7 +317,7 @@ namespace firefly {
   }
 
   bool ShuntingYardParser::is_variable(const char c) const {
-    if (vars_conv_map.find(c) != vars_conv_map.end())
+    if (chars.find(c) != chars.end())
       return true;
 
     return false;
@@ -350,13 +325,6 @@ namespace firefly {
 
   std::vector<std::vector<std::string>> ShuntingYardParser::get_rp_functions() const {
     return functions;
-  }
-
-  char ShuntingYardParser::get_var(int index) {
-    if (int_var_map.empty())
-      int_var_map = init_int_var_map();
-
-    return int_var_map.at(index);
   }
 
   bool ShuntingYardParser::empty() const {
@@ -411,26 +379,22 @@ namespace firefly {
             if (token[0] == '-') {
               std::string tmp = token;
               tmp.erase(0, 1);
-              const char* var = tmp.c_str();
 
-              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
-                precomp_tokens[i][j] = {operands::NEG_VARIABLE, vars_map.at(vars_conv_map.at(var[0]))};
+              if (vars_map.find(tmp) != vars_map.end())
+                precomp_tokens[i][j] = {operands::NEG_VARIABLE, vars_map[tmp]};
               else
                 precomp_tokens[i][j] = {operands::NUMBER, (-FFInt(std::stoull(tmp)))};
             } else if (token[0] == '+') {
               std::string tmp = token;
               tmp.erase(0, 1);
-              const char* var = tmp.c_str();
 
-              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
-                precomp_tokens[i][j] = {operands::VARIABLE, vars_map.at(vars_conv_map.at(var[0]))};
+              if (vars_map.find(tmp) != vars_map.end())
+                precomp_tokens[i][j] = {operands::VARIABLE, vars_map[tmp]};
               else
                 precomp_tokens[i][j] = {operands::NUMBER, (FFInt(std::stoull(tmp)))};
             } else {
-              const char* var = token.c_str();
-
-              if (vars_conv_map.find(var[0]) != vars_conv_map.end())
-                precomp_tokens[i][j] = {operands::VARIABLE, vars_map.at(vars_conv_map.at(var[0]))};
+              if (vars_map.find(token) != vars_map.end())
+                precomp_tokens[i][j] = {operands::VARIABLE, vars_map[token]};
               else
                 precomp_tokens[i][j] = {operands::NUMBER, (FFInt(std::stoull(token)))};
             }

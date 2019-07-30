@@ -2772,7 +2772,7 @@ namespace firefly {
       zi = 1;
     } else { // Get total amount of needed feeds to interpolate this function over the current prime
 
-      std::map<uint32_t, uint32_t> r_map {};
+      /*std::map<uint32_t, uint32_t> r_map {};
 
       if (is_singular_system) {
         // Check when we can remove functions from the sytem of equations
@@ -2888,7 +2888,7 @@ namespace firefly {
           last_number_of_terms = el.first;
           tmp_max_num_eqn = tmp_num_eqn;
         }
-      }
+      }*/
     }
 
     return false;

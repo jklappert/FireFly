@@ -7,6 +7,10 @@ Bug fixes
  * A minor oversampling could happen if the singular system case was present.
  This has been fixed.
 
+ * Using the `ShuntingYardParser` with variables that were also used internally,
+ (a,b,c,...,z), could lead to wrongly parsed functions. Now only the user defined
+ variables are parsed without replacing them. Thanks to Rob Schabinger.
+
 
 FireFly 1.2.0
 =============

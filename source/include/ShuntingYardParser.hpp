@@ -21,6 +21,7 @@
 #include "FFInt.hpp"
 #include <stack>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace firefly {
   /**
@@ -80,21 +81,12 @@ namespace firefly {
   private:
     std::vector<std::vector<std::string>> functions {};
     std::unordered_map<std::string, int> vars_map {};
-    std::unordered_map<char, std::string> vars_conv_map {};
     std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {};
-    static std::unordered_map<int, char> int_var_map;
     /**
      *  Initializes the conversion map
      *  @return The conversion map
      */
-    static std::unordered_map<int, char> init_int_var_map() {
-      std::unordered_map<int, char> m = {{0, 'a'}, {1, 'b'}, {2, 'c'}, {3, 'd'},
-        {4, 'e'}, {5, 'f'}, {6, 'g'}, {7, 'h'}, {8, 'i'}, {9, 'j'}, {10, 'k'}, {11, 'l'}, {12, 'm'},
-        {13, 'n'}, {14, 'o'}, {15, 'p'}, {16, 'q'}, {17, 'r'}, {18, 's'}, {19, 't'}, {20, 'u'}, {21, 'v'},
-        {22, 'w'}, {23, 'x'}, {24, 'y'}, {25, 'z'}
-      };
-      return m;
-    }
+    std::unordered_set<char> chars {{'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'}};
     /**
      *  Gets the weight of an operator
      *  @param c The operator as a character
@@ -121,10 +113,9 @@ namespace firefly {
     bool is_variable(const char c) const;
     /**
      *  Converts a function in reverse polish notation
-     *  @param fun The function which should be converted
-     *  @param use_regex determines whether one replaces variables with regex
+     *  @param fun_ The function which should be converted
      */
-    void parse(const std::string&, bool use_regex = true);
+    void parse(const std::string& fun_);
   };
 
   namespace operators {
