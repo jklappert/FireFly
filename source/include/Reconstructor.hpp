@@ -69,7 +69,10 @@ namespace firefly {
 
   typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
   typedef std::list<RatReconst_tuple> RatReconst_list;
-  typedef std::list<std::tuple<FFInt, std::vector<uint32_t>, std::future<std::pair<std::vector<FFInt>, double>>>> future_list;
+  typedef std::future<std::pair<std::vector<FFInt>, double>> probe_future;
+  typedef std::list<std::tuple<FFInt, std::vector<uint32_t>, probe_future>> future_list;
+  typedef std::future<std::pair<std::vector<std::vector<FFInt>>, double>> probe_future_bunch;
+  typedef std::list<std::tuple<std::vector<FFInt>, std::vector<uint32_t>, probe_future_bunch>> future_list_bunch;
 
   /**
    * @class Reconstructor
@@ -163,6 +166,11 @@ namespace firefly {
     std::condition_variable condition_feed;
     // list containing the parameters and the future of the parallel tasks; t, zi_order, future
     future_list probes;
+    future_list_bunch probes_bunch;
+    std::vector<uint32_t> bunch_zi_order;
+    std::vector<FFInt> bunch_t;
+    std::vector<std::vector<FFInt>> bunch;
+    double bunch_time;
     uint32_t jobs_finished = 0;
     std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes;
     uint32_t fed_ones = 0;
@@ -202,6 +210,10 @@ namespace firefly {
      *  @param to_start the number of jobs which should be queued
      */
     void start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t to_start);
+    /**
+     * TODO
+     */
+    void get_probe(FFInt& t, std::vector<uint32_t>& zi_order, std::vector<FFInt>* probe, double& time);
     /**
      *  Feeds the reconstruction objects
      *  @param zi_order the order at which the black box was probed

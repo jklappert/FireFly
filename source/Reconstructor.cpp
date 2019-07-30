@@ -343,31 +343,16 @@ namespace firefly {
     started_probes.emplace(zi_order, start);
 
     FFInt t = 1;
-    std::vector<FFInt> probe {};
+    std::vector<FFInt>* probe = new std::vector<FFInt>;
 
     {
       std::unique_lock<std::mutex> lock_future(future_control);
 
-      // sometimes the future is not ready even though the solution job returned already
-      // probably there is an additional copy operation involved
-      while (probe.empty()) {
-        while (jobs_finished == 0) {
-          condition_future.wait(lock_future);
-        }
-
-        for (auto it = probes.begin(); it != probes.end(); ++it) {
-          if ((std::get<2>(*it)).wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-            t = std::get<0>(*it);
-            zi_order = std::get<1>(*it);
-            std::pair<std::vector<FFInt>, double> tmp = (std::get<2>(*it)).get();
-            probe = std::move(tmp.first);
-            average_black_box_time = std::move(tmp.second);
-            it = probes.erase(it);
-            --jobs_finished;
-            break;
-          }
-        }
+      while (jobs_finished == 0) {
+        condition_future.wait(lock_future);
       }
+
+      get_probe(t, zi_order, probe, average_black_box_time);
     }
 
     ++iteration;
@@ -377,7 +362,7 @@ namespace firefly {
     }
 
     ++fed_ones;
-    items = probe.size();
+    items = probe->size();
     size_t tag_size = tags.size();
 
     for (uint32_t i = 0; i != items; ++i) {
@@ -400,7 +385,7 @@ namespace firefly {
         }
       }
 
-      rec->feed(t, probe[i], zi_order, prime_it);
+      rec->feed(t, (*probe)[i], zi_order, prime_it);
       rec->interpolate();
 
       std::mutex* mut = new std::mutex;
@@ -408,7 +393,7 @@ namespace firefly {
       reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
     }
 
-    probe.clear();
+    delete probe;
 
     if (verbosity > SILENT) {
       INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: 0 / " + std::to_string(items));
@@ -517,26 +502,11 @@ namespace firefly {
       {
         std::unique_lock<std::mutex> lock_future(future_control);
 
-        // sometimes the future is not ready even though the solution job returned already
-        // probably there is an additional copy operation involved
-        while (probe->empty()) {
-          while (jobs_finished == 0) {
-            condition_future.wait(lock_future);
-          }
-
-          for (auto it = probes.begin(); it != probes.end(); ++it) {
-            if ((std::get<2>(*it)).wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-              t = std::get<0>(*it);
-              zi_order = std::get<1>(*it);
-              std::pair<std::vector<FFInt>, double> tmp = (std::get<2>(*it)).get();
-              *probe = std::move(tmp.first);
-              time = std::move(tmp.second);
-              it = probes.erase(it);
-              --jobs_finished;
-              break;
-            }
-          }
+        while (jobs_finished == 0) {
+          condition_future.wait(lock_future);
         }
+
+        get_probe(t, zi_order, probe, time);
       }
 
       ++iteration;
@@ -665,54 +635,164 @@ namespace firefly {
       ones = true;
     }
 
-    std::vector<FFInt> values(n);
+    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
 
-    for (uint32_t j = 0; j != to_start; ++j) {
-      FFInt t = tmp_rec.get_rand();
-      values[0] = t + shift[0];
+    if (bunch_size == 1) {
+      std::vector<FFInt> values(n);
+      FFInt t;
 
-      std::vector<firefly::FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+      for (uint32_t j = 0; j != to_start; ++j) {
+        t = tmp_rec.get_rand();
+        values[0] = t + shift[0];
 
-      for (uint32_t i = 1; i != n; ++i) {
-        values[i] = rand_zi[i - 1] * t + shift[i];
+        for (uint32_t i = 1; i != n; ++i) {
+          values[i] = rand_zi[i - 1] * t + shift[i];
+        }
+
+        probe_future future;
+
+        // TODO: Why is this required already here?
+        std::unique_lock<std::mutex> lock(future_control);
+
+        if (ones) {
+          future = tp.run_priority_packaged_task([this, values]() {
+            auto time0 = std::chrono::high_resolution_clock::now();
+
+            std::vector<FFInt> probe = bb(values);
+
+            auto time1 = std::chrono::high_resolution_clock::now();
+
+            std::unique_lock<std::mutex> lock(future_control);
+
+            ++jobs_finished;
+            condition_future.notify_one();
+
+            return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
+          });
+        } else {
+          future = tp.run_packaged_task([this, values]() {
+            auto time0 = std::chrono::high_resolution_clock::now();
+
+            std::vector<FFInt> probe = bb(values);
+
+            auto time1 = std::chrono::high_resolution_clock::now();
+
+            std::unique_lock<std::mutex> lock(future_control);
+
+            ++jobs_finished;
+            condition_future.notify_one();
+
+            return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
+          });
+        }
+
+        //std::unique_lock<std::mutex> lock(future_control);
+
+        probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));
       }
+    } else {
+      for (uint32_t j = 0; j != to_start / bunch_size; ++j) {
+        std::vector<FFInt> t_vec(bunch_size);
+        std::vector<std::vector<FFInt>> values_vec(bunch_size);
 
-      std::unique_lock<std::mutex> lock(future_control);
+        for (uint32_t i = 0; i != bunch_size; ++i) {
+          std::vector<FFInt> values(n);
 
-      if (ones) {
-        auto future = tp.run_priority_packaged_task([this, values]() {
-          auto time0 = std::chrono::high_resolution_clock::now();
+          FFInt t = tmp_rec.get_rand();
+          values[0] = t + shift[0];
 
-          std::vector<FFInt> probe = bb(values);
+          for (uint32_t i = 1; i != n; ++i) {
+            values[i] = rand_zi[i - 1] * t + shift[i];
+          }
 
-          auto time1 = std::chrono::high_resolution_clock::now();
+          t_vec.emplace_back(t);
+          values_vec.emplace_back(std::move(values));
+        }
 
-          std::unique_lock<std::mutex> lock(future_control);
+        probe_future_bunch future;
 
-          ++jobs_finished;
-          condition_future.notify_one();
-          return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
-        });
+        // TODO: Why is this required already here?
+        std::unique_lock<std::mutex> lock(future_control);
 
-        probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));
-      } else {
-        auto future = tp.run_packaged_task([this, values]() {
-          auto time0 = std::chrono::high_resolution_clock::now();
+        if (ones) {
+          future = tp.run_priority_packaged_task([this, values_vec]() {
+            auto time0 = std::chrono::high_resolution_clock::now();
 
-          std::vector<FFInt> probe = bb(values);
+            std::vector<std::vector<FFInt>> probe_vec = bb(values_vec);
 
-          auto time1 = std::chrono::high_resolution_clock::now();
+            auto time1 = std::chrono::high_resolution_clock::now();
 
-          std::unique_lock<std::mutex> lock(future_control);
+            std::unique_lock<std::mutex> lock(future_control);
 
-          ++jobs_finished;
-          condition_future.notify_one();
-          return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
-        });
+            jobs_finished += bunch_size;
+            condition_future.notify_one();
 
-        probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));
+            return std::make_pair(std::move(probe_vec), std::chrono::duration<double>(time1 - time0).count());
+          });
+        } else {
+          future = tp.run_packaged_task([this, values_vec]() {
+            auto time0 = std::chrono::high_resolution_clock::now();
+
+            std::vector<std::vector<FFInt>> probe_vec = bb(values_vec);
+
+            auto time1 = std::chrono::high_resolution_clock::now();
+
+            std::unique_lock<std::mutex> lock(future_control);
+
+            jobs_finished += bunch_size;
+            condition_future.notify_one();
+
+            return std::make_pair(std::move(probe_vec), std::chrono::duration<double>(time1 - time0).count());
+          });
+        }
+
+        probes_bunch.emplace_back(std::make_tuple(t_vec, zi_order, std::move(future)));
       }
     }
+  }
+
+  void Reconstructor::get_probe(FFInt& t, std::vector<uint32_t>& zi_order, std::vector<FFInt>* probe, double& time) {
+    if (bunch_size == 1) {
+      // sometimes the future is not ready even though the solution job returned already
+      // probably there is an additional copy operation involved
+      while (probe->empty()) {
+        for (auto it = probes.begin(); it != probes.end(); ++it) {
+          if ((std::get<2>(*it)).wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+            t = std::get<0>(*it);
+            zi_order = std::get<1>(*it);
+            std::pair<std::vector<FFInt>, double> tmp = (std::get<2>(*it)).get();
+            *probe = std::move(tmp.first);
+            time = tmp.second;
+            it = probes.erase(it);
+            break;
+          }
+        }
+      }
+    } else {
+      while (bunch.empty()) {
+        for (auto it = probes_bunch.begin(); it != probes_bunch.end(); ++it) {
+          if ((std::get<2>(*it)).wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+            bunch_t = std::get<0>(*it);
+            bunch_zi_order = std::get<1>(*it);
+            std::pair<std::vector<std::vector<FFInt>>, double> tmp = (std::get<2>(*it)).get();
+            bunch = std::move(tmp.first);
+            bunch_time = tmp.second;
+            it = probes_bunch.erase(it);
+            break;
+          }
+        }
+      }
+
+      t = bunch_t.back();
+      zi_order = bunch_zi_order;
+      *probe = std::move(bunch.back());
+      time = bunch_time / bunch_size;
+
+      bunch_t.pop_back();
+      bunch.pop_back();
+    }
+
+    --jobs_finished;
   }
 
   void Reconstructor::feed_job(const std::vector<uint32_t> zi_order, const firefly::FFInt t, std::vector<FFInt>* probe) {
