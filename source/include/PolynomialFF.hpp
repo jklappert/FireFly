@@ -36,7 +36,6 @@ namespace firefly {
     /**
      *  Default constructor
      */
-    //void generate_horner();
     PolynomialFF();
     /**
      *  Constructor with a given number of variables and coefficients
@@ -122,9 +121,10 @@ namespace firefly {
      *  Generates Horner scheme coefficients of a polynomial recursively
      *  @param var An integer representing the current variable
      *  @param monomials A map of monomials that build a polynomial
+     *  @param vars the list of variables
      *  @return A Horner form of a polynomial
      */
-    std::string generate_horner_coefs(int var, const ff_map& monomials);
+    std::string generate_horner_coefs(int var, const ff_map& monomials, const std::vector<std::string>& vars);
     bool generate_new_horner = true;
     bool eval_horner = false;
   };

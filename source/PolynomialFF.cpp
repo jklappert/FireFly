@@ -45,15 +45,15 @@ namespace firefly {
   FFInt PolynomialFF::calc_n_m_1(const std::vector<FFInt>& x) {
     FFInt res(0);
     uint32_t n_m_1 = n - 1;
-    
+
     if (generate_new_horner && coefs.size() > 50) {
       generate_new_horner = false;
       eval_horner = true;
       generate_hornerff();
       return s_y_fun.evaluate_pre(x)[0];
-    } else if(eval_horner)
+    } else if (eval_horner)
       return s_y_fun.evaluate_pre(x)[0];
-    
+
     for (const auto & term : coefs) {
       FFInt product(1);
 
@@ -387,7 +387,6 @@ namespace firefly {
       }
 
       if (!pow_poly.coefs.empty()) {
-        //std::clock_t begin3 = clock();
         if (res.coefs.empty())
           res.coefs = pow_poly.coefs;
         else
@@ -432,7 +431,7 @@ namespace firefly {
       std::vector<std::string> vars {};
 
       for (uint32_t i = 0; i < n - 1; i++) {
-        vars.emplace_back(std::string(1, ShuntingYardParser::get_var(i)));
+        vars.emplace_back("a" + std::to_string(i));
       }
 
       ff_map coefs_n_m_1 {};
@@ -448,12 +447,12 @@ namespace firefly {
       }
 
       s_y_fun = ShuntingYardParser();
-      s_y_fun.parse_function(generate_horner_coefs(0, coefs_n_m_1), vars);
+      s_y_fun.parse_function(generate_horner_coefs(0, coefs_n_m_1, vars), vars);
       s_y_fun.precompute_tokens();
     }
   }
 
-  std::string PolynomialFF::generate_horner_coefs(int index, const ff_map& monomials) {
+  std::string PolynomialFF::generate_horner_coefs(int index, const ff_map& monomials, const std::vector<std::string>& vars) {
     std::map<uint32_t, ff_map, std::greater<uint32_t>> tmp_coefs {};
 
     if (monomials.begin() -> first.size() > 1) {
@@ -472,7 +471,7 @@ namespace firefly {
       std::unordered_map<uint32_t, std::string> horner_coefs {};
 
       for (const auto & el : tmp_coefs) {
-        horner_coefs.emplace(std::make_pair(el.first, generate_horner_coefs(index + 1, el.second)));
+        horner_coefs.emplace(std::make_pair(el.first, generate_horner_coefs(index + 1, el.second, vars)));
       }
 
       uint32_t max_deg = tmp_coefs.begin() -> first;
@@ -483,7 +482,7 @@ namespace firefly {
           horner_coef += "(";
         }
 
-        const std::string var = std::string(1, ShuntingYardParser::get_var(index));
+        const std::string var = vars[index];
 
         horner_coef += var + "*(" + horner_coefs[max_deg] + ")";
 
@@ -519,7 +518,7 @@ namespace firefly {
           horner_coef += "(";
         }
 
-        const std::string var = std::string(1, ShuntingYardParser::get_var(index));
+        const std::string var = vars[index];
 
         horner_coef += var;
         horner_coef += monomials.at( {max_deg}).n != 1 ? "*" + std::to_string(monomials.at( {max_deg}).n) : "";
