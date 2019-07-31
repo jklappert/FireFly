@@ -642,7 +642,7 @@ namespace firefly {
       ones = true;
     }
 
-    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
 
     if (bunch_size == 1) {
       std::vector<FFInt> values(n);

@@ -113,9 +113,9 @@ namespace firefly {
     bool is_variable(const char c) const;
     /**
      *  Converts a function in reverse polish notation
-     *  @param fun The function which should be converted
+     *  @param fun_ The function which should be converted
      */
-    void parse(const std::string&);
+    void parse(const std::string& fun_);
   };
 
   namespace operators {

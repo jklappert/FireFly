@@ -381,7 +381,7 @@ namespace firefly {
               tmp.erase(0, 1);
 
               if (vars_map.find(tmp) != vars_map.end())
-                precomp_tokens[i][j] = {operands::NEG_VARIABLE, vars_map.at(tmp)};
+                precomp_tokens[i][j] = {operands::NEG_VARIABLE, vars_map[tmp]};
               else
                 precomp_tokens[i][j] = {operands::NUMBER, (-FFInt(std::stoull(tmp)))};
             } else if (token[0] == '+') {
@@ -389,12 +389,12 @@ namespace firefly {
               tmp.erase(0, 1);
 
               if (vars_map.find(tmp) != vars_map.end())
-                precomp_tokens[i][j] = {operands::VARIABLE, vars_map.at(tmp)};
+                precomp_tokens[i][j] = {operands::VARIABLE, vars_map[tmp]};
               else
                 precomp_tokens[i][j] = {operands::NUMBER, (FFInt(std::stoull(tmp)))};
             } else {
               if (vars_map.find(token) != vars_map.end())
-                precomp_tokens[i][j] = {operands::VARIABLE, vars_map.at(token)};
+                precomp_tokens[i][j] = {operands::VARIABLE, vars_map[token]};
               else
                 precomp_tokens[i][j] = {operands::NUMBER, (FFInt(std::stoull(token)))};
             }

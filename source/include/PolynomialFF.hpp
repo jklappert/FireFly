@@ -127,6 +127,7 @@ namespace firefly {
     std::string generate_horner_coefs(int var, const ff_map& monomials, const std::vector<std::string>& vars);
     bool generate_new_horner = true;
     bool eval_horner = false;
+    std::vector<std::string> vars {};
   };
   PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b);
   PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b);
