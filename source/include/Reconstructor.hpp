@@ -19,7 +19,6 @@
 #pragma once
 
 #include "RatReconst.hpp"
-#include "ReconstHelper.hpp"
 #include "ThreadPool.hpp"
 
 #include <chrono>
@@ -52,10 +51,11 @@ namespace firefly {
      *  @return
      */
     virtual std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>>& values_vec) {
-      std::vector<std::vector<FFInt>> results_vec(values_vec.size());
+      std::vector<std::vector<FFInt>> results_vec;
+      results_vec.reserve(values_vec.size());
 
       for (const auto & values : values_vec) {
-        results_vec.emplace_back(values);
+        results_vec.emplace_back(operator()(values));
       }
 
       return results_vec;

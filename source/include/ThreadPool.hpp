@@ -175,7 +175,7 @@ namespace firefly {
     bool wait() {
       std::unique_lock<std::mutex> lock(mutex);
 
-      if (!all_threads_idle(lock)) {
+      if (!all_threads_idle()) {
         condition_wait.wait(lock);
         return true;
       } else {
@@ -201,7 +201,8 @@ namespace firefly {
     std::vector<bool> threads_idle {};
     std::condition_variable condition_wait {};
 
-    bool all_threads_idle(std::unique_lock<std::mutex>& lock) {
+    // Should only be called when the mutex is locked
+    bool all_threads_idle() {
       if (threads.empty()) {
         if (tasks.size() > 0) {
           return false;

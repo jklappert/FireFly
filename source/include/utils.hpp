@@ -18,9 +18,8 @@
 
 #pragma once
 
-#include "RationalNumber.hpp"
 #include "PolynomialFF.hpp"
-#include "BaseReconst.hpp"
+#include "RationalNumber.hpp"
 
 namespace firefly {
   /**

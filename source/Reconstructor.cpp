@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
+#include "ReconstHelper.hpp"
 #include "Reconstructor.hpp"
 #include "utils.hpp"
 #include "version.hpp"
@@ -286,6 +287,9 @@ namespace firefly {
       }
 
       probes.clear();
+      probes_bunch.clear();
+      bunch_t.clear();
+      bunch.clear();
       jobs_finished = 0;
       started_probes.clear();
       fed_ones = 0;
@@ -400,7 +404,7 @@ namespace firefly {
     }
 
     start_probe_jobs(zi_order, bunch_size);
-    started_probes.at(zi_order) += bunch_size;
+    started_probes[zi_order] += bunch_size;
   }
 
   void Reconstructor::run_until_done() {
@@ -444,6 +448,9 @@ namespace firefly {
         iteration = 0;
 
         probes.clear();
+        probes_bunch.clear();
+        bunch_t.clear();
+        bunch.clear();
         fed_ones = 0;
         jobs_finished = 0;
         started_probes.clear();
@@ -544,7 +551,7 @@ namespace firefly {
       {
         std::unique_lock<std::mutex> lock_future(future_control);
 
-        if (jobs_finished == 0 && probes.size() == 0) {
+        if (jobs_finished == 0 && ((bunch_size == 1 && probes.empty()) || (bunch_size != 1 && bunch.empty() && probes_bunch.empty()))) {
           lock_future.unlock();
 
           bool cont = false;
@@ -558,7 +565,7 @@ namespace firefly {
               lock_feed.unlock();
               lock_future.lock();
 
-              if (jobs_finished > 0 || probes.size() > 0) {
+              if (jobs_finished > 0 || !probes.empty() || !bunch.empty() || !probes_bunch.empty()) {
                 lock_future.unlock();
                 cont = true;
                 break;
@@ -692,8 +699,10 @@ namespace firefly {
       }
     } else {
       for (uint32_t j = 0; j != to_start / bunch_size; ++j) {
-        std::vector<FFInt> t_vec(bunch_size);
-        std::vector<std::vector<FFInt>> values_vec(bunch_size);
+        std::vector<FFInt> t_vec;
+        t_vec.reserve(bunch_size);
+        std::vector<std::vector<FFInt>> values_vec;
+        values_vec.reserve(bunch_size);
 
         for (uint32_t i = 0; i != bunch_size; ++i) {
           std::vector<FFInt> values(n);
@@ -879,14 +888,14 @@ namespace firefly {
               //lock_exists.unlock();
               std::unique_lock<std::mutex> lock(job_control);
 
-              if (started_probes.at(zi_order) - thr_n <= fed_ones - 1) {
-                uint32_t start = fed_ones - started_probes.at(zi_order) + thr_n;
+              if (started_probes[zi_order] - thr_n <= fed_ones - 1) {
+                uint32_t start = fed_ones - started_probes[zi_order] + thr_n;
 
                 if (bunch_size != 1) {
                   start = (start + bunch_size - 1) / bunch_size * bunch_size;
                 }
 
-                started_probes.at(zi_order) += start;
+                started_probes[zi_order] += start;
 
                 lock.unlock();
 
@@ -907,14 +916,14 @@ namespace firefly {
               auto it = started_probes.find(zi_order);
 
               if (it != started_probes.end()) {
-                if (required_probes > started_probes.at(zi_order)) {
-                  uint32_t start = required_probes - started_probes.at(zi_order);
+                if (required_probes > started_probes[zi_order]) {
+                  uint32_t start = required_probes - started_probes[zi_order];
 
                   if (bunch_size != 1) {
                     start = (start + bunch_size - 1) / bunch_size * bunch_size;
                   }
 
-                  started_probes.at(zi_order) = required_probes;
+                  started_probes[zi_order] = required_probes;
 
                   lock.unlock();
 

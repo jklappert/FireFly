@@ -89,7 +89,7 @@ int main() {
   BlackBoxUser bb(par);
 
   // Initialize the Reconstructor
-  Reconstructor reconst(4, 4, bb/*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(4, 4, 1, bb/*, Reconstructor::CHATTY*/);
   // Enables a scan for a sparse shift
   reconst.enable_scan();
   // Set the safe mode
