@@ -642,7 +642,7 @@ namespace firefly {
       ones = true;
     }
 
-    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
+    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
 
     if (bunch_size == 1) {
       std::vector<FFInt> values(n);
@@ -676,6 +676,8 @@ namespace firefly {
 
             return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
           });
+
+          probes.emplace_front(std::make_tuple(t, zi_order, std::move(future)));
         } else {
           future = tp.run_packaged_task([this, values]() {
             auto time0 = std::chrono::high_resolution_clock::now();
@@ -691,11 +693,9 @@ namespace firefly {
 
             return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
           });
+
+          probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));
         }
-
-        //std::unique_lock<std::mutex> lock(future_control);
-
-        probes.emplace_back(std::make_tuple(t, zi_order, std::move(future)));
       }
     } else {
       for (uint32_t j = 0; j != to_start / bunch_size; ++j) {
@@ -738,6 +738,8 @@ namespace firefly {
 
             return std::make_pair(std::move(probe_vec), std::chrono::duration<double>(time1 - time0).count());
           });
+
+          probes_bunch.emplace_front(std::make_tuple(t_vec, zi_order, std::move(future)));
         } else {
           future = tp.run_packaged_task([this, values_vec]() {
             auto time0 = std::chrono::high_resolution_clock::now();
@@ -753,20 +755,28 @@ namespace firefly {
 
             return std::make_pair(std::move(probe_vec), std::chrono::duration<double>(time1 - time0).count());
           });
-        }
 
-        probes_bunch.emplace_back(std::make_tuple(t_vec, zi_order, std::move(future)));
+          probes_bunch.emplace_back(std::make_tuple(t_vec, zi_order, std::move(future)));
+        }
       }
     }
   }
 
   void Reconstructor::get_probe(FFInt& t, std::vector<uint32_t>& zi_order, std::vector<FFInt>* probe, double& time) {
     if (bunch_size == 1) {
+      // TODO
       // sometimes the future is not ready even though the solution job returned already
       // probably there is an additional copy operation involved
+      // -> std::chrono::microseconds(10) helps
+      bool twice = false;
       while (probe->empty()) {
+        if (twice) {
+          std::cout << "twice\n";
+        }
+        uint32_t i = 0;
         for (auto it = probes.begin(); it != probes.end(); ++it) {
-          if ((std::get<2>(*it)).wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+          ++i;
+          if ((std::get<2>(*it)).wait_for(std::chrono::microseconds(10)) == std::future_status::ready) {
             t = std::get<0>(*it);
             zi_order = std::get<1>(*it);
             std::pair<std::vector<FFInt>, double> tmp = (std::get<2>(*it)).get();
@@ -776,11 +786,15 @@ namespace firefly {
             break;
           }
         }
+        if (i > thr_n) {
+          std::cout << i << "\n";
+        }
+        twice = true;
       }
     } else {
       while (bunch.empty()) {
         for (auto it = probes_bunch.begin(); it != probes_bunch.end(); ++it) {
-          if ((std::get<2>(*it)).wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+          if ((std::get<2>(*it)).wait_for(std::chrono::microseconds(10)) == std::future_status::ready) {
             bunch_t = std::get<0>(*it);
             bunch_zi_order = std::get<1>(*it);
             std::pair<std::vector<std::vector<FFInt>>, double> tmp = (std::get<2>(*it)).get();
@@ -881,6 +895,81 @@ namespace firefly {
             }
 
             //lock_exists.unlock();
+          } else if (!safe_mode && prime_it != 0) {
+            std::vector<std::pair<uint32_t, uint32_t>> all_required_probes = std::get<3>(rec)->get_needed_feed_vec();
+
+            if (!all_required_probes.empty()) {
+              uint32_t counter = 1;
+
+              for (const auto & some_probes : all_required_probes) {
+                uint32_t required_probes = some_probes.second;
+
+                for (uint32_t i = 0; i != some_probes.first; ++i) {
+                  std::vector<uint32_t> zi_order(n - 1, counter);
+                  ++counter;
+
+                  std::unique_lock<std::mutex> lock(job_control);
+
+                  auto it = started_probes.find(zi_order);
+
+                  if (it != started_probes.end()) {
+                    if (required_probes > started_probes[zi_order]) {
+                      uint32_t start = required_probes - started_probes[zi_order];
+
+                      if (bunch_size != 1) {
+                        start = (start + bunch_size - 1) / bunch_size * bunch_size;
+                      }
+
+                      started_probes[zi_order] = required_probes;
+
+                      lock.unlock();
+
+                      if (verbosity == CHATTY) {
+                        std::string msg = "Starting zi_order (";
+
+                        for (const auto & ele : zi_order) {
+                          msg += std::to_string(ele) + ", ";
+                        }
+
+                        msg = msg.substr(0, msg.length() - 2);
+                        msg += ") " + std::to_string(start) + " time(s)";
+
+                        std::unique_lock<std::mutex> lock_print(print_control);
+
+                        INFO_MSG(msg + ".");
+                      }
+
+                      start_probe_jobs(zi_order, start);
+                    }
+                  } else {
+                    if (bunch_size != 1) {
+                      required_probes = (required_probes + bunch_size - 1) / bunch_size * bunch_size;
+                    }
+
+                    started_probes.emplace(zi_order, required_probes);
+
+                    lock.unlock();
+
+                    if (verbosity == CHATTY) {
+                      std::string msg = "Starting zi_order (";
+
+                      for (const auto & ele : zi_order) {
+                        msg += std::to_string(ele) + ", ";
+                      }
+
+                      msg = msg.substr(0, msg.length() - 2);
+                      msg += ") " + std::to_string(required_probes) + " time(s)";
+
+                      std::unique_lock<std::mutex> lock_print(print_control);
+
+                      INFO_MSG(msg + ".");
+                    }
+
+                    start_probe_jobs(zi_order, required_probes);
+                  }
+                }
+              }
+            }
           } else {
             std::vector<uint32_t> zi_order = std::get<3>(rec)->get_zi_order();
 

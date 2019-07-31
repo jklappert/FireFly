@@ -1826,14 +1826,14 @@ namespace firefly {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> res {};
 
-    /*if (generate) {
+    if (generate) {
       for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
         auto key = std::make_pair(tmp_zi, order[tmp_zi - 2]);
 
         if (rand_zi.find(key) == rand_zi.end())
           rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
       }
-    }*/
+    }
 
     for (uint32_t i = 2; i <= n; ++i) {
       res.emplace_back(rand_zi.at(std::make_pair(i, order[i - 2])));
@@ -2784,7 +2784,7 @@ namespace firefly {
       zi = 1;
     } else { // Get total amount of needed feeds to interpolate this function over the current prime
 
-      /*std::map<uint32_t, uint32_t> r_map {};
+      std::map<uint32_t, uint32_t> r_map {};
 
       if (is_singular_system) {
         // Check when we can remove functions from the sytem of equations
@@ -2900,14 +2900,17 @@ namespace firefly {
           last_number_of_terms = el.first;
           tmp_max_num_eqn = tmp_num_eqn;
         }
-      }*/
+      }
     }
 
     return false;
   }
 
-  std::vector<std::pair<uint32_t, uint32_t>> RatReconst::get_needed_feed_vec() const {
-    return needed_feed_vec;
+  std::vector<std::pair<uint32_t, uint32_t>> RatReconst::get_needed_feed_vec() {
+    std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_tmp = std::move(needed_feed_vec);
+    needed_feed_vec.clear();
+
+    return needed_feed_vec_tmp;
   }
 
   std::vector<FFInt> RatReconst::get_anchor_points() {

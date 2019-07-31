@@ -130,7 +130,7 @@ namespace firefly {
      *  Returns the required feeds for new primes
      *  @return the vector of required feeds where the first entry is the multiplicity and the second entry is the number of different t, e.g, (3,4) means this object needs for 3 different zi order 4 black-box probes with different t
      */
-    std::vector<std::pair<uint32_t, uint32_t>> get_needed_feed_vec() const;
+    std::vector<std::pair<uint32_t, uint32_t>> get_needed_feed_vec();
   private:
     /**
      *  Starts the real interpolation managed by the class itself
