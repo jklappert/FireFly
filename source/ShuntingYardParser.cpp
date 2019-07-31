@@ -1,7 +1,6 @@
 #include "ShuntingYardParser.hpp"
 #include "Logger.hpp"
 #include <fstream>
-#include <regex>
 #include <chrono>
 
 namespace firefly {
@@ -67,8 +66,16 @@ namespace firefly {
           tmp = "";
         }
 
-        if (!op_stack.empty() && *(l_ptr - 1) == '(')
-          tmp.insert(tmp.begin(), *l_ptr);
+        if (!op_stack.empty() && *(l_ptr - 1) == '('){
+          if(*(l_ptr + 1) == '('){
+            tmp.insert(tmp.begin(), *l_ptr);
+            tmp += "1";
+            pf.emplace_back(tmp);
+            tmp = "";
+            op_stack.push('*');
+          } else
+            tmp.insert(tmp.begin(), *l_ptr);
+        }
         else if (op_stack.empty() && pf.empty())
           tmp.insert(tmp.begin(), *l_ptr);
         else {
