@@ -349,15 +349,7 @@ namespace firefly {
     FFInt t = 1;
     std::vector<FFInt>* probe = new std::vector<FFInt>;
 
-    {
-      std::unique_lock<std::mutex> lock_future(future_control);
-
-      while (jobs_finished == 0) {
-        condition_future.wait(lock_future);
-      }
-
-      get_probe(t, zi_order, probe, average_black_box_time);
-    }
+    get_probe(t, zi_order, probe, average_black_box_time);
 
     ++iteration;
 
@@ -506,15 +498,7 @@ namespace firefly {
       std::vector<FFInt>* probe = new std::vector<FFInt>;
       double time;
 
-      {
-        std::unique_lock<std::mutex> lock_future(future_control);
-
-        while (jobs_finished == 0) {
-          condition_future.wait(lock_future);
-        }
-
-        get_probe(t, zi_order, probe, time);
-      }
+      get_probe(t, zi_order, probe, time);
 
       ++iteration;
 
@@ -763,6 +747,12 @@ namespace firefly {
   }
 
   void Reconstructor::get_probe(FFInt& t, std::vector<uint32_t>& zi_order, std::vector<FFInt>* probe, double& time) {
+    std::unique_lock<std::mutex> lock_future(future_control);
+
+    while (jobs_finished == 0) {
+      condition_future.wait(lock_future);
+    }
+
     if (bunch_size == 1) {
       // TODO
       // sometimes the future is not ready even though the solution job returned already
