@@ -43,13 +43,15 @@ Changes
  In general, this leads to fewer required black-box probes than a dense approach
  while minimizing the oversampling when a sparse shift is found.
 
- * `BlackBoxBase` now has a virtual destructor.
+ * `BlackBoxBase` now has a virtual destructor. We thank Philipp Maierhoefer for
+ this suggestion.
 
  * `prime_changed()` in `BlackBoxBase` now has a default implementation which
- does nothing instead of requiring the user to define it.
+ does nothing instead of requiring the user to define it. We thank Mario Prausa
+ for this suggestion.
 
  * `enable_scan()` in the safe mode now just throws a warning instead of exiting
- the program.
+ the program. We thank Mario Prausa for this suggestion.
 
 Bug fixes
 ---------
@@ -57,11 +59,12 @@ Bug fixes
  * The `Reconstructor` class now has a destructor which deletes all dynamically
  allocated memory.
 
- * The safe mode is usable again.
+ * The safe mode is usable again. We thank Mario Prausa for noticing the
+ problems.
 
  * If the number of variables was set to 1 and the black box was just a constant,
  the interpolation failed. This has been fixed and constants for one variable
- can be interpolated again.
+ can be interpolated again. We thank Mario Prausa for noticing.
 
  * The `ShuntingYardParser` could not parse negative variables. This has been fixed.
 
