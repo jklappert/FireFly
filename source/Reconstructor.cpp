@@ -560,7 +560,7 @@ namespace firefly {
 
           lock_future.lock();
 
-          if (jobs_finished > 0 || probes.size() > 0) {
+          if (jobs_finished > 0 || !probes.empty() || !bunch.empty() || !probes_bunch.empty()) {
             continue;
           }
 
