@@ -191,7 +191,7 @@ namespace firefly {
     *  Parses a prime number counter from a file
     *  @param file_name the file name
     */
-    uint32_t parse_prime_number(std::string& file_name);
+    uint32_t parse_prime_number(const std::string& file_name);
     /**
     *  Scan the black-box functions for a sparse shift
     */

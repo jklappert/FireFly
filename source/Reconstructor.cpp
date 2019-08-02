@@ -136,7 +136,7 @@ namespace firefly {
     }
   }
 
-  uint32_t Reconstructor::parse_prime_number(std::string& file_name) {
+  uint32_t Reconstructor::parse_prime_number(const std::string& file_name) {
     std::string reverse_file_name = file_name;
     std::reverse(reverse_file_name.begin(), reverse_file_name.end());
     reverse_file_name.erase(0, 4);
@@ -168,7 +168,7 @@ namespace firefly {
       if (scan) {
         scan_for_shift();
 
-        uint32_t start = (thr_n + bunch_size - 1) / bunch_size * bunch_size;
+        uint32_t start = thr_n * bunch_size;
 
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
         started_probes.emplace(std::vector<uint32_t> (n - 1, 1), start);
@@ -257,7 +257,7 @@ namespace firefly {
         tmp_rec.set_zi_shift(shift_vec[counter]);
         shift = tmp_rec.get_zi_shift_vec();
 
-        uint32_t start = (thr_n + bunch_size - 1) / bunch_size * bunch_size;
+        uint32_t start = thr_n * bunch_size;
 
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
         started_probes.emplace(std::vector<uint32_t> (n - 1, 1), start);
@@ -341,7 +341,7 @@ namespace firefly {
     shift = tmp_rec.get_zi_shift_vec();
     std::vector<uint32_t> zi_order(n - 1, 1);
 
-    uint32_t start = (thr_n + bunch_size - 1) / bunch_size * bunch_size;
+    uint32_t start = thr_n * bunch_size;
 
     start_probe_jobs(zi_order, start);
     started_probes.emplace(zi_order, start);
@@ -472,8 +472,8 @@ namespace firefly {
         tmp_rec.generate_anchor_points();
 
         // start only thr_n jobs first, because the reconstruction can be done after the first feed
-        if (probes_for_next_prime > thr_n) {
-          uint32_t start = (thr_n + bunch_size - 1) / bunch_size * bunch_size;
+        if (probes_for_next_prime > thr_n * bunch_size) {
+          uint32_t start = thr_n * bunch_size;
 
           if (verbosity == CHATTY) {
             INFO_MSG("Starting " + std::to_string(start) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - start) + " jobs will be started later.");
@@ -628,7 +628,14 @@ namespace firefly {
       ones = true;
     }
 
-    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+    std::vector<FFInt> rand_zi;
+    rand_zi.reserve(zi_order.size());
+
+    if (!ones && (prime_it != 0 && safe_mode == false)) {
+      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+    } else {
+      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
+    }
 
     if (bunch_size == 1) {
       std::vector<FFInt> values(n);
@@ -778,7 +785,7 @@ namespace firefly {
             break;
           }
         }
-        if (i > thr_n) {
+        if (i > thr_n || twice) {
           std::cout << i << "\n";
         }
         twice = true;
