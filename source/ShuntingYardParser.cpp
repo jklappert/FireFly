@@ -66,8 +66,8 @@ namespace firefly {
           tmp = "";
         }
 
-        if (!op_stack.empty() && *(l_ptr - 1) == '('){
-          if(*(l_ptr + 1) == '('){
+        if (!op_stack.empty() && *(l_ptr - 1) == '(') {
+          if (*(l_ptr + 1) == '(') {
             tmp.insert(tmp.begin(), *l_ptr);
             tmp += "1";
             pf.emplace_back(tmp);
@@ -75,8 +75,7 @@ namespace firefly {
             op_stack.push('*');
           } else
             tmp.insert(tmp.begin(), *l_ptr);
-        }
-        else if (op_stack.empty() && pf.empty())
+        } else if (op_stack.empty() && pf.empty())
           tmp.insert(tmp.begin(), *l_ptr);
         else {
 
@@ -285,6 +284,96 @@ namespace firefly {
       else {
         ERROR_MSG("Error in functional evaluation! Check your input.");
         std::exit(-1);
+      }
+    }
+
+    return res;
+  }
+
+  std::vector<std::vector<FFInt>> ShuntingYardParser::evaluate_pre(const std::vector<std::vector<FFInt>>& values) const {
+    size_t bunch_size = values.size();
+    std::vector<std::vector<FFInt>> res(bunch_size);
+
+    for (const auto & tokens : precomp_tokens) {
+      std::vector<std::stack<FFInt>> nums (bunch_size);
+
+      for (const auto & token : tokens) {
+        switch (token.first) {
+          case operands::OPERATOR : {
+            // Pop two numbers
+            for (size_t i = 0; i != bunch_size; ++i) {
+              FFInt a = nums[i].top();
+              nums[i].pop();
+              FFInt b = nums[i].top();
+              nums[i].pop();
+
+              switch (token.second.n) {
+                case operators::PLUS: {
+                  nums[i].push(a + b);
+
+                  break;
+                }
+
+                case operators::MINUS: {
+                  nums[i].push(b - a);
+
+                  break;
+                }
+
+                case operators::MULT: {
+                  nums[i].push(b * a);
+
+                  break;
+                }
+
+                case operators::DIV: {
+                  nums[i].push(b / a);
+
+                  break;
+                }
+
+                case operators::POW: {
+                  nums[i].push(b.pow(a));
+
+                  break;
+                }
+              }
+            }
+
+            break;
+          }
+
+          case operands::VARIABLE : {
+            for (size_t i = 0; i != bunch_size; ++i) {
+              nums[i].push(values[i][token.second.n]);
+            }
+
+            break;
+          }
+
+          case operands::NEG_VARIABLE : {
+            for (size_t i = 0; i != bunch_size; ++i) {
+              nums[i].push(-values[i][token.second.n]);
+            }
+
+            break;
+          }
+
+          case operands::NUMBER: {
+            for (size_t i = 0; i != bunch_size; ++i) {
+              nums[i].push(token.second);
+            }
+          }
+        }
+      }
+
+      for (size_t i = 0; i != bunch_size; ++i) {
+        if (nums[i].size())
+          res[i].emplace_back(nums[i].top());
+        else {
+          ERROR_MSG("Error in functional evaluation! Check your input.");
+          std::exit(-1);
+        }
       }
     }
 

@@ -59,6 +59,12 @@ namespace firefly {
      */
     std::vector<FFInt> evaluate_pre(const std::vector<FFInt>& values) const;
     /**
+     *  Evaluates all functions for a given parameter point and returs their result using precomputed values in bunches. This is in general much faster than ShuntingYardParser::evaluate.
+     *  @param values A vector of vectors of FFInt objects at which the parsed functions should be evaluated.
+     *  @return The values of the parsed functions as a vector of vectors.
+     */
+    std::vector<std::vector<FFInt>> evaluate_pre(const std::vector<std::vector<FFInt>>& values) const;
+    /**
      *  Returns the reverse polish notation of the parsed functions
      *  @return A vector of all parsed functions in reverse polish notation with changed variable names according to int_var_map
      */
