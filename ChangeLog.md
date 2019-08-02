@@ -1,3 +1,18 @@
+FireFly 1.2.2
+=============
+
+Changes
+-------
+
+ * The `ShuntingYardParser` now supports unary operators in front of
+ parenthesis. We thank Robert Schabinger for this suggestion.
+
+Bug fixes
+---------
+
+ * Fixed a rare crash of the `Reconstructor` with `No items to feed anymore`.
+
+
 FireFly 1.2.1
 =============
 

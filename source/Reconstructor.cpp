@@ -552,8 +552,6 @@ namespace firefly {
         if (jobs_finished == 0 && probes.size() == 0) {
           lock_future.unlock();
 
-          bool cont = false;
-
           {
             std::unique_lock<std::mutex> lock_feed(feed_control);
 
@@ -565,7 +563,7 @@ namespace firefly {
 
               if (jobs_finished > 0 || probes.size() > 0) {
                 lock_future.unlock();
-                cont = true;
+
                 break;
               }
 
@@ -573,6 +571,14 @@ namespace firefly {
               lock_feed.lock();
             }
           }
+
+          lock_future.lock();
+
+          if (jobs_finished > 0 || probes.size() > 0) {
+            continue;
+          }
+
+          lock_future.unlock();
 
           {
             std::unique_lock<std::mutex> lock_status(status_control);
@@ -584,10 +590,6 @@ namespace firefly {
               new_prime = true;
               continue;
             }
-          }
-
-          if (cont) {
-            continue;
           }
 
           // no jobs are running anymore, check if done or new_prime else throw error
