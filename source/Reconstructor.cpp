@@ -791,8 +791,14 @@ namespace firefly {
         twice = true;
       }
     } else {
+      bool twice = false;
       while (bunch.empty()) {
+        if (twice) {
+          std::cout << "twice\n";
+        }
+        uint32_t i = 0;
         for (auto it = probes_bunch.begin(); it != probes_bunch.end(); ++it) {
+          ++i;
           if ((std::get<2>(*it)).wait_for(std::chrono::microseconds(10)) == std::future_status::ready) {
             bunch_t = std::get<0>(*it);
             bunch_zi_order = std::get<1>(*it);
@@ -803,6 +809,10 @@ namespace firefly {
             break;
           }
         }
+        if (i > thr_n || twice) {
+          std::cout << i << "\n";
+        }
+        twice = true;
       }
 
       t = bunch_t.back();
@@ -976,8 +986,8 @@ namespace firefly {
               //lock_exists.unlock();
               std::unique_lock<std::mutex> lock(job_control);
 
-              if (started_probes[zi_order] - thr_n <= fed_ones - 1) {
-                uint32_t start = fed_ones - started_probes[zi_order] + thr_n;
+              if (started_probes[zi_order] - thr_n * bunch_size <= fed_ones - 1) {
+                uint32_t start = fed_ones - started_probes[zi_order] + thr_n * bunch_size;
 
                 if (bunch_size != 1) {
                   start = (start + bunch_size - 1) / bunch_size * bunch_size;
