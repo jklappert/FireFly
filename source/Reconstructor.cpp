@@ -283,9 +283,9 @@ namespace firefly {
       }
 
       probes.clear();
-      finished_probes_it = {};
+      finished_probes_it = std::queue<future_list::iterator>();
       probes_bunch.clear();
-      finished_probes_bunch_it = {};
+      finished_probes_bunch_it = std::queue<future_list_bunch::iterator>();
       bunch_t.clear();
       bunch.clear();
       jobs_finished = 0;
@@ -434,9 +434,9 @@ namespace firefly {
         iteration = 0;
 
         probes.clear();
-        finished_probes_it = {};
+        finished_probes_it = std::queue<future_list::iterator>();
         probes_bunch.clear();
-        finished_probes_bunch_it = {};
+        finished_probes_bunch_it = std::queue<future_list_bunch::iterator>();
         bunch_t.clear();
         bunch.clear();
         fed_ones = 0;
