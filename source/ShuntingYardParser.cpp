@@ -28,7 +28,8 @@ namespace firefly {
     }
 
     while (std::getline(istream, line)) {
-      parse(line);
+      //if(line.length() > 0)
+        parse(line);
     }
 
     functions.shrink_to_fit();
@@ -36,7 +37,9 @@ namespace firefly {
 
     istream.close();
     auto time1 = std::chrono::high_resolution_clock::now();
-    INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s.");
+    INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions in "
+             + std::to_string(std::chrono::duration<double>(time1 - time0).count())
+             + " s.");
   }
 
   void ShuntingYardParser::parse(const std::string& fun_) {
@@ -51,6 +54,8 @@ namespace firefly {
     std::string tmp = ""; // Used for numbers
     std::vector<std::string> pf = {};
     std::stack<char> op_stack;
+    bool neg_pow = false;
+    uint32_t counter = 0;
 
     // Pick one character at a time until we reach the end of the line
     while (*l_ptr != '\0') {
@@ -66,13 +71,11 @@ namespace firefly {
           tmp = "";
         }
 
+        // Check for cases like +(-(x+...))
         if (!op_stack.empty() && *(l_ptr - 1) == '(') {
           if (*(l_ptr + 1) == '(') {
-            tmp.insert(tmp.begin(), *l_ptr);
-            tmp += "1";
-            pf.emplace_back(tmp);
-            tmp = "";
-            op_stack.push('*');
+            pf.emplace_back("0");
+            op_stack.push(*l_ptr);
           } else
             tmp.insert(tmp.begin(), *l_ptr);
         } else if (op_stack.empty() && pf.empty())
@@ -84,6 +87,70 @@ namespace firefly {
             op_stack.pop();
           }
 
+          if (*l_ptr == '^' && *(l_ptr + 1) == '(' && *(l_ptr + 2) == '-') {
+            if (*(l_ptr - 1) == ')') {
+              char const* l_ptr_c = l_ptr;
+
+              --l_ptr_c;
+              uint32_t parenthesis_counter = 0;
+
+              while (*(l_ptr_c) != '(') {
+//                 std::cout << "1 " << *(l_ptr_c) << " " << parenthesis_counter << " " << counter << "\n";
+
+                if (*l_ptr_c != ')' && *l_ptr_c != '(')
+                  counter ++;
+                else if (*l_ptr_c == ')')
+                  parenthesis_counter++;
+
+                l_ptr_c --;
+
+//                 std::cout << "1.5 " << *l_ptr_c << " " << parenthesis_counter << " " << counter << "\n";
+
+                if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
+                  counter += 1;
+
+//                 std::cout << "2 " << *l_ptr_c << " " << parenthesis_counter << " " << counter << "\n";
+
+                if (*(l_ptr_c) == '(' && parenthesis_counter != 0) {
+                  parenthesis_counter --;
+                  l_ptr_c --;
+
+                  if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
+                    counter += 1;
+
+//                   std::cout << "3 " << *(l_ptr_c) << " " << parenthesis_counter << " " << counter << "\n";
+
+                  if (parenthesis_counter == 0)
+                    break;
+                  else {
+                    while (*(l_ptr_c) == '(') {
+                      l_ptr_c --;
+                      parenthesis_counter --;
+//                       std::cout << "4 " << *(l_ptr_c) << " " << parenthesis_counter << " " << counter << "\n";
+
+                      if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
+                        counter += 1;
+
+                      if (parenthesis_counter == 0)
+                        break;
+                    }
+                  }
+                }
+
+                if (parenthesis_counter == 0)
+                  break;
+
+//                 std::cout << "-------------\n";
+              }
+            } else
+              counter = 1;
+
+            neg_pow = true;
+          }
+
+          if (neg_pow && *l_ptr == '^')
+            op_stack.push('/');
+
           op_stack.push(*l_ptr);
         }
       }
@@ -93,9 +160,21 @@ namespace firefly {
       // When reaching a closing one, pop off operators from the stack until an opening one is found
       else if (*l_ptr == ')') {
         if (tmp.length() > 0) {
-          pf.emplace_back(tmp);
-          tmp = "";
+          if (neg_pow) {
+//             std::cout << "drin " << counter << " " << op_stack.empty() << "\n";
+            pf.insert(pf.end() - counter, "1");
+            tmp.erase(0, 1);
+            pf.emplace_back(tmp);
+            tmp = "";
+            counter = 0;
+            neg_pow = false;
+          } else {
+            pf.emplace_back(tmp);
+            tmp = "";
+          }
         }
+
+        tmp = "";
 
         while (!op_stack.empty()) {
           if (op_stack.top() == '(') {
@@ -112,14 +191,31 @@ namespace firefly {
       l_ptr ++;
     }
 
-    if (tmp.length() > 0)
-      pf.emplace_back(tmp);
+    if (tmp.length() > 0) {
+      if (neg_pow) {
+//         std::cout << "drin " << counter << " " << op_stack.empty() << "\n";
+        pf.insert(pf.end() - counter, "1");
+        tmp.erase(0, 1);
+        pf.emplace_back(tmp);
+        tmp = "";
+        counter = 0;
+        neg_pow = false;
+      } else {
+        pf.emplace_back(tmp);
+      }
+    }
 
     while (!op_stack.empty()) {
       pf.emplace_back(std::string(1, op_stack.top()));
       op_stack.pop();
     }
 
+//     for (const auto & el : pf) {
+//       std::cout << el << " ";
+//     }
+// 
+//     std::cout << "\n";
+    pf.shrink_to_fit();
     functions.emplace_back(pf);
   }
 
@@ -295,7 +391,7 @@ namespace firefly {
     std::vector<std::vector<FFInt>> res(bunch_size);
 
     for (const auto & tokens : precomp_tokens) {
-      std::vector<std::stack<FFInt>> nums (bunch_size);
+      std::vector<std::stack<FFInt>> nums(bunch_size);
 
       for (const auto & token : tokens) {
         switch (token.first) {

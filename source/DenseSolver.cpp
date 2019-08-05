@@ -132,6 +132,12 @@ namespace firefly {
         }
       }
     } else {
+      for(int i = 0; i < n; i++){
+        for(int j = 0; j < n; j++){
+          std::cout << a[i][j] << " ";
+        }
+        std::cout << "\n";
+      }
       ERROR_MSG("Singular system of equations!");
       std::exit(-1);
     }
