@@ -147,7 +147,7 @@ namespace firefly {
     BlackBoxBase& bb;
     int verbosity;
     RatReconst_list reconst;
-    bool scan = false;
+    std::atomic<bool> scan = {false};
     bool save_states = false;
     bool resume_from_state = false;
     std::vector<std::string> tags;
@@ -161,12 +161,13 @@ namespace firefly {
     std::mutex print_control;
     std::mutex status_control;
     std::mutex clean;
-    std::mutex mutex_external;
     std::condition_variable condition_future;
     std::condition_variable condition_feed;
     // list containing the parameters and the future of the parallel tasks; t, zi_order, future
     future_list probes;
+    std::queue<future_list::iterator> finished_probes_it;
     future_list_bunch probes_bunch;
+    std::queue<future_list_bunch::iterator> finished_probes_bunch_it;
     std::vector<uint32_t> bunch_zi_order;
     std::vector<FFInt> bunch_t;
     std::vector<std::vector<FFInt>> bunch;
