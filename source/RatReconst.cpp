@@ -2914,6 +2914,7 @@ namespace firefly {
     std::vector<FFInt> res(n - 1);
 
     for (uint32_t i = 2; i <= n; ++i) {
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
       res[i - 2] = rand_zi[std::make_pair(i, 1)];
     }
 
