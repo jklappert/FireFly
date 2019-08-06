@@ -35,11 +35,10 @@ namespace firefly {
     /**
     *    Computes the coefficient a(i) = ai.at(i) recursively
     *    @param i The order of a(i)
-    *    @param ip Recursion order
     *    @param num f(y_i)
     *    @return a(i)
     */
-    FFInt comp_ai(int i, int ip, const FFInt& num);
+    FFInt comp_ai(int i, const FFInt& num);
     /**
     *    Constructs the canonical form of the rational function recursivly
     *    @return the rational function in its canonical form
@@ -48,17 +47,15 @@ namespace firefly {
     /**
      *    Iterates Thiele's interpolation formula to get the canonical form
      *    of the rational function
-     *    @param i an integer telling the current degree of the rational function
      *    @return the recursivly iterated rational function in its canonical form
      */
-    std::pair<PolynomialFF, PolynomialFF> iterate_canonical(uint32_t i);
+    std::pair<PolynomialFF, PolynomialFF> iterate_canonical();
     /**
      *    Calculates f(y_i) using  Thiele's interpolation formula
      *    @param i order of the highest coefficient a_i
-     *    @param ip order of sub coefficient a_ip
      *    @param y y_i
      *    @returns f(y_i)
      */
-    FFInt comp_fyi(uint32_t i, uint32_t ip, const FFInt& y);
+    FFInt comp_fyi(uint32_t i, const FFInt& y);
   };
 }

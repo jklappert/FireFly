@@ -118,12 +118,11 @@ namespace firefly {
     /**
      *    Computes the coefficient a(i) = ai.at(i) recursively
      *    @param i The order of a(i)
-     *    @param ip Recursion order
      *    @param num f(y_i)
      *    @param ai The vector of previously computed ai
      *    @return a(i)
      */
-    FFInt comp_ai(int i, int ip, const FFInt& num, std::vector<FFInt>& ai);
+    FFInt comp_ai(int i, const FFInt& num, const std::vector<FFInt>& ai) const;
     /**
      *    Convert the reconstructed polynomial to the canonical form
      *    @param ai The computed ai
@@ -132,11 +131,10 @@ namespace firefly {
     ff_map construct_canonical(const std::vector<FFInt>& ai) const;
     /**
      *    Iterative construction of the canonical form
-     *    @param i The iteration step; stops at ai.size()
      *    @param ai The computed ai
      *    @return One iteration step of the canonical polynomial
      */
-    PolynomialFF iterate_canonical(uint32_t i, const std::vector<FFInt>& ai) const;
+    PolynomialFF iterate_canonical(const std::vector<FFInt>& ai) const;
     /**
      *    Test if the guess yields the same answer for the function in the finite
      *    field of prime

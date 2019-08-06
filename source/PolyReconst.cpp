@@ -177,7 +177,7 @@ namespace firefly {
             if (i == 0)
               ais[zero_element].emplace_back(num);
             else
-              ais[zero_element].emplace_back(comp_ai(i, i, num, ais[zero_element]));
+              ais[zero_element].emplace_back(comp_ai(i, num, ais[zero_element]));
 
             if (ais[zero_element].back() == 0) {
               combine_res = true;
@@ -247,8 +247,7 @@ namespace firefly {
 
             for (uint32_t tmp_zi = 1; tmp_zi <= zi; ++tmp_zi) {
               // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-              std::unique_lock<std::mutex> lock_statics(mutex_statics);
-              coef_num *= rand_zi[std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1])].pow(deg_vec[tmp_zi - 1]);
+              coef_num *= get_rand_zi(tmp_zi, curr_zi_order[tmp_zi - 1]).pow(deg_vec[tmp_zi - 1]);
             }
 
             res -= coef_num;
@@ -260,8 +259,7 @@ namespace firefly {
 
             for (uint32_t tmp_zi = 1; tmp_zi <= zi; ++tmp_zi) {
               // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-              std::unique_lock<std::mutex> lock_statics(mutex_statics);
-              coef_num *= rand_zi[std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1])].pow(deg_vec[tmp_zi - 1]);
+              coef_num *= get_rand_zi(tmp_zi, curr_zi_order[tmp_zi - 1]).pow(deg_vec[tmp_zi - 1]);
             }
 
             res -= coef_num;
@@ -295,7 +293,7 @@ namespace firefly {
                   tmp_deg -= ele;
                 }
 
-                FFInt tmp_ai = comp_ai(i, i, el.second, ais[key]);
+                FFInt tmp_ai = comp_ai(i, el.second, ais[key]);
                 ais[key].emplace_back(tmp_ai);
 
                 if (tmp_ai == 0) {
@@ -584,18 +582,19 @@ namespace firefly {
     return result_ff;
   }
 
-  FFInt PolyReconst::comp_ai(int i, int ip, const FFInt& num, std::vector<FFInt>& ai) {
-    if (ip == 0) return num;
+  FFInt PolyReconst::comp_ai(int i, const FFInt& num, const std::vector<FFInt>& ai) const {
+    FFInt res = num;
 
-    FFInt yi_i_p_1;
-    FFInt yi_ip;
-    {
-      std::unique_lock<std::mutex> lock_statics(mutex_statics);
-      yi_i_p_1 = rand_zi[std::make_pair(zi, i + 1)];
-      yi_ip = rand_zi[std::make_pair(zi, ip)];
+    if (i > 0) {
+      FFInt yi_i_p_1 = get_rand_zi(zi, i + 1);
+
+      for (int ip_tmp = 1; ip_tmp != i + 1; ip_tmp++) {
+        FFInt yi_ip = get_rand_zi(zi, ip_tmp);
+        res = (res - ai[ip_tmp - 1]) / (yi_i_p_1 - yi_ip); //yi[i + 1] - yi[ip - 1 + 1] the +1 in the first and the +1 in the second is due to the 0th element in the vector*/
+      }
     }
 
-    return (comp_ai(i, ip - 1, num, ai) - ai[ip - 1]) / (yi_i_p_1 - yi_ip); //yi[i + 1] - yi[ip - 1 + 1] the +1 in the first and the +1 in the second is due to the 0th element in the vector
+    return res;
   }
 
   ff_map PolyReconst::construct_canonical(const std::vector<FFInt>& ai) const {
@@ -604,24 +603,22 @@ namespace firefly {
     if (size == 1) return {{std::vector<uint32_t> (1, 0), ai[0]}};
     else if (size == 0) return {{std::vector<uint32_t> (n, 0), 0}};
 
-    return (PolynomialFF(1, {{std::vector<uint32_t> (1, 0), ai[0]}}) + iterate_canonical(1, ai)).coefs;
+    return (PolynomialFF(1, {{std::vector<uint32_t> (1, 0), ai[0]}}) + iterate_canonical(ai)).coefs;
   }
 
-  PolynomialFF PolyReconst::iterate_canonical(uint32_t i, const std::vector<FFInt>& ai) const {
-    FFInt yi;
-    {
-      std::unique_lock<std::mutex> lock_statics(mutex_statics);
-      yi = rand_zi[std::make_pair(zi, i)];
+  PolynomialFF PolyReconst::iterate_canonical(const std::vector<FFInt>& ai) const {
+    FFInt yi = get_rand_zi(zi, ai.size() - 1);
+
+    PolynomialFF res = PolynomialFF(1, {{{0}, ai.back()}});
+    res = res * (-yi) + res.mul(1);
+
+    for (uint32_t i_tmp = ai.size() - 2; i_tmp != 0; i_tmp--) {
+      yi = get_rand_zi(zi, i_tmp);
+      res += PolynomialFF(1, {{{0}, ai[i_tmp]}});
+      res = res * (-yi) + res.mul(1); //yi[i - 1 + 1] +1 is due to 0th element
     }
 
-    PolynomialFF dum_pol = PolynomialFF(1, {{{0}, ai[i]}});
-
-    if (i < ai.size() - 1) {
-      PolynomialFF poly = dum_pol + iterate_canonical(i + 1, ai);
-      return poly.mul(1) + poly * (-yi); //yi[i - 1 + 1] +1 is due to 0th element
-    }
-
-    return dum_pol * (-yi) + dum_pol.mul(1); // yi[i - 1 + 1]
+    return res;
   }
 
   bool PolyReconst::test_guess(const FFInt& num) {
@@ -630,9 +627,7 @@ namespace firefly {
     std::vector<FFInt> chosen_yi(n);
 
     for (uint32_t i = 1; i <= n; ++i) {
-      std::unique_lock<std::mutex> lock_statics(mutex_statics);
-
-      chosen_yi[i - 1] = rand_zi[std::make_pair(i, 1)];
+      chosen_yi[i - 1] = get_rand_zi(i, 1);
     }
 
     return gy.calc(chosen_yi) == num;
@@ -655,8 +650,7 @@ namespace firefly {
 
       for (uint32_t tmp_zi = 1; tmp_zi < zi; ++tmp_zi) {
         // curr_zi_ord starts at 1, thus we need to subtract 1 entry
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
-        vi *= rand_zi.at(std::make_pair(tmp_zi, el[tmp_zi - 1]));
+        vi *= get_rand_zi(tmp_zi, el[tmp_zi - 1]);
       }
 
       vis.emplace_back(vi);
@@ -850,7 +844,10 @@ namespace firefly {
       if (result == 0) {
         roots.first.emplace_back(a);
         roots.second.emplace_back(count);
+        {
+          std::unique_lock<std::mutex> lock_statics(mutex_statics);
         rand_zi.emplace(std::make_pair(std::make_pair(zi, count), a));
+        }
       }
 
       a *= base;

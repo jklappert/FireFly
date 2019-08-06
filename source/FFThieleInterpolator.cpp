@@ -29,10 +29,10 @@ namespace firefly {
     if (i == 0) {
       ai.emplace_back(num);
     } else {
-      if (num == comp_fyi(i - 1, i - 1, ti.back())) check = true;
+      if (num == comp_fyi(i - 1, ti.back())) check = true;
 
       if (!check)
-        ai.emplace_back(comp_ai(i, i, num));
+        ai.emplace_back(comp_ai(i, num));
     }
 
     return check;
@@ -43,21 +43,28 @@ namespace firefly {
     return construct_canonical();
   }
 
-  FFInt ThieleInterpolator::comp_ai(int i, int ip, const FFInt& num) {
-    if (ip == 0) {
-      return num;
-    } else {
-      FFInt ai_i = comp_ai(i, ip - 1, num);
-      return (ti[i] - ti[ip - 1]) / (ai_i - ai[ip - 1]);
+  FFInt ThieleInterpolator::comp_ai(int i, const FFInt& num) {
+    FFInt res = num;
+
+    if (i > 0) {
+      for (int ip_tmp = 1; ip_tmp != i + 1; ip_tmp++) {
+        res = (ti[i] - ti[ip_tmp - 1]) / (res - ai[ip_tmp - 1]);
+      }
     }
+
+    return res;
   }
 
-  FFInt ThieleInterpolator::comp_fyi(uint32_t i, uint32_t ip, const FFInt& y) {
-    if (ip == 0) {
-      return ai[i];
-    } else {
-      return ai[i - ip] + (-ti[i - ip] + y) / comp_fyi(i, ip - 1, y);
+  FFInt ThieleInterpolator::comp_fyi(uint32_t i, const FFInt& y) {
+    FFInt res = ai[i];
+
+    if (i > 0) {
+      for (int ip_tmp = 1; ip_tmp != i + 1; ip_tmp++) {
+        res = ai[i - ip_tmp] + (-ti[i - ip_tmp] + y) / res;
+      }
     }
+
+    return res;
   }
 
   std::pair<ff_map, ff_map> ThieleInterpolator::construct_canonical() {
@@ -69,27 +76,29 @@ namespace firefly {
       denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1)));
       return std::make_pair(numerator_ff, denominator_ff);
     } else {
-      std::pair<PolynomialFF, PolynomialFF> r = iterate_canonical(1);
+      std::pair<PolynomialFF, PolynomialFF> r = iterate_canonical();
       FFInt mti = -ti[0];
       return std::make_pair((r.first * ai[0] + r.second * mti + r.second.mul(1)).coefs,
                             r.first.coefs);
     }
   }
 
-  std::pair<PolynomialFF, PolynomialFF> ThieleInterpolator::iterate_canonical(uint32_t i) {
-    if (i < ai.size() - 1) {
-      std::pair<PolynomialFF, PolynomialFF> fnp1 = iterate_canonical(i + 1);
-      FFInt mti = -ti[i];
-      return std::pair<PolynomialFF, PolynomialFF> (fnp1.first * ai[i] + fnp1.second.mul(1) + fnp1.second * mti,
-                                                    fnp1.first);
-    } else {
-      ff_map numerator_ff;
-      std::vector<uint32_t> zero_deg = {0};
-      numerator_ff.emplace(std::make_pair(zero_deg, ai[i]));
-      ff_map denominator_ff;
-      denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1)));
-      return std::make_pair(PolynomialFF(1, numerator_ff), PolynomialFF(1, denominator_ff));
+  std::pair<PolynomialFF, PolynomialFF> ThieleInterpolator::iterate_canonical() {
+    ff_map numerator_ff;
+    std::vector<uint32_t> zero_deg = {0};
+    numerator_ff.emplace(std::make_pair(zero_deg, ai.back()));
+    ff_map denominator_ff;
+    denominator_ff.emplace(std::make_pair(zero_deg, FFInt(1)));
+    std::pair<PolynomialFF, PolynomialFF> res = std::make_pair(PolynomialFF(1, numerator_ff),
+                                                               PolynomialFF(1, denominator_ff));
+
+    for (uint32_t i_tmp = ai.size() - 2; i_tmp != 0; i_tmp--) {
+      FFInt mti = -ti[i_tmp];
+      res = std::pair<PolynomialFF, PolynomialFF> (res.first * ai[i_tmp] + res.second.mul(1) + res.second * mti,
+                                                   res.first);
     }
+
+    return res;
   }
 
   ThieleInterpolator& ThieleInterpolator::operator=(const ThieleInterpolator& other) {
@@ -119,5 +128,4 @@ namespace firefly {
     ai = std::move(other.ai);
     ti = std::move(other.ti);
   }
-
 }
