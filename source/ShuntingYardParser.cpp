@@ -28,7 +28,7 @@ namespace firefly {
     }
 
     while (std::getline(istream, line)) {
-      //if(line.length() > 0)
+      if(line.length() > 0)
         parse(line);
     }
 
@@ -108,6 +108,18 @@ namespace firefly {
 
                 if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
                   counter += 1;
+                else if (*l_ptr_c == '-' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
+                  counter += 1;
+                else if (*l_ptr_c == '+' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
+                  counter += 1;
+                else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(')
+                  counter -= 1;
+                else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(')
+                  counter -= 1;
+                else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
+                  counter -= 1;
+                else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
+                  counter -= 1;
 
 //                 std::cout << "2 " << *l_ptr_c << " " << parenthesis_counter << " " << counter << "\n";
 
@@ -117,6 +129,18 @@ namespace firefly {
 
                   if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
                     counter += 1;
+                  else if (*l_ptr_c == '-' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
+                    counter += 1;
+                  else if (*l_ptr_c == '+' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
+                    counter += 1;
+                  else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(')
+                    counter -= 1;
+                  else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(')
+                    counter -= 1;
+                  else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
+                    counter -= 1;
+                  else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
+                    counter -= 1;
 
 //                   std::cout << "3 " << *(l_ptr_c) << " " << parenthesis_counter << " " << counter << "\n";
 
@@ -130,6 +154,18 @@ namespace firefly {
 
                       if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
                         counter += 1;
+                      else if (*l_ptr_c == '-' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
+                        counter += 1;
+                      else if (*l_ptr_c == '+' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
+                        counter += 1;
+                      else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(')
+                        counter -= 1;
+                      else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(')
+                        counter -= 1;
+                      else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
+                        counter -= 1;
+                      else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
+                        counter -= 1;
 
                       if (parenthesis_counter == 0)
                         break;
