@@ -820,6 +820,7 @@ namespace firefly {
                   }
 
                   solved_degs_num[key] = solve_vandermonde_system(non_solved_degs_num[key], coef_mat_num[key], get_anchor_points());
+
                   non_solved_degs_num.erase(key);
                   coef_mat_num.erase(key);
                   tmp_solved_coefs_num ++;
@@ -1042,14 +1043,6 @@ namespace firefly {
                 saved_ti.erase(curr_zi_order);
                 std::transform(curr_zi_order.begin(), curr_zi_order.end(),
                 curr_zi_order.begin(), [](uint32_t x) {return x + 1;});
-
-                for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
-                  auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
-
-                  std::unique_lock<std::mutex> lock_statics(mutex_statics);
-                  if (rand_zi.find(key) == rand_zi.end())
-                    rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
-                }
 
                 if (!is_singular_system)
                   num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
@@ -2789,35 +2782,26 @@ namespace firefly {
 
       std::map<uint32_t, uint32_t> r_map {};
 
+      // Fill the feed vector
+      uint32_t last_number_of_terms = 0;
+      uint32_t tmp_max_num_eqn = num_eqn;
+
       if (is_singular_system) {
+        // subtraction term for shifted interpolation
+        uint32_t sparse_num = 0;
+        uint32_t sparse_den = 0;
+
         // Check when we can remove functions from the sytem of equations
         for (const auto & el : coef_mat_num) {
-          bool is_dense = dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end();
+          bool got_max_size = false;
+          uint32_t size = non_solved_degs_num[el.first].size();
 
-          if (is_dense) {
-            uint32_t size = non_solved_degs_num[el.first].size();
+          if (size == max_num_coef_num.second) {
+            sparse_num ++;
+            got_max_size = true;
+          }
 
-            if (r_map.find(size) != r_map.end())
-              r_map[size] ++;
-            else
-              r_map[size] = 1;
-          } else if (el.first == max_num_coef_num.first)
-            r_map[non_solved_degs_num[el.first].size()] = 1;
-        }
-
-        for (const auto & el : coef_mat_den) {
-          bool is_dense = dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end();
-
-          if (is_dense) {
-            uint32_t size = non_solved_degs_den[el.first].size();
-
-            if (r_map.find(size) != r_map.end())
-              r_map[size] ++;
-            else
-              r_map[size] = 1;
-          } else if (el.first == max_num_coef_den.first) {
-            uint32_t size = non_solved_degs_den[el.first].size();
-
+          if (got_max_size || dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end()) {
             if (r_map.find(size) != r_map.end())
               r_map[size] ++;
             else
@@ -2825,9 +2809,23 @@ namespace firefly {
           }
         }
 
-        // Fill the feed vector
-        uint32_t last_number_of_terms = 0;
-        uint32_t tmp_max_num_eqn = num_eqn;
+        for (const auto & el : coef_mat_den) {
+          bool got_max_size = false;
+          uint32_t size = non_solved_degs_den[el.first].size();
+
+          if (size == max_num_coef_den.second) {
+            sparse_den ++;
+            got_max_size = true;
+          }
+
+          if (got_max_size || dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end()) {
+            if (r_map.find(size) != r_map.end())
+              r_map[size] ++;
+            else
+              r_map[size] = 1;
+          }
+        }
+
         bool num_done = false;
         bool den_done = false;
 
@@ -2843,21 +2841,21 @@ namespace firefly {
             tmp_num_eqn -= r_map[last_number_of_terms];
 
             if (num_done) {
-              tmp_num_eqn -= non_solved_degs_num.size() - dense_solve_degs_num.size() - 1; // correct for already removed degrees
+              tmp_num_eqn -= (non_solved_degs_num.size() - dense_solve_degs_num.size() - sparse_num); // correct for already removed degrees
               num_done = false;
             }
 
             if (den_done) {
-              tmp_num_eqn -= non_solved_degs_den.size() - dense_solve_degs_den.size() - 1; // correct for already removed degrees
+              tmp_num_eqn -= (non_solved_degs_den.size() - dense_solve_degs_den.size() - sparse_den); // correct for already removed degrees
               den_done = false;
             }
-
-            if (!num_done && el.first == max_num_coef_num.second)
-              num_done = true;
-
-            if (!den_done && el.first == max_num_coef_den.second)
-              den_done = true;
           }
+
+          if (!num_done && el.first == max_num_coef_num.second)
+            num_done = true;
+
+          if (!den_done && el.first == max_num_coef_den.second)
+            den_done = true;
 
           needed_feed_vec.emplace_back(std::make_pair(multiplicity, tmp_num_eqn));
           last_number_of_terms = el.first;
@@ -2882,10 +2880,6 @@ namespace firefly {
           else
             r_map[size] = 1;
         }
-
-        // Fill the feed vector
-        uint32_t last_number_of_terms = 0;
-        uint32_t tmp_max_num_eqn = num_eqn;
 
         for (const auto & el : r_map) {
           uint32_t multiplicity;
