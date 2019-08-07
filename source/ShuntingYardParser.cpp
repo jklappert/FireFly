@@ -27,9 +27,17 @@ namespace firefly {
       vars_map.emplace(std::make_pair(vars[i], i));
     }
 
+    uint32_t line_c = 1;
+
     while (std::getline(istream, line)) {
-      if(line.length() > 0)
+      line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+
+      if (line.length() > 0) {
+        line = validate(line, line_c);
         parse(line);
+      }
+
+      line_c++;
     }
 
     functions.shrink_to_fit();
@@ -95,8 +103,6 @@ namespace firefly {
               uint32_t parenthesis_counter = 0;
 
               while (*(l_ptr_c) != '(') {
-//                 std::cout << "1 " << *(l_ptr_c) << " " << parenthesis_counter << " " << counter << "\n";
-
                 if (*l_ptr_c != ')' && *l_ptr_c != '(')
                   counter ++;
                 else if (*l_ptr_c == ')')
@@ -104,11 +110,25 @@ namespace firefly {
 
                 l_ptr_c --;
 
-//                 std::cout << "1.5 " << *l_ptr_c << " " << parenthesis_counter << " " << counter << "\n";
+                 //std::cout << "1 " << *l_ptr_c << " " << counter << "\n";
 
-                if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
-                  counter += 1;
-                else if (*l_ptr_c == '-' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
+                if ((is_operator(*l_ptr_c) || *l_ptr_c == '(') && is_operand(*(l_ptr_c + 1))) {
+                  uint32_t tmp_c = 0;
+
+                  while (is_operand(*(l_ptr_c + tmp_c + 2))) {
+                    tmp_c ++;
+                  }
+
+                  counter -= tmp_c;
+                } else if ((is_operator(*l_ptr_c) || *l_ptr_c == '(') && is_variable(*(l_ptr_c + 1))) {
+                  uint32_t tmp_c = 0;
+
+                  while (is_variable(*(l_ptr_c + tmp_c + 2)) || is_operand(*(l_ptr_c + tmp_c + 2))) {
+                    tmp_c ++;
+                  }
+
+                  counter -= tmp_c;
+                } else if (*l_ptr_c == '-' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
                   counter += 1;
                 else if (*l_ptr_c == '+' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
                   counter += 1;
@@ -116,67 +136,33 @@ namespace firefly {
                   counter -= 1;
                 else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(')
                   counter -= 1;
+                else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(')
+                  counter -= 1;
+                else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(')
+                  counter -= 1;
                 else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
                   counter -= 1;
                 else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
                   counter -= 1;
 
-//                 std::cout << "2 " << *l_ptr_c << " " << parenthesis_counter << " " << counter << "\n";
-
-                if (*(l_ptr_c) == '(' && parenthesis_counter != 0) {
+                if (*l_ptr_c == '(' && parenthesis_counter != 0) {
                   parenthesis_counter --;
                   l_ptr_c --;
+                  //std::cout << *l_ptr_c << " dd\n";
 
                   if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
-                    counter += 1;
+                    counter += 2; // one for '/' and one for '1'
                   else if (*l_ptr_c == '-' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
                     counter += 1;
                   else if (*l_ptr_c == '+' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
                     counter += 1;
-                  else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(')
-                    counter -= 1;
-                  else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(')
-                    counter -= 1;
-                  else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
-                    counter -= 1;
-                  else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
-                    counter -= 1;
-
-//                   std::cout << "3 " << *(l_ptr_c) << " " << parenthesis_counter << " " << counter << "\n";
 
                   if (parenthesis_counter == 0)
                     break;
-                  else {
-                    while (*(l_ptr_c) == '(') {
-                      l_ptr_c --;
-                      parenthesis_counter --;
-//                       std::cout << "4 " << *(l_ptr_c) << " " << parenthesis_counter << " " << counter << "\n";
-
-                      if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
-                        counter += 1;
-                      else if (*l_ptr_c == '-' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
-                        counter += 1;
-                      else if (*l_ptr_c == '+' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
-                        counter += 1;
-                      else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(')
-                        counter -= 1;
-                      else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(')
-                        counter -= 1;
-                      else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
-                        counter -= 1;
-                      else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
-                        counter -= 1;
-
-                      if (parenthesis_counter == 0)
-                        break;
-                    }
-                  }
                 }
 
                 if (parenthesis_counter == 0)
                   break;
-
-//                 std::cout << "-------------\n";
               }
             } else
               counter = 1;
@@ -197,7 +183,6 @@ namespace firefly {
       else if (*l_ptr == ')') {
         if (tmp.length() > 0) {
           if (neg_pow) {
-//             std::cout << "drin " << counter << " " << op_stack.empty() << "\n";
             pf.insert(pf.end() - counter, "1");
             tmp.erase(0, 1);
             pf.emplace_back(tmp);
@@ -229,7 +214,6 @@ namespace firefly {
 
     if (tmp.length() > 0) {
       if (neg_pow) {
-//         std::cout << "drin " << counter << " " << op_stack.empty() << "\n";
         pf.insert(pf.end() - counter, "1");
         tmp.erase(0, 1);
         pf.emplace_back(tmp);
@@ -631,4 +615,60 @@ namespace firefly {
       }
     }
   }
+
+  std::string ShuntingYardParser::validate(const std::string& line, uint32_t exp_n) {
+    size_t size = line.size() + 1;
+    char r[size];
+    char s[size];
+    std::strcpy(r, line.c_str());
+    std::strcpy(s, line.c_str());
+    std::stack<int> st;
+    int i = 0;
+
+    while (i < size) {
+      if (s[i] == '(') {
+        if (i != 0 && s[i - 1] == '(')
+          st.push(-i);
+        else
+          st.push(i);
+
+        i++;
+      } else if (s[i] != ')' && s[i] != '(')
+        i++;
+      else if (s[i] == ')') {
+        if (st.size() == 0) {
+          ERROR_MSG("Mismatch of closing prenthesis in expression " + std::to_string(exp_n) + ".");
+          std::exit(1);
+        } else {
+          int top = st.top();
+
+          if (i != size -1 && s[i + 1] == ')' && top < 0) {
+            r[-top] = '$';
+            r[i] = '$';
+          }
+
+          st.pop();
+          i++;
+        }
+      }
+    }
+
+    if (st.size() > 0) {
+      ERROR_MSG("Mismatch of opening prenthesis in your expression " + std::to_string(exp_n) + ".");
+      std::exit(1);
+    }
+
+    std::string result = "";
+
+    for (i = 0; i < size; i++) {
+      if (r[i] == '$')
+        continue;
+
+      result += r[i];
+    }
+
+    //std::cout << "validate\n" << line << "\n" << result << "\n";
+    return result;
+  }
 }
+

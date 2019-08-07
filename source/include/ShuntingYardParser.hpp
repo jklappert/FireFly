@@ -122,6 +122,12 @@ namespace firefly {
      *  @param fun_ The function which should be converted
      */
     void parse(const std::string& fun_);
+    /**
+     *  Checks expression for redundant parenthesis, removes them and throws an error if one encounters a mismatch of parenthesis
+     *  @param line the expression as a string
+     *  @param exp_n the expression number
+     */
+    std::string validate(const std::string& line, uint32_t exp_n);
   };
 
   namespace operators {
