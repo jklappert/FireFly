@@ -654,7 +654,7 @@ namespace firefly {
     }
 
     if (st.size() > 0) {
-      ERROR_MSG("Mismatch of opening prenthesis in your expression " + std::to_string(exp_n) + ".");
+      ERROR_MSG("Mismatch of opening prenthesis in expression " + std::to_string(exp_n) + ".");
       std::exit(1);
     }
 
