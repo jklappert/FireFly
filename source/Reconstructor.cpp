@@ -845,16 +845,22 @@ namespace firefly {
               }
             }
           }
-        } else { /*if (std::get<2>(rec) == RECONSTRUCTING)*/  // to be sure that no other thread does the same
+        } else {
           lock_exists.lock();
 
-          std::get<2>(rec) = DONE;
+          // to be sure that no other thread does the same
+          // TODO: Why is this necessary?
+          if (std::get<2>(rec) == RECONSTRUCTING) {
+            std::get<2>(rec) = DONE;
 
-          lock_exists.unlock();
-          std::unique_lock<std::mutex> lock_status(status_control);
+            lock_exists.unlock();
+            std::unique_lock<std::mutex> lock_status(status_control);
 
-          ++items_done;
-          one_done = true;
+            ++items_done;
+            one_done = true;
+          } else {
+            lock_exists.unlock();
+          }
         }
       }
     } else {

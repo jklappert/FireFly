@@ -12,6 +12,9 @@ Bug fixes
 
  * Fixed a rare crash of the `Reconstructor` with `No items to feed anymore`.
 
+ * Fixed another rare crash of the `Reconstructor` with `No items to feed
+ anymore`. We thank Mario Prausa for noticing.
+
 
 FireFly 1.2.1
 =============
