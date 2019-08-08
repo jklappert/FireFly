@@ -611,37 +611,34 @@ namespace firefly {
 
   std::string ShuntingYardParser::validate(const std::string& line, uint32_t exp_n) {
     size_t size = line.size() + 1;
-    char r[size];
-    char s[size];
-    std::strcpy(r, line.c_str());
-    std::strcpy(s, line.c_str());
+    std::string r = line;
     std::stack<int> st;
     int i = 0;
 
     while (i < size) {
-      if (s[i] == '+' && s[i + 1] == '-')
+      if (r[i] == '+' && r[i + 1] == '-')
         r[i] = '$';
 
-      if (s[i] == '-' && s[i + 1] == '+')
+      if (r[i] == '-' && r[i + 1] == '+')
         r[i + 1] = '$';
 
-      if (s[i] == '(') {
-        if (i != 0 && s[i - 1] == '(')
+      if (r[i] == '(') {
+        if (i != 0 && r[i - 1] == '(')
           st.push(-i);
         else
           st.push(i);
 
         i++;
-      } else if (s[i] != ')' && s[i] != '(')
+      } else if (r[i] != ')' && r[i] != '(')
         i++;
-      else if (s[i] == ')') {
+      else if (r[i] == ')') {
         if (st.size() == 0) {
           ERROR_MSG("Mismatch of closing prenthesis in expression " + std::to_string(exp_n) + ".");
           std::exit(1);
         } else {
           int top = st.top();
 
-          if (i != size - 1 && s[i + 1] == ')' && top < 0) {
+          if (i != size - 1 && r[i + 1] == ')' && top < 0) {
             r[-top] = '$';
             r[i] = '$';
           }
