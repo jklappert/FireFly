@@ -671,4 +671,3 @@ namespace firefly {
     return result;
   }
 }
-
