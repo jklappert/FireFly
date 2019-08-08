@@ -38,7 +38,7 @@ namespace firefly {
     *    @param num f(y_i)
     *    @return a(i)
     */
-    FFInt comp_ai(int i, const FFInt& num);
+    FFInt comp_ai(uint32_t i, const FFInt& num);
     /**
     *    Constructs the canonical form of the rational function recursivly
     *    @return the rational function in its canonical form

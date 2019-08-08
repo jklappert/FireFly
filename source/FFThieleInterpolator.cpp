@@ -43,11 +43,11 @@ namespace firefly {
     return construct_canonical();
   }
 
-  FFInt ThieleInterpolator::comp_ai(int i, const FFInt& num) {
+  FFInt ThieleInterpolator::comp_ai(uint32_t i, const FFInt& num) {
     FFInt res = num;
 
     if (i > 0) {
-      for (int ip_tmp = 1; ip_tmp != i + 1; ip_tmp++) {
+      for (uint32_t ip_tmp = 1; ip_tmp != i + 1; ip_tmp++) {
         res = (ti[i] - ti[ip_tmp - 1]) / (res - ai[ip_tmp - 1]);
       }
     }
@@ -59,7 +59,7 @@ namespace firefly {
     FFInt res = ai[i];
 
     if (i > 0) {
-      for (int ip_tmp = 1; ip_tmp != i + 1; ip_tmp++) {
+      for (uint32_t ip_tmp = 1; ip_tmp != i + 1; ip_tmp++) {
         res = ai[i - ip_tmp] + (-ti[i - ip_tmp] + y) / res;
       }
     }

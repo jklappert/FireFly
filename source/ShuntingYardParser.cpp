@@ -615,7 +615,7 @@ namespace firefly {
     std::stack<int> st;
     int i = 0;
 
-    while (i < size) {
+    while (static_cast<size_t>(i) != size) {
       if (r[i] == '+' && r[i + 1] == '-')
         r[i] = '$';
 
@@ -638,7 +638,7 @@ namespace firefly {
         } else {
           int top = st.top();
 
-          if (i != size - 1 && r[i + 1] == ')' && top < 0) {
+          if (static_cast<uint32_t>(i) != size - 1 && r[i + 1] == ')' && top < 0) {
             r[-top] = '$';
             r[i] = '$';
           }
@@ -656,11 +656,11 @@ namespace firefly {
 
     std::string result = "";
 
-    for (i = 0; i < size; i++) {
-      if (r[i] == '$')
+    for (size_t tmp = 0; tmp != size; ++tmp) {
+      if (r[tmp] == '$')
         continue;
 
-      result += r[i];
+      result += r[tmp];
     }
 
     //std::cout << "validate\n" << line << "\n" << result << "\n";
