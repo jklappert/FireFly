@@ -1,12 +1,33 @@
 FireFly 1.2.2
 =============
 
+New features
+------------
+
+ * Introducing bunched evaluation of the black box. The black-box probes are
+ now supported to be taken in bunches such that instead of returning a vector
+ of probes a vector of a vector of probes can be returned. This feature can help
+ improving the runtime when reaching CPU limits.
+
 Changes
 -------
 
- * The `ShuntingYardParser` now supports unary operators in front of
- parenthesis. We thank Robert Schabinger for this suggestion.
-
+ * Changes for the `ShuntingYardParser`:
+   - It now supports unary operators for parenthesis. We thank
+   Robert Schabinger for this suggestion.
+   
+   - Supports negative exponents like `(x+y)^(-10)`. A negative exponent
+   has to be used with parenthesis.
+   
+   - Supports capital letters for variables.
+   
+   - Performs a validation of the input by removing
+   white spaces, checking parenthesis, removing redundant parenthesis, and
+   transforming `+-` or `-+` to `-`.
+   
+ * Without the safe mode, all required probes are now scheduled when
+ changing a prime field. This leads to runtime improvements.
+   
 Bug fixes
 ---------
 
