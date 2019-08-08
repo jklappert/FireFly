@@ -70,12 +70,6 @@ namespace firefly {
      */
     std::vector<std::vector<std::string>> get_rp_functions() const;
     /**
-     *  Returns the mapped variable to a given index
-     *  @param index The index of the variable
-     *  @return The mapped variable
-     */
-    static char get_var(int index);
-    /**
      *  Checks if functions are stored in this class
      *  @return True if no functions are stored in this class
      */
@@ -131,6 +125,11 @@ namespace firefly {
      *  @param exp_n the expression number
      */
     std::string validate(const std::string& line, uint32_t exp_n);
+    /**
+     *  Exits the program since a variable was not declared
+     *  @param var the undeclared variable
+     */
+    void throw_not_declared_var_err(const std::string& var) const;
   };
 
   namespace operators {

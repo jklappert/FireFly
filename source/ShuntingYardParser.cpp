@@ -2,6 +2,7 @@
 #include "Logger.hpp"
 #include <fstream>
 #include <chrono>
+#include <cctype>
 
 namespace firefly {
 
@@ -295,21 +296,27 @@ namespace firefly {
 
               if (vars_map.find(tmp) != vars_map.end())
                 nums.push(-values[vars_map.at(tmp)]);
-              else
+              else if (isdigit(tmp[0]))
                 nums.push(-FFInt(std::stoull(tmp)));
+              else
+                throw_not_declared_var_err(tmp);
             } else if (token[0] == '+') {
               std::string tmp = token;
               tmp.erase(0, 1);
 
               if (vars_map.find(tmp) != vars_map.end())
                 nums.push(values[vars_map.at(tmp)]);
-              else
+              else  if (isdigit(tmp[0]))
                 nums.push(FFInt(std::stoull(tmp)));
+              else
+                throw_not_declared_var_err(tmp);
             } else {
               if (vars_map.find(token) != vars_map.end())
                 nums.push(values[vars_map.at(token)]);
-              else
+              else if (isdigit(token[0]))
                 nums.push(FFInt(std::stoull(token)));
+              else
+                throw_not_declared_var_err(token);
             }
           }
         }
@@ -480,7 +487,7 @@ namespace firefly {
         if (nums[i].size())
           res[i].emplace_back(nums[i].top());
         else {
-          ERROR_MSG("Error in functional evaluation! Check your input.");
+          ERROR_MSG("Error in functional evaluation! Please check your input.");
           std::exit(-1);
         }
       }
@@ -587,21 +594,27 @@ namespace firefly {
 
               if (vars_map.find(tmp) != vars_map.end())
                 precomp_tokens[i][j] = {operands::NEG_VARIABLE, vars_map[tmp]};
-              else
+              else if (std::isdigit(tmp[0]))
                 precomp_tokens[i][j] = {operands::NUMBER, (-FFInt(std::stoull(tmp)))};
+              else
+                throw_not_declared_var_err(tmp);
             } else if (token[0] == '+') {
               std::string tmp = token;
               tmp.erase(0, 1);
 
               if (vars_map.find(tmp) != vars_map.end())
                 precomp_tokens[i][j] = {operands::VARIABLE, vars_map[tmp]};
-              else
+              else if (std::isdigit(tmp[0]))
                 precomp_tokens[i][j] = {operands::NUMBER, (FFInt(std::stoull(tmp)))};
+              else
+                throw_not_declared_var_err(tmp);
             } else {
               if (vars_map.find(token) != vars_map.end())
                 precomp_tokens[i][j] = {operands::VARIABLE, vars_map[token]};
-              else
+              else if (std::isdigit(token[0]))
                 precomp_tokens[i][j] = {operands::NUMBER, (FFInt(std::stoull(token)))};
+              else
+                throw_not_declared_var_err(token);
             }
           }
         }
@@ -665,5 +678,10 @@ namespace firefly {
 
     //std::cout << "validate\n" << line << "\n" << result << "\n";
     return result;
+  }
+
+  void ShuntingYardParser::throw_not_declared_var_err(const std::string& var) const {
+    ERROR_MSG("Variable " + var + " not declared!");
+    std::exit(-1);
   }
 }
