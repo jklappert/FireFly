@@ -1413,12 +1413,14 @@ namespace firefly {
           std::unique_lock<std::mutex> lock(mutex_status);
           num_eqn = shifted_max_num_eqn;
         } else {
-          for (const auto & el : non_solved_degs_num) {
-            coef_mat_num[el.first] = std::vector<FFInt> {};
-          }
+          if (n > 1) {
+            for (const auto & el : non_solved_degs_num) {
+              coef_mat_num[el.first] = std::vector<FFInt> {};
+            }
 
-          for (const auto & el : non_solved_degs_den) {
-            coef_mat_den[el.first] = std::vector<FFInt> {};
+            for (const auto & el : non_solved_degs_den) {
+              coef_mat_den[el.first] = std::vector<FFInt> {};
+            }
           }
 
           std::unique_lock<std::mutex> lock(mutex_status);
@@ -2862,41 +2864,44 @@ namespace firefly {
           tmp_max_num_eqn = tmp_num_eqn;
         }
       } else {
-        // Check when we can remove functions from the sytem of equations
-        for (const auto & el : coef_mat_num) {
-          uint32_t size = non_solved_degs_num[el.first].size();
+        if (n > 1) {
+          // Check when we can remove functions from the sytem of equations
+          for (const auto & el : coef_mat_num) {
+            uint32_t size = non_solved_degs_num[el.first].size();
 
-          if (r_map.find(size) != r_map.end())
-            r_map[size] ++;
-          else
-            r_map[size] = 1;
-        }
-
-        for (const auto & el : coef_mat_den) {
-          uint32_t size = non_solved_degs_den[el.first].size();
-
-          if (r_map.find(size) != r_map.end())
-            r_map[size] ++;
-          else
-            r_map[size] = 1;
-        }
-
-        for (const auto & el : r_map) {
-          uint32_t multiplicity;
-          uint32_t tmp_num_eqn = tmp_max_num_eqn;
-
-          if (last_number_of_terms == 0)
-            multiplicity = el.first;
-          else {
-            multiplicity = el.first - last_number_of_terms;
-
-            tmp_num_eqn -= r_map[last_number_of_terms];
+            if (r_map.find(size) != r_map.end())
+              r_map[size] ++;
+            else
+              r_map[size] = 1;
           }
 
-          needed_feed_vec.emplace_back(std::make_pair(multiplicity, tmp_num_eqn));
-          last_number_of_terms = el.first;
-          tmp_max_num_eqn = tmp_num_eqn;
-        }
+          for (const auto & el : coef_mat_den) {
+            uint32_t size = non_solved_degs_den[el.first].size();
+
+            if (r_map.find(size) != r_map.end())
+              r_map[size] ++;
+            else
+              r_map[size] = 1;
+          }
+
+          for (const auto & el : r_map) {
+            uint32_t multiplicity;
+            uint32_t tmp_num_eqn = tmp_max_num_eqn;
+
+            if (last_number_of_terms == 0)
+              multiplicity = el.first;
+            else {
+              multiplicity = el.first - last_number_of_terms;
+
+              tmp_num_eqn -= r_map[last_number_of_terms];
+            }
+
+            needed_feed_vec.emplace_back(std::make_pair(multiplicity, tmp_num_eqn));
+            last_number_of_terms = el.first;
+            tmp_max_num_eqn = tmp_num_eqn;
+          }
+        } else
+          needed_feed_vec.emplace_back(std::make_pair(1, num_eqn));
       }
     }
 
