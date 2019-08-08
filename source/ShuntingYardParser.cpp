@@ -110,8 +110,6 @@ namespace firefly {
 
                 l_ptr_c --;
 
-                 //std::cout << "1 " << *l_ptr_c << " " << counter << "\n";
-
                 if ((is_operator(*l_ptr_c) || *l_ptr_c == '(') && is_operand(*(l_ptr_c + 1))) {
                   uint32_t tmp_c = 0;
 
@@ -140,15 +138,10 @@ namespace firefly {
                   counter -= 1;
                 else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(')
                   counter -= 1;
-                else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
-                  counter -= 1;
-                else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(' && *(l_ptr_c - 3) != '^')
-                  counter -= 1;
 
                 if (*l_ptr_c == '(' && parenthesis_counter != 0) {
                   parenthesis_counter --;
                   l_ptr_c --;
-                  //std::cout << *l_ptr_c << " dd\n";
 
                   if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
                     counter += 2; // one for '/' and one for '1'
@@ -233,7 +226,7 @@ namespace firefly {
 //     for (const auto & el : pf) {
 //       std::cout << el << " ";
 //     }
-// 
+//
 //     std::cout << "\n";
     pf.shrink_to_fit();
     functions.emplace_back(pf);
@@ -626,10 +619,12 @@ namespace firefly {
     int i = 0;
 
     while (i < size) {
-      if(s[i] == '+' && s[i + 1] == '-')
+      if (s[i] == '+' && s[i + 1] == '-')
         r[i] = '$';
-      if(s[i] == '-' && s[i + 1] == '+')
+
+      if (s[i] == '-' && s[i + 1] == '+')
         r[i + 1] = '$';
+
       if (s[i] == '(') {
         if (i != 0 && s[i - 1] == '(')
           st.push(-i);
@@ -646,7 +641,7 @@ namespace firefly {
         } else {
           int top = st.top();
 
-          if (i != size -1 && s[i + 1] == ')' && top < 0) {
+          if (i != size - 1 && s[i + 1] == ')' && top < 0) {
             r[-top] = '$';
             r[i] = '$';
           }
