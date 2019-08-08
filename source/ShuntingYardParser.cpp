@@ -325,7 +325,7 @@ namespace firefly {
       if (nums.size())
         res.emplace_back(nums.top());
       else {
-        ERROR_MSG("Error in functional evaluation! Check your input.");
+        ERROR_MSG("Error in functional evaluation! Please check your input.");
         std::exit(-1);
       }
     }
@@ -398,7 +398,7 @@ namespace firefly {
       if (nums.size())
         res.emplace_back(nums.top());
       else {
-        ERROR_MSG("Error in functional evaluation! Check your input.");
+        ERROR_MSG("Error in functional evaluation! Please check your input.");
         std::exit(-1);
       }
     }
@@ -626,6 +626,10 @@ namespace firefly {
     int i = 0;
 
     while (i < size) {
+      if(s[i] == '+' && s[i + 1] == '-')
+        r[i] = '$';
+      if(s[i] == '-' && s[i + 1] == '+')
+        r[i + 1] = '$';
       if (s[i] == '(') {
         if (i != 0 && s[i - 1] == '(')
           st.push(-i);
