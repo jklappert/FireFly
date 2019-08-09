@@ -18,14 +18,17 @@
 #==================================================================================
 
 file=$1
+suff="_c"
+file_c="$file$suff"
 
-echo "Converting $file"
-tr -d '\040\011\012\015' < $file > tmp.m
-mv tmp.m $file
-sed -i 's/"//g' $file
-sed -i 's/{//g' $file
-sed -i 's/}//g' $file
-sed -i 's/\\//g' $file
-sed -i 's/,/\n/g' $file
+echo "Converting $file to $file_c"
+
+tr -d '\040\011\012\015' < $file > $file_c
+
+sed -i 's/"//g' $file_c
+sed -i 's/{//g' $file_c
+sed -i 's/}/;/g' $file_c
+sed -i 's/\\//g' $file_c
+sed -i 's/,/;/g' $file_c
 
 
