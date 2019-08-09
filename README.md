@@ -12,7 +12,7 @@ Please refer to this paper when using FireFly:
 * [Building FireFly](#building-firefly)
 * [Reconstructing funtions](#reconstructing-functions)
 * [Directly parse collections of rational functions](#directly-parse-collections-of-rational-functions)
-* [Converting Mathematica expressions to C++ code](##converting-mathematica-expressions-to-c++-code)
+* [Converting Mathematica expressions to compilable code](##converting-mathematica-expressions-to-compilable-code)
 * [Code Documentation](#code-documentation)
 
 ## Requirements
@@ -137,7 +137,7 @@ For convenience, FireFly also provides a script which converts a list of rationa
 where `$FILE` contains the list of rational functions.
 
 
-## Converting Mathematica expressions to C++ code
+## Converting Mathematica expressions to compilable code
 **Note that this conversion might not reach an optimal performance.**
 
 Sometimes the black box is not provided by a code but some Mathematica expressions. For this purpose FireFly provides a script to convert Mathematica functions to compilable C++ code. The functions have to be provided as a file in which a list of functions (expression or string) is stored, e.g.,
