@@ -15,19 +15,19 @@ Changes
 -------
 
  * Changes for the `ShuntingYardParser`:
-   - The parsable format has slightly changed. The delimiter to split functions
-   has been replaced from `\n` to `;`. Spaces and new lines occurring in
-   expressions will be removed automatically.
+   - The parsable format has slightly changed. The delimiter to mark the end
+   of functions has been replaced from `\n` to `;`. Spaces and new lines
+   occurring in expressions will be removed automatically.
 
-   - Supports unary operators for parenthesis. We thank Robert Schabinger for this
+   - The parser now supports unary operators for parenthesis. We thank Robert Schabinger for this
    suggestion.
    
-   - Supports negative exponents like `(x+y)^(-10)`. A negative exponent
+   - The parser now supports negative exponents like `(x+y)^(-10)`. A negative exponent
    has to be used with parenthesis.
    
-   - Supports capital letters for variables.
+   - The parser now supports capital letters for variables.
    
-   - Performs a validation of the input by removing white spaces, checking
+   - The parser now performs a validation of the input by removing white spaces, checking
    parenthesis, removing redundant parenthesis, and transforming `+-` or `-+`
    to `-`.
    
@@ -35,7 +35,7 @@ Changes
  changing a prime field. This leads to runtime improvements.
  
  * Changed recursive implementation of Thiele and Newton interpolation to
- an iterative one, which avoids stack overflows.
+ an iterative one which avoids stack overflows.
    
 Bug fixes
 ---------
