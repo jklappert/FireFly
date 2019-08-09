@@ -13,6 +13,10 @@ Changes
 -------
 
  * Changes for the `ShuntingYardParser`:
+   - The parsable format has slightly changed. The delimiter to split functions
+   has been replaced from `\n` to `;`. Spaces and new lines occuring in a
+   single expression will be removed automatically.
+
    - It now supports unary operators for parenthesis. We thank
    Robert Schabinger for this suggestion.
    

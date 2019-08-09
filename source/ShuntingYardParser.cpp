@@ -30,8 +30,9 @@ namespace firefly {
 
     uint32_t line_c = 1;
 
-    while (std::getline(istream, line)) {
+    while (std::getline(istream, line, ';')) {
       line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+      line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
 
       if (line.length() > 0) {
         line = validate(line, line_c);
