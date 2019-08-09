@@ -7,6 +7,14 @@ FireFly is a reconstruction library for rational functions and polynomials writt
 Please refer to this paper when using FireFly:
 * J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[1904.00009](https://arxiv.org/abs/1904.00009)]
 
+## Table of contents
+1. [Requirements](#requirements)
+2. [Building FireFly](#building-firefly)
+3. [Reconstructing funtions](#reconstructing-functions)
+4. [Directly parse collections of rational functions](#directly-parse-collections-of-rational-functions)
+5. [Converting Mathematica expressions to C++ code](##converting-mathematica-expressions-to-c---code)
+6. [Code Documentation](#code-documentation)
+
 ## Requirements
 FireFly requires:
 * C++ compiler supporting C++11
@@ -84,17 +92,17 @@ Additional options can be set and we refer to the `example.cpp` file and the cod
 
 
 ## Directly parse collections of rational functions
-When the conversion and compilation steps of the `convert_to_ff.sh` scripts are too time consuming, FireFly also provides a parser class for rational functions. The functions will be stored in reverse polish notation to be evaluated for a given parameter point. Parsing collections of rational functions can be done with the `ShuntingYardParser` class. It has to be constructed with a path to a file which contains the rational functions and a vector which sets the occurring variables:
+FireFly provides a parser class for rational functions. The functions will be stored in reverse polish notation to be evaluated for a given parameter point. Parsing collections of rational functions can be done with the `ShuntingYardParser` class. It has to be constructed with a path to a file which contains the rational functions and a vector which sets the occurring variables:
 
 ```cpp
 ShuntingYardParser parser(path, vars);
 ```
 
-Here, `path` is a string containing the path to the file in which the needed functions are stored and `vars` is a vector of strings which represent the occurring variables. The collection of functions have to be separated by new lines to be identified correctly, e.g.,
+Here, `path` is a string containing the path to the file in which the needed functions are stored and `vars` is a vector of strings which represent the occurring variables. The collection of functions have to be separated by a semicolon `;` to be identified correctly, e.g.,
 
 ```
-(x+y*3)/(z^2+x)
-(12132132323213213212/33*x + 12 * 3 - x^100*y^2)/(3*y^5)
+(x+y*3)/(z^2+x);
+(12132132323213213212/33*x + 12 * 3 - x^100*y^2)/(3*y^5);
 ```
 
 The corresponding vector `vars` would thus be
@@ -103,6 +111,8 @@ The corresponding vector `vars` would thus be
 std::vector<std::string> vars = {"x","y","z"};
 ```
 
+Variables are limited to a length of at most 16 characters and can consist of lower and upper case letters, i.e. `a,...,z` and `A,...,Z`, and numbers, e.g., `s12`.
+
 The functions have to be parsed only once and can be evaluated afterwards calling
 
 ```cpp
@@ -110,13 +120,13 @@ parser.evaluate(values);
 //parser.evaluate_pre(values); // Evaluates the black-box functions with precomputed values (faster than evaluate()). Requires parser.precompute_tokens() after the field has changed.
 ```
 
-where `values` is a vector which contains the parameter point at which the functions should be evaluated. The function `evaluate` returns a vector of `FFInt` objects which is filled by the values of the evaluated functions in the same order as the functions are defined in the input file. Thus, it can be directly used in the `BlackBox` functor of FireFly. An example file is given in `s_y_test.m`. Note that only the operators
+where `values` is a vector which contains the parameter point at which the functions should be evaluated. The function `evaluate` returns a vector of `FFInt` objects which is filled with the values of the evaluated functions in the same order as the functions are defined in the input file. Thus, it can be directly used in the `BlackBox` functor of FireFly. An example file is given in `parser_test/s_y_test.m`. Note that only the operators
 
 ```
 +, -, *, /, ^
 ```
 
-are supported.
+are supported. Negative exponents like `x^(-10)` have to be set in parenthesis. For improved runtime, the evaluation should be performed with `evaluate_pre` which uses precomputed values of the monomial coefficients for the current field.
 
 For convenience, FireFly also provides a script which converts a list of rational functions (stored as an expression list of Mathematica) to FireFly's parsable format. It is located in the `mma_2_ff` directory and can be executed with
 
@@ -128,7 +138,9 @@ where `$FILE` contains the list of rational functions.
 
 
 ## Converting Mathematica expressions to C++ code
-Sometimes the black box is not provided by a code but some Mathematica expressions. For this purpose FireFly provides a script to convert Mathematica functions to compilable C++ code. This can be useful by performing algebraic computations on large functions (see also the parser of FireFly). The functions have to be provided as a file in which a list of functions (expression or string) is stored, e.g.,
+**Note that this conversion might not reach an optimal performance.**
+
+Sometimes the black box is not provided by a code but some Mathematica expressions. For this purpose FireFly provides a script to convert Mathematica functions to compilable C++ code. The functions have to be provided as a file in which a list of functions (expression or string) is stored, e.g.,
 
 ```
 {x+y,2*x+z,...}
@@ -144,7 +156,6 @@ Note that both lists are allowed to contain expressions and/or strings. The scri
 
 ```
 cd mma_2_ff
-chmod u+x convert_to_ff.sh
 ./convert_to_ff.sh $PATH_TO_FUNCTION_FILE $PATH_TO_VARIABLES_FILE <number_of_threads>
 ```
 
@@ -178,3 +189,4 @@ make doc
 ```
 
 The generated documentation can be found in `doc/html/index.html`.
+
