@@ -12,7 +12,7 @@ Please refer to this paper when using FireFly:
 * [Building FireFly](#building-firefly)
 * [Reconstructing funtions](#reconstructing-functions)
 * [Directly parse collections of rational functions](#directly-parse-collections-of-rational-functions)
-* [Converting Mathematica expressions to compilable code](##converting-mathematica-expressions-to-compilable-code)
+* [Converting Mathematica expressions to compilable code](#converting-mathematica-expressions-to-compilable-code)
 * [Code Documentation](#code-documentation)
 
 ## Requirements
