@@ -8,29 +8,34 @@ New features
  now supported to be taken in bunches such that instead of returning a vector
  of probes a vector of a vector of probes can be returned. This feature can help
  improving the runtime when reaching CPU limits.
+ 
+ * Added a bunched evaluation of parsed functions for the `ShuntingYardParser`.
 
 Changes
 -------
 
  * Changes for the `ShuntingYardParser`:
    - The parsable format has slightly changed. The delimiter to split functions
-   has been replaced from `\n` to `;`. Spaces and new lines occuring in a
-   single expression will be removed automatically.
+   has been replaced from `\n` to `;`. Spaces and new lines occurring in
+   expressions will be removed automatically.
 
-   - It now supports unary operators for parenthesis. We thank
-   Robert Schabinger for this suggestion.
+   - Supports unary operators for parenthesis. We thank Robert Schabinger for this
+   suggestion.
    
    - Supports negative exponents like `(x+y)^(-10)`. A negative exponent
    has to be used with parenthesis.
    
    - Supports capital letters for variables.
    
-   - Performs a validation of the input by removing
-   white spaces, checking parenthesis, removing redundant parenthesis, and
-   transforming `+-` or `-+` to `-`.
+   - Performs a validation of the input by removing white spaces, checking
+   parenthesis, removing redundant parenthesis, and transforming `+-` or `-+`
+   to `-`.
    
  * Without the safe mode, all required probes are now scheduled when
  changing a prime field. This leads to runtime improvements.
+ 
+ * Changed recursive implementation of Thiele and Newton interpolation to
+ an iterative one, which avoids stack overflows.
    
 Bug fixes
 ---------
