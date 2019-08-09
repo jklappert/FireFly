@@ -8,12 +8,12 @@ Please refer to this paper when using FireFly:
 * J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[1904.00009](https://arxiv.org/abs/1904.00009)]
 
 ## Table of contents
-1. [Requirements](#requirements)
-2. [Building FireFly](#building-firefly)
-3. [Reconstructing funtions](#reconstructing-functions)
-4. [Directly parse collections of rational functions](#directly-parse-collections-of-rational-functions)
-5. [Converting Mathematica expressions to C++ code](##converting-mathematica-expressions-to-c---code)
-6. [Code Documentation](#code-documentation)
+* [Requirements](#requirements)
+* [Building FireFly](#building-firefly)
+* [Reconstructing funtions](#reconstructing-functions)
+* [Directly parse collections of rational functions](#directly-parse-collections-of-rational-functions)
+* [Converting Mathematica expressions to C++ code](##converting-mathematica-expressions-to-c---code)
+* [Code Documentation](#code-documentation)
 
 ## Requirements
 FireFly requires:
