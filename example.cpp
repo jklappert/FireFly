@@ -101,8 +101,8 @@ namespace firefly {
 using namespace firefly;
 int main() {
   // Example of ShuntingYardParser
-  // Parse the functions from "../s_y_test.m" with the variables x, y, z, w
-  ShuntingYardParser par("../parser_test/s_y_test.m", {"x", "y", "z", "w"});
+  // Parse the functions from "../s_y_test.m" with the variables x1, y, zZ, W
+  ShuntingYardParser par("../parser_test/s_y_test.m", {"x1", "y", "zZ", "W"});
 
   // Create the user defined black box
   BlackBoxUser bb(par);
@@ -125,6 +125,7 @@ int main() {
 
   // Reconstruct the black box
   reconst.reconstruct();
+
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();
 
