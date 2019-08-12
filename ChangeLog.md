@@ -8,7 +8,7 @@ New features
  now supported to be taken in bunches such that instead of returning a vector
  of probes a vector of a vector of probes can be returned. This feature can help
  improving the runtime when reaching CPU limits.
- 
+
  * Added a bunched evaluation of parsed functions for the `ShuntingYardParser`.
 
 Changes
