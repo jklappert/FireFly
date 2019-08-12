@@ -197,5 +197,5 @@ Doxygen can be used to generate code documentation. To generate the documentatio
 make doc
 ```
 
-The generated documentation can be found in `doc/html/index.html`.
+The generated documentation can be found in `doc/html/index.html` or in `doc/latex`. Using the latter directory, calling `make` will create a pdf file.
 
