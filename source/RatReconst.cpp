@@ -83,7 +83,7 @@ namespace firefly {
 
     if (n == 1) {
       ERROR_MSG("You should never want to shift a univariate rational function.");
-      std::exit(-1);
+      std::exit(EXIT_FAILURE);
     }
   }
 
@@ -126,7 +126,7 @@ namespace firefly {
 
           if (prime_number == 100) {
             ERROR_MSG("Your interpolation requests more than 100 primes.");
-            std::exit(-1);
+            std::exit(EXIT_FAILURE);
           } else if (zero_counter == 3 && prime_number == 3) {
             new_prime = false;
             done = true;
@@ -1457,7 +1457,7 @@ namespace firefly {
 
       if (prime_number == 100) {
         ERROR_MSG("Your interpolation requests more than 100 primes.");
-        std::exit(-1);
+        std::exit(EXIT_FAILURE);
       }
     }
 
@@ -1486,7 +1486,7 @@ namespace firefly {
       return result;
     } else {
       ERROR_MSG("Trying to access unfinished result.");
-      std::exit(-1);
+      std::exit(EXIT_FAILURE);
     }
   }
 
@@ -2125,7 +2125,7 @@ namespace firefly {
             is_zero = true;
           else if (line != "combined_prime") {
             ERROR_MSG("Wrong input format! Has to start with 'combined_prime'!");
-            std::exit(-1);
+            std::exit(EXIT_FAILURE);
           }
 
           curr_parsed_variable = COMBINED_PRIME;
@@ -2284,7 +2284,7 @@ namespace firefly {
               case SUB_NUM: {
                 if (n == 0) {
                   ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                  std::exit(-1);
+                  std::exit(EXIT_FAILURE);
                 }
 
                 uint32_t tmp_deg = parse_vector(line, 1)[0];
@@ -2301,7 +2301,7 @@ namespace firefly {
               case SUB_DEN: {
                 if (n == 0) {
                   ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                  std::exit(-1);
+                  std::exit(EXIT_FAILURE);
                 }
 
                 uint32_t tmp_deg = parse_vector(line, 1)[0];
@@ -2338,7 +2338,7 @@ namespace firefly {
               case G_NI: {
                 if (n == 0) {
                   ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                  std::exit(-1);
+                  std::exit(EXIT_FAILURE);
                 }
 
                 std::vector<uint32_t> tmp_vec = parse_vector(line, n);
@@ -2352,7 +2352,7 @@ namespace firefly {
               case G_DI: {
                 if (n == 0) {
                   ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                  std::exit(-1);
+                  std::exit(EXIT_FAILURE);
                 }
 
                 std::vector<uint32_t> tmp_vec = parse_vector(line, n);
@@ -2366,7 +2366,7 @@ namespace firefly {
               case COMBINED_NI: {
                 if (n == 0) {
                   ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                  std::exit(-1);
+                  std::exit(EXIT_FAILURE);
                 }
 
                 std::vector<uint32_t> tmp_vec = parse_vector(line, n);
@@ -2378,7 +2378,7 @@ namespace firefly {
               case COMBINED_DI: {
                 if (n == 0) {
                   ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                  std::exit(-1);
+                  std::exit(EXIT_FAILURE);
                 }
 
                 std::vector<uint32_t> tmp_vec = parse_vector(line, n);
@@ -2390,7 +2390,7 @@ namespace firefly {
               case INTERPOLATIONS: {
                 if (n == 0) {
                   ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                  std::exit(-1);
+                  std::exit(EXIT_FAILURE);
                 }
 
                 interpolations = std::stoi(line);
@@ -2405,7 +2405,7 @@ namespace firefly {
       for (const auto & el : parsed_variables) {
         if (!el) {
           ERROR_MSG("Incomplete input file! It cannot be used to resume a run.");
-          std::exit(-1);
+          std::exit(EXIT_FAILURE);
         }
       }
 
@@ -2449,7 +2449,7 @@ namespace firefly {
       return std::make_pair(tmp_need_shift, prime_number);
     } else {
       ERROR_MSG("The file '" + file_name + "' could not be found!");
-      std::exit(-1);
+      std::exit(EXIT_FAILURE);
     }
   }
 

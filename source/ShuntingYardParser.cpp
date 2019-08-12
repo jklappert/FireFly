@@ -16,7 +16,7 @@ namespace firefly {
 
     if (!infile.good()) {
       ERROR_MSG("File '" + file + "' does not exist!");
-      std::exit(-1);
+      std::exit(EXIT_FAILURE);
     }
 
     std::ifstream istream;
@@ -327,7 +327,7 @@ namespace firefly {
         res.emplace_back(nums.top());
       else {
         ERROR_MSG("Error in functional evaluation! Please check your input.");
-        std::exit(-1);
+        std::exit(EXIT_FAILURE);
       }
     }
 
@@ -400,7 +400,7 @@ namespace firefly {
         res.emplace_back(nums.top());
       else {
         ERROR_MSG("Error in functional evaluation! Please check your input.");
-        std::exit(-1);
+        std::exit(EXIT_FAILURE);
       }
     }
 
@@ -489,7 +489,7 @@ namespace firefly {
           res[i].emplace_back(nums[i].top());
         else {
           ERROR_MSG("Error in functional evaluation! Please check your input.");
-          std::exit(-1);
+          std::exit(EXIT_FAILURE);
         }
       }
     }
@@ -648,7 +648,7 @@ namespace firefly {
       else if (r[i] == ')') {
         if (st.size() == 0) {
           ERROR_MSG("Mismatch of closing prenthesis in expression " + std::to_string(exp_n) + ".");
-          std::exit(1);
+          std::exit(EXIT_FAILURE);
         } else {
           int top = st.top();
 
@@ -665,7 +665,7 @@ namespace firefly {
 
     if (st.size() > 0) {
       ERROR_MSG("Mismatch of opening prenthesis in expression " + std::to_string(exp_n) + ".");
-      std::exit(1);
+      std::exit(EXIT_FAILURE);
     }
 
     std::string result = "";
@@ -683,6 +683,6 @@ namespace firefly {
 
   void ShuntingYardParser::throw_not_declared_var_err(const std::string& var) const {
     ERROR_MSG("Variable " + var + " not declared!");
-    std::exit(-1);
+    std::exit(EXIT_FAILURE);
   }
 }

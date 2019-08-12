@@ -60,7 +60,7 @@ namespace firefly {
     else {
       if (vars.size() != n) {
         ERROR_MSG("Symbol size does not match to number of variables of the polynomial!");
-        std::exit(-1);
+        std::exit(EXIT_FAILURE);
       }
 
       for (const auto & mono : coefs) {
