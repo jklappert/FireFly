@@ -26,7 +26,7 @@
 namespace firefly {
   /**
    * @class ShuntingYardParser
-   * @brief A functional parser using reverse polish notation
+   * @brief A parser for converting rational functions to reverse polish notation and evaluating the results
    */
   class ShuntingYardParser {
   public:
@@ -79,9 +79,9 @@ namespace firefly {
      */
     void precompute_tokens();
   private:
-    std::vector<std::vector<std::string>> functions {};
-    std::unordered_map<std::string, int> vars_map {};
-    std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {};
+    std::vector<std::vector<std::string>> functions {}; /**< This vector holds the input function in reverse polish notation where each operand/operator is separated */
+    std::unordered_map<std::string, int> vars_map {}; /**< This map holds the conversion of the used variables to an integer value to map variables to parameter points */
+    std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {}; /**< This vector holds a collection of precomputed tokens where each operand/operator as a string is already converted to an FFInt */
     /**
      *  Initializes the conversion map
      *  @return The conversion map
@@ -89,7 +89,7 @@ namespace firefly {
     std::unordered_set<char> chars {{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
       }
-    };
+    }; /**< The collection of supported characters for variable definition */
     /**
      *  Gets the weight of an operator
      *  @param c The operator as a character
@@ -139,7 +139,7 @@ namespace firefly {
       MULT,
       DIV,
       POW
-    };
+    }; /**< The allowed operators as an enum for fast identification */
   }
 
   namespace operands {
@@ -148,6 +148,6 @@ namespace firefly {
       VARIABLE,
       NEG_VARIABLE,
       NUMBER
-    };
+    }; /**< The allowed operands as an enum for fast identification */
   }
 }

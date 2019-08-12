@@ -216,10 +216,10 @@ namespace firefly {
     polff_map sub_den {};
     ff_map_map saved_num_num {};
     ff_map_map saved_num_den {};
-    int max_deg_num = -1;
-    int max_deg_den = -1;
-    uint32_t tmp_solved_coefs_num = 0;
-    uint32_t tmp_solved_coefs_den = 0;
+    int max_deg_num = -1; /**< The maximal degree of the numerator */
+    int max_deg_den = -1; /**< The maximal degree of the denominator */
+    uint32_t tmp_solved_coefs_num = 0; /**< A temporary variable that saves how many coefficients of the numerator have already been interpolated */
+    uint32_t tmp_solved_coefs_den = 0; /**< A temporary variable that saves how many coefficients of the denominator have already been interpolated */
     /**
      *  Adds a coefficient for the numerator which appears to be correctly reconstructed
      *  @param deg_vec the degree of the coefficient
@@ -269,7 +269,7 @@ namespace firefly {
     polff_map solved_degs_num {};
     polff_map solved_degs_den {};
     std::vector<uint32_t> normalizer_deg {};
-    std::string tag = "";
+    std::string tag = ""; /**< The name of this interpolation class for state saving */
     bool is_singular_system = false;
     static std::vector<FFInt> shift;
     static ff_pair_map rand_zi;
