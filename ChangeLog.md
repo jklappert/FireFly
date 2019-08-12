@@ -6,7 +6,7 @@ New features
 
  * Introducing bunched evaluation of the black box. The black-box probes are
  now supported to be taken in bunches such that instead of returning a vector
- of probes a vector of a vector of probes can be returned. This feature can help
+ of probes a vector of vectors of probes can be returned. This feature can help
  improving the runtime when reaching CPU limits.
 
  * Added a bunched evaluation of parsed functions to the `ShuntingYardParser`.
