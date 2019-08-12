@@ -1,4 +1,4 @@
-FireFly 1.2.2
+FireFly 1.3.0
 =============
 
 New features
@@ -9,12 +9,12 @@ New features
  of probes a vector of a vector of probes can be returned. This feature can help
  improving the runtime when reaching CPU limits.
 
- * Added a bunched evaluation of parsed functions for the `ShuntingYardParser`.
+ * Added a bunched evaluation of parsed functions to the `ShuntingYardParser`.
 
 Changes
 -------
 
- * Changes for the `ShuntingYardParser`:
+ * Changes to the `ShuntingYardParser`:
    - The parsable format has slightly changed. The delimiter to mark the end
    of functions has been replaced from `\n` to `;`. Spaces and new lines
    occurring in expressions will be removed automatically.
