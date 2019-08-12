@@ -21,22 +21,22 @@ Changes
 
    - The parser now supports unary operators for parenthesis. We thank Robert Schabinger for this
    suggestion.
-   
+
    - The parser now supports negative exponents like `(x+y)^(-10)`. A negative exponent
    has to be used with parenthesis.
-   
+
    - The parser now supports capital letters for variables.
-   
+
    - The parser now performs a validation of the input by removing white spaces, checking
    parenthesis, removing redundant parenthesis, and transforming `+-` or `-+`
    to `-`.
-   
+
  * Without the safe mode, all required probes are now scheduled when
  changing a prime field. This leads to runtime improvements.
- 
+
  * Changed recursive implementation of Thiele and Newton interpolation to
  an iterative one which avoids stack overflows.
-   
+
 Bug fixes
 ---------
 

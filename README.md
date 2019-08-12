@@ -136,6 +136,13 @@ For convenience, FireFly also provides a script which converts a list of rationa
 
 where `$FILE` contains the list of rational functions.
 
+**The following operations are not supported:**
+
+* Any kind of implicit operators like `3 x`. This should read `3*x` instead.
+* Negative exponents without parenthesis like `x^-5`. This should read `x^(-5)` instead.
+* Unevaluated exponents like `x^(3+7)`. This should read `x^10` instead.
+* Operators followed by operators should be separated, i.e., for example, `3*-x` should read `3*(-x)` or `-3*x`. Only `+-` or `-+` will be interpreted as `-`.
+
 
 ## Converting Mathematica expressions to compilable code
 **Note that this conversion might not reach an optimal performance.**

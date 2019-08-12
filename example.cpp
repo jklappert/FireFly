@@ -41,6 +41,7 @@ namespace firefly {
 
       // Get results from parsed expressions
       std::vector<FFInt> result = par.evaluate_pre(values);
+
       result.emplace_back(result[0] / result[3]);
 
       // Build the matrix mat
@@ -58,6 +59,26 @@ namespace firefly {
       result.emplace_back(gghh(values));
       result.emplace_back(pol_n_eq_3(values));
       result.emplace_back(ggh(values));*/
+
+      return result;
+    }
+
+    // Example for bunched evaluations
+    virtual std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>>& values) {
+      // Get results from parsed expressions
+      std::vector<std::vector<FFInt>> result = par.evaluate_pre(values);
+
+      for (size_t i = 0; i != values.size(); ++i) {
+        result[i].emplace_back(result[i][0] / result[i][3]);
+
+        // Build the matrix mat
+        mat_ff mat = {{result[i][0], result[i][1]}, {result[i][2], result[i][3]}};
+        std::vector<int> p {};
+        // Compute LU decomposition of mat
+        calc_lu_decomposition(mat, p, 2);
+        // Compute determinant of mat
+        result[i].emplace_back(calc_determinant_lu(mat, p, 2));
+      }
 
       return result;
     }
@@ -81,7 +102,7 @@ using namespace firefly;
 int main() {
   // Example of ShuntingYardParser
   // Parse the functions from "../s_y_test.m" with the variables x, y, z, w
-  ShuntingYardParser par("../parser_test/s_y_test.m", {"x","y","z","w"});
+  ShuntingYardParser par("../parser_test/s_y_test.m", {"x", "y", "z", "w"});
   // Parse the functions from "../s_y_1_v_test.m" with the variables x
   //ShuntingYardParser par("../parser_test/s_y_1_v_test.m", {"x"});
 
