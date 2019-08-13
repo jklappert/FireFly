@@ -36,6 +36,8 @@ Changes
 
  * Changed recursive implementation of Thiele and Newton interpolation to
  an iterative one which avoids stack overflows.
+ 
+ * Added more information to the info messages of the `Reconstructor` class.
 
 Bug fixes
 ---------
