@@ -425,9 +425,12 @@ namespace firefly {
         ++prime_it;
 
         if (verbosity > SILENT) {
-          INFO_MSG("Probes for previous prime field: " + std::to_string(iteration) + ". | " + std::to_string(total_iterations) + " probes in total.");
+          INFO_MSG("Probe: " + std::to_string(iteration) +
+                   " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
+                   " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+          INFO_MSG("Probes for previous prime field: " + std::to_string(iteration) + ". | " + std::to_string(total_iterations) + " probes in total.");// first print is redundant
           INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
-          INFO_MSG("Reconstructed functions: " + std::to_string(items_done) + " / " + std::to_string(items) + ".");
+          //INFO_MSG("Reconstructed functions: " + std::to_string(items_done) + " / " + std::to_string(items) + "."); redundant information
           INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
         }
 
@@ -868,7 +871,9 @@ namespace firefly {
         std::unique_lock<std::mutex> lock_print(print_control);
 
         if (verbosity > SILENT) {
-          INFO_MSG("Probe: " + std::to_string(iteration) + " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) + " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+          INFO_MSG("Probe: " + std::to_string(iteration) +
+                   " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
+                   " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
         }
       }
     }
