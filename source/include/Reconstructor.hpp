@@ -140,7 +140,7 @@ namespace firefly {
     enum RatReconst_status {RECONSTRUCTING, DONE, DELETED};
   private:
     std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
-    std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
+    std::chrono::_V2::system_clock::time_point prime_start = std::chrono::high_resolution_clock::now();
     uint32_t n;
     uint32_t thr_n;
     uint32_t bunch_size = 1;

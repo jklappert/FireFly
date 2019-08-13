@@ -183,10 +183,8 @@ namespace firefly {
 
     tp.kill_all();
 
-    end = std::chrono::high_resolution_clock::now();
-
     if (verbosity > SILENT) {
-      INFO_MSG("Reconstructed all functions successfully in " + std::to_string(std::chrono::duration<double>(end - start).count()) + " s.");
+      INFO_MSG("Reconstructed all functions successfully in " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count()) + " s.");
       INFO_MSG(std::to_string(total_iterations) + " probes in total.");
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
@@ -321,17 +319,21 @@ namespace firefly {
         }
 
         msg = msg.substr(0, msg.size() - 2);
-        INFO_MSG("Shift scan completed successfully. Shift the variable tuple: (" + msg + ").");
+        INFO_MSG("Found a sparse shift. Shift the variable tuple: (" + msg + ").");
       } else {
-        INFO_MSG("Shift scan found no sparse shift.");
+        INFO_MSG("Found no sparse shift.");
       }
 
-      INFO_MSG("Total black-box probes for scan: " + std::to_string(total_iterations) + ".");
+      INFO_MSG("Completed scan in: " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
+               " s. | " + std::to_string(total_iterations) + " probes in total.");
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
+
+    prime_start = std::chrono::high_resolution_clock::now();
   }
 
   void Reconstructor::start_first_runs() {
+    prime_start = std::chrono::high_resolution_clock::now();
     shift = tmp_rec.get_zi_shift_vec();
     std::vector<uint32_t> zi_order(n - 1, 1);
 
@@ -428,11 +430,15 @@ namespace firefly {
           INFO_MSG("Probe: " + std::to_string(iteration) +
                    " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
                    " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
-          INFO_MSG("Probes for previous prime field: " + std::to_string(iteration) + ". | " + std::to_string(total_iterations) + " probes in total.");// first print is redundant
+          INFO_MSG("Completed current prime field in: " +
+                   std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
+                   " s. | " + std::to_string(total_iterations) + " probes in total.");
           INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
           //INFO_MSG("Reconstructed functions: " + std::to_string(items_done) + " / " + std::to_string(items) + "."); redundant information
           INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
         }
+
+        prime_start = std::chrono::high_resolution_clock::now();
 
         iteration = 0;
 
