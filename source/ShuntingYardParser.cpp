@@ -288,9 +288,14 @@ namespace firefly {
           }
         } else {
           // check then if number has more than 18 digits
-          if (token.length() > 18)
-            nums.push(FFInt(mpz_class(token)));
-          else {
+          if (token.length() > 18) {
+            std::string tmp = token;
+
+            if (token[0] == '+')
+              tmp.erase(0, 1);
+
+            nums.push(FFInt(mpz_class(tmp)));
+          } else {
             if (token[0] == '-') {
               std::string tmp = token;
               tmp.erase(0, 1);
@@ -586,9 +591,14 @@ namespace firefly {
           }
         } else {
           // check then if number has more than 18 digits
-          if (token.length() > 18)
-            precomp_tokens[i][j] = {operands::NUMBER, FFInt(mpz_class(token))};
-          else {
+          if (token.length() > 18) {
+            std::string tmp = token;
+
+            if (token[0] == '+')
+              tmp.erase(0, 1);
+
+            precomp_tokens[i][j] = {operands::NUMBER, FFInt(mpz_class(tmp))};
+          } else {
             if (token[0] == '-') {
               std::string tmp = token;
               tmp.erase(0, 1);

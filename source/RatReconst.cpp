@@ -571,26 +571,20 @@ namespace firefly {
               }
 
               FFInt terminator = 0;
+
               // check if one can normalize to a single univariate degree, if so
               // set the corresponding degree in equalizer_degree. Check constants
               // first and proceed with denominator/numerator.
               // if the denominator is just a constant, there is no corresponding
               // PolyReconst object. Thus we set the minimal degree to a zero tuple
-
               if (prime_number == 0 + zero_counter) {
-                if (const_den != 1 && const_den != 0 && shift != std::vector<FFInt> (n)) {
-                  ff_map dummy_map {};
+                if (const_den != 1) {
                   terminator = FFInt(1) - const_den;
 
-                  dummy_map.emplace(std::make_pair(std::vector<uint32_t> (n, 0), terminator));
-
-                  if (normalize_to_den) {
-                    denominator += PolynomialFF(n, dummy_map);
+                  if (normalize_to_den)
                     normalizer_den_num = true;
-                  } else {
-                    numerator += PolynomialFF(n, dummy_map);
+                  else
                     normalizer_den_num = false;
-                  }
 
                   normalizer_deg = std::vector<uint32_t> (n, 0);
                 } else if (!normalize_to_den && numerator.coefs.find(std::vector<uint32_t> (n, 0)) != numerator.coefs.end()) {
@@ -645,27 +639,18 @@ namespace firefly {
 
                 // -1 for the normalization constant
                 shifted_max_num_eqn = solved_degs_num.size() + solved_degs_den.size() - 1;
-                solved_degs_num.clear();
-                solved_degs_den.clear();
-                dense_solve_degs_den.clear();
-                dense_solve_degs_num.clear();
-              } else {
-                if (const_den != 1 && shift != std::vector<FFInt> (n)) {
-                  ff_map dummy_map {};
-                  terminator = FFInt(1) - const_den;
-                  dummy_map.emplace(std::make_pair(std::vector<uint32_t> (n, 0), terminator));
+              } else if (normalizer_den_num)
+                terminator = denominator.coefs[normalizer_deg];
+              else
+                terminator = numerator.coefs[normalizer_deg];
 
-                  if (normalize_to_den)
-                    denominator += PolynomialFF(n, dummy_map);
-                  else
-                    numerator += PolynomialFF(n, dummy_map);
-                }
+              dense_solve_degs_den.clear();
+              dense_solve_degs_num.clear();
+              solved_degs_num.clear();
+              solved_degs_den.clear();
 
-                if (normalizer_den_num)
-                  terminator = denominator.coefs[normalizer_deg];
-                else
-                  terminator = numerator.coefs[normalizer_deg];
-              }
+              if (interpolations > prime_number + 1)
+                is_singular_system = false;
 
               // normalize
               FFInt equalizer = FFInt(1) / terminator;

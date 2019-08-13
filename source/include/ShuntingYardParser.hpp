@@ -33,7 +33,7 @@ namespace firefly {
     /**
      *  Constructor which parses a list of rational functions and prepares them for evaluation.
      *  @param file The path to the file in which the rational functions are stored
-     *  @param vars A vector which specifies the variables of the functions.
+     *  @param vars A vector which specifies the variables of the functions. Each variable is allowed to be built of lower and upper case letters and numbers up to 16 characters.
      */
     ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars);
     /**
