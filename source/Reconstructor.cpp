@@ -319,9 +319,9 @@ namespace firefly {
         }
 
         msg = msg.substr(0, msg.size() - 2);
-        INFO_MSG("Found a sparse shift. Shift the variable tuple: (" + msg + ").");
+        INFO_MSG("Found a sparse shift after " + std::to_string(counter) + " scans. Shift the variable tuple: (" + msg + ").");
       } else {
-        INFO_MSG("Found no sparse shift.");
+        INFO_MSG("Found no sparse shift after " + std::to_string(counter) + " scans.");
       }
 
       INFO_MSG("Completed scan in: " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
