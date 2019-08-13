@@ -41,14 +41,14 @@ namespace firefly {
     virtual ~BlackBoxBase() {};
     /**
      *  The evaluation of the black box. This function is called from Reconstructor.
-     *  @param values the values to be inserted for the variables
-     *  @return the result vector
+     *  @param values The values to be inserted for the variables
+     *  @return The result vector
      */
     virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) = 0;
     /**
-     *  TODO
-     *  @param
-     *  @return
+     *  The evaluation of the black box in bunches. This function is called from Reconstructor.
+     *  @param values_vec A vector (bunch) which holds several variable tuples at which the black box should be evaluated.
+     *  @return The bunched result vector.
      */
     virtual std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>>& values_vec) {
       std::vector<std::vector<FFInt>> results_vec;
@@ -88,10 +88,10 @@ namespace firefly {
      */
     Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_ = IMPORTANT);
     /**
-     * TODO
      *  A constructor for the Reconstructor class
      *  @param n_ the number of parameters
      *  @param thr_n_ the number of threads being used during the reconstruction
+     *  @param bunch_size_ the bunch size
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
     Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_, uint32_t verbosity_ = IMPORTANT);
