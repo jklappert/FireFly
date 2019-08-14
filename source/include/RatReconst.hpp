@@ -237,8 +237,8 @@ namespace firefly {
     rn_map g_di {}; /**< rational coefficient guesses for the denominator*/
     mpz_map combined_ni {};  /**< The combination of the coefficients of the numerator over finite field with the chinese remained theorem */
     mpz_map combined_di {};  /**< The combination of the coefficients of the denominator over finite field with the chinese remained theorem */
-    mpz_map combined_prime_ni {}; // used for safe mode
-    mpz_map combined_prime_di {}; // used for safe mode
+    mpz_map combined_primes_ni {}; // used for safe mode
+    mpz_map combined_primes_di {}; // used for safe mode
     static std::mutex mutex_statics;
     /**
      *  Adds non-solved monomials of the numerator to a data object
@@ -281,7 +281,7 @@ namespace firefly {
      *  Sets all required variables of this class in the "singular system" mode
      */
     void set_singular_system_vars();
-    std::vector<bool> parsed_variables {std::vector<bool>(19, false)};
+    std::vector<bool> parsed_variables {std::vector<bool>(21, false)};
     int curr_parsed_variable = -1;
     /**
      *  Parses a vector from a file with a given number of maximal entries
@@ -343,7 +343,7 @@ namespace firefly {
     enum save_variables {COMBINED_PRIME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
-                         COMBINED_NI, COMBINED_DI, INTERPOLATIONS
+                         COMBINED_NI, COMBINED_DI, COMBINED_PRIMES_NI, COMBINED_PRIMES_DI, INTERPOLATIONS
                         };
   };
 }
