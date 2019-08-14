@@ -237,6 +237,8 @@ namespace firefly {
     rn_map g_di {}; /**< rational coefficient guesses for the denominator*/
     mpz_map combined_ni {};  /**< The combination of the coefficients of the numerator over finite field with the chinese remained theorem */
     mpz_map combined_di {};  /**< The combination of the coefficients of the denominator over finite field with the chinese remained theorem */
+    mpz_map combined_prime_ni {}; // used for safe mode
+    mpz_map combined_prime_di {}; // used for safe mode
     static std::mutex mutex_statics;
     /**
      *  Adds non-solved monomials of the numerator to a data object

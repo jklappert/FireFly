@@ -53,7 +53,7 @@ namespace firefly {
    *  @param p the permutation matrix obtained during the LU decomposition of a
    *  @param n the size of a
    */
-  void calc_inverse_lu(const mat_ff& a, mat_ff& ia, std::vector<int>& p, uint32_t n);
+  void calc_inverse_lu(const mat_ff& a, mat_ff& ia, const std::vector<int>& p, uint32_t n);
   /**
    *  Calculates the determinant of a matrix using LU factorization
    *  @param a input matrix build of FFInts and is already LU decomposed
@@ -61,7 +61,7 @@ namespace firefly {
    *  @param n the size of a
    *  @return the determinant of a
    */
-  FFInt calc_determinant_lu(const mat_ff& a, std::vector<int>& p, uint32_t n);
+  FFInt calc_determinant_lu(const mat_ff& a, const std::vector<int>& p, uint32_t n);
   /**
    *  Decomposes a matrix accodring to LU decomposition and saves its form in the given input
    *  @param a the matrix of which a LU decomposition should be performed. The result is saved in a.

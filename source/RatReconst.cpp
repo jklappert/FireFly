@@ -1186,6 +1186,7 @@ namespace firefly {
     non_solved_degs_num.clear();
     saved_num_num = ff_map_map();
     saved_num_den = ff_map_map();
+    bool is_safe_mode = interpolations != 1;
 
     if (!div_by_zero) {
       if (!use_chinese_remainder) {
@@ -1201,6 +1202,9 @@ namespace firefly {
             remove_ni(c_ni.first, RationalNumber(1, 1));
           else
             add_non_solved_num(c_ni.first);
+
+          if (is_safe_mode)
+            combined_prime_ni[c_ni.first] = combined_prime;
         }
 
         mpz_map combined_di_back = combined_di;
@@ -1211,6 +1215,9 @@ namespace firefly {
             remove_di(c_di.first, RationalNumber(1, 1));
           else
             add_non_solved_den(c_di.first);
+
+          if (is_safe_mode)
+            combined_prime_di[c_di.first] = combined_prime;
         }
 
         if (is_singular_system) {
@@ -1220,65 +1227,101 @@ namespace firefly {
             check_for_solved_degs(tmp_deg_den, false);
         }
       } else {
-        for (const auto & el : numerator) {
-          if (combined_ni.find(el.first) == combined_ni.end() && g_ni.find(el.first) == g_ni.end())
-            combined_ni.emplace(std::make_pair(el.first, 0));
-        }
-
-        for (const auto & el : denominator) {
-          if (combined_di.find(el.first) == combined_di.end() && g_di.find(el.first) == g_di.end())
-            combined_di.emplace(std::make_pair(el.first, 0));
-        }
-
-        for (const auto & el : combined_ni) {
-          if (numerator.find(el.first) == numerator.end() && g_ni.find(el.first) == g_ni.end())
-            numerator.emplace(std::make_pair(el.first, 0));
-        }
-
-        for (const auto & el : combined_di) {
-          if (denominator.find(el.first) == denominator.end() && g_di.find(el.first) == g_di.end())
-            denominator.emplace(std::make_pair(el.first, 0));
-        }
-
         mpz_map combined_ni_back = combined_ni;
         mpz_map combined_di_back = combined_di;
+
+        if (is_safe_mode) {
+          for (const auto & el : numerator) {
+            if (combined_ni.find(el.first) == combined_ni.end() && g_ni.find(el.first) == g_ni.end())
+              combined_ni.emplace(std::make_pair(el.first, 0));
+          }
+
+          for (const auto & el : denominator) {
+            if (combined_di.find(el.first) == combined_di.end() && g_di.find(el.first) == g_di.end())
+              combined_di.emplace(std::make_pair(el.first, 0));
+          }
+        }
+
         mpz_class combined_prime_back = combined_prime;
+        mpz_map combined_prime_ni_back = combined_prime_ni;
+        mpz_map combined_prime_di_back = combined_prime_di;
         std::pair<mpz_class, mpz_class> p1;
         std::pair<mpz_class, mpz_class> p2;
         std::pair<mpz_class, mpz_class> p3;
 
         //numerator
         for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
-          p1 = std::make_pair(it->second, combined_prime);
-          p2 = std::make_pair(mpz_class(numerator[it->first].n), FFInt::p);
-          p3 = run_chinese_remainder(p1, p2);
-          combined_ni[it->first] = p3.first;
+          if (!is_safe_mode) {
+            p1 = std::make_pair(it->second, combined_prime);
+            p2 = std::make_pair(mpz_class(numerator[it->first].n), FFInt::p);
+            p3 = run_chinese_remainder(p1, p2);
+            combined_ni[it->first] = p3.first;
+          } else {
+            if (numerator.find(it->first) != numerator.end() && g_ni.find(it->first) == g_ni.end()) {
+              if (combined_ni[it->first] == 0) {
+                combined_ni[it->first] = mpz_class(numerator[it->first].n);
+                combined_prime_ni[it->first] = mpz_class(FFInt::p);
+              } else {
+                p1 = std::make_pair(it->second, combined_prime_ni[it->first]);
+                p2 = std::make_pair(mpz_class(numerator[it->first].n), FFInt::p);
+                p3 = run_chinese_remainder(p1, p2);
+                combined_ni[it->first] = p3.first;
+                combined_prime_ni[it->first] = p3.second;
+              }
+            }
+          }
         }
 
         // denominator
         for (auto it = combined_di.begin(); it != combined_di.end(); ++it) {
-          p1 = std::make_pair(it->second, combined_prime);
-          p2 = std::make_pair(mpz_class(denominator[it->first].n), FFInt::p);
-          p3 = run_chinese_remainder(p1, p2);
-          combined_di[it->first] = p3.first;
+          if (!is_safe_mode) {
+            p1 = std::make_pair(it->second, combined_prime);
+            p2 = std::make_pair(mpz_class(denominator[it->first].n), FFInt::p);
+            p3 = run_chinese_remainder(p1, p2);
+            combined_di[it->first] = p3.first;
+          } else {
+            if (denominator.find(it->first) != denominator.end() && g_di.find(it->first) == g_di.end()) {
+              if (combined_di[it->first] == 0) {
+                combined_di[it->first] = mpz_class(denominator[it->first].n);
+                combined_prime_di[it->first] = mpz_class(FFInt::p);
+              } else {
+                p1 = std::make_pair(it->second, combined_prime_di[it->first]);
+                p2 = std::make_pair(mpz_class(denominator[it->first].n), FFInt::p);
+                p3 = run_chinese_remainder(p1, p2);
+                combined_di[it->first] = p3.first;
+                combined_prime_di[it->first] = p3.second;
+              }
+            }
+          }
         }
 
         combined_prime = p3.second;
 
         // Remove already known coefficients from solve algorithm to save numerical runs
         for (auto & c_ni : combined_ni_back) {
-          if (g_ni.find(c_ni.first) == g_ni.end()) {
+          if (g_ni.find(c_ni.first) == g_ni.end() && (!is_safe_mode || (is_safe_mode && numerator.find(c_ni.first) != numerator.end()))) {
             RationalNumber last_rn_wang;
             RationalNumber curr_rn_wang;
             bool last_wang;
             bool curr_wang;
-            auto res = get_rational_coef(c_ni.second, combined_prime_back);
+
+            std::pair<bool, RationalNumber> res;
+
+            if (!is_safe_mode)
+              res = get_rational_coef(c_ni.second, combined_prime_back);
+            else
+              res = get_rational_coef(c_ni.second, combined_prime_ni_back[c_ni.first]);
+
             last_wang = res.first;
 
             if (last_wang)
               last_rn_wang = res.second;
 
-            res = get_rational_coef(combined_ni[c_ni.first], combined_prime);
+            if (!is_safe_mode)
+              res = get_rational_coef(combined_ni[c_ni.first], combined_prime);
+            else
+              res = get_rational_coef(combined_ni[c_ni.first], combined_prime_ni[c_ni.first]);
+
             curr_wang = res.first;
 
             if (curr_wang)
@@ -1290,13 +1333,21 @@ namespace firefly {
             bool last_monagan;
             bool curr_monagan;
 
-            res = get_rational_coef_mqrr(c_ni.second, combined_prime_back);
+            if (!is_safe_mode)
+              res = get_rational_coef_mqrr(c_ni.second, combined_prime_back);
+            else
+              res = get_rational_coef_mqrr(c_ni.second, combined_prime_ni_back[c_ni.first]);
+
             last_monagan = res.first;
 
             if (last_monagan)
               last_rn_monagan = res.second;
 
-            res = get_rational_coef_mqrr(combined_ni[c_ni.first], combined_prime);
+            if (!is_safe_mode)
+              res = get_rational_coef_mqrr(combined_ni[c_ni.first], combined_prime);
+            else
+              res = get_rational_coef_mqrr(combined_ni[c_ni.first], combined_prime_ni[c_ni.first]);
+
             curr_monagan = res.first;
 
             if (curr_monagan)
@@ -1305,15 +1356,23 @@ namespace firefly {
 
             if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
               remove_ni(c_ni.first, curr_rn_wang);
+
+              if (is_safe_mode)
+                combined_prime_ni.erase(c_ni.first);
+
               continue;
             }
 
             if (last_monagan && curr_monagan && last_rn_monagan == curr_rn_monagan) {
               remove_ni(c_ni.first, curr_rn_monagan);
+
+              if (is_safe_mode)
+                combined_prime_ni.erase(c_ni.first);
+
               continue;
             }
 
-            if (c_ni.second == combined_ni[c_ni.first]) {
+            if (!is_safe_mode && c_ni.second == combined_ni[c_ni.first]) {
               RationalNumber rn = RationalNumber(c_ni.second, 1);
               remove_ni(c_ni.first, rn);
             } else
@@ -1322,18 +1381,28 @@ namespace firefly {
         }
 
         for (auto & c_di : combined_di_back) {
-          if (g_di.find(c_di.first) == g_di.end()) {
+          if (g_di.find(c_di.first) == g_di.end() && (!is_safe_mode || (is_safe_mode && denominator.find(c_di.first) != denominator.end()))) {
             RationalNumber last_rn_wang;
             RationalNumber curr_rn_wang;
             bool last_wang;
             bool curr_wang;
-            auto res = get_rational_coef(c_di.second, combined_prime_back);
+            std::pair<bool, RationalNumber> res;
+
+            if (!is_safe_mode)
+              res = get_rational_coef(c_di.second, combined_prime_back);
+            else
+              res = get_rational_coef(c_di.second, combined_prime_di_back[c_di.first]);
+
             last_wang = res.first;
 
             if (last_wang)
               last_rn_wang = res.second;
 
-            res = get_rational_coef(combined_di[c_di.first], combined_prime);
+            if (!is_safe_mode)
+              res = get_rational_coef(combined_di[c_di.first], combined_prime);
+            else
+              res = get_rational_coef(combined_di[c_di.first], combined_prime_di[c_di.first]);
+
             curr_wang = res.first;
 
             if (curr_wang)
@@ -1345,13 +1414,21 @@ namespace firefly {
             bool last_monagan;
             bool curr_monagan;
 
-            res = get_rational_coef_mqrr(c_di.second, combined_prime_back);
+            if (!is_safe_mode)
+              res = get_rational_coef_mqrr(c_di.second, combined_prime_back);
+            else
+              res = get_rational_coef_mqrr(c_di.second, combined_prime_di_back[c_di.first]);
+
             last_monagan = res.first;
 
             if (last_monagan)
               last_rn_monagan = res.second;
 
-            res = get_rational_coef_mqrr(combined_di[c_di.first], combined_prime);
+            if (!is_safe_mode)
+              res = get_rational_coef_mqrr(combined_di[c_di.first], combined_prime);
+            else
+              res = get_rational_coef_mqrr(combined_di[c_di.first], combined_prime_di[c_di.first]);
+
             curr_monagan = res.first;
 
             if (curr_monagan)
@@ -1359,15 +1436,23 @@ namespace firefly {
 
             if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
               remove_di(c_di.first, curr_rn_wang);
+
+              if (is_safe_mode)
+                combined_prime_di.erase(c_di.first);
+
               continue;
             }
 
             if (last_monagan && curr_monagan && last_rn_monagan == curr_rn_monagan) {
               remove_di(c_di.first, curr_rn_monagan);
+
+              if (is_safe_mode)
+                combined_prime_di.erase(c_di.first);
+
               continue;
             }
 
-            if (c_di.second == combined_di[c_di.first]) {
+            if (!is_safe_mode && c_di.second == combined_di[c_di.first]) {
               RationalNumber rn = RationalNumber(c_di.second, 1);
               remove_di(c_di.first, rn);
             } else
@@ -2911,3 +2996,7 @@ namespace firefly {
     return res;
   }
 }
+
+
+
+

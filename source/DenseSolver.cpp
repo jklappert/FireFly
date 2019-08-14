@@ -60,6 +60,7 @@ namespace firefly {
 
   void calc_inverse(mat_ff& a, uint32_t n_) {
     int n = static_cast<int>(n_);
+
     // Augment a with unit matrix
     for (int i = 0; i < n; ++i) {
       std::vector<FFInt> dum(n);
@@ -170,12 +171,14 @@ namespace firefly {
         }
       }
     } else {
-      for(int i = 0; i < n; i++){
-        for(int j = 0; j < n + 1; j++){
+      for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n + 1; j++) {
           std::cout << a[i][j] << " ";
         }
+
         std::cout << "\n";
       }
+
       ERROR_MSG("Singular system of equations!");
       std::exit(EXIT_FAILURE);
     }
@@ -218,6 +221,9 @@ namespace firefly {
       }
 
       for (j = i + 1; j < n; ++j) {
+        if (a[i][i] == 0)
+          ERROR_MSG("Division by zero while calculating LU decomposition.");
+
         a[j][i] /= a[i][i];
 
         for (k = i + 1; k < n; ++k)
@@ -226,7 +232,7 @@ namespace firefly {
     }
   }
 
-  void calc_inverse_lu(const mat_ff& a, mat_ff& ia, std::vector<int>& p, uint32_t n) {
+  void calc_inverse_lu(const mat_ff& a, mat_ff& ia, const std::vector<int>& p, uint32_t n) {
     ia = mat_ff(n, std::vector<FFInt> (n));
 
     for (uint32_t j = 0; j < n; ++j) {
@@ -249,7 +255,7 @@ namespace firefly {
     }
   }
 
-  FFInt calc_determinant_lu(const mat_ff& a, std::vector<int>& p, uint32_t n) {
+  FFInt calc_determinant_lu(const mat_ff& a, const std::vector<int>& p, uint32_t n) {
     FFInt det = a[0][0];
 
     for (uint32_t i = 1; i < n; ++i)
