@@ -118,7 +118,8 @@ namespace firefly {
     void enable_scan();
     /**
      *  Activate the safe interpolation mode where the function is completely interpolated in each prime field,
-     *  no optimizations are used after the first prime field
+     *  no optimizations are used after the first prime field. Note that this mode cannot handle function changes
+     *  which lead to coefficients which will become zero in all but one prime field.
      */
     void set_safe_interpolation();
     /**
