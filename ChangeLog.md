@@ -39,6 +39,9 @@ Changes
 
  * Added more information to the info messages of the `Reconstructor` class.
 
+ * The safe mode now supports coefficients with the denominator being a prime
+ which is used during the interpolation.
+
 Bug fixes
 ---------
 
