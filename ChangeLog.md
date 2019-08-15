@@ -7,7 +7,8 @@ New features
  * Introducing bunched evaluation of the black box. The black-box probes are
  now supported to be taken in bunches such that instead of returning a vector
  of probes a vector of vectors of probes can be returned. This feature can help
- improving the runtime when reaching CPU limits.
+ improving the runtime when reaching CPU limits. However, note that additional
+ threads are always preferable than a larger bunch sizes.
 
  * Added a bunched evaluation of parsed functions to the `ShuntingYardParser`.
 
