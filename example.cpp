@@ -139,8 +139,8 @@ int main() {
   }
 
   // Rewrite result in Horner form
-  std::string f8_horner = results[13].generate_horner({"x", "y", "z", "w"});
-  std::cout << "Function 14 in Horner form:\n" << f8_horner << "\n";*/
+  std::string f15_horner = results[14].generate_horner({"x", "y", "z", "w"});
+  std::cout << "Function 15 in Horner form:\n" << f15_horner << "\n";*/
 
   // Resets all statics in RatReconst to start a new reconstruction
   //RatReconst::reset();

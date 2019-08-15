@@ -24,7 +24,7 @@ namespace firefly {
 
     std::string line;
 
-    for (uint32_t i = 0; i < vars.size(); ++i) {
+    for (uint32_t i = 0; i != vars.size(); ++i) {
       vars_map.emplace(std::make_pair(vars[i], i));
     }
 
@@ -97,6 +97,7 @@ namespace firefly {
             op_stack.pop();
           }
 
+          // Check for negative exponents
           if (*l_ptr == '^' && *(l_ptr + 1) == '(' && *(l_ptr + 2) == '-') {
             if (*(l_ptr - 1) == ')') {
               char const* l_ptr_c = l_ptr;
@@ -235,7 +236,7 @@ namespace firefly {
   }
 
   void ShuntingYardParser::parse_function(const std::string& fun, const std::vector<std::string>& vars) {
-    for (uint32_t i = 0; i < vars.size(); ++i) {
+    for (uint32_t i = 0; i != vars.size(); ++i) {
       vars_map.emplace(std::make_pair(vars[i], i));
     }
 
@@ -554,13 +555,15 @@ namespace firefly {
     uint64_t size = functions.size();
     precomp_tokens = std::vector<std::vector<std::pair<uint8_t, FFInt>>> (size);
 
-    for (uint64_t i = 0; i < size; ++i) {
+    for (uint64_t i = 0; i != size; ++i) {
       std::vector<std::string> tokens = functions[i];
       uint64_t t_size = tokens.size();
       precomp_tokens[i] = std::vector<std::pair<uint8_t, FFInt>> (t_size);
 
-      for (uint64_t j = 0; j < t_size; ++j) {
-        std::string token = tokens[j];
+      uint32_t offset = 0;
+
+      for (uint64_t j = 0; j != t_size; ++j) {
+        std::string token = tokens[j + offset];
 
         if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^") {
           switch (token[0]) {
@@ -580,7 +583,18 @@ namespace firefly {
             }
 
             case '/': {
-              precomp_tokens[i][j] = {operands::OPERATOR, operators::DIV};
+              // If the coefficient is a rational number, perform the division just once
+              if (precomp_tokens[i][j - 1].first == operands::NUMBER && precomp_tokens[i][j - 2].first == operands::NUMBER) {
+                FFInt quotient = precomp_tokens[i][j - 2].second / precomp_tokens[i][j - 1].second;
+                j -= 2;
+                t_size -= 2;
+                offset += 2;
+                precomp_tokens[i].pop_back();
+                precomp_tokens[i].pop_back();
+                precomp_tokens[i][j] = {operands::NUMBER, quotient};
+              } else
+                precomp_tokens[i][j] = {operands::OPERATOR, operators::DIV};
+
               break;
             }
 
