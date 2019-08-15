@@ -27,7 +27,7 @@ namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
-      INFO_MSG("Launching " << thr_n_ << " thread(s).");
+      INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size 1.");
     }
 
     FFInt::set_new_prime(primes()[prime_it]);
@@ -39,7 +39,7 @@ namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
-      INFO_MSG("Launching " << thr_n_ << " thread(s).");
+      INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size " + std::to_string(bunch_size_) + ".");
     }
 
     FFInt::set_new_prime(primes()[prime_it]);
