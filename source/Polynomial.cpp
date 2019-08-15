@@ -17,9 +17,9 @@
 //==================================================================================
 
 #include "Polynomial.hpp"
-#include "utils.hpp"
-#include "Logger.hpp"
 #include "HornerGenerator.hpp"
+#include "Logger.hpp"
+#include "utils.hpp"
 
 namespace firefly {
 
@@ -142,4 +142,3 @@ namespace firefly {
     return generate_horner_mon(coefs, vars);
   }
 }
-

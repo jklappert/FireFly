@@ -19,7 +19,7 @@
 #pragma once
 
 #include "FFInt.hpp"
-#include <stack>
+
 #include <unordered_map>
 #include <unordered_set>
 

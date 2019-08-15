@@ -18,11 +18,10 @@
 
 #pragma once
 
-#include <cstdint>
+#include <gmpxx.h>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <gmpxx.h>
 
 namespace firefly {
 

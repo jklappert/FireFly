@@ -15,13 +15,11 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
+
 #include "Poly.hpp"
 
-#include <iostream>
 #include <math.h>
 #include <random>
-#include <limits>
-#include "FFInt.hpp"
 
 namespace firefly {
 

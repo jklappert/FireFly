@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include <string>
-
 #include "PolynomialFF.hpp"
 #include "Monomial.hpp"
 

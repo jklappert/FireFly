@@ -4,44 +4,50 @@ FireFly 1.3.0
 New features
 ------------
 
- * Introducing bunched evaluation of the black box. The black-box probes are
- now supported to be taken in bunches such that instead of returning a vector
- of probes a vector of vectors of probes can be returned. This feature can help
- improving the runtime when reaching CPU limits. However, note that additional
- threads are always preferable than a larger bunch size.
+ * Introduced a bunched evaluation of the black box. In addition to the
+ `operator()` of `BlackBoxBase` which returns a vector of FFInt, a probe, there
+ is now an `operator()` which returns a vector of a vector of FFInt, a vector of
+ probes. The default implementation just calls the normal operator several
+ times. This feature can help improving the runtime when reaching CPU limits if
+ the user can provide an `operator()` which reduces the overhead when it
+ computes several probes at once. However, additional threads are always
+ preferable to larger bunch sizes.
 
  * Added a bunched evaluation of parsed functions to the `ShuntingYardParser`.
+ It can slightly improve the runtime for large functions.
 
 Changes
 -------
 
  * Changes to the `ShuntingYardParser`:
-   - The parsable format has slightly changed. The delimiter to mark the end
-   of functions has been replaced from `\n` to `;`. Spaces and new lines
-   occurring in expressions will be removed automatically.
+   - The parsable format changed slightly. The delimiter to mark the end of
+   functions `\n` has been replaced by `;`. Spaces and new lines occurring in
+   expressions will be removed automatically.
 
-   - The parser now supports unary operators for parenthesis. We thank Robert
+   - The parser now supports unary operators for parentheses. We thank Robert
    Schabinger for this suggestion.
 
    - The parser now supports negative exponents like `(x+y)^(-10)`. A negative
-   exponent has to be used with parenthesis.
+   exponent has to be used with parentheses.
 
    - The parser now supports capital letters for variables.
 
    - The parser now performs a validation of the input by removing white spaces,
-   checking parenthesis, removing redundant parenthesis, and transforming `+-`
+   checking parentheses, removing redundant parentheses, and transforming `+-`
    or `-+` to `-`.
 
- * Without the safe mode, all required probes are now scheduled when
- changing a prime field. This leads to runtime improvements.
+ * Without the safe mode, all required probes are now scheduled when changing a
+ prime field. This leads to runtime improvements when more than one prime is
+ needed.
 
  * Changed recursive implementation of Thiele and Newton interpolation to
  an iterative one which avoids stack overflows.
 
- * Added more information to the info messages of the `Reconstructor` class.
+ * Added more information to the info messages of the `Reconstructor` class and
+ changed them a bit.
 
- * The safe mode now supports primes which are used during the interpolation as
- denominators of monomial coefficients.
+ * The safe mode can now handle denominators of monomial coefficients which
+ are the prime numbers used for the interpolation.
 
 Bug fixes
 ---------

@@ -22,7 +22,6 @@
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
 
-#include <unordered_set>
 #include <queue>
 
 namespace firefly {

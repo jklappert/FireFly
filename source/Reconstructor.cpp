@@ -16,8 +16,8 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "ReconstHelper.hpp"
 #include "Reconstructor.hpp"
+#include "ReconstHelper.hpp"
 #include "utils.hpp"
 #include "version.hpp"
 
@@ -297,7 +297,7 @@ namespace firefly {
         first = false;
 
         if (verbosity > SILENT) {
-          INFO_MSG("Maximal degree in numerator: " + std::to_string(max_deg_num) + " | Maximal degree in denominator: " + std::to_string(max_deg_den));
+          INFO_MSG("Maximal degree of numerator: " + std::to_string(max_deg_num) + " | Maximal degree of denominator: " + std::to_string(max_deg_den));
         }
       } else {
         ++counter;
@@ -488,6 +488,8 @@ namespace firefly {
         interpolate_jobs = 0;
         new_prime = false;
         items_new_prime = 0;
+        one_done = false;
+        one_new_prime = false;
 
         FFInt::set_new_prime(primes()[prime_it]);
         bb.prime_changed();

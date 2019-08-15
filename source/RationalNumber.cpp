@@ -128,5 +128,4 @@ namespace firefly {
 
     return out;
   }
-
 }

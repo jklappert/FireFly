@@ -16,14 +16,13 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
+#include "RatReconst.hpp"
 #include "DenseSolver.hpp"
 #include "Logger.hpp"
-#include "RatReconst.hpp"
 #include "ReconstHelper.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <fstream>
 #include <map>
 #include <sys/stat.h>
@@ -3054,7 +3053,9 @@ namespace firefly {
       return std::make_pair(all_shift_max_degs[0], all_shift_max_degs[1]);
     } else if (max_deg_num != -1 && max_deg_den != -1)
       return std::make_pair(max_deg_num, max_deg_den);
-    else
+    else {
       WARNING_MSG("Maximal degrees are not known yet.");
+      return std::make_pair(0,0);
+    }
   }
 }

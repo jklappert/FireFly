@@ -52,7 +52,7 @@ where `FLINT_LIB_PATH` is the absolute path pointing to the shared library of FL
 ## Reconstructing functions
 To reconstruct functions with FireFly it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
 
-The black box is implemented as functor. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor, the evaluation of the black box, and a function which allows the user to change member variables when the prime field changes:
+The black box is implemented as functor. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor and the evaluation of the black box:
 
 ```cpp
 class BlackBoxUser : public BlackBoxBase {
@@ -63,11 +63,10 @@ public:
   virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
     ...
   }
-  virtual void prime_changed() {
-    ...
-  }
 }
 ```
+
+Optionally, the user can provide the function `void prime_changed()` which allows the user to change member variables when the prime field changes.
 
 The actual reconstruction is done by the `Reconstructor` object which is initialized with the number of variables `n_var`, the number of threads `n_thr` that should be used, and the `BlackBoxUser` object `bb`:
 
@@ -86,6 +85,12 @@ The reconstruction will run from this point until it is finished. The results ca
 
 ```cpp
 rec.get_result();
+```
+
+The user can also provide the evaluation `std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>>& values_vec)` which returns vector of probes. This can used when the evaluation of several black-box probes at once is cheaper than evaluating the black box several times. This feature can be used by setting `bunch_size` to a value > 1 in the constructor of `Reconstructor`:
+
+```cpp
+Reconstructor rec(n_var, n_thr, bunch_size, bb);
 ```
 
 Additional options can be set and we refer to the `example.cpp` file and the code documentation.
@@ -198,4 +203,3 @@ make doc
 ```
 
 The generated documentation can be found in `doc/html/index.html` or in `doc/latex`. Using the latter directory, calling `make` will create a pdf file.
-

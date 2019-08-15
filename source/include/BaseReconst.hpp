@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include "RationalNumber.hpp"
 #include "PolynomialFF.hpp"
 #include "UintHasher.hpp"
 

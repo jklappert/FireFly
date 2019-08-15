@@ -17,8 +17,6 @@
 //==================================================================================
 
 #include "BaseReconst.hpp"
-#include "PolyReconst.hpp"
-#include "RatReconst.hpp"
 #include "utils.hpp"
 
 namespace firefly {

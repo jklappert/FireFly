@@ -16,9 +16,9 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
+#include "utils.hpp"
 #include "RatReconst.hpp"
 #include "ReconstHelper.hpp"
-#include "utils.hpp"
 
 namespace firefly {
   static uint64_t xorshift64star_state = 0x4d595df4d0f33173;

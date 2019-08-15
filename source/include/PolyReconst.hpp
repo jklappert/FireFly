@@ -18,10 +18,10 @@
 
 #pragma once
 
-#include <cstdint>
-#include <list>
-#include "Polynomial.hpp"
 #include "BaseReconst.hpp"
+#include "Polynomial.hpp"
+
+#include <list>
 
 namespace firefly {
   /**

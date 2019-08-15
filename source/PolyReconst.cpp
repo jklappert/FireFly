@@ -16,12 +16,11 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include <cstdlib>
 #include "PolyReconst.hpp"
-#include "ReconstHelper.hpp"
 #include "Logger.hpp"
-#include "utils.hpp"
 #include "Poly.hpp"
+#include "ReconstHelper.hpp"
+#include "utils.hpp"
 
 namespace firefly {
   // TODO check if this interpolates in combination with RatReconst to use the

@@ -49,5 +49,4 @@ namespace firefly {
   };
 
   std::ostream& operator<< (std::ostream& out, const RationalNumber&);
-
 }

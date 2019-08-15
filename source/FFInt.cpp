@@ -16,9 +16,9 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include <sstream>
 #include "FFInt.hpp"
-#include "utils.hpp"
+
+#include <sstream>
 #ifdef FLINT
 #include <ulong_extras.h>
 #endif

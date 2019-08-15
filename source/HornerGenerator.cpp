@@ -18,6 +18,7 @@
 
 #include "HornerGenerator.hpp"
 #include "Logger.hpp"
+
 #include <map>
 
 namespace firefly {
