@@ -2,7 +2,6 @@
 #include "Logger.hpp"
 #include <fstream>
 #include <chrono>
-#include <cctype>
 
 namespace firefly {
 

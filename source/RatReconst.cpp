@@ -1329,7 +1329,6 @@ namespace firefly {
             if (curr_wang)
               curr_rn_wang = res.second;
 
-
             RationalNumber last_rn_monagan;
             RationalNumber curr_rn_monagan;
             bool last_monagan;
@@ -1354,7 +1353,6 @@ namespace firefly {
 
             if (curr_monagan)
               curr_rn_monagan = res.second;
-
 
             if (last_wang && curr_wang && last_rn_wang == curr_rn_wang) {
               remove_ni(c_ni.first, curr_rn_wang);
