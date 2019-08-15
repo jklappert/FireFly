@@ -185,6 +185,7 @@ namespace firefly {
     uint32_t total_iterations = 0;
     uint32_t iteration = 0;
     bool one_done = false;
+    bool one_new_prime = false;
     double average_black_box_time = 0;
     RatReconst tmp_rec;
     std::vector<FFInt> shift;

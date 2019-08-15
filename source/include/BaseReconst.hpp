@@ -21,8 +21,8 @@
 #include "RationalNumber.hpp"
 #include "PolynomialFF.hpp"
 #include "UintHasher.hpp"
+
 #include <mutex>
-#include <stdint.h>
 
 namespace firefly {
   typedef std::unordered_map<std::vector<uint32_t>, mpz_class, UintHasher> mpz_map;
@@ -69,6 +69,11 @@ namespace firefly {
      *  @return the counter of the currently used prime
      */
     uint32_t get_prime() const;
+    /**
+     *  @returns a pair of a bool if the current reconstruction is done and the
+     *  counter of the currently used prime
+     */
+    std::pair<bool, uint32_t> get_done_and_prime() const;
     /**
      *  @returns the currently used zi_order
      */

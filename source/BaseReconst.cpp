@@ -152,6 +152,11 @@ namespace firefly {
     return done;
   }
 
+  std::pair<bool, uint32_t> BaseReconst::get_done_and_prime() const {
+    std::unique_lock<std::mutex> lock(mutex_status);
+    return std::make_pair(done, prime_number);
+  }
+
   bool BaseReconst::is_new_prime() const {
     std::unique_lock<std::mutex> lock(mutex_status);
     return new_prime;

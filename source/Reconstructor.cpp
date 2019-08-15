@@ -184,13 +184,15 @@ namespace firefly {
     tp.kill_all();
 
     if (verbosity > SILENT) {
-      INFO_MSG("Probe: " + std::to_string(iteration) +
-               " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
-               " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+      if (one_done || one_new_prime) {
+        INFO_MSG("Probe: " + std::to_string(iteration) +
+                 " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
+                 " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+      }
+
       INFO_MSG("Completed reconstruction in: " +
                std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count()) + " s. | " + std::to_string(total_iterations) + " probes in total.");
       INFO_MSG("Needed prime fields: " + std::to_string(prime_it) + " + 1.");
-      //INFO_MSG(std::to_string(total_iterations) + " probes in total.");
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
   }
@@ -383,7 +385,11 @@ namespace firefly {
       }
 
       rec->feed(t, (*probe)[i], zi_order, prime_it);
-      rec->interpolate();
+      std::tuple<bool, bool, uint32_t> interpolated_done_prime = rec->interpolate();
+
+      if (std::get<2>(interpolated_done_prime) > prime_it) {
+        ++items_new_prime;
+      }
 
       std::mutex* mut = new std::mutex;
 
@@ -393,7 +399,7 @@ namespace firefly {
     delete probe;
 
     if (verbosity > SILENT) {
-      INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: 0 / " + std::to_string(items));
+      INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
     }
 
     start_probe_jobs(zi_order, bunch_size);
@@ -432,14 +438,16 @@ namespace firefly {
         ++prime_it;
 
         if (verbosity > SILENT) {
-          INFO_MSG("Probe: " + std::to_string(iteration) +
-                   " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
-                   " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+          if (one_done || one_new_prime) {
+            INFO_MSG("Probe: " + std::to_string(iteration) +
+                     " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
+                     " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+          }
+
           INFO_MSG("Completed current prime field in: " +
                    std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
                    " s. | " + std::to_string(total_iterations) + " probes in total.");
           INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
-          //INFO_MSG("Reconstructed functions: " + std::to_string(items_done) + " / " + std::to_string(items) + "."); redundant information
           INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
         }
 
@@ -566,53 +574,25 @@ namespace firefly {
               lock_future.unlock();
               lock_feed.lock();
             }
-          }
 
-          lock_future.lock();
+            lock_future.lock();
 
-          if (jobs_finished > 0 || !probes.empty() || !bunch.empty() || !probes_bunch.empty()) {
-            continue;
-          }
-
-          lock_future.unlock();
-
-          {
-            std::unique_lock<std::mutex> lock_status(status_control);
-
-            if (items_done == items) {
-              done = true;
-              continue;
-            } else if (items_done + items_new_prime == items) {
-              new_prime = true;
+            if (jobs_finished > 0 || !probes.empty() || !bunch.empty() || !probes_bunch.empty()) {
               continue;
             }
+
+            lock_future.unlock();
           }
 
           // no jobs are running anymore, check if done or new_prime else throw error
-          uint32_t items_new_prime_tmp = 0;
-
-          for (auto & rec : reconst) {
-            std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-
-            if (std::get<2>(rec) == RECONSTRUCTING) {
-              if (!std::get<3>(rec)->is_done()) {
-                if (std::get<3>(rec)->get_prime() != prime_it) {
-                  ++items_new_prime_tmp;
-                }
-              }
-            }
-          }
-
-          if (!scan && items_new_prime_tmp > items_new_prime) {
-            items_new_prime = items_new_prime_tmp;
-          }
-
           if (items_done == items) {
             done = true;
-          } else if (items_done + items_new_prime_tmp == items) {
+            continue;
+          } else if (items_done + items_new_prime == items) {
             new_prime = true;
+            continue;
           } else {
-            throw std::runtime_error("No items to feed anymore");
+            throw std::runtime_error("Nothing left to feed.");
           }
         }
       }
@@ -842,7 +822,6 @@ namespace firefly {
       interpolate_jobs += items;
     }
 
-    uint32_t items_new_prime_tmp = 0;
     uint32_t counter = 0;
 
     for (auto & rec : reconst) {
@@ -851,8 +830,10 @@ namespace firefly {
       if (std::get<2>(rec) == RECONSTRUCTING) {
         lock_exists.unlock();
 
-        if (!(std::get<3>(rec)->is_done())) {
-          if (std::get<3>(rec)->get_prime() == prime_it) {
+        std::pair<bool, uint32_t> done_prime = std::get<3>(rec)->get_done_and_prime();
+
+        if (!done_prime.first) {
+          if (done_prime.second == prime_it) {
             ++counter;
 
             std::get<3>(rec)->feed(t, (*probe)[std::get<0>(rec)], zi_order, prime_it);
@@ -860,8 +841,6 @@ namespace firefly {
             tp.run_task([this, &rec]() {
               interpolate_job(rec);
             });
-          } else {
-            ++items_new_prime_tmp;
           }
         }
       }
@@ -872,12 +851,9 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_status(status_control);
 
-      if (!scan && (one_done || items_new_prime_tmp > items_new_prime)) {
-        if (items_new_prime_tmp > items_new_prime) {
-          items_new_prime = items_new_prime_tmp;
-        }
-
+      if (!scan && (one_done || one_new_prime)) {
         one_done = false;
+        one_new_prime = false;
 
         std::unique_lock<std::mutex> lock_print(print_control);
 
@@ -902,11 +878,20 @@ namespace firefly {
     if (std::get<2>(rec) == RECONSTRUCTING) {
       lock_exists.unlock();
 
-      if (!std::get<3>(rec)->interpolate()) {
+      std::tuple<bool, bool, uint32_t> interpolated_done_prime = std::get<3>(rec)->interpolate();
+
+      if (std::get<0>(interpolated_done_prime)) { // interpolated
         //lock_exists.lock();
         // start new jobs if required
-        if (!std::get<3>(rec)->is_done()) {
-          if (std::get<3>(rec)->get_prime() > prime_it) {
+        if (!std::get<1>(interpolated_done_prime)) { // not done
+          if (std::get<2>(interpolated_done_prime) > prime_it) { // compare prime counters
+            {
+              std::unique_lock<std::mutex> lock_status(status_control);
+
+              one_new_prime = true;
+              ++items_new_prime;
+            }
+
             std::unique_lock<std::mutex> lock(job_control);
 
             if (std::get<3>(rec)->get_num_eqn() > probes_for_next_prime) {

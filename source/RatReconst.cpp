@@ -16,16 +16,17 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
+#include "DenseSolver.hpp"
 #include "Logger.hpp"
 #include "RatReconst.hpp"
 #include "ReconstHelper.hpp"
 #include "utils.hpp"
-#include "DenseSolver.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <fstream>
-#include <sys/stat.h>
 #include <map>
+#include <sys/stat.h>
 
 namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
@@ -147,13 +148,13 @@ namespace firefly {
     }
   }
 
-  bool RatReconst::interpolate() {
+  std::tuple<bool, bool, uint32_t> RatReconst::interpolate() {
     std::unique_lock<std::mutex> lock(mutex_status);
 
     if (fed_zero) {
       fed_zero = false;
-      return false;
-    } else if (is_interpolating || queue.empty()) return true;
+      return std::make_tuple(true, done, prime_number);
+    } else if (is_interpolating || queue.empty()) return std::make_tuple(false, done, prime_number);
     else {
       is_interpolating = true;
 
@@ -179,7 +180,7 @@ namespace firefly {
     }
 
     is_interpolating = false;
-    return false;
+    return std::make_tuple(true, done, prime_number);
   }
 
   void RatReconst::interpolate(const FFInt& new_ti,
