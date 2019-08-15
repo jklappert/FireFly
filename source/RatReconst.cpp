@@ -1200,11 +1200,12 @@ namespace firefly {
 
           if (!normalizer_den_num && c_ni.first == normalizer_deg)
             remove_ni(c_ni.first, RationalNumber(1, 1));
-          else
+          else {
             add_non_solved_num(c_ni.first);
 
-          if (is_safe_mode)
-            combined_primes_ni[c_ni.first] = combined_prime;
+            if (is_safe_mode)
+              combined_primes_ni[c_ni.first] = combined_prime;
+          }
         }
 
         mpz_map combined_di_back = combined_di;
@@ -1213,11 +1214,12 @@ namespace firefly {
 
           if (normalizer_den_num && c_di.first == normalizer_deg)
             remove_di(c_di.first, RationalNumber(1, 1));
-          else
+          else {
             add_non_solved_den(c_di.first);
 
-          if (is_safe_mode)
-            combined_primes_di[c_di.first] = combined_prime;
+            if (is_safe_mode)
+              combined_primes_di[c_di.first] = combined_prime;
+          }
         }
 
         if (is_singular_system) {
