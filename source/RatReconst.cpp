@@ -154,7 +154,8 @@ namespace firefly {
     if (fed_zero) {
       fed_zero = false;
       return std::make_tuple(true, done, prime_number);
-    } else if (is_interpolating || queue.empty()) return std::make_tuple(false, done, prime_number);
+    } else if (is_interpolating || queue.empty())
+      return std::make_tuple(false, done, prime_number);
     else {
       is_interpolating = true;
 
@@ -187,7 +188,6 @@ namespace firefly {
                                const FFInt& num,
                                const std::vector<uint32_t>& fed_zi_ord) {
     if (!done) {
-
       // Compare if the food is the expected food; if not, store it for later use
       if (fed_zi_ord == curr_zi_order) {
         // first check if we are done. If not start the interpolation again using
@@ -3047,5 +3047,12 @@ namespace firefly {
     }
 
     return res;
+  }
+
+  std::pair<int, int> RatReconst::get_max_deg() {
+    if(max_deg_num != -1 && max_deg_den != -1){
+      return std::make_pair(max_deg_num, max_deg_den);
+    } else
+      WARNING_MSG("Maximal degrees are not known yet.");
   }
 }

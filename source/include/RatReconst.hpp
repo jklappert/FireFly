@@ -136,6 +136,11 @@ namespace firefly {
      *  @return the vector of required feeds where the first entry is the multiplicity and the second entry is the number of different t, e.g, (3,4) means this object needs for 3 different zi order 4 black-box probes with different t
      */
     std::vector<std::pair<uint32_t, uint32_t>> get_needed_feed_vec();
+    /**
+     *  Returns the maximal degree of numerator and denominator
+     *  @return The maximal degree of numerator (first) and denominator (second) as a pair
+     */
+    std::pair<int, int> get_max_deg();
   private:
     /**
      *  Starts the real interpolation managed by the class itself
