@@ -8,7 +8,7 @@ namespace firefly {
   ShuntingYardParser::ShuntingYardParser() {}
 
   ShuntingYardParser::ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars) {
-    INFO_MSG("Parsing functions in '" + file + "'.");
+    INFO_MSG("Parsing functions in '" + file + "'");
     auto time0 = std::chrono::high_resolution_clock::now();
     // Check if file exists
     std::ifstream infile(file);
@@ -48,7 +48,7 @@ namespace firefly {
     auto time1 = std::chrono::high_resolution_clock::now();
     INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions in "
              + std::to_string(std::chrono::duration<double>(time1 - time0).count())
-             + " s.");
+             + " s");
   }
 
   void ShuntingYardParser::parse(const std::string& fun_) {

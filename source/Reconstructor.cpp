@@ -27,7 +27,7 @@ namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
-      INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size 1.");
+      INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size 1");
     }
 
     FFInt::set_new_prime(primes()[prime_it]);
@@ -39,7 +39,7 @@ namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
-      INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size " + std::to_string(bunch_size_) + ".");
+      INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size " + std::to_string(bunch_size_));
     }
 
     FFInt::set_new_prime(primes()[prime_it]);
@@ -153,7 +153,8 @@ namespace firefly {
 
     if (!resume_from_state) {
       if (verbosity > SILENT) {
-        INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
+        std::cout << "\n";
+        INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
       }
 
       if (safe_mode) {
@@ -190,10 +191,11 @@ namespace firefly {
                  " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
       }
 
-      INFO_MSG("Completed reconstruction in: " +
-               std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count()) + " s. | " + std::to_string(total_iterations) + " probes in total.");
-      INFO_MSG("Needed prime fields: " + std::to_string(prime_it) + " + 1.");
-      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
+      std::cout << "\n";
+      INFO_MSG("Completed reconstruction in " +
+               std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count()) + " s | " + std::to_string(total_iterations) + " probes in total");
+      INFO_MSG("Needed prime fields: " + std::to_string(prime_it) + " + 1");
+      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
     }
   }
 
@@ -238,7 +240,7 @@ namespace firefly {
 
   void Reconstructor::scan_for_shift() {
     if (verbosity > SILENT)
-      INFO_MSG("Scanning for a sparse shift.");
+      INFO_MSG("Scanning for a sparse shift");
 
     // Generate all possible combinations of shifting variables
     const auto shift_vec = generate_possible_shifts(n);
@@ -251,6 +253,9 @@ namespace firefly {
     tmp_rec.scan_for_sparsest_shift();
 
     start_first_runs();
+
+    uint32_t max_deg_num = 0;
+    uint32_t max_deg_den = 0;
 
     // Run this loop until a proper shift is found
     while (!found_shift && counter != bound) {
@@ -278,11 +283,22 @@ namespace firefly {
         if (!(std::get<3>(rec)->is_shift_working())) {
           found_shift = false;
         }
+
+        if (first) {
+          std::pair<uint32_t, uint32_t> degs = std::get<3>(rec)->get_max_deg();
+
+          max_deg_num = std::max(max_deg_num, degs.first);
+          max_deg_den = std::max(max_deg_den, degs.second);
+        }
       }
 
       if (first) {
         found_shift = false;
         first = false;
+
+        if (verbosity > SILENT) {
+          INFO_MSG("Maximal degree in numerator: " + std::to_string(max_deg_num) + " | Maximal degree in denominator: " + std::to_string(max_deg_den));
+        }
       } else {
         ++counter;
       }
@@ -326,14 +342,17 @@ namespace firefly {
         }
 
         msg = msg.substr(0, msg.size() - 2);
-        INFO_MSG("Found a sparse shift after " + std::to_string(counter + 1) + " scans. Shift the variable tuple: (" + msg + ").");
+        INFO_MSG("Found a sparse shift after " + std::to_string(counter + 1) + " scans");
+        INFO_MSG("Shift the variable tuple (" + msg + ")");
       } else {
-        INFO_MSG("Found no sparse shift after " + std::to_string(counter + 1) + " scans.");
+        INFO_MSG("Found no sparse shift after " + std::to_string(counter + 1) + " scans");
       }
 
-      INFO_MSG("Completed scan in: " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
-               " s. | " + std::to_string(total_iterations) + " probes in total.");
-      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
+      INFO_MSG("Completed scan in " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
+               " s | " + std::to_string(total_iterations) + " probes in total");
+      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
+      std::cout << "\n";
+      INFO_MSG("Proceeding with interpolation over prime field F(" + std::to_string(primes()[prime_it]) + ")");
     }
 
     prime_start = std::chrono::high_resolution_clock::now();
@@ -357,7 +376,7 @@ namespace firefly {
     ++iteration;
 
     if (verbosity > SILENT) {
-      INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s.");
+      INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s");
     }
 
     ++fed_ones;
@@ -444,11 +463,12 @@ namespace firefly {
                      " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
           }
 
-          INFO_MSG("Completed current prime field in: " +
+          INFO_MSG("Completed current prime field in " +
                    std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
-                   " s. | " + std::to_string(total_iterations) + " probes in total.");
-          INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
-          INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ").");
+                   " s | " + std::to_string(total_iterations) + " probes in total.");
+          INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
+          std::cout << "\n";
+          INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
         }
 
         prime_start = std::chrono::high_resolution_clock::now();
@@ -480,7 +500,7 @@ namespace firefly {
         if (!safe_mode && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             if (verbosity > SILENT)
-              INFO_MSG("Disable shift.");
+              INFO_MSG("Disable shift");
 
             tmp_rec.disable_shift();
           }
@@ -494,7 +514,7 @@ namespace firefly {
           uint32_t start = thr_n * bunch_size;
 
           if (verbosity == CHATTY) {
-            INFO_MSG("Starting " + std::to_string(start) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - start) + " jobs will be started later.");
+            INFO_MSG("Starting " + std::to_string(start) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - start) + " jobs will be started later");
           }
 
           start_probe_jobs(std::vector<uint32_t>(n - 1, 1), start);
@@ -503,7 +523,7 @@ namespace firefly {
           uint32_t start = (probes_for_next_prime + bunch_size - 1) / bunch_size * bunch_size;
 
           if (verbosity == CHATTY) {
-            INFO_MSG("Starting " + std::to_string(start) + " jobs.");
+            INFO_MSG("Starting " + std::to_string(start) + " jobs");
           }
 
           start_probe_jobs(std::vector<uint32_t>(n - 1, 1), start);
@@ -940,7 +960,7 @@ namespace firefly {
 
                         std::unique_lock<std::mutex> lock_print(print_control);
 
-                        INFO_MSG(msg + ".");
+                        INFO_MSG(msg);
                       }
 
                       start_probe_jobs(zi_order, start);
@@ -966,7 +986,7 @@ namespace firefly {
 
                       std::unique_lock<std::mutex> lock_print(print_control);
 
-                      INFO_MSG(msg + ".");
+                      INFO_MSG(msg);
                     }
 
                     start_probe_jobs(zi_order, required_probes);
@@ -995,7 +1015,7 @@ namespace firefly {
                 if (verbosity == CHATTY) {
                   std::unique_lock<std::mutex> lock_print(print_control);
 
-                  INFO_MSG("Starting ones: " + std::to_string(start) + ".");
+                  INFO_MSG("Starting ones: " + std::to_string(start));
                 }
 
                 start_probe_jobs(zi_order, start);
@@ -1032,7 +1052,7 @@ namespace firefly {
 
                     std::unique_lock<std::mutex> lock_print(print_control);
 
-                    INFO_MSG(msg + ".");
+                    INFO_MSG(msg);
                   }
 
                   start_probe_jobs(zi_order, start);
@@ -1058,7 +1078,7 @@ namespace firefly {
 
                   std::unique_lock<std::mutex> lock_print(print_control);
 
-                  INFO_MSG(msg + ".");
+                  INFO_MSG(msg);
                 }
 
                 start_probe_jobs(zi_order, required_probes);
