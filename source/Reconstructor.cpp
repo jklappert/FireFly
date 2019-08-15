@@ -189,7 +189,7 @@ namespace firefly {
                " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
       INFO_MSG("Completed reconstruction in: " +
                std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count()) + " s. | " + std::to_string(total_iterations) + " probes in total.");
-      INFO_MSG("Needed prime fields: " + std::to_string(prime_it) + ".");
+      INFO_MSG("Needed prime fields: " + std::to_string(prime_it) + " + 1.");
       //INFO_MSG(std::to_string(total_iterations) + " probes in total.");
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s.");
     }
