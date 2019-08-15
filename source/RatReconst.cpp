@@ -3049,10 +3049,12 @@ namespace firefly {
     return res;
   }
 
-  std::pair<int, int> RatReconst::get_max_deg() {
-    if(max_deg_num != -1 && max_deg_den != -1){
+  std::pair<uint32_t, uint32_t> RatReconst::get_max_deg() {
+    if (all_shift_max_degs.size() != 0) {
+      return std::make_pair(all_shift_max_degs[0], all_shift_max_degs[1]);
+    } else if (max_deg_num != -1 && max_deg_den != -1)
       return std::make_pair(max_deg_num, max_deg_den);
-    } else
+    else
       WARNING_MSG("Maximal degrees are not known yet.");
   }
 }

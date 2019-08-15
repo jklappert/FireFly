@@ -140,7 +140,7 @@ namespace firefly {
      *  Returns the maximal degree of numerator and denominator
      *  @return The maximal degree of numerator (first) and denominator (second) as a pair
      */
-    std::pair<int, int> get_max_deg();
+    std::pair<uint32_t, uint32_t> get_max_deg();
   private:
     /**
      *  Starts the real interpolation managed by the class itself
