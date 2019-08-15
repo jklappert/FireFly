@@ -20,16 +20,16 @@ Changes
    of functions has been replaced from `\n` to `;`. Spaces and new lines
    occurring in expressions will be removed automatically.
 
-   - The parser now supports unary operators for parenthesis. We thank Robert
+   - The parser now supports unary operators for parentheses. We thank Robert
    Schabinger for this suggestion.
 
    - The parser now supports negative exponents like `(x+y)^(-10)`. A negative
-   exponent has to be used with parenthesis.
+   exponent has to be used with parentheses.
 
    - The parser now supports capital letters for variables.
 
    - The parser now performs a validation of the input by removing white spaces,
-   checking parenthesis, removing redundant parenthesis, and transforming `+-`
+   checking parentheses, removing redundant parentheses, and transforming `+-`
    or `-+` to `-`.
 
  * Without the safe mode, all required probes are now scheduled when

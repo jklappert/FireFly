@@ -128,7 +128,7 @@ where `values` is a vector which contains the parameter point at which the funct
 +, -, *, /, ^
 ```
 
-are supported. Negative exponents like `x^(-10)` have to be set in parenthesis. For improved runtime, the evaluation should be performed with `evaluate_pre` which uses precomputed values of the monomial coefficients for the current field.
+are supported. Negative exponents like `x^(-10)` have to be set in parentheses. For improved runtime, the evaluation should be performed with `evaluate_pre` which uses precomputed values of the monomial coefficients for the current field.
 
 For convenience, FireFly also provides a script which converts a list of rational functions (stored as an expression list of Mathematica) to FireFly's parsable format. It is located in the `mma_2_ff` directory and can be executed with
 
@@ -141,7 +141,7 @@ where `$FILE` contains the list of rational functions.
 **The following operations are not supported:**
 
 * Any kind of implicit operators like `3 x`. This should read `3*x` instead.
-* Negative exponents without parenthesis like `x^-5`. This should read `x^(-5)` instead.
+* Negative exponents without parentheses like `x^-5`. This should read `x^(-5)` instead.
 * Unevaluated exponents like `x^(3+7)`. This should read `x^10` instead.
 * Operators followed by operators should be separated, i.e., for example, `3*-x` should read `3*(-x)` or `-3*x`. Only `+-` or `-+` will be interpreted as `-`.
 
