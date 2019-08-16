@@ -449,7 +449,7 @@ namespace firefly {
       }
 
       s_y_fun = ShuntingYardParser();
-      s_y_fun.parse_function(generate_horner_coefs(0, coefs_n_m_1, vars), vars);
+      s_y_fun.parse_function_internal(generate_horner_coefs(0, coefs_n_m_1, vars), vars);
       s_y_fun.precompute_tokens();
     }
   }

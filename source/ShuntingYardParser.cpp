@@ -254,6 +254,97 @@ namespace firefly {
     functions.emplace_back(pf);
   }
 
+  void ShuntingYardParser::parse_internal(const std::string& fun_) {
+    std::string fun = fun_;
+
+    char const* l_ptr = fun.c_str();
+    std::string tmp = ""; // Used for numbers
+    std::vector<std::string> pf = {};
+    std::stack<char> op_stack;
+
+    // Pick one character at a time until we reach the end of the line
+    while (*l_ptr != '\0') {
+      // If operand, add it to postfix string
+      // If operator pop operators off the stack until it is empty
+      if (is_operand(*l_ptr))
+        tmp += *l_ptr;
+      else if (*l_ptr == 'a')
+        tmp += *l_ptr;
+      else if (is_operator(*l_ptr)) {
+        if (tmp.length() > 0) {
+          pf.emplace_back(tmp);
+          tmp = "";
+        }
+
+        // Check for cases like +(-(x+...))
+        if (!op_stack.empty() && *(l_ptr - 1) == '(') {
+          if (*(l_ptr + 1) == '(') {
+            pf.emplace_back("0");
+            op_stack.push(*l_ptr);
+          } else
+            tmp.insert(tmp.begin(), *l_ptr);
+        } else if (op_stack.empty() && pf.empty())
+          tmp.insert(tmp.begin(), *l_ptr);
+        else {
+
+          while (!op_stack.empty() && op_stack.top() != '(' && get_weight(op_stack.top()) >= get_weight(*l_ptr)) {
+            pf.emplace_back(std::string(1, op_stack.top()));
+            op_stack.pop();
+          }
+
+          op_stack.push(*l_ptr);
+        }
+      }
+      // Push all open parenthesis to the stack
+      else if (*l_ptr == '(')
+        op_stack.push(*l_ptr);
+      // When reaching a closing one, pop off operators from the stack until an opening one is found
+      else if (*l_ptr == ')') {
+        if (tmp.length() > 0) {
+          pf.emplace_back(tmp);
+          tmp = "";
+        }
+
+        tmp = "";
+
+        while (!op_stack.empty()) {
+          if (op_stack.top() == '(') {
+            op_stack.pop();
+            break;
+          }
+
+          pf.emplace_back(std::string(1, op_stack.top()));
+          op_stack.pop();
+        }
+      }
+
+      // Proceed to the next character
+      l_ptr ++;
+    }
+
+    if (tmp.length() > 0) {
+      pf.emplace_back(tmp);
+    }
+
+    while (!op_stack.empty()) {
+      pf.emplace_back(std::string(1, op_stack.top()));
+      op_stack.pop();
+    }
+
+    pf.shrink_to_fit();
+    functions.emplace_back(pf);
+  }
+
+  void ShuntingYardParser::parse_function_internal(const std::string& fun, const std::vector<std::string>& vars) {
+    for (uint32_t i = 0; i != vars.size(); ++i) {
+      vars_map.emplace(std::make_pair(vars[i], i));
+    }
+
+    parse_internal(fun);
+
+    functions.shrink_to_fit();
+  }
+
   void ShuntingYardParser::parse_function(const std::string& fun, const std::vector<std::string>& vars) {
     for (uint32_t i = 0; i != vars.size(); ++i) {
       vars_map.emplace(std::make_pair(vars[i], i));
