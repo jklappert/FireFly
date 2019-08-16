@@ -168,6 +168,10 @@ namespace firefly {
 
                 if (*l_ptr_c == '(' && parenthesis_counter != 0) {
                   parenthesis_counter --;
+
+                  if (parenthesis_counter == 0)
+                    break;
+
                   l_ptr_c --;
 
                   if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
@@ -176,9 +180,6 @@ namespace firefly {
                     counter += 1;
                   else if (*l_ptr_c == '+' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
                     counter += 1;
-
-                  if (parenthesis_counter == 0)
-                    break;
                 }
 
                 if (parenthesis_counter == 0)
@@ -695,7 +696,7 @@ namespace firefly {
         i++;
       else if (r[i] == ')') {
         if (st.size() == 0) {
-          ERROR_MSG("Mismatch of closing prenthesis in expression " + std::to_string(exp_n) + ".");
+          ERROR_MSG("Mismatch of closing parentheses in expression " + std::to_string(exp_n) + ".");
           std::exit(EXIT_FAILURE);
         } else {
           int top = st.top();
@@ -712,7 +713,7 @@ namespace firefly {
     }
 
     if (st.size() > 0) {
-      ERROR_MSG("Mismatch of opening prenthesis in expression " + std::to_string(exp_n) + ".");
+      ERROR_MSG("Mismatch of opening parentheses in expression " + std::to_string(exp_n) + ".");
       std::exit(EXIT_FAILURE);
     }
 

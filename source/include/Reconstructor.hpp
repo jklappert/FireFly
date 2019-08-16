@@ -214,7 +214,11 @@ namespace firefly {
      */
     void start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t to_start);
     /**
-     * TODO
+     * Gets a probe from probes, probes_bunch, or bunch
+     * @param t is set to the t of the returned probe
+     * @param zi_order is set to the zi_order of the returned probe
+     * @param probe is set to point to a probe from probes, probes_bunch, or bunch
+     * @param time is set to the time of the returned probe
      */
     void get_probe(FFInt& t, std::vector<uint32_t>& zi_order, std::vector<FFInt>* probe, double& time);
     /**

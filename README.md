@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/jklappert/FireFly.svg?branch=master)](https://travis-ci.org/jklappert/FireFly) [![](https://img.shields.io/github/tag/jklappert/firefly)](https://gitlab.com/firefly-library/firefly/-/tags/1.2.1)
 
-FireFly is a reconstruction library for rational functions and polynomials written in C++.
+FireFly is a reconstruction library for rational functions written in C++.
 
 Please refer to this paper when using FireFly:
 * J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[1904.00009](https://arxiv.org/abs/1904.00009)]
@@ -50,7 +50,7 @@ where `FLINT_LIB_PATH` is the absolute path pointing to the shared library of FL
 
 
 ## Reconstructing functions
-To reconstruct functions with FireFly it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
+To reconstruct functions with FireFly, it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
 
 The black box is implemented as functor. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor and the evaluation of the black box:
 
@@ -87,23 +87,17 @@ The reconstruction will run from this point until it is finished. The results ca
 rec.get_result();
 ```
 
-The user can also provide the evaluation `std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>>& values_vec)` which returns vector of probes. This can used when the evaluation of several black-box probes at once is cheaper than evaluating the black box several times. This feature can be used by setting `bunch_size` to a value > 1 in the constructor of `Reconstructor`:
-
-```cpp
-Reconstructor rec(n_var, n_thr, bunch_size, bb);
-```
-
-Additional options can be set and we refer to the `example.cpp` file and the code documentation.
+We refer to the `example.cpp` file and the code documentation for additional options and features.
 
 
 ## Directly parse collections of rational functions
-FireFly provides a parser class for rational functions. The functions will be stored in reverse polish notation to be evaluated for a given parameter point. Parsing collections of rational functions can be done with the `ShuntingYardParser` class. It has to be constructed with a path to a file which contains the rational functions and a vector which sets the occurring variables:
+FireFly provides a parser class for rational functions. The functions will be stored in reverse polish notation to be evaluated for a given parameter point. Parsing collections of rational functions can be done with the `ShuntingYardParser` class. It has to be constructed with a path to a file which contains the rational functions and a vector of the occurring variables:
 
 ```cpp
 ShuntingYardParser parser(path, vars);
 ```
 
-Here, `path` is a string containing the path to the file in which the needed functions are stored and `vars` is a vector of strings which represent the occurring variables. The collection of functions have to be separated by a semicolon `;` to be identified correctly, e.g.,
+Here, `path` is a string containing the path to the file in which the functions are stored and `vars` is a vector of strings of the variables. The collection of functions have to be separated by a semicolon `;` to be identified correctly, e.g.
 
 ```
 (x+y*3)/(z^2+x);
@@ -116,7 +110,7 @@ The corresponding vector `vars` would thus be
 std::vector<std::string> vars = {"x","y","z"};
 ```
 
-Variables are limited to a length of at most 16 characters and can consist of lower and upper case letters, i.e. `a,...,z` and `A,...,Z`, and numbers, e.g., `s12`.
+Variables are limited to a length of at most 16 characters and can consist of lower and upper case letters, i.e. `a,...,z` and `A,...,Z`, and numbers, e.g. `s12`.
 
 The functions have to be parsed only once and can be evaluated afterwards calling
 
