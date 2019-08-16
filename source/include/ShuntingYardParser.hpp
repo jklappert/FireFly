@@ -92,10 +92,7 @@ namespace firefly {
      *  Initializes the conversion map
      *  @return The conversion map
      */
-    std::unordered_set<char> chars {{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
-      }
-    }; /**< The collection of supported characters for variable definition */
+    static const std::unordered_set<char> chars;/**< The collection of supported characters for variable definition */
     /**
      *  Gets the weight of an operator
      *  @param c The operator as a character
