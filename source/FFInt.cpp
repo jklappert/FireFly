@@ -323,7 +323,7 @@ namespace firefly {
 
 #ifdef DEFAULT
   FFInt operator/(const FFInt& a, const FFInt& b) {
-    if(b.n = 0)
+    if(b.n == 0)
       return 0;
     return FFInt(mod_mul(a.n, mod_inv(b.n, FFInt::p), FFInt::p));
   }
