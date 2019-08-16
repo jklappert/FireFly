@@ -47,12 +47,6 @@ namespace firefly {
      */
     void parse_function(const std::string& fun, const std::vector<std::string>& vars);
     /**
-     *  Parses a rational function given as a string for internal functions only
-     *  @param fun The rational function to be parsed as a string
-     *  @param vars A vector which specifies the variables of the function.
-     */
-    void parse_function_internal(const std::string& fun, const std::vector<std::string>& vars);
-    /**
      *  Evaluates all functions for a given parameter point and returs their result.
      *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
      *  @return The values of the parsed functions as a vector.
@@ -122,11 +116,6 @@ namespace firefly {
      *  @param fun_ The function which should be converted
      */
     void parse(const std::string& fun_);
-    /**
-     *  Converts a function in reverse polish notation for internal functions
-     *  @param fun_ The function which should be converted
-     */
-    void parse_internal(const std::string& fun_);
     /**
      *  Checks expression for redundant parenthesis, removes them and throws an error if one encounters a mismatch of parenthesis
      *  @param line the expression as a string
