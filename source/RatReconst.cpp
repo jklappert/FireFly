@@ -107,7 +107,7 @@ namespace firefly {
 
     if (!done) {
       if (first_feed && !scan) {
-        if (num == 0) {
+        if (num == 0 && fed_prime == prime_number) {
           new_prime = true;
           zero_counter ++;
           fed_zero = true;
