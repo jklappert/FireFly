@@ -96,13 +96,11 @@ namespace firefly {
 #ifdef FLINT
   FFInt& FFInt::operator+=(const FFInt& ffint) {
     n = (p - ffint.n > n ? n + ffint.n : n + ffint.n - p);
-
     return *this;
   }
 
   FFInt& FFInt::operator-=(const FFInt& ffint) {
     n = (ffint.n > n ? n - ffint.n + p : n - ffint.n);
-
     return *this;
   }
 
@@ -112,6 +110,10 @@ namespace firefly {
   }
 
   FFInt& FFInt::operator/=(const FFInt& ffint) {
+    if(ffint.n == 0){
+      n = 0;
+      return *this;
+    }
     n = n_mulmod2_preinv(n, n_invmod(ffint.n, p), p, p_inv);
     return *this;
   }
@@ -146,6 +148,10 @@ namespace firefly {
   }
 
   FFInt& FFInt::operator/=(const FFInt& ffint) {
+    if(ffint.n == 0){
+      n = 0;
+      return *this;
+    }
     n = mod_mul(n, mod_inv(ffint.n, p), p);
     return *this;
   }
@@ -305,6 +311,8 @@ namespace firefly {
 
 #ifdef FLINT
   FFInt operator/(const FFInt& a, const FFInt& b) {
+    if(b.n == 0)
+      return 0;
     return FFInt(n_mulmod2_preinv(a.n, n_invmod(b.n, FFInt::p), FFInt::p, FFInt::p_inv));
   }
 
@@ -315,6 +323,8 @@ namespace firefly {
 
 #ifdef DEFAULT
   FFInt operator/(const FFInt& a, const FFInt& b) {
+    if(b.n = 0)
+      return 0;
     return FFInt(mod_mul(a.n, mod_inv(b.n, FFInt::p), FFInt::p));
   }
 
