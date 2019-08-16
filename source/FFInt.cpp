@@ -17,6 +17,7 @@
 //==================================================================================
 
 #include "FFInt.hpp"
+#include "utils.hpp"
 
 #include <sstream>
 #ifdef FLINT
