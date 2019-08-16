@@ -57,6 +57,8 @@ Bug fixes
  * Fixed another rare crash of the `Reconstructor` with `No items to feed
  anymore`. We thank Mario Prausa for noticing.
 
+ * Fixed 1/0 cases for development versions of FLINT.
+
 
 FireFly 1.2.1
 =============
