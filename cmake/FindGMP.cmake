@@ -68,8 +68,8 @@ if(GMP_INCLUDE_DIR)
   endforeach()
 
   #hack for travis
+  if(DO_NOT_CHECK_GMP_VERSION)
     set(GMP_VERSION "6.1.2")
-    message(STATUS "test")
   endif()
   # Check whether found version exists and exceeds the minimum requirement
   if(NOT GMP_VERSION)
