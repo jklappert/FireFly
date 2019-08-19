@@ -49,6 +49,8 @@ Changes
  * The safe mode can now handle denominators of monomial coefficients which
  are the prime numbers used for the interpolation.
 
+ * Added a check for the GMP version.
+
 Bug fixes
 ---------
 
@@ -58,6 +60,8 @@ Bug fixes
  anymore`. We thank Mario Prausa for noticing.
 
  * Fixed 1/0 cases for development versions of FLINT.
+
+ * Fixed the string type for the Intel icpc compiler.
 
 
 FireFly 1.2.1
