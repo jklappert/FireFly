@@ -31,11 +31,11 @@
 # GMP_INCLUDE_DIR - The GMP include directory
 # GMP_LIBRARIES - Libraries needed to use GMP
 
-if (GMP_INCLUDE_DIR AND GMP_LIBRARIES)
+#if (GMP_INCLUDE_DIR AND GMP_LIBRARIES)
   # Force search at every time, in case configuration changes
-  unset(GMP_INCLUDE_DIR CACHE)
-  unset(GMP_LIBRARIES CACHE)
-endif (GMP_INCLUDE_DIR AND GMP_LIBRARIES)
+#  unset(GMP_INCLUDE_DIR CACHE)
+#  unset(GMP_LIBRARIES CACHE)
+#endif (GMP_INCLUDE_DIR AND GMP_LIBRARIES)
 
 find_path(GMP_INCLUDE_DIR NAMES gmpxx.h)
 

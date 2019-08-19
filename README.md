@@ -20,7 +20,7 @@ FireFly requires:
 * C++ compiler supporting C++11
 * [CMake](https://cmake.org/) >= 3.1
 * [FLINT](http://www.flintlib.org/) >= 2.5 (optional)
-* [GMP](https://gmplib.org/) >= 6.1
+* [GMP](https://gmplib.org/) >= 6.1.2
 
 ## Building FireFly
 FireFly uses CMake to generate files for build automation. To build FireFly one should first create a separate `build` directory inside FireFly's top directory. Afterwards, `cmake` should be called:
@@ -48,6 +48,11 @@ If FLINT is used for modular arithmetic and it cannot be found in the default sy
 
 where `FLINT_LIB_PATH` is the absolute path pointing to the shared library of FLINT.
 
+If the GMP version installed in the sytem directories does not match 6.1.2 or CMake does not find GMP, the paths for GMP can be set with the flags:
+```
+-DGMP_INCLUDE_DIR=$GMP_INC_PATH -DGMP_LIBRARIES=$GMP_LIB_PATH
+```
+where `GMP_INC_DIR` is the absolute path to the directory of where the include files can be found (`gmpxx.h` is required) and `GMP_LIB_PATH` is the absolute path to the GMP library.
 
 ## Reconstructing functions
 To reconstruct functions with FireFly, it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.

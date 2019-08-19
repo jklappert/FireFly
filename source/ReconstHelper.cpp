@@ -62,7 +62,7 @@ namespace firefly {
   }
 
   // the 10 largest 128-bit primes
-  const std::vector< std::__cxx11::string >& primes_128() {
+  const std::vector<std::string>& primes_128() {
     const static std::vector<std::string> prime_vec = {
       "340282366920938463463374607431768211297", "340282366920938463463374607431768211283",
       "340282366920938463463374607431768211223", "340282366920938463463374607431768211219",

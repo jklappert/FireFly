@@ -4,6 +4,8 @@ project(FireFly VERSION 1.2.1 LANGUAGES CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(GMP REQUIRED)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 # decleare some colours
 if(NOT WIN32)
@@ -126,10 +128,10 @@ if("${CUSTOM}" STREQUAL "true")
   message("-- ${Red}Using custom modular arithmetic. The example is thus not compiled.${ColourReset}")
 elseif("${WITH_FLINT}" STREQUAL "true")
   add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-  target_link_libraries(example FireFly_static gmp flint)
+  target_link_libraries(example FireFly_static gmp flint Threads::Threads)
 else()
   add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-  target_link_libraries(example FireFly_static gmp)
+  target_link_libraries(example FireFly_static gmp Threads::Threads)
 endif()
 
 # install libraries
