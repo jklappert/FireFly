@@ -73,8 +73,6 @@ if(GMP_INCLUDE_DIR)
     message(STATUS "GMP version was not detected")
   elseif(${GMP_VERSION} VERSION_LESS ${GMP_FIND_VERSION})
     set(GMP_VERSION_OK FALSE)
-    message(STATUS "GMP version ${GMP_VERSION} found in ${GMP_INCLUDE_DIR}, "
-                   "but at least version ${GMP_FIND_VERSION} is required")
   else()
     set(GMP_VERSION_OK TRUE)
   endif()
@@ -94,7 +92,8 @@ if(GMP_FOUND AND GMP_VERSION_OK)
   message(STATUS "Found GMP ${GMP_VERSION} library: ${GMP_LIBRARIES}")
   message(STATUS "Found GMP ${GMP_VERSION} headers: ${GMP_INCLUDE_DIR}")
 else()
-  message(FATAL_ERROR "${Red}Could NOT find GMP or its correct version${ColourReset}")
+  message(FATAL_ERROR "GMP version ${GMP_VERSION} found in ${GMP_INCLUDE_DIR}, "
+                   "but at least version ${GMP_FIND_VERSION} is required")
 endif()
 
 mark_as_advanced(GMP_INCLUDE_DIR GMP_LIBRARIES)
