@@ -91,7 +91,17 @@ endif(GMP_INCLUDE_DIR AND GMP_LIBRARIES)
 if(GMP_FOUND AND GMP_VERSION_OK)
   message(STATUS "Found GMP ${GMP_VERSION} headers: ${GMP_INCLUDE_DIR}")
   message(STATUS "GMP library: ${GMP_LIBRARIES}")
+elseif(NOT GMP_FOUND)
+  # Force search at every time, in case configuration changes
+  unset(GMP_INCLUDE_DIR CACHE)
+  unset(GMP_LIBRARIES CACHE)
+
+  message(FATAL_ERROR "GMP not found")
 else()
+  # Force search at every time, in case configuration changes
+  unset(GMP_INCLUDE_DIR CACHE)
+  unset(GMP_LIBRARIES CACHE)
+
   message(FATAL_ERROR "GMP version ${GMP_VERSION} found in ${GMP_INCLUDE_DIR}, "
                    "but at least version ${GMP_FIND_VERSION} is required")
 endif()
