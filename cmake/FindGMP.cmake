@@ -89,8 +89,8 @@ if(GMP_INCLUDE_DIR AND GMP_LIBRARIES)
 endif(GMP_INCLUDE_DIR AND GMP_LIBRARIES)
 
 if(GMP_FOUND AND GMP_VERSION_OK)
-  message(STATUS "Found GMP ${GMP_VERSION} library: ${GMP_LIBRARIES}")
   message(STATUS "Found GMP ${GMP_VERSION} headers: ${GMP_INCLUDE_DIR}")
+  message(STATUS "GMP library: ${GMP_LIBRARIES}")
 else()
   message(FATAL_ERROR "GMP version ${GMP_VERSION} found in ${GMP_INCLUDE_DIR}, "
                    "but at least version ${GMP_FIND_VERSION} is required")
