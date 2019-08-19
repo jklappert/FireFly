@@ -4,8 +4,6 @@ project(FireFly VERSION 1.2.1 LANGUAGES CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(GMP REQUIRED)
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
 
 # decleare some colours
 if(NOT WIN32)
@@ -44,7 +42,7 @@ endif()
 # set the build type to release. If one needs debugging symbols, compile
 # with "-DCMAKE_BUILD_TYPE=Debug"
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
 # set the C++ standard
@@ -53,16 +51,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # enable all warnings in Debug mode
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
-  if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pthread -pedantic -g")
-  endif()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pthread -pedantic -g")
 endif()
 
 # enable optimization
 if(CMAKE_BUILD_TYPE STREQUAL Release)
-  if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pthread -g")
-  endif()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pthread -g")
 endif()
 
 # set paths
@@ -71,7 +65,10 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 
 # include headers
 include_directories(${INCLUDE_PATH})
-include_directories(${FLINT_INCLUDE_DIR}/flint)
+if("${WITH_FLINT}" STREQUAL true)
+  include_directories(${FLINT_INCLUDE_DIR}/flint)
+endif()
+include_directories(${GMP_INCLUDE_DIR})
 
 # Firefly library files
 set(LIBSOURCES
@@ -128,10 +125,10 @@ if("${CUSTOM}" STREQUAL "true")
   message("-- ${Red}Using custom modular arithmetic. The example is thus not compiled.${ColourReset}")
 elseif("${WITH_FLINT}" STREQUAL "true")
   add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-  target_link_libraries(example FireFly_static gmp flint Threads::Threads)
+  target_link_libraries(example FireFly_static gmp flint)
 else()
   add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-  target_link_libraries(example FireFly_static gmp Threads::Threads)
+  target_link_libraries(example FireFly_static gmp)
 endif()
 
 # install libraries
