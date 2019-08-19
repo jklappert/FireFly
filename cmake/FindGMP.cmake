@@ -94,7 +94,7 @@ if(GMP_FOUND AND GMP_VERSION_OK)
   message(STATUS "Found GMP ${GMP_VERSION} library: ${GMP_LIBRARIES}")
   message(STATUS "Found GMP ${GMP_VERSION} headers: ${GMP_INCLUDE_DIR}")
 else()
-  message(FATAL_ERROR "Could NOT find GMP or its correct version")
+  message(FATAL_ERROR "${Red}Could NOT find GMP or its correct version${ColourReset}")
 endif()
 
 mark_as_advanced(GMP_INCLUDE_DIR GMP_LIBRARIES)
