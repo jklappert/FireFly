@@ -6,5 +6,5 @@ compiler:
 script:
   - mkdir build
   - cd build
-  - cmake -DWITH_FLINT=false ..
+  - cmake -DGMP_INC_DIR=/usr/include -DGMP_LIBRARIES=/usr/lib/x86_64-linux-gnu/libgmp.so ..
   - make
