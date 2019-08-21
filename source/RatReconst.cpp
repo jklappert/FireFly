@@ -2250,8 +2250,11 @@ namespace firefly {
             std::getline(file, line);
             tag_name = line;
             std::getline(file, line);
+            std::getline(file, line);
             normalize_to_den = std::stoi(line);
             file.close();
+            prime_number = 0;
+            check_interpolation = false;
             return std::make_pair(true, 0);
           } else if (line != "combined_prime") {
             ERROR_MSG("Wrong input format! Has to start with 'combined_prime'!");

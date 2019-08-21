@@ -21,6 +21,7 @@
 #include "utils.hpp"
 #include "version.hpp"
 
+#include <fstream>
 #include <sys/stat.h>
 
 namespace firefly {
@@ -127,11 +128,28 @@ namespace firefly {
 
         reconst.emplace_back(std::make_tuple(i, mut, DONE, rec));
       } else {
-        probes_for_next_prime = std::max(probes_for_next_prime, rec->get_num_eqn());
+        if (rec->is_new_prime()) {
+          probes_for_next_prime = std::max(probes_for_next_prime, rec->get_num_eqn());
+          ++items_new_prime;
+        }
 
         std::mutex* mut = new std::mutex;
 
         reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
+      }
+    }
+
+    if (scan) {
+      if (prime_it == 0) {
+        std::string file_name = "scan";
+        std::ifstream file;
+        file.open(file_name.c_str());
+        if (file.is_open()) {
+          scan = false;
+        }
+        file.close();
+      } else {
+        scan = false;
       }
     }
   }
@@ -333,6 +351,13 @@ namespace firefly {
 
     scan = false;
 
+    if (save_states == true) {
+      std::string file_name = "scan";
+      std::ofstream file;
+      file.open(file_name.c_str());
+      file.close();
+    }
+
     if (verbosity > SILENT) {
       if (found_shift) {
         std::string msg = "";
@@ -395,10 +420,12 @@ namespace firefly {
       }
 
       if (save_states) {
-        if (tag_size > 0)
-          rec->set_tag(tags[i]);
-        else {
-          rec->set_tag(std::to_string(i));
+        rec->set_tag(std::to_string(i));
+
+        if (tag_size > 0) {
+          rec->set_tag_name(tags[i]);
+        } else {
+          rec->set_tag_name(std::to_string(i));
           tags.emplace_back(std::to_string(i));
         }
       }
@@ -433,8 +460,19 @@ namespace firefly {
     bool new_prime = false;
 
     if (resume_from_state) {
-      new_prime = true;
       resume_from_state = false;
+
+      if (prime_it == 0) {
+        INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
+
+        shift = tmp_rec.get_zi_shift_vec();
+
+        uint32_t start = thr_n * bunch_size;
+        start_probe_jobs(std::vector<uint32_t>(n - 1, 1), start);
+        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), start);
+      } else {
+        new_prime = true;
+      }
     }
 
     while (!done) {
@@ -444,8 +482,8 @@ namespace firefly {
         clean_reconst();
 
         if (save_states && prime_it) {
+          mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
           for (auto & tag : tags) {
-            mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             std::string file_name_old = "ff_save/" + tag + "_" + std::to_string(prime_it - 1) + ".txt";
             std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_it) + ".txt";
 
@@ -621,8 +659,8 @@ namespace firefly {
     }
 
     if (save_states && prime_it) {
+      mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       for (auto & tag : tags) {
-        mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         std::string file_name_old = "ff_save/" + tag + "_" + std::to_string(prime_it - 1) + ".txt";
         std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_it) + ".txt";
 
