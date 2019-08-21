@@ -1939,6 +1939,11 @@ namespace firefly {
 
   bool RatReconst::need_shift() {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
+    for (uint32_t i = 0; i < n; ++i) {
+      shift[i] = FFInt(shift[i].n);
+    }
+
     bool tmp = need_prime_shift;
     set_singular_system = need_prime_shift;
     need_prime_shift = false;
