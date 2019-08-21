@@ -894,13 +894,13 @@ namespace firefly {
 
         if (!done_prime.first) {
           if (done_prime.second == prime_it) {
-            ++counter;
+            if (std::get<3>(rec)->feed(t, (*probe)[std::get<0>(rec)], zi_order, prime_it)) {
+              ++counter;
 
-            std::get<3>(rec)->feed(t, (*probe)[std::get<0>(rec)], zi_order, prime_it);
-
-            tp.run_task([this, &rec]() {
-              interpolate_job(rec);
-            });
+              tp.run_task([this, &rec]() {
+                interpolate_job(rec);
+              });
+            }
           }
         }
       }

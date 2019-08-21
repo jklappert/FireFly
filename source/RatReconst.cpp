@@ -100,7 +100,7 @@ namespace firefly {
     }
   }
 
-  void RatReconst::feed(const FFInt& new_ti, const FFInt& num,
+  bool RatReconst::feed(const FFInt& new_ti, const FFInt& num,
                         const std::vector<uint32_t>& feed_zi_ord,
                         const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
@@ -145,6 +145,8 @@ namespace firefly {
           queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
       }
     }
+
+    return !is_interpolating;
   }
 
   std::tuple<bool, bool, uint32_t> RatReconst::interpolate() {

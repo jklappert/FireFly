@@ -43,12 +43,13 @@ namespace firefly {
     static void reset();
     /**
      *  Feeds a black-box probe which will be processed by the class.
+     *  @return true if no interpolation is running, false otherwise
      *  @param new_ti the value of t for the current feed
      *  @param num the black-box probe
      *  @param fed_zi_ord the corresponding zi_order to this feed
      *  @param fed_prime the corresponding prime number to this feed
      */
-    void feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord, const uint32_t fed_prime);
+    bool feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord, const uint32_t fed_prime);
     /**
      *  @return the result of the reconstruction as a RationalFunction object
      */
