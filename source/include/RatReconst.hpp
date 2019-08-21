@@ -120,7 +120,7 @@ namespace firefly {
      *  @param file_name the absolute path to the saved state file
      *  @return a pair of a bool which indicates if the current objects needs a shift and an uint32_t for the prime number
      */
-    std::pair<bool, uint32_t> start_from_saved_file(std::string file_name);
+    std::pair<bool, uint32_t> start_from_saved_file(const std::string & file_name);
     /**
      *  Enables the scan for a sparsest shift
      */
@@ -309,23 +309,6 @@ namespace firefly {
     void set_singular_system_vars();
     std::vector<bool> parsed_variables {std::vector<bool>(22, false)};
     int curr_parsed_variable = -1;
-    /**
-     *  Parses a vector from a file with a given number of maximal entries
-     *  @param line a string representing the line which should be parsed
-     *  @param number_of_parameters a limiting number how many entries should be parsed
-     *  @return the parsed vector
-     */
-    std::vector<uint32_t> parse_vector(std::string& line, int number_of_parameters = -1);
-    /**
-     *  Parses a rational number from a file
-     *  @param line the string that should be parsed to a rational number
-     */
-    std::vector<mpz_class> parse_rational_number(std::string& line);
-    /**
-     *  Parses a prime number counter from a file
-     *  @param file_name the file name
-     */
-    void parse_prime_number(std::string& file_name);
     /**
      *  Checks if the reconstruction is done
      *  @param num a numerical value of the black box

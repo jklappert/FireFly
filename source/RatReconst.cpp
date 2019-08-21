@@ -19,6 +19,7 @@
 #include "RatReconst.hpp"
 #include "DenseSolver.hpp"
 #include "Logger.hpp"
+#include "ParserUtils.hpp"
 #include "ReconstHelper.hpp"
 #include "utils.hpp"
 
@@ -2231,11 +2232,11 @@ namespace firefly {
     }
   }
 
-  std::pair<bool, uint32_t> RatReconst::start_from_saved_file(std::string file_name) {
+  std::pair<bool, uint32_t> RatReconst::start_from_saved_file(const std::string & file_name) {
     std::string line;
     std::ifstream file(file_name.c_str());
     bool first = true;
-    parse_prime_number(file_name);
+    prime_number = parse_prime_number(file_name) + 1;
     check_interpolation = true;
     bool tmp_need_shift = false;
 
@@ -2422,13 +2423,15 @@ namespace firefly {
                   std::vector<uint32_t> tmp_vec = parse_vector(line);
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-                  if (shift == std::vector<FFInt> (n, 0)) {
+                  // TODO
+                  //if (shift == std::vector<FFInt> (n, 0)) {
+                  shift = std::vector<FFInt> (n, 0);
 
                     for (uint32_t i = 0; i != n; ++i) {
                       if (tmp_vec[i] != 0)
                         shift[i] = FFInt(xorshift64star());
                     }
-                  }
+                  //}
                 }
 
                 break;
@@ -2495,9 +2498,7 @@ namespace firefly {
                 }
 
                 std::vector<uint32_t> tmp_vec = parse_vector(line, n);
-                std::vector<mpz_class> tmp_rn = parse_rational_number(line);
-
-                g_ni.emplace(std::make_pair(tmp_vec, RationalNumber(tmp_rn[0], tmp_rn[1])));
+                g_ni.emplace(std::make_pair(tmp_vec, parse_rational_number(line)));
 
                 break;
               }
@@ -2509,11 +2510,9 @@ namespace firefly {
                 }
 
                 std::vector<uint32_t> tmp_vec = parse_vector(line, n);
-                std::vector<mpz_class> tmp_rn = parse_rational_number(line);
+                g_di.emplace(std::make_pair(tmp_vec, parse_rational_number(line)));
 
-                g_di.emplace(std::make_pair(tmp_vec, RationalNumber(tmp_rn[0], tmp_rn[1])));
                 break;
-
               }
 
               case COMBINED_NI: {
@@ -2628,43 +2627,6 @@ namespace firefly {
       ERROR_MSG("The file '" + file_name + "' could not be found!");
       std::exit(EXIT_FAILURE);
     }
-  }
-
-  std::vector<uint32_t> RatReconst::parse_vector(std::string& line, int number_of_parameters) {
-    size_t pos = 0;
-    int i = 0;
-    std::string delimiter = " ";
-    std::vector<uint32_t> tmp {};
-
-    if (number_of_parameters > 0)
-      tmp.reserve(number_of_parameters);
-
-    while ((pos = line.find(delimiter)) != std::string::npos) {
-      tmp.emplace_back(std::stoi(line.substr(0, pos)));
-      line.erase(0, pos + 1);
-      i++;
-
-      if (i == number_of_parameters) break;
-    }
-
-    return tmp;
-  }
-
-  std::vector<mpz_class> RatReconst::parse_rational_number(std::string& line) {
-    size_t pos = line.find(" ");
-    std::vector<mpz_class> tmp {};
-    tmp.emplace_back(mpz_class(line.substr(0, pos)));
-    line.erase(0, pos + 1);
-    tmp.emplace_back(mpz_class(line));
-    return tmp;
-  }
-
-  void RatReconst::parse_prime_number(std::string& file_name) {
-    std::string reverse_file_name = file_name;
-    std::reverse(reverse_file_name.begin(), reverse_file_name.end());
-    reverse_file_name.erase(0, 4);
-    size_t pos = reverse_file_name.find("_");
-    prime_number = std::stoi(reverse_file_name.substr(0, pos)) + 1;
   }
 
   void RatReconst::set_singular_system_vars() {

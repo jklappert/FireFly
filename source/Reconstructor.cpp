@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
+#include "ParserUtils.hpp"
 #include "Reconstructor.hpp"
 #include "ReconstHelper.hpp"
 #include "tinydir.h"
@@ -124,6 +125,35 @@ namespace firefly {
   void Reconstructor::resume_from_saved_state(const std::vector<std::string>& file_paths_) {
     INFO_MSG("Loading saved states");
 
+    std::ifstream validation_file;
+    validation_file.open("validation");
+    std::string line;
+    if (validation_file.is_open()) {
+      std::getline(validation_file, line);
+      std::vector<FFInt> values = parse_vector(line, "64");
+
+      std::vector<FFInt> result = bb(values);
+      size_t counter = 0;
+
+      while (std::getline(validation_file, line)) {
+        if (std::stoul(line) != result[counter]) {
+          ERROR_MSG("Validation failed: Entry " + std::to_string(counter) + " does not match the black-box result!");
+          std::exit(EXIT_FAILURE);
+        }
+        ++counter;
+      }
+
+      if (counter != result.size()) {
+        ERROR_MSG("Validation failed: Number of entries does not match the black box!");
+        std::exit(EXIT_FAILURE);
+      }
+    } else {
+      ERROR_MSG("Validation file not found!");
+      std::exit(EXIT_FAILURE);
+    }
+
+    validation_file.close();
+
     save_states = true;
     resume_from_state = true;
     file_paths = file_paths_;
@@ -167,9 +197,8 @@ namespace firefly {
 
     if (scan) {
       if (prime_it == 0 && items_new_prime != items) {
-        std::string file_name = "scan";
         std::ifstream file;
-        file.open(file_name.c_str());
+        file.open("scan");
         if (file.is_open()) {
           scan = false;
         } else {
@@ -182,14 +211,6 @@ namespace firefly {
         scan = false;
       }
     }
-  }
-
-  uint32_t Reconstructor::parse_prime_number(const std::string& file_name) {
-    std::string reverse_file_name = file_name;
-    std::reverse(reverse_file_name.begin(), reverse_file_name.end());
-    reverse_file_name.erase(0, 4);
-    size_t pos = reverse_file_name.find("_");
-    return std::stoi(reverse_file_name.substr(0, pos));
   }
 
   void Reconstructor::set_safe_interpolation() {
@@ -231,6 +252,10 @@ namespace firefly {
     run_until_done();
 
     tp.kill_all();
+
+    if (save_states) {
+      std::remove("validation");
+    }
 
     if (verbosity > SILENT) {
       if (one_done || one_new_prime) {
@@ -382,9 +407,8 @@ namespace firefly {
     scan = false;
 
     if (save_states == true) {
-      std::string file_name = "scan";
       std::ofstream file;
-      file.open(file_name.c_str());
+      file.open("scan");
       file.close();
     }
 
@@ -443,6 +467,21 @@ namespace firefly {
       std::exit(EXIT_FAILURE);
     }
 
+    std::ofstream file;
+
+    if (save_states) {
+      file.open("validation");
+
+      std::vector<FFInt> rand_zi;
+      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
+
+      file << (t + shift[0]).n << " ";
+      for (uint32_t i = 1; i != n; ++i) {
+        file << (rand_zi[i - 1] * t + shift[i]).n << " ";
+      }
+      file << "\n";
+    }
+
     for (uint32_t i = 0; i != items; ++i) {
       RatReconst* rec = new RatReconst(n);
 
@@ -462,6 +501,8 @@ namespace firefly {
         } else {
           rec->set_tag_name(std::to_string(i));
         }
+
+        file << ((*probe)[i]).n << "\n";
       }
 
       rec->feed(t, (*probe)[i], zi_order, prime_it);
@@ -476,7 +517,10 @@ namespace firefly {
       reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
     }
 
-    tags.clear();
+    if (save_states) {
+      file.close();
+      tags.clear();
+    }
 
     delete probe;
 
@@ -511,6 +555,7 @@ namespace firefly {
 
     while (!done) {
       if (new_prime) {
+        //exit(-1);
         tp.kill_all();
 
         clean_reconst();

@@ -198,11 +198,6 @@ namespace firefly {
     std::vector<FFInt> shift;
     uint32_t min_prime_keep_shift = 0;
     /**
-    *  Parses a prime number counter from a file
-    *  @param file_name the file name
-    */
-    uint32_t parse_prime_number(const std::string& file_name);
-    /**
     *  Scan the black-box functions for a sparse shift
     */
     void scan_for_shift();

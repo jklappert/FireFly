@@ -78,6 +78,7 @@ set(LIBSOURCES
   ${SOURCE_PATH}/FFThieleInterpolator.cpp
   ${SOURCE_PATH}/HornerGenerator.cpp
   ${SOURCE_PATH}/Monomial.cpp
+  ${SOURCE_PATH}/ParserUtils.cpp
   ${SOURCE_PATH}/Poly.cpp
   ${SOURCE_PATH}/Polynomial.cpp
   ${SOURCE_PATH}/PolynomialFF.cpp
@@ -97,6 +98,7 @@ set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/FFThieleInterpolator.cpp
   ${SOURCE_PATH}/HornerGenerator.cpp
   ${SOURCE_PATH}/Monomial.cpp
+  ${SOURCE_PATH}/ParserUtils.cpp
   ${SOURCE_PATH}/Poly.cpp
   ${SOURCE_PATH}/Polynomial.cpp
   ${SOURCE_PATH}/PolynomialFF.cpp
@@ -161,6 +163,7 @@ install(FILES
   "${INCLUDE_PATH}/HornerGenerator.hpp"
   "${INCLUDE_PATH}/Logger.hpp"
   "${INCLUDE_PATH}/Monomial.hpp"
+  "${INCLUDE_PATH}/ParserUtils.hpp"
   "${INCLUDE_PATH}/Poly.hpp"
   "${INCLUDE_PATH}/Polynomial.hpp"
   "${INCLUDE_PATH}/PolynomialFF.hpp"
