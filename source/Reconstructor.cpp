@@ -18,6 +18,7 @@
 
 #include "Reconstructor.hpp"
 #include "ReconstHelper.hpp"
+#include "tinydir.h"
 #include "utils.hpp"
 #include "version.hpp"
 
@@ -91,6 +92,35 @@ namespace firefly {
     tags = tags_;
   }
 
+  void Reconstructor::resume_from_saved_state(const std::string& directory) {
+    tinydir_dir dir;
+    tinydir_open_sorted(&dir, directory.c_str());
+
+    std::vector<std::string> files;
+    std::vector<std::string> paths;
+
+    for (size_t i = 0; i != dir.n_files; ++i) {
+      tinydir_file file;
+      tinydir_readfile_n(&dir, &file, i);
+
+      if (!file.is_dir) {
+        files.emplace_back(file.name);
+      }
+    }
+
+    tinydir_close(&dir);
+
+    std::sort(files.begin(), files.end(), [](const std::string & l, const std::string & r) {
+      return std::stoi(l.substr(0, l.find("_"))) < stoi(r.substr(0, r.find("_")));
+    });
+
+    for(const auto& file : files){
+      paths.emplace_back(directory + "/" + file);
+    }
+
+    resume_from_saved_state(paths);
+  }
+
   void Reconstructor::resume_from_saved_state(const std::vector<std::string>& file_paths_) {
     resume_from_state = true;
     file_paths = file_paths_;
@@ -114,9 +144,9 @@ namespace firefly {
       }
 
       if (save_states) {
-        if (tag_size > 0)
-          rec->set_tag(tags[i]);
-        else {
+        if (tag_size > 0) {
+          rec->set_tag(std::to_string(i));
+        } else {
           rec->set_tag(std::to_string(i));
           tags.emplace_back(std::to_string(i));
         }

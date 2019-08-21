@@ -172,6 +172,7 @@ install(FILES
   "${INCLUDE_PATH}/Reconstructor.hpp"
   "${INCLUDE_PATH}/ShuntingYardParser.hpp"
   "${INCLUDE_PATH}/ThreadPool.hpp"
+  "${INCLUDE_PATH}/tinydir.h"
   "${INCLUDE_PATH}/UintHasher.hpp"
   "${INCLUDE_PATH}/utils.hpp"
   "${INCLUDE_PATH}/version.hpp"

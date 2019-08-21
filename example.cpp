@@ -100,7 +100,6 @@ namespace firefly {
 
 using namespace firefly;
 int main() {
-  // Example of ShuntingYardParser
   // Parse the functions from "../s_y_4_v.m" with the variables x1, y, zZ, W
   ShuntingYardParser par("../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
 
@@ -108,23 +107,20 @@ int main() {
   BlackBoxUser bb(par);
 
   // Initialize the Reconstructor
-  Reconstructor reconst(4, 4, 1, bb/*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(4 /*n_vars*/, 4 /*n_threads*/, 1 /*bunch size*/, bb /*black box*//*, Reconstructor::CHATTY*/);
+
   // Enables a scan for a sparse shift
   reconst.enable_scan();
-  // Set the safe mode
+
+  // Enables the safe mode
   //reconst.set_safe_interpolation();
 
   // Write the state of all reconstruction objects after each interpolation over a prime field
+  // The intermediate results are stored in ./ff_save
   //reconst.set_tags();
 
-  // Give the paths to the intermediate results
-  /*std::vector<std::string> file_paths = {"ff_save/0_3.txt", "ff_save/1_3.txt", "ff_save/2_3.txt"
-                                         , "ff_save/3_3.txt", "ff_save/4_3.txt", "ff_save/5_3.txt", "ff_save/6_3.txt", "ff_save/7_3.txt"
-                                         , "ff_save/8_3.txt", "ff_save/9_3.txt", "ff_save/10_3.txt", "ff_save/11_3.txt", "ff_save/12_3.txt"
-                                         , "ff_save/13_3.txt", "ff_save/14_3.txt"
-                                        };*/
-  // Enables to resume from a saved state
-  //reconst.resume_from_saved_state(file_paths);
+  // Read in all saved states from the directory ./ff_save
+  //reconst.resume_from_saved_state("ff_save");
 
   // Reconstruct the black box
   reconst.reconstruct();
@@ -132,9 +128,8 @@ int main() {
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();
 
+  // Print all reconstruced functions
   for (uint32_t i = 0; i < results.size(); ++i) {
-    if(i == 5)
-      continue;
     std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
   }
 
