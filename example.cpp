@@ -117,14 +117,8 @@ int main() {
   // Write the state of all reconstruction objects after each interpolation over a prime field
   //reconst.set_tags();
 
-  // Give the paths to the intermediate results
-  /*std::vector<std::string> file_paths = {"ff_save/0_3.txt", "ff_save/1_3.txt", "ff_save/2_3.txt"
-                                         , "ff_save/3_3.txt", "ff_save/4_3.txt", "ff_save/5_3.txt", "ff_save/6_3.txt", "ff_save/7_3.txt"
-                                         , "ff_save/8_3.txt", "ff_save/9_3.txt", "ff_save/10_3.txt", "ff_save/11_3.txt", "ff_save/12_3.txt"
-                                         , "ff_save/13_3.txt", "ff_save/14_3.txt"
-                                        };*/
-  // Enables to resume from a saved state
-  //reconst.resume_from_saved_state(file_paths);
+  // Read in all saved states from directory 'ff_save'
+  //reconst.resume_from_saved_state("ff_save");
 
   // Reconstruct the black box
   reconst.reconstruct();
