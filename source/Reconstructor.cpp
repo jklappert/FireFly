@@ -122,6 +122,9 @@ namespace firefly {
   }
 
   void Reconstructor::resume_from_saved_state(const std::vector<std::string>& file_paths_) {
+    INFO_MSG("Loading saved states");
+
+    save_states = true;
     resume_from_state = true;
     file_paths = file_paths_;
     items = file_paths.size();
@@ -131,9 +134,9 @@ namespace firefly {
       prime_it = std::min(prime_it, parse_prime_number(file_paths[i]));
     }
 
-    tmp_rec.start_from_saved_file(file_paths[0]);
+    FFInt::set_new_prime(primes()[prime_it]);
 
-    size_t tag_size = tags.size();
+    tmp_rec.start_from_saved_file(file_paths[0]);
 
     for (uint32_t i = 0; i != items; ++i) {
       RatReconst* rec = new RatReconst(n);
@@ -143,14 +146,7 @@ namespace firefly {
         min_prime_keep_shift = shift_prime.second;
       }
 
-      if (save_states) {
-        if (tag_size > 0) {
-          rec->set_tag(std::to_string(i));
-        } else {
-          rec->set_tag(std::to_string(i));
-          tags.emplace_back(std::to_string(i));
-        }
-      }
+      rec->set_tag(std::to_string(i));
 
       if (rec->is_done()) {
         ++items_done;
@@ -170,12 +166,16 @@ namespace firefly {
     }
 
     if (scan) {
-      if (prime_it == 0) {
+      if (prime_it == 0 && items_new_prime != items) {
         std::string file_name = "scan";
         std::ifstream file;
         file.open(file_name.c_str());
         if (file.is_open()) {
           scan = false;
+        } else {
+          ERROR_MSG("Cannot resume from saved state because the scan was not completed");
+          ERROR_MSG("Please remove the directory 'ff_save' and start from the beginning");
+          std::exit(EXIT_FAILURE);
         }
         file.close();
       } else {
@@ -272,8 +272,8 @@ namespace firefly {
       std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
       if (std::get<2>(rec) == DONE) {
-        if (tags.size() > 0) {
-          result.emplace_back(std::make_pair(tags[std::get<0>(rec)], std::get<3>(rec)->get_result()));
+        if (save_states) {
+          result.emplace_back(std::make_pair(std::get<3>(rec)->get_tag_name(), std::get<3>(rec)->get_result()));
         } else {
           result.emplace_back(std::make_pair(std::to_string(std::get<0>(rec)), std::get<3>(rec)->get_result()));
         }
@@ -438,6 +438,11 @@ namespace firefly {
     items = probe->size();
     size_t tag_size = tags.size();
 
+    if (tag_size != 0 && tag_size != items) {
+      ERROR_MSG("Number of tags does not match the black box!");
+      std::exit(EXIT_FAILURE);
+    }
+
     for (uint32_t i = 0; i != items; ++i) {
       RatReconst* rec = new RatReconst(n);
 
@@ -456,7 +461,6 @@ namespace firefly {
           rec->set_tag_name(tags[i]);
         } else {
           rec->set_tag_name(std::to_string(i));
-          tags.emplace_back(std::to_string(i));
         }
       }
 
@@ -471,6 +475,8 @@ namespace firefly {
 
       reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
     }
+
+    tags.clear();
 
     delete probe;
 
@@ -490,10 +496,8 @@ namespace firefly {
     bool new_prime = false;
 
     if (resume_from_state) {
-      resume_from_state = false;
-
-      if (prime_it == 0) {
-        INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
+      if (prime_it == 0 && items_new_prime != items) {
+        INFO_MSG("Resuming in prime field: F(" + std::to_string(primes()[prime_it]) + ")");
 
         shift = tmp_rec.get_zi_shift_vec();
 
@@ -513,12 +517,16 @@ namespace firefly {
 
         if (save_states && prime_it) {
           mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-          for (auto & tag : tags) {
-            std::string file_name_old = "ff_save/" + tag + "_" + std::to_string(prime_it - 1) + ".txt";
-            std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_it) + ".txt";
+          for (uint32_t item = 0; item != items; ++item) {
+            std::string file_name_old = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".txt";
+            std::string file_name_new = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".txt";
 
             std::rename(file_name_old.c_str(), file_name_new.c_str());
           }
+        }
+
+        if (save_states && prime_it == 0) {
+          std::remove("scan");
         }
 
         total_iterations += iteration;
@@ -564,7 +572,7 @@ namespace firefly {
 
         // if only a small constant is reconstructed it will not ask for new run
         if (probes_for_next_prime == 0) {
-          probes_for_next_prime = thr_n;
+          probes_for_next_prime = bunch_size;
         }
 
         if (!safe_mode && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
@@ -690,9 +698,9 @@ namespace firefly {
 
     if (save_states && prime_it) {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-      for (auto & tag : tags) {
-        std::string file_name_old = "ff_save/" + tag + "_" + std::to_string(prime_it - 1) + ".txt";
-        std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_it) + ".txt";
+      for (uint32_t item = 0; item != items; ++item) {
+        std::string file_name_old = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".txt";
+        std::string file_name_new = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".txt";
 
         std::rename(file_name_old.c_str(), file_name_new.c_str());
       }
