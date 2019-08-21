@@ -137,7 +137,9 @@ namespace firefly {
      */
     void resume_from_saved_state(const std::vector<std::string>& file_paths_);
     /**
-     *  Resumes the reconstruction of a set of functions which are located in a directory
+     *  Resumes the reconstruction of a set of functions which are located in a directory.
+     *  The corresponding interpolation objects are created in the same order as they were defined in the prior
+     *  run, thus requiring the black box to be probed in the same order.
      *  @param directory the directory in which the saved states are located
      */
     void resume_from_saved_state(const std::string& directory);
