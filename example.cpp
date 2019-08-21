@@ -100,7 +100,6 @@ namespace firefly {
 
 using namespace firefly;
 int main() {
-  // Example of ShuntingYardParser
   // Parse the functions from "../s_y_4_v.m" with the variables x1, y, zZ, W
   ShuntingYardParser par("../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
 
@@ -108,13 +107,16 @@ int main() {
   BlackBoxUser bb(par);
 
   // Initialize the Reconstructor
-  Reconstructor reconst(4, 4, 1, bb/*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(4 /*n_vars*/, 4 /*n_threads*/, 1 /*bunch size*/, bb /*black box*//*, Reconstructor::CHATTY*/);
+
   // Enables a scan for a sparse shift
   reconst.enable_scan();
+
   // Set the safe mode
   //reconst.set_safe_interpolation();
 
   // Write the state of all reconstruction objects after each interpolation over a prime field
+  // The intermediate results are stored in ./ff_save
   //reconst.set_tags();
 
   // Read in all saved states from directory 'ff_save'
@@ -126,9 +128,8 @@ int main() {
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();
 
+  // Print all reconstruced functions
   for (uint32_t i = 0; i < results.size(); ++i) {
-    if(i == 5)
-      continue;
     std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
   }
 
