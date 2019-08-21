@@ -112,14 +112,14 @@ int main() {
   // Enables a scan for a sparse shift
   reconst.enable_scan();
 
-  // Set the safe mode
+  // Enables the safe mode
   //reconst.set_safe_interpolation();
 
   // Write the state of all reconstruction objects after each interpolation over a prime field
   // The intermediate results are stored in ./ff_save
   //reconst.set_tags();
 
-  // Read in all saved states from directory 'ff_save'
+  // Read in all saved states from the directory ./ff_save
   //reconst.resume_from_saved_state("ff_save");
 
   // Reconstruct the black box
