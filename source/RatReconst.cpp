@@ -2274,527 +2274,603 @@ namespace firefly {
             curr_parsed_variable = IS_DONE;
             parsed_variables[IS_DONE] = true;
           } else if (line == "tag_name") {
-              curr_parsed_variable = TAG_NAME;
-              parsed_variables[TAG_NAME] = true;
-            } else if (line == "max_deg_num") {
-              curr_parsed_variable = MAX_DEG_NUM;
-              parsed_variables[MAX_DEG_NUM] = true;
-            } else if (line == "max_deg_den") {
-              curr_parsed_variable = MAX_DEG_DEN;
-              parsed_variables[MAX_DEG_DEN] = true;
-            } else if (line == "need_prime_shift") {
-              curr_parsed_variable = NEED_PRIME_SHIFT;
-              parsed_variables[NEED_PRIME_SHIFT] = true;
-            } else if (line == "normalizer_deg") {
-              curr_parsed_variable = NORMALIZER_DEG;
-              parsed_variables[NORMALIZER_DEG] = true;
-            } else if (line == "normalize_to_den") {
-              curr_parsed_variable = NORMALIZE_TO_DEN;
-              parsed_variables[NORMALIZE_TO_DEN] = true;
-            } else if (line == "normalizer_den_num") {
-              curr_parsed_variable = NORMALIZER_DEN_NUM;
-              parsed_variables[NORMALIZER_DEN_NUM] = true;
-            } else if (line == "shifted_max_num_eqn") {
-              curr_parsed_variable = SHIFTED_MAX_NUM_EQN;
-              parsed_variables[SHIFTED_MAX_NUM_EQN] = true;
-            } else if (line == "shift") {
-              curr_parsed_variable = SHIFT;
-              parsed_variables[SHIFT] = true;
-            } else if (line == "sub_num") {
-              curr_parsed_variable = SUB_NUM;
-              parsed_variables[SUB_NUM] = true;
-            } else if (line == "sub_den") {
-              curr_parsed_variable = SUB_DEN;
-              parsed_variables[SUB_DEN] = true;
-            } else if (line == "zero_degs_num") {
-              curr_parsed_variable = ZERO_DEGS_NUM;
-              parsed_variables[ZERO_DEGS_NUM] = true;
-            } else if (line == "zero_degs_den") {
-              curr_parsed_variable = ZERO_DEGS_DEN;
-              parsed_variables[ZERO_DEGS_DEN] = true;
-            } else if (line == "g_ni") {
-              curr_parsed_variable = G_NI;
-              parsed_variables[G_NI] = true;
-            } else if (line == "g_di") {
-              curr_parsed_variable = G_DI;
-              parsed_variables[G_DI] = true;
-            } else if (line == "combined_ni") {
-              curr_parsed_variable = COMBINED_NI;
-              parsed_variables[COMBINED_NI] = true;
-            } else if (line == "combined_di") {
-              curr_parsed_variable = COMBINED_DI;
-              parsed_variables[COMBINED_DI] = true;
-            } else if (line == "combined_primes_ni") {
-              curr_parsed_variable = COMBINED_PRIMES_NI;
-              parsed_variables[COMBINED_PRIMES_NI] = true;
-            } else if (line == "combined_primes_di") {
-              curr_parsed_variable = COMBINED_PRIMES_DI;
-              parsed_variables[COMBINED_PRIMES_DI] = true;
-            } else if (line == "interpolations") {
-              curr_parsed_variable = INTERPOLATIONS;
-              parsed_variables[INTERPOLATIONS] = true;
-            } else {
-              switch (curr_parsed_variable) {
-                case COMBINED_PRIME: {
-                  std::unique_lock<std::mutex> lock_status(mutex_status);
-                  combined_prime = mpz_class(line);
-                  break;
-                }
+            curr_parsed_variable = TAG_NAME;
+            parsed_variables[TAG_NAME] = true;
+          } else if (line == "max_deg_num") {
+            curr_parsed_variable = MAX_DEG_NUM;
+            parsed_variables[MAX_DEG_NUM] = true;
+          } else if (line == "max_deg_den") {
+            curr_parsed_variable = MAX_DEG_DEN;
+            parsed_variables[MAX_DEG_DEN] = true;
+          } else if (line == "need_prime_shift") {
+            curr_parsed_variable = NEED_PRIME_SHIFT;
+            parsed_variables[NEED_PRIME_SHIFT] = true;
+          } else if (line == "normalizer_deg") {
+            curr_parsed_variable = NORMALIZER_DEG;
+            parsed_variables[NORMALIZER_DEG] = true;
+          } else if (line == "normalize_to_den") {
+            curr_parsed_variable = NORMALIZE_TO_DEN;
+            parsed_variables[NORMALIZE_TO_DEN] = true;
+          } else if (line == "normalizer_den_num") {
+            curr_parsed_variable = NORMALIZER_DEN_NUM;
+            parsed_variables[NORMALIZER_DEN_NUM] = true;
+          } else if (line == "shifted_max_num_eqn") {
+            curr_parsed_variable = SHIFTED_MAX_NUM_EQN;
+            parsed_variables[SHIFTED_MAX_NUM_EQN] = true;
+          } else if (line == "shift") {
+            curr_parsed_variable = SHIFT;
+            parsed_variables[SHIFT] = true;
+          } else if (line == "sub_num") {
+            curr_parsed_variable = SUB_NUM;
+            parsed_variables[SUB_NUM] = true;
+          } else if (line == "sub_den") {
+            curr_parsed_variable = SUB_DEN;
+            parsed_variables[SUB_DEN] = true;
+          } else if (line == "zero_degs_num") {
+            curr_parsed_variable = ZERO_DEGS_NUM;
+            parsed_variables[ZERO_DEGS_NUM] = true;
+          } else if (line == "zero_degs_den") {
+            curr_parsed_variable = ZERO_DEGS_DEN;
+            parsed_variables[ZERO_DEGS_DEN] = true;
+          } else if (line == "g_ni") {
+            curr_parsed_variable = G_NI;
+            parsed_variables[G_NI] = true;
+          } else if (line == "g_di") {
+            curr_parsed_variable = G_DI;
+            parsed_variables[G_DI] = true;
+          } else if (line == "combined_ni") {
+            curr_parsed_variable = COMBINED_NI;
+            parsed_variables[COMBINED_NI] = true;
+          } else if (line == "combined_di") {
+            curr_parsed_variable = COMBINED_DI;
+            parsed_variables[COMBINED_DI] = true;
+          } else if (line == "combined_primes_ni") {
+            curr_parsed_variable = COMBINED_PRIMES_NI;
+            parsed_variables[COMBINED_PRIMES_NI] = true;
+          } else if (line == "combined_primes_di") {
+            curr_parsed_variable = COMBINED_PRIMES_DI;
+            parsed_variables[COMBINED_PRIMES_DI] = true;
+          } else if (line == "interpolations") {
+            curr_parsed_variable = INTERPOLATIONS;
+            parsed_variables[INTERPOLATIONS] = true;
+          } else {
+            switch (curr_parsed_variable) {
+              case COMBINED_PRIME: {
+                std::unique_lock<std::mutex> lock_status(mutex_status);
+                combined_prime = mpz_class(line);
+                break;
+              }
 
-                case TAG_NAME: {
-                  tag_name = line;
-                  break;
-                }
+              case TAG_NAME: {
+                tag_name = line;
+                break;
+              }
 
-                case IS_DONE: {
-                  std::unique_lock<std::mutex> lock_status(mutex_status);
-                  done = std::stoi(line);
-                  break;
-                }
+              case IS_DONE: {
+                std::unique_lock<std::mutex> lock_status(mutex_status);
+                done = std::stoi(line);
+                break;
+              }
 
-                case MAX_DEG_NUM: {
-                  max_deg_num = std::stoi(line);
-                  break;
-                }
+              case MAX_DEG_NUM: {
+                max_deg_num = std::stoi(line);
+                break;
+              }
 
-                case MAX_DEG_DEN: {
-                  max_deg_den = std::stoi(line);
-                  break;
-                }
+              case MAX_DEG_DEN: {
+                max_deg_den = std::stoi(line);
+                break;
+              }
 
-                case NEED_PRIME_SHIFT: {
-                  tmp_need_shift = std::stoi(line);
+              case NEED_PRIME_SHIFT: {
+                tmp_need_shift = std::stoi(line);
+                std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
+                if (!is_done() && !need_prime_shift)
+                  need_prime_shift = std::stoi(line);
+
+                break;
+              }
+
+              case NORMALIZER_DEG: {
+                normalizer_deg = parse_vector(line);
+                std::unique_lock<std::mutex> lock_status(mutex_status);
+
+                n = normalizer_deg.size();
+                break;
+              }
+
+              case NORMALIZE_TO_DEN: {
+                normalize_to_den = std::stoi(line);
+                break;
+              }
+
+              case NORMALIZER_DEN_NUM: {
+                normalizer_den_num = std::stoi(line);
+                break;
+              }
+
+              case SHIFTED_MAX_NUM_EQN: {
+                shifted_max_num_eqn = std::stoi(line);
+                break;
+              }
+
+              case SHIFT: {
+                if (!is_done()) {
+                  std::vector<uint32_t> tmp_vec = parse_vector(line);
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-                  if (!is_done() && !need_prime_shift)
-                    need_prime_shift = std::stoi(line);
+                  shift = std::vector<FFInt> (n, 0);
 
-                  break;
-                }
-
-                case NORMALIZER_DEG: {
-                  normalizer_deg = parse_vector(line);
-                  std::unique_lock<std::mutex> lock_status(mutex_status);
-
-                  n = normalizer_deg.size();
-                  break;
-                }
-
-                case NORMALIZE_TO_DEN: {
-                  normalize_to_den = std::stoi(line);
-                  break;
-                }
-
-                case NORMALIZER_DEN_NUM: {
-                  normalizer_den_num = std::stoi(line);
-                  break;
-                }
-
-                case SHIFTED_MAX_NUM_EQN: {
-                  shifted_max_num_eqn = std::stoi(line);
-                  break;
-                }
-
-                case SHIFT: {
-                  if (!is_done()) {
-                    std::vector<uint32_t> tmp_vec = parse_vector(line);
-                    std::unique_lock<std::mutex> lock_statics(mutex_statics);
-
-                    shift = std::vector<FFInt> (n, 0);
-
-                    for (uint32_t i = 0; i < n; ++i) {
-                      if (tmp_vec[i] != 0)
-                        shift[i] = FFInt(xorshift64star());
-                    }
+                  for (uint32_t i = 0; i < n; ++i) {
+                    if (tmp_vec[i] != 0)
+                      shift[i] = FFInt(xorshift64star());
                   }
-
-                  break;
                 }
 
-                case SUB_NUM: {
-                  if (n == 0) {
-                    ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                    std::exit(EXIT_FAILURE);
-                  }
+                break;
+              }
 
-                  uint32_t tmp_deg = parse_vector(line, 1)[0];
-                  std::vector<uint32_t> tmp_vec = parse_vector(line, n);
-
-                  if (sub_num.find(tmp_deg) == sub_num.end())
-                    sub_num[tmp_deg] = PolynomialFF(n, {{tmp_vec, 1}});
-                  else
-                    sub_num[tmp_deg] += PolynomialFF(n, {{tmp_vec, 1}});
-
-                  break;
+              case SUB_NUM: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(EXIT_FAILURE);
                 }
 
-                case SUB_DEN: {
-                  if (n == 0) {
-                    ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                    std::exit(EXIT_FAILURE);
-                  }
+                uint32_t tmp_deg = parse_vector(line, 1)[0];
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
 
-                  uint32_t tmp_deg = parse_vector(line, 1)[0];
-                  std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                if (sub_num.find(tmp_deg) == sub_num.end())
+                  sub_num[tmp_deg] = PolynomialFF(n, {{tmp_vec, 1}});
+                else
+                  sub_num[tmp_deg] += PolynomialFF(n, {{tmp_vec, 1}});
 
-                  if (sub_den.find(tmp_deg) == sub_den.end())
-                    sub_den[tmp_deg] = PolynomialFF(n, {{tmp_vec, 1}});
-                  else
-                    sub_den[tmp_deg] += PolynomialFF(n, {{tmp_vec, 1}});
+                break;
+              }
 
-                  break;
+              case SUB_DEN: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(EXIT_FAILURE);
                 }
 
-                case ZERO_DEGS_NUM: {
-                  std::vector<uint32_t> tmp_vec = parse_vector(line);
+                uint32_t tmp_deg = parse_vector(line, 1)[0];
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
 
-                  for (const auto & el : tmp_vec) {
-                    zero_degs_num.emplace(el);
-                  }
+                if (sub_den.find(tmp_deg) == sub_den.end())
+                  sub_den[tmp_deg] = PolynomialFF(n, {{tmp_vec, 1}});
+                else
+                  sub_den[tmp_deg] += PolynomialFF(n, {{tmp_vec, 1}});
 
-                  break;
+                break;
+              }
+
+              case ZERO_DEGS_NUM: {
+                std::vector<uint32_t> tmp_vec = parse_vector(line);
+
+                for (const auto & el : tmp_vec) {
+                  zero_degs_num.emplace(el);
                 }
 
-                case ZERO_DEGS_DEN: {
-                  std::vector<uint32_t> tmp_vec = parse_vector(line);
+                break;
+              }
 
-                  for (const auto & el : tmp_vec) {
-                    zero_degs_den.emplace(el);
-                  }
+              case ZERO_DEGS_DEN: {
+                std::vector<uint32_t> tmp_vec = parse_vector(line);
 
-                  break;
+                for (const auto & el : tmp_vec) {
+                  zero_degs_den.emplace(el);
                 }
 
-                case G_NI: {
-                  if (n == 0) {
-                    ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                    std::exit(EXIT_FAILURE);
-                  }
+                break;
+              }
 
-                  std::vector<uint32_t> tmp_vec = parse_vector(line, n);
-                  std::vector<mpz_class> tmp_rn = parse_rational_number(line);
-
-                  g_ni.emplace(std::make_pair(tmp_vec, RationalNumber(tmp_rn[0], tmp_rn[1])));
-
-                  break;
+              case G_NI: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(EXIT_FAILURE);
                 }
 
-                case G_DI: {
-                  if (n == 0) {
-                    ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                    std::exit(EXIT_FAILURE);
-                  }
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                std::vector<mpz_class> tmp_rn = parse_rational_number(line);
 
-                  std::vector<uint32_t> tmp_vec = parse_vector(line, n);
-                  std::vector<mpz_class> tmp_rn = parse_rational_number(line);
+                g_ni.emplace(std::make_pair(tmp_vec, RationalNumber(tmp_rn[0], tmp_rn[1])));
 
-                  g_di.emplace(std::make_pair(tmp_vec, RationalNumber(tmp_rn[0], tmp_rn[1])));
-                  break;
+                break;
+              }
 
+              case G_DI: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(EXIT_FAILURE);
                 }
 
-                case COMBINED_NI: {
-                  if (n == 0) {
-                    ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                    std::exit(EXIT_FAILURE);
-                  }
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                std::vector<mpz_class> tmp_rn = parse_rational_number(line);
 
-                  std::vector<uint32_t> tmp_vec = parse_vector(line, n);
-                  combined_ni.emplace(std::make_pair(tmp_vec, mpz_class(line)));
+                g_di.emplace(std::make_pair(tmp_vec, RationalNumber(tmp_rn[0], tmp_rn[1])));
+                break;
 
-                  break;
+              }
+
+              case COMBINED_NI: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(EXIT_FAILURE);
                 }
 
-                case COMBINED_DI: {
-                  if (n == 0) {
-                    ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                    std::exit(EXIT_FAILURE);
-                  }
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                combined_ni.emplace(std::make_pair(tmp_vec, mpz_class(line)));
 
-                  std::vector<uint32_t> tmp_vec = parse_vector(line, n);
-                  combined_di.emplace(std::make_pair(tmp_vec, mpz_class(line)));
+                break;
+              }
 
-                  break;
+              case COMBINED_DI: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(EXIT_FAILURE);
                 }
 
-                case COMBINED_PRIMES_NI: {
-                  if (n == 0) {
-                    ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                    std::exit(EXIT_FAILURE);
-                  }
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                combined_di.emplace(std::make_pair(tmp_vec, mpz_class(line)));
 
-                  std::vector<uint32_t> tmp_vec = parse_vector(line, n);
-                  combined_primes_ni.emplace(std::make_pair(tmp_vec, mpz_class(line)));
+                break;
+              }
 
-                  break;
+              case COMBINED_PRIMES_NI: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(EXIT_FAILURE);
                 }
 
-                case COMBINED_PRIMES_DI: {
-                  if (n == 0) {
-                    ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                    std::exit(EXIT_FAILURE);
-                  }
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                combined_primes_ni.emplace(std::make_pair(tmp_vec, mpz_class(line)));
 
-                  std::vector<uint32_t> tmp_vec = parse_vector(line, n);
-                  combined_primes_di.emplace(std::make_pair(tmp_vec, mpz_class(line)));
+                break;
+              }
 
-                  break;
+              case COMBINED_PRIMES_DI: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(EXIT_FAILURE);
                 }
 
-                case INTERPOLATIONS: {
-                  if (n == 0) {
-                    ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
-                    std::exit(EXIT_FAILURE);
-                  }
+                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                combined_primes_di.emplace(std::make_pair(tmp_vec, mpz_class(line)));
 
-                  interpolations = std::stoi(line);
+                break;
+              }
 
-                  break;
+              case INTERPOLATIONS: {
+                if (n == 0) {
+                  ERROR_MSG("Input file is in the wrong order! Need to parse 'normalizer_deg' first.");
+                  std::exit(EXIT_FAILURE);
                 }
+
+                interpolations = std::stoi(line);
+
+                break;
               }
             }
           }
         }
+      }
 
-        for (const auto & el : parsed_variables) {
-          if (!el) {
-            ERROR_MSG("Incomplete input file! It cannot be used to resume a run.");
-            std::exit(EXIT_FAILURE);
+      for (const auto & el : parsed_variables) {
+        if (!el) {
+          ERROR_MSG("Incomplete input file! It cannot be used to resume a run.");
+          std::exit(EXIT_FAILURE);
+        }
+      }
+
+      file.close();
+
+      for (const auto & el : combined_ni) add_non_solved_num(el.first);
+
+      for (const auto & el : combined_di) add_non_solved_den(el.first);
+
+      {
+        std::unique_lock<std::mutex> lock_statics(mutex_statics);
+        is_singular_system = need_prime_shift;
+      }
+
+      {
+        std::unique_lock<std::mutex> lock(mutex_status);
+        std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
+        new_prime = true;
+      }
+
+      if (prime_number >= interpolations) {
+        if (is_singular_system) {
+          tmp_solved_coefs_den = 0;
+          tmp_solved_coefs_num = 0;
+          {
+            std::unique_lock<std::mutex> lock_statics(mutex_statics);
+            need_prime_shift = true;
           }
-        }
+          set_singular_system_vars();
 
-        file.close();
-
-        for (const auto & el : combined_ni) add_non_solved_num(el.first);
-
-        for (const auto & el : combined_di) add_non_solved_den(el.first);
-
-        {
-          std::unique_lock<std::mutex> lock_statics(mutex_statics);
-          is_singular_system = need_prime_shift;
-        }
-
-        {
+        } else {
           std::unique_lock<std::mutex> lock(mutex_status);
-          std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
-          new_prime = true;
+          num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
         }
-
-        if (prime_number >= interpolations) {
-          if (is_singular_system) {
-            tmp_solved_coefs_den = 0;
-            tmp_solved_coefs_num = 0;
-            {
-              std::unique_lock<std::mutex> lock_statics(mutex_statics);
-              need_prime_shift = true;
-            }
-            set_singular_system_vars();
-
-          } else {
-            std::unique_lock<std::mutex> lock(mutex_status);
-            num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
-          }
-        }
-
-        for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<FFInt> {};
-
-        for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<FFInt> {};
-
-        return std::make_pair(tmp_need_shift, prime_number);
       }
-      else {
-        ERROR_MSG("The file '" + file_name + "' could not be found!");
-        std::exit(EXIT_FAILURE);
-      }
+
+      for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<FFInt> {};
+
+      for (const auto & el : non_solved_degs_den) coef_mat_den[el.first] = std::vector<FFInt> {};
+
+      return std::make_pair(tmp_need_shift, prime_number);
+    } else {
+      ERROR_MSG("The file '" + file_name + "' could not be found!");
+      std::exit(EXIT_FAILURE);
     }
+  }
 
-    std::vector<uint32_t> RatReconst::parse_vector(std::string & line, int number_of_parameters) {
-      size_t pos = 0;
-      int i = 0;
-      std::string delimiter = " ";
-      std::vector<uint32_t> tmp {};
+  std::vector<uint32_t> RatReconst::parse_vector(std::string& line, int number_of_parameters) {
+    size_t pos = 0;
+    int i = 0;
+    std::string delimiter = " ";
+    std::vector<uint32_t> tmp {};
 
-      if (number_of_parameters > 0)
-        tmp.reserve(number_of_parameters);
+    if (number_of_parameters > 0)
+      tmp.reserve(number_of_parameters);
 
-      while ((pos = line.find(delimiter)) != std::string::npos) {
-        tmp.emplace_back(std::stoi(line.substr(0, pos)));
-        line.erase(0, pos + 1);
-        i++;
-
-        if (i == number_of_parameters) break;
-      }
-
-      return tmp;
-    }
-
-    std::vector<mpz_class> RatReconst::parse_rational_number(std::string & line) {
-      size_t pos = line.find(" ");
-      std::vector<mpz_class> tmp {};
-      tmp.emplace_back(mpz_class(line.substr(0, pos)));
+    while ((pos = line.find(delimiter)) != std::string::npos) {
+      tmp.emplace_back(std::stoi(line.substr(0, pos)));
       line.erase(0, pos + 1);
-      tmp.emplace_back(mpz_class(line));
-      return tmp;
+      i++;
+
+      if (i == number_of_parameters) break;
     }
 
-    void RatReconst::parse_prime_number(std::string & file_name) {
-      std::string reverse_file_name = file_name;
-      std::reverse(reverse_file_name.begin(), reverse_file_name.end());
-      reverse_file_name.erase(0, 4);
-      size_t pos = reverse_file_name.find("_");
-      prime_number = std::stoi(reverse_file_name.substr(0, pos)) + 1;
+    return tmp;
+  }
+
+  std::vector<mpz_class> RatReconst::parse_rational_number(std::string& line) {
+    size_t pos = line.find(" ");
+    std::vector<mpz_class> tmp {};
+    tmp.emplace_back(mpz_class(line.substr(0, pos)));
+    line.erase(0, pos + 1);
+    tmp.emplace_back(mpz_class(line));
+    return tmp;
+  }
+
+  void RatReconst::parse_prime_number(std::string& file_name) {
+    std::string reverse_file_name = file_name;
+    std::reverse(reverse_file_name.begin(), reverse_file_name.end());
+    reverse_file_name.erase(0, 4);
+    size_t pos = reverse_file_name.find("_");
+    prime_number = std::stoi(reverse_file_name.substr(0, pos)) + 1;
+  }
+
+  void RatReconst::set_singular_system_vars() {
+    is_singular_system = true;
+    tmp_solved_coefs_den = 0;
+    tmp_solved_coefs_num = 0;
+
+    for (const auto & el : g_ni) {
+      if (normalize_to_den)
+        add_non_solved_num(el.first);
+      else if (el.first != std::vector<uint32_t> (n))
+        add_non_solved_num(el.first);
     }
 
-    void RatReconst::set_singular_system_vars() {
-      is_singular_system = true;
-      tmp_solved_coefs_den = 0;
-      tmp_solved_coefs_num = 0;
+    for (const auto & el : g_di) {
+      if (!normalize_to_den)
+        add_non_solved_den(el.first);
+      else if (el.first != std::vector<uint32_t> (n))
+        add_non_solved_den(el.first);
+    }
 
-      for (const auto & el : g_ni) {
-        if (normalize_to_den)
-          add_non_solved_num(el.first);
-        else if (el.first != std::vector<uint32_t> (n))
-          add_non_solved_num(el.first);
-      }
+    for (const auto & el : non_solved_degs_num) {
+      coef_mat_num[el.first] = std::vector<FFInt> {};
+      const uint32_t size = el.second.size();
 
-      for (const auto & el : g_di) {
-        if (!normalize_to_den)
-          add_non_solved_den(el.first);
-        else if (el.first != std::vector<uint32_t> (n))
-          add_non_solved_den(el.first);
-      }
+      if (size > max_num_coef_num.second || (size == max_num_coef_num.second && el.first > max_num_coef_num.first))
+        max_num_coef_num = std::make_pair(el.first, size);
+    }
 
-      for (const auto & el : non_solved_degs_num) {
-        coef_mat_num[el.first] = std::vector<FFInt> {};
-        const uint32_t size = el.second.size();
+    for (const auto & el : non_solved_degs_den) {
+      coef_mat_den[el.first] = std::vector<FFInt> {};
+      const uint32_t size = el.second.size();
 
-        if (size > max_num_coef_num.second || (size == max_num_coef_num.second && el.first > max_num_coef_num.first))
-          max_num_coef_num = std::make_pair(el.first, size);
-      }
+      if (size > max_num_coef_den.second || (size == max_num_coef_den.second && el.first > max_num_coef_den.first))
+        max_num_coef_den = std::make_pair(el.first, size);
+    }
 
-      for (const auto & el : non_solved_degs_den) {
-        coef_mat_den[el.first] = std::vector<FFInt> {};
-        const uint32_t size = el.second.size();
+    PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
 
-        if (size > max_num_coef_den.second || (size == max_num_coef_den.second && el.first > max_num_coef_den.first))
-          max_num_coef_den = std::make_pair(el.first, size);
-      }
+    // Initialize subtraction terms with zero
+    for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_num); ++i) {
+      if (sub_num.find(i) == sub_num.end())
+        sub_num[i] = zero_poly;
+    }
 
-      PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
+    for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_den); ++i) {
+      if (sub_den.find(i) == sub_den.end())
+        sub_den[i] = zero_poly;
+    }
 
-      // Initialize subtraction terms with zero
-      for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_num); ++i) {
-        if (sub_num.find(i) == sub_num.end())
-          sub_num[i] = zero_poly;
-      }
+    std::vector<uint32_t> zero_vec(n);
 
-      for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_den); ++i) {
-        if (sub_den.find(i) == sub_den.end())
-          sub_den[i] = zero_poly;
-      }
+    for (auto & el : sub_num) {
+      if (el.first != max_num_coef_num.first) {
+        if (non_solved_degs_num.find(el.first) != non_solved_degs_num.end()) {
+          el.second.remove_zero_coefs();
+          std::unordered_set<std::vector<uint32_t>, UintHasher> tmp_set;
+          std::vector<std::vector<uint32_t>> tmp_vec = non_solved_degs_num[el.first];
 
-      std::vector<uint32_t> zero_vec(n);
+          for (const auto & vec_deg : non_solved_degs_num[el.first]) {
+            tmp_set.emplace(vec_deg);
+          }
 
-      for (auto & el : sub_num) {
-        if (el.first != max_num_coef_num.first) {
-          if (non_solved_degs_num.find(el.first) != non_solved_degs_num.end()) {
+          for (const auto & el2 : el.second.coefs) {
+            if (tmp_set.find(el2.first) == tmp_set.end() && el2.first != zero_vec)
+              tmp_vec.emplace_back(el2.first);
+          }
+
+          if (tmp_vec.size() > 0 && tmp_vec.size() < max_num_coef_num.second) {
+            dense_solve_degs_num.emplace(el.first);
+
+            non_solved_degs_num[el.first] = tmp_vec;
+          }
+        } else {
+          if (!(!normalize_to_den && el.first == 0) && !el.second.zero()) {
             el.second.remove_zero_coefs();
-            std::unordered_set<std::vector<uint32_t>, UintHasher> tmp_set;
-            std::vector<std::vector<uint32_t>> tmp_vec = non_solved_degs_num[el.first];
 
-            for (const auto & vec_deg : non_solved_degs_num[el.first]) {
-              tmp_set.emplace(vec_deg);
-            }
-
-            for (const auto & el2 : el.second.coefs) {
-              if (tmp_set.find(el2.first) == tmp_set.end() && el2.first != zero_vec)
-                tmp_vec.emplace_back(el2.first);
-            }
-
-            if (tmp_vec.size() > 0 && tmp_vec.size() < max_num_coef_num.second) {
+            if (el.second.coefs.size() < max_num_coef_num.second) {
               dense_solve_degs_num.emplace(el.first);
+              std::vector<std::vector<uint32_t>> tmp_vec;
+
+              if (el.first != 0) {
+                for (const auto & el2 : el.second.coefs) {
+                  if (el2.first != zero_vec)
+                    tmp_vec.emplace_back(el2.first);
+                }
+              } else {
+                for (const auto & el2 : el.second.coefs) {
+                  tmp_vec.emplace_back(el2.first);
+                }
+              }
 
               non_solved_degs_num[el.first] = tmp_vec;
-            }
-          } else {
-            if (!(!normalize_to_den && el.first == 0) && !el.second.zero()) {
-              el.second.remove_zero_coefs();
-
-              if (el.second.coefs.size() < max_num_coef_num.second) {
-                dense_solve_degs_num.emplace(el.first);
-                std::vector<std::vector<uint32_t>> tmp_vec;
-
-                if (el.first != 0) {
-                  for (const auto & el2 : el.second.coefs) {
-                    if (el2.first != zero_vec)
-                      tmp_vec.emplace_back(el2.first);
-                  }
-                } else {
-                  for (const auto & el2 : el.second.coefs) {
-                    tmp_vec.emplace_back(el2.first);
-                  }
-                }
-
-                non_solved_degs_num[el.first] = tmp_vec;
-                coef_mat_num[el.first] = std::vector<FFInt> {};
-              } else
-                non_solved_degs_num[el.first] = {zero_vec};
-            }
+              coef_mat_num[el.first] = std::vector<FFInt> {};
+            } else
+              non_solved_degs_num[el.first] = {zero_vec};
           }
         }
       }
+    }
 
-      for (auto & el : sub_den) {
-        if (el.first != max_num_coef_den.first) {
-          if (non_solved_degs_den.find(el.first) != non_solved_degs_den.end()) {
+    for (auto & el : sub_den) {
+      if (el.first != max_num_coef_den.first) {
+        if (non_solved_degs_den.find(el.first) != non_solved_degs_den.end()) {
+          el.second.remove_zero_coefs();
+          std::unordered_set<std::vector<uint32_t>, UintHasher> tmp_set;
+          std::vector<std::vector<uint32_t>> tmp_vec = non_solved_degs_den[el.first];
+
+          for (const auto & vec_deg : non_solved_degs_den[el.first]) {
+            tmp_set.emplace(vec_deg);
+          }
+
+          for (const auto & el2 : el.second.coefs) {
+            if (tmp_set.find(el2.first) == tmp_set.end() && el2.first != zero_vec)
+              tmp_vec.emplace_back(el2.first);
+          }
+
+          if (tmp_vec.size() > 0 && tmp_vec.size() < max_num_coef_den.second) {
+            dense_solve_degs_den.emplace(el.first);
+
+            non_solved_degs_den[el.first] = tmp_vec;
+          }
+        } else {
+          if (!(normalize_to_den && el.first == 0) && !el.second.zero()) {
             el.second.remove_zero_coefs();
-            std::unordered_set<std::vector<uint32_t>, UintHasher> tmp_set;
-            std::vector<std::vector<uint32_t>> tmp_vec = non_solved_degs_den[el.first];
 
-            for (const auto & vec_deg : non_solved_degs_den[el.first]) {
-              tmp_set.emplace(vec_deg);
-            }
-
-            for (const auto & el2 : el.second.coefs) {
-              if (tmp_set.find(el2.first) == tmp_set.end() && el2.first != zero_vec)
-                tmp_vec.emplace_back(el2.first);
-            }
-
-            if (tmp_vec.size() > 0 && tmp_vec.size() < max_num_coef_den.second) {
+            if (el.second.coefs.size() < max_num_coef_den.second) {
               dense_solve_degs_den.emplace(el.first);
+              std::vector<std::vector<uint32_t>> tmp_vec;
+
+              if (el.first != 0) {
+                for (const auto & el2 : el.second.coefs) {
+                  if (el2.first != zero_vec)
+                    tmp_vec.emplace_back(el2.first);
+                }
+              } else {
+                for (const auto & el2 : el.second.coefs) {
+                  tmp_vec.emplace_back(el2.first);
+                }
+              }
 
               non_solved_degs_den[el.first] = tmp_vec;
-            }
-          } else {
-            if (!(normalize_to_den && el.first == 0) && !el.second.zero()) {
-              el.second.remove_zero_coefs();
-
-              if (el.second.coefs.size() < max_num_coef_den.second) {
-                dense_solve_degs_den.emplace(el.first);
-                std::vector<std::vector<uint32_t>> tmp_vec;
-
-                if (el.first != 0) {
-                  for (const auto & el2 : el.second.coefs) {
-                    if (el2.first != zero_vec)
-                      tmp_vec.emplace_back(el2.first);
-                  }
-                } else {
-                  for (const auto & el2 : el.second.coefs) {
-                    tmp_vec.emplace_back(el2.first);
-                  }
-                }
-
-                non_solved_degs_den[el.first] = tmp_vec;
-                coef_mat_den[el.first] = std::vector<FFInt> {};
-              } else
-                non_solved_degs_den[el.first] = {zero_vec};
-            }
+              coef_mat_den[el.first] = std::vector<FFInt> {};
+            } else
+              non_solved_degs_den[el.first] = {zero_vec};
           }
         }
       }
+    }
 
-      sub_num = polff_map();
-      sub_den = polff_map();
+    sub_num = polff_map();
+    sub_den = polff_map();
+
+    // Initialize subtraction terms with zero
+    for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_num); ++i) {
+      sub_num[i] = zero_poly;
+    }
+
+    for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_den); ++i) {
+      sub_den[i] = zero_poly;
+    }
+
+    {
+      std::unique_lock<std::mutex> lock(mutex_status);
+      num_eqn = shifted_max_num_eqn;
+    }
+  }
+
+  void RatReconst::reset() {
+    std::unique_lock<std::mutex> lock(mutex_statics);
+    shift = std::vector<FFInt> ();
+    need_prime_shift = false;
+    set_singular_system = false;
+    rand_zi = ff_pair_map();
+    curr_shift = std::vector<uint32_t>();
+    PolyReconst::reset();
+  }
+
+  void RatReconst::set_safe_interpolation() {
+    interpolations = 100;
+  }
+
+  bool RatReconst::check_if_done(const FFInt& num, const FFInt& ti) {
+    {
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
+      if (!is_singular_system && set_singular_system && prime_number >= interpolations) {
+        lock_statics.unlock();
+        set_singular_system_vars();
+      }
+    }
+
+    needed_feed_vec.clear();
+    sub_num = polff_map();
+    sub_den = polff_map();
+    solved_degs_num.clear();
+    solved_degs_den.clear();
+
+    if (rec_rat_coef()) {
+      bool tmp_done = test_guess(num, ti);
+      {
+        std::unique_lock<std::mutex> lock(mutex_status);
+        done = tmp_done;
+      }
+
+      if (done) {
+        is_singular_system = false;
+
+        if (tag.size() > 0)
+          save_state();
+
+        std::unique_lock<std::mutex> lock(mutex_status);
+        new_prime = false;
+        curr_zi_order = std::vector<uint32_t>();
+        use_chinese_remainder = false;
+        return true;
+      } else {
+        for (const auto & ci : combined_ni) {
+          g_ni.erase(ci.first);
+        }
+
+        for (const auto & ci : combined_di) {
+          g_di.erase(ci.first);
+        }
+      }
+    }
+
+    if (n > 1 && prime_number >= interpolations) {
+      PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
 
       // Initialize subtraction terms with zero
       for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_num); ++i) {
@@ -2804,187 +2880,163 @@ namespace firefly {
       for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_den); ++i) {
         sub_den[i] = zero_poly;
       }
-
-      {
-        std::unique_lock<std::mutex> lock(mutex_status);
-        num_eqn = shifted_max_num_eqn;
-      }
     }
 
-    void RatReconst::reset() {
-      std::unique_lock<std::mutex> lock(mutex_statics);
-      shift = std::vector<FFInt> ();
-      need_prime_shift = false;
-      set_singular_system = false;
-      rand_zi = ff_pair_map();
-      curr_shift = std::vector<uint32_t>();
-      PolyReconst::reset();
+    if (!use_chinese_remainder) use_chinese_remainder = true;
+
+    {
+      std::unique_lock<std::mutex> lock(mutex_status);
+      new_prime = false;
     }
 
-    void RatReconst::set_safe_interpolation() {
-      interpolations = 100;
-    }
+    if (!is_singular_system && prime_number >= interpolations) {
+      ff_map tmp_num {};
+      tmp_num.reserve(g_ni.size() + 1);
+      ff_map tmp_den {};
+      tmp_den.reserve(g_di.size() + 1);
+      tmp_num.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
+      tmp_den.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
 
-    bool RatReconst::check_if_done(const FFInt & num, const FFInt & ti) {
-      {
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
-
-        if (!is_singular_system && set_singular_system && prime_number >= interpolations) {
-          lock_statics.unlock();
-          set_singular_system_vars();
-        }
+      for (const auto & el : g_ni) {
+        tmp_num[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
       }
 
-      needed_feed_vec.clear();
-      sub_num = polff_map();
-      sub_den = polff_map();
-      solved_degs_num.clear();
-      solved_degs_den.clear();
+      for (const auto & el : g_di) {
+        tmp_den[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
+      }
 
-      if (rec_rat_coef()) {
-        bool tmp_done = test_guess(num, ti);
-        {
-          std::unique_lock<std::mutex> lock(mutex_status);
-          done = tmp_done;
-        }
+      for (const auto & el : tmp_num) {
+        uint32_t deg = 0;
 
-        if (done) {
-          is_singular_system = false;
+        for (const auto & tmp_deg : el.first) deg += tmp_deg;
 
-          if (tag.size() > 0)
-            save_state();
+        if (solved_degs_num[deg].zero())
+          solved_degs_num[deg] = PolynomialFF(n, {{el.first, el.second}});
+        else
+          solved_degs_num[deg].coefs.emplace(std::make_pair(el.first, el.second));
+      }
 
-          std::unique_lock<std::mutex> lock(mutex_status);
-          new_prime = false;
-          curr_zi_order = std::vector<uint32_t>();
-          use_chinese_remainder = false;
-          return true;
-        } else {
-          for (const auto & ci : combined_ni) {
-            g_ni.erase(ci.first);
+      for (const auto & el : tmp_den) {
+        uint32_t deg = 0;
+
+        for (const auto & tmp_deg : el.first) deg += tmp_deg;
+
+        if (solved_degs_den[deg].zero())
+          solved_degs_den[deg] = PolynomialFF(n, {{el.first, el.second}});
+        else
+          solved_degs_den[deg].coefs.emplace(std::make_pair(el.first, el.second));
+      }
+
+      //solved_num = PolynomialFF(n, tmp_num);
+      //solved_den = PolynomialFF(n, tmp_den);
+    }
+
+    if (prime_number < interpolations) {
+      std::unique_lock<std::mutex> lock(mutex_status);
+      zi = 1;
+    } else { // Get total amount of needed feeds to interpolate this function over the current prime
+
+      std::map<uint32_t, uint32_t> r_map {};
+
+      // Fill the feed vector
+      uint32_t last_number_of_terms = 0;
+      uint32_t tmp_max_num_eqn = num_eqn;
+
+      if (is_singular_system) {
+        // subtraction term for shifted interpolation
+        uint32_t sparse_num = 0;
+        uint32_t sparse_den = 0;
+
+        // Check when we can remove functions from the sytem of equations
+        for (const auto & el : coef_mat_num) {
+          bool got_max_size = false;
+          uint32_t size = non_solved_degs_num[el.first].size();
+
+          if (size == max_num_coef_num.second) {
+            sparse_num ++;
+            got_max_size = true;
           }
 
-          for (const auto & ci : combined_di) {
-            g_di.erase(ci.first);
+          if (got_max_size || dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end()) {
+            if (r_map.find(size) != r_map.end())
+              r_map[size] ++;
+            else
+              r_map[size] = 1;
           }
         }
-      }
 
-      if (n > 1 && prime_number >= interpolations) {
-        PolynomialFF zero_poly(n, {{std::vector<uint32_t>(n), 0}});
+        for (const auto & el : coef_mat_den) {
+          bool got_max_size = false;
+          uint32_t size = non_solved_degs_den[el.first].size();
 
-        // Initialize subtraction terms with zero
-        for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_num); ++i) {
-          sub_num[i] = zero_poly;
+          if (size == max_num_coef_den.second) {
+            sparse_den ++;
+            got_max_size = true;
+          }
+
+          if (got_max_size || dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end()) {
+            if (r_map.find(size) != r_map.end())
+              r_map[size] ++;
+            else
+              r_map[size] = 1;
+          }
         }
 
-        for (uint32_t i = 0; i <= static_cast<uint32_t>(max_deg_den); ++i) {
-          sub_den[i] = zero_poly;
+        bool num_done = false;
+        bool den_done = false;
+
+        for (const auto & el : r_map) {
+          uint32_t multiplicity;
+          uint32_t tmp_num_eqn = tmp_max_num_eqn;
+
+          if (last_number_of_terms == 0)
+            multiplicity = el.first;
+          else {
+            multiplicity = el.first - last_number_of_terms;
+
+            tmp_num_eqn -= r_map[last_number_of_terms];
+
+            if (num_done) {
+              tmp_num_eqn -= (non_solved_degs_num.size() - dense_solve_degs_num.size() - sparse_num); // correct for already removed degrees
+              num_done = false;
+            }
+
+            if (den_done) {
+              tmp_num_eqn -= (non_solved_degs_den.size() - dense_solve_degs_den.size() - sparse_den); // correct for already removed degrees
+              den_done = false;
+            }
+          }
+
+          if (!num_done && el.first == max_num_coef_num.second)
+            num_done = true;
+
+          if (!den_done && el.first == max_num_coef_den.second)
+            den_done = true;
+
+          needed_feed_vec.emplace_back(std::make_pair(multiplicity, tmp_num_eqn));
+          last_number_of_terms = el.first;
+          tmp_max_num_eqn = tmp_num_eqn;
         }
-      }
-
-      if (!use_chinese_remainder) use_chinese_remainder = true;
-
-      {
-        std::unique_lock<std::mutex> lock(mutex_status);
-        new_prime = false;
-      }
-
-      if (!is_singular_system && prime_number >= interpolations) {
-        ff_map tmp_num {};
-        tmp_num.reserve(g_ni.size() + 1);
-        ff_map tmp_den {};
-        tmp_den.reserve(g_di.size() + 1);
-        tmp_num.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
-        tmp_den.emplace(std::make_pair(std::vector<uint32_t> (n), 0));
-
-        for (const auto & el : g_ni) {
-          tmp_num[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
-        }
-
-        for (const auto & el : g_di) {
-          tmp_den[el.first] = FFInt(el.second.numerator) / FFInt(el.second.denominator);
-        }
-
-        for (const auto & el : tmp_num) {
-          uint32_t deg = 0;
-
-          for (const auto & tmp_deg : el.first) deg += tmp_deg;
-
-          if (solved_degs_num[deg].zero())
-            solved_degs_num[deg] = PolynomialFF(n, {{el.first, el.second}});
-          else
-            solved_degs_num[deg].coefs.emplace(std::make_pair(el.first, el.second));
-        }
-
-        for (const auto & el : tmp_den) {
-          uint32_t deg = 0;
-
-          for (const auto & tmp_deg : el.first) deg += tmp_deg;
-
-          if (solved_degs_den[deg].zero())
-            solved_degs_den[deg] = PolynomialFF(n, {{el.first, el.second}});
-          else
-            solved_degs_den[deg].coefs.emplace(std::make_pair(el.first, el.second));
-        }
-
-        //solved_num = PolynomialFF(n, tmp_num);
-        //solved_den = PolynomialFF(n, tmp_den);
-      }
-
-      if (prime_number < interpolations) {
-        std::unique_lock<std::mutex> lock(mutex_status);
-        zi = 1;
-      } else { // Get total amount of needed feeds to interpolate this function over the current prime
-
-        std::map<uint32_t, uint32_t> r_map {};
-
-        // Fill the feed vector
-        uint32_t last_number_of_terms = 0;
-        uint32_t tmp_max_num_eqn = num_eqn;
-
-        if (is_singular_system) {
-          // subtraction term for shifted interpolation
-          uint32_t sparse_num = 0;
-          uint32_t sparse_den = 0;
-
+      } else {
+        if (n > 1) {
           // Check when we can remove functions from the sytem of equations
           for (const auto & el : coef_mat_num) {
-            bool got_max_size = false;
             uint32_t size = non_solved_degs_num[el.first].size();
 
-            if (size == max_num_coef_num.second) {
-              sparse_num ++;
-              got_max_size = true;
-            }
-
-            if (got_max_size || dense_solve_degs_num.find(el.first) != dense_solve_degs_num.end()) {
-              if (r_map.find(size) != r_map.end())
-                r_map[size] ++;
-              else
-                r_map[size] = 1;
-            }
+            if (r_map.find(size) != r_map.end())
+              r_map[size] ++;
+            else
+              r_map[size] = 1;
           }
 
           for (const auto & el : coef_mat_den) {
-            bool got_max_size = false;
             uint32_t size = non_solved_degs_den[el.first].size();
 
-            if (size == max_num_coef_den.second) {
-              sparse_den ++;
-              got_max_size = true;
-            }
-
-            if (got_max_size || dense_solve_degs_den.find(el.first) != dense_solve_degs_den.end()) {
-              if (r_map.find(size) != r_map.end())
-                r_map[size] ++;
-              else
-                r_map[size] = 1;
-            }
+            if (r_map.find(size) != r_map.end())
+              r_map[size] ++;
+            else
+              r_map[size] = 1;
           }
-
-          bool num_done = false;
-          bool den_done = false;
 
           for (const auto & el : r_map) {
             uint32_t multiplicity;
@@ -2996,108 +3048,54 @@ namespace firefly {
               multiplicity = el.first - last_number_of_terms;
 
               tmp_num_eqn -= r_map[last_number_of_terms];
-
-              if (num_done) {
-                tmp_num_eqn -= (non_solved_degs_num.size() - dense_solve_degs_num.size() - sparse_num); // correct for already removed degrees
-                num_done = false;
-              }
-
-              if (den_done) {
-                tmp_num_eqn -= (non_solved_degs_den.size() - dense_solve_degs_den.size() - sparse_den); // correct for already removed degrees
-                den_done = false;
-              }
             }
-
-            if (!num_done && el.first == max_num_coef_num.second)
-              num_done = true;
-
-            if (!den_done && el.first == max_num_coef_den.second)
-              den_done = true;
 
             needed_feed_vec.emplace_back(std::make_pair(multiplicity, tmp_num_eqn));
             last_number_of_terms = el.first;
             tmp_max_num_eqn = tmp_num_eqn;
           }
-        } else {
-          if (n > 1) {
-            // Check when we can remove functions from the sytem of equations
-            for (const auto & el : coef_mat_num) {
-              uint32_t size = non_solved_degs_num[el.first].size();
-
-              if (r_map.find(size) != r_map.end())
-                r_map[size] ++;
-              else
-                r_map[size] = 1;
-            }
-
-            for (const auto & el : coef_mat_den) {
-              uint32_t size = non_solved_degs_den[el.first].size();
-
-              if (r_map.find(size) != r_map.end())
-                r_map[size] ++;
-              else
-                r_map[size] = 1;
-            }
-
-            for (const auto & el : r_map) {
-              uint32_t multiplicity;
-              uint32_t tmp_num_eqn = tmp_max_num_eqn;
-
-              if (last_number_of_terms == 0)
-                multiplicity = el.first;
-              else {
-                multiplicity = el.first - last_number_of_terms;
-
-                tmp_num_eqn -= r_map[last_number_of_terms];
-              }
-
-              needed_feed_vec.emplace_back(std::make_pair(multiplicity, tmp_num_eqn));
-              last_number_of_terms = el.first;
-              tmp_max_num_eqn = tmp_num_eqn;
-            }
-          } else
-            needed_feed_vec.emplace_back(std::make_pair(1, num_eqn));
-        }
-      }
-
-      return false;
-    }
-
-    std::vector<std::pair<uint32_t, uint32_t>> RatReconst::get_needed_feed_vec() {
-      std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_tmp = std::move(needed_feed_vec);
-      needed_feed_vec.clear();
-
-      return needed_feed_vec_tmp;
-    }
-
-    std::vector<FFInt> RatReconst::get_anchor_points() {
-      std::vector<FFInt> res(n - 1);
-
-      for (uint32_t i = 2; i <= n; ++i) {
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
-        res[i - 2] = rand_zi[std::make_pair(i, 1)];
-      }
-
-      return res;
-    }
-
-    std::pair<uint32_t, uint32_t> RatReconst::get_max_deg() {
-      if (all_shift_max_degs.size() != 0) {
-        return std::make_pair(all_shift_max_degs[0], all_shift_max_degs[1]);
-      } else if (max_deg_num != -1 && max_deg_den != -1)
-        return std::make_pair(max_deg_num, max_deg_den);
-      else {
-        WARNING_MSG("Maximal degrees are not known yet.");
-        return std::make_pair(0, 0);
+        } else
+          needed_feed_vec.emplace_back(std::make_pair(1, num_eqn));
       }
     }
 
-    std::string RatReconst::get_tag() {
-      return tag;
-    }
-
-    std::string RatReconst::get_tag_name() {
-      return tag_name;
-    }
-
+    return false;
   }
+
+  std::vector<std::pair<uint32_t, uint32_t>> RatReconst::get_needed_feed_vec() {
+    std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_tmp = std::move(needed_feed_vec);
+    needed_feed_vec.clear();
+
+    return needed_feed_vec_tmp;
+  }
+
+  std::vector<FFInt> RatReconst::get_anchor_points() {
+    std::vector<FFInt> res(n - 1);
+
+    for (uint32_t i = 2; i <= n; ++i) {
+      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      res[i - 2] = rand_zi[std::make_pair(i, 1)];
+    }
+
+    return res;
+  }
+
+  std::pair<uint32_t, uint32_t> RatReconst::get_max_deg() {
+    if (all_shift_max_degs.size() != 0) {
+      return std::make_pair(all_shift_max_degs[0], all_shift_max_degs[1]);
+    } else if (max_deg_num != -1 && max_deg_den != -1)
+      return std::make_pair(max_deg_num, max_deg_den);
+    else {
+      WARNING_MSG("Maximal degrees are not known yet.");
+      return std::make_pair(0, 0);
+    }
+  }
+
+  std::string RatReconst::get_tag() {
+    return tag;
+  }
+
+  std::string RatReconst::get_tag_name() {
+    return tag_name;
+  }
+}
