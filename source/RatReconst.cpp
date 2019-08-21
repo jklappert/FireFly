@@ -1977,11 +1977,18 @@ namespace firefly {
   }
 
   void RatReconst::set_tag(const std::string& tag_) {
-    tag = tag_;
+    if (tag.size() == 0) {
+      mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      tag = tag_;
+      std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
+      std::ofstream file;
+      file.open(file_name.c_str());
+      file.close();
+    } else
+      WARNING_MSG("This object has already a valid tag!");
   }
 
   void RatReconst::save_zero_state() {
-    mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     std::ofstream file;
     std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
     file.open(file_name.c_str());
@@ -2000,7 +2007,6 @@ namespace firefly {
   }
 
   void RatReconst::save_state() {
-    mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     std::ofstream file;
     std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
     file.open(file_name.c_str());
@@ -2524,10 +2530,15 @@ namespace firefly {
         }
       }
 
-      for (const auto & el : parsed_variables) {
-        if (!el) {
-          ERROR_MSG("Incomplete input file! It cannot be used to resume a run.");
-          std::exit(EXIT_FAILURE);
+      if (file.peek() == std::ifstream::traits_type::eof()) {
+        file.close();
+        return std::make_pair(true, 0);
+      } else {
+        for (const auto & el : parsed_variables) {
+          if (!el) {
+            ERROR_MSG("Incomplete input file! It cannot be used to resume a run.");
+            std::exit(EXIT_FAILURE);
+          }
         }
       }
 
@@ -3055,7 +3066,7 @@ namespace firefly {
       return std::make_pair(max_deg_num, max_deg_den);
     else {
       WARNING_MSG("Maximal degrees are not known yet.");
-      return std::make_pair(0,0);
+      return std::make_pair(0, 0);
     }
   }
 }
