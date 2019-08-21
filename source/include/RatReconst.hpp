@@ -100,6 +100,21 @@ namespace firefly {
      */
     void set_tag(const std::string& tag_);
     /**
+     *  Sets a user readable tag to this object
+     *  @param tag_name_ the tag name of the object
+     */
+    void set_tag_name(const std::string& tag_name_);
+    /**
+     *  Get the tag of this object
+     *  @return the tag of this object
+     */
+    std::string get_tag();
+    /**
+     *  Get the tag name of this object
+     *  @return the tag name of this object
+     */
+    std::string get_tag_name();
+    /**
      *  If called, the reconstruction will start from the state saved in a file
      *  @param file_name the absolute path to the saved state file
      *  @return a pair of a bool which indicates if the current objects needs a shift and an uint32_t for the prime number
@@ -280,7 +295,8 @@ namespace firefly {
     polff_map solved_degs_num {};
     polff_map solved_degs_den {};
     std::vector<uint32_t> normalizer_deg {};
-    std::string tag = ""; /**< The name of this interpolation class for state saving */
+    std::string tag = ""; /**< The tag of this interpolation class for state saving */
+    std::string tag_name = ""; /**< The tag name of this interpolation class for state saving */
     bool is_singular_system = false;
     static std::vector<FFInt> shift;
     static ff_pair_map rand_zi;
@@ -290,7 +306,7 @@ namespace firefly {
      *  Sets all required variables of this class in the "singular system" mode
      */
     void set_singular_system_vars();
-    std::vector<bool> parsed_variables {std::vector<bool>(21, false)};
+    std::vector<bool> parsed_variables {std::vector<bool>(22, false)};
     int curr_parsed_variable = -1;
     /**
      *  Parses a vector from a file with a given number of maximal entries
@@ -349,7 +365,7 @@ namespace firefly {
     bool normalizer_den_num = false;
     ThieleInterpolator t_interpolator;
     uint32_t interpolations = 1;
-    enum save_variables {COMBINED_PRIME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
+    enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
                          COMBINED_NI, COMBINED_DI, COMBINED_PRIMES_NI, COMBINED_PRIMES_DI, INTERPOLATIONS
