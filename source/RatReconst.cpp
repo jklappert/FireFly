@@ -1924,6 +1924,15 @@ namespace firefly {
   }
 
   void RatReconst::accept_shift() {
+    if (tag.size() > 0) {
+      std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
+      std::ofstream file;
+      file.open(file_name.c_str());
+      file << "tag_name\n" << tag_name << "\n";
+      file << "normalize_to_den\n" << std::to_string(normalize_to_den) << "\n";
+      file.close();
+    }
+
     scan = false;
   }
 
@@ -1996,6 +2005,7 @@ namespace firefly {
       std::ofstream file;
       file.open(file_name.c_str());
       file << "tag_name\n" << tag_name << "\n";
+      file << "normalize_to_den\n1\n";
       file.close();
     } else
       WARNING_MSG("This object has already a valid tag!");
@@ -2239,6 +2249,8 @@ namespace firefly {
           else if (line == "tag_name") {
             std::getline(file, line);
             tag_name = line;
+            std::getline(file, line);
+            normalize_to_den = std::stoi(line);
             file.close();
             return std::make_pair(true, 0);
           } else if (line != "combined_prime") {
