@@ -2422,11 +2422,12 @@ namespace firefly {
                   std::vector<uint32_t> tmp_vec = parse_vector(line);
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-                  shift = std::vector<FFInt> (n, 0);
+                  if (shift == std::vector<FFInt> (n, 0)) {
 
-                  for (uint32_t i = 0; i < n; ++i) {
-                    if (tmp_vec[i] != 0)
-                      shift[i] = FFInt(xorshift64star());
+                    for (uint32_t i = 0; i != n; ++i) {
+                      if (tmp_vec[i] != 0)
+                        shift[i] = FFInt(xorshift64star());
+                    }
                   }
                 }
 
