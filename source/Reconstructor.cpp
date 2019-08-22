@@ -569,8 +569,6 @@ namespace firefly {
         clean_reconst();
 
         if (save_states && prime_it) {
-          mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-
           for (uint32_t item = 0; item != items; ++item) {
             std::string file_name_old = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".txt";
             std::string file_name_new = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".txt";
@@ -625,7 +623,7 @@ namespace firefly {
 
         // if only a small constant is reconstructed it will not ask for new run
         if (probes_for_next_prime == 0) {
-          probes_for_next_prime = bunch_size;
+          probes_for_next_prime = thr_n * bunch_size;
         }
 
         if (!safe_mode && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
@@ -750,8 +748,6 @@ namespace firefly {
     }
 
     if (save_states && prime_it) {
-      mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-
       for (uint32_t item = 0; item != items; ++item) {
         std::string file_name_old = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".txt";
         std::string file_name_new = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".txt";

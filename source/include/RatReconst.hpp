@@ -43,11 +43,11 @@ namespace firefly {
     static void reset();
     /**
      *  Feeds a black-box probe which will be processed by the class.
-     *  @return true if no interpolation is running, false otherwise
      *  @param new_ti the value of t for the current feed
      *  @param num the black-box probe
      *  @param fed_zi_ord the corresponding zi_order to this feed
      *  @param fed_prime the corresponding prime number to this feed
+     *  @return true if no interpolation is running, false otherwise
      */
     bool feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord, const uint32_t fed_prime);
     /**
@@ -73,7 +73,7 @@ namespace firefly {
     /**
      *  @param zi the zi of which one wants to get the corresponding random number
      *  @param order the order of zi, i.e. zi^order
-     *  @returns the random number of zi at a given order
+     *  @return the random number of zi at a given order
      */
     FFInt get_rand_zi(uint32_t zi, uint32_t order) const;
     /**
@@ -317,7 +317,7 @@ namespace firefly {
      */
     bool check_if_done(const FFInt& num, const FFInt& ti);
     /**
-     *  @returns the anchor points
+     *  @return the anchor points
      */
     std::vector<FFInt> get_anchor_points();
     bool scan = false;
