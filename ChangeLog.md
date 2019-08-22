@@ -1,3 +1,13 @@
+FireFly 1.3.1
+=============
+
+Bug fixes
+---------
+
+  * Fixed a crash with `Nothing left to feed.` which was caused by queuing not
+  enough probes in the safe mode with bunch sizes larger than 1.
+
+
 FireFly 1.3.0
 =============
 

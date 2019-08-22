@@ -496,7 +496,7 @@ namespace firefly {
 
         // if only a small constant is reconstructed it will not ask for new run
         if (probes_for_next_prime == 0) {
-          probes_for_next_prime = thr_n;
+          probes_for_next_prime = thr_n * bunch_size;
         }
 
         if (!safe_mode && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
