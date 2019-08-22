@@ -28,27 +28,29 @@
 
 namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
+    FFInt::set_new_prime(primes()[prime_it]);
+    uint64_t seed = static_cast<uint64_t>(std::time(0));
+    BaseReconst().set_seed(seed);
+    tmp_rec = RatReconst(n);
+
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
       INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size 1");
+      INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
     }
-
-    FFInt::set_new_prime(primes()[prime_it]);
-    uint64_t seed = static_cast<uint64_t>(std::time(0));
-    BaseReconst().set_seed(seed);
-    tmp_rec = RatReconst(n);
   }
 
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
-    if (verbosity > SILENT) {
-      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
-      INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size " + std::to_string(bunch_size_));
-    }
-
     FFInt::set_new_prime(primes()[prime_it]);
     uint64_t seed = static_cast<uint64_t>(std::time(0));
     BaseReconst().set_seed(seed);
     tmp_rec = RatReconst(n);
+
+    if (verbosity > SILENT) {
+      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
+      INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size " + std::to_string(bunch_size_));
+      INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
+    }
   }
 
   Reconstructor::~Reconstructor() {
@@ -115,11 +117,16 @@ namespace firefly {
       return std::stoi(l.substr(0, l.find("_"))) < stoi(r.substr(0, r.find("_")));
     });
 
-    for(const auto& file : files){
+    for (const auto & file : files) {
       paths.emplace_back(directory + "/" + file);
     }
 
-    resume_from_saved_state(paths);
+    if(paths.size() != 0) {
+      resume_from_saved_state(paths);
+    } else {
+      ERROR_MSG("Directory " + directory + " does not exist or has no content.");
+      std::exit(EXIT_FAILURE);
+    }
   }
 
   void Reconstructor::resume_from_saved_state(const std::vector<std::string>& file_paths_) {
@@ -128,6 +135,7 @@ namespace firefly {
     std::ifstream validation_file;
     validation_file.open("validation");
     std::string line;
+
     if (validation_file.is_open()) {
       std::getline(validation_file, line);
       std::vector<FFInt> values = parse_vector(line, "64");
@@ -140,6 +148,7 @@ namespace firefly {
           ERROR_MSG("Validation failed: Entry " + std::to_string(counter) + " does not match the black-box result!");
           std::exit(EXIT_FAILURE);
         }
+
         ++counter;
       }
 
@@ -199,13 +208,15 @@ namespace firefly {
       if (prime_it == 0 && items_new_prime != items) {
         std::ifstream file;
         file.open("scan");
+
         if (file.is_open()) {
           scan = false;
         } else {
-          ERROR_MSG("Cannot resume from saved state because the scan was not completed");
-          ERROR_MSG("Please remove the directory 'ff_save' and start from the beginning");
+          ERROR_MSG("Cannot resume from saved state because the scan was not completed.");
+          ERROR_MSG("Please remove the directory 'ff_save' and start from the beginning.");
           std::exit(EXIT_FAILURE);
         }
+
         file.close();
       } else {
         scan = false;
@@ -476,9 +487,11 @@ namespace firefly {
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
 
       file << (t + shift[0]).n << " ";
+
       for (uint32_t i = 1; i != n; ++i) {
         file << (rand_zi[i - 1] * t + shift[i]).n << " ";
       }
+
       file << "\n";
     }
 
@@ -562,10 +575,10 @@ namespace firefly {
 
         if (save_states && prime_it) {
           mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
           for (uint32_t item = 0; item != items; ++item) {
             std::string file_name_old = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".txt";
             std::string file_name_new = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".txt";
-
             std::rename(file_name_old.c_str(), file_name_new.c_str());
           }
         }
@@ -743,10 +756,10 @@ namespace firefly {
 
     if (save_states && prime_it) {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
       for (uint32_t item = 0; item != items; ++item) {
         std::string file_name_old = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".txt";
         std::string file_name_new = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".txt";
-
         std::rename(file_name_old.c_str(), file_name_new.c_str());
       }
     }

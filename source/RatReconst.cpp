@@ -2232,7 +2232,7 @@ namespace firefly {
     }
   }
 
-  std::pair<bool, uint32_t> RatReconst::start_from_saved_file(const std::string & file_name) {
+  std::pair<bool, uint32_t> RatReconst::start_from_saved_file(const std::string& file_name) {
     std::string line;
     std::ifstream file(file_name.c_str());
     bool first = true;
@@ -2423,15 +2423,12 @@ namespace firefly {
                   std::vector<uint32_t> tmp_vec = parse_vector(line);
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-                  // TODO
-                  //if (shift == std::vector<FFInt> (n, 0)) {
-                  shift = std::vector<FFInt> (n, 0);
-
-                    for (uint32_t i = 0; i != n; ++i) {
-                      if (tmp_vec[i] != 0)
-                        shift[i] = FFInt(xorshift64star());
-                    }
-                  //}
+                  for (uint32_t i = 0; i != n; ++i) {
+                    if (tmp_vec[i] != 0 && shift[i] == 0)
+                      shift[i] = FFInt(xorshift64star());
+                    else if (tmp_vec[i] == 0 && shift[i] != 0)
+                      shift[i] = 0;
+                  }
                 }
 
                 break;
