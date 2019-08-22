@@ -1,0 +1,17 @@
+include_directories(${INCLUDE_PATH}/test)
+add_definitions(-DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
+
+function(add_firefly_test name)
+  if("${CUSTOM}" STREQUAL "true")
+  message("-- ${Red}Using custom modular arithmetic. The unit test is thus not compiled.${ColourReset}")
+  elseif("${WITH_FLINT}" STREQUAL "true")
+    add_executable(${name} ${name}.cpp ${SOURCE_PATH}/Tests.cpp)
+    target_link_libraries(${name} FireFly_static gmp flint)
+  else()
+    add_executable(${name} ${name}.cpp ${SOURCE_PATH}/Tests.cpp)
+    target_link_libraries(example FireFly_static gmp)
+  endif()
+  add_test(NAME ${name} COMMAND ${name})
+endfunction()
+
+add_firefly_test(UnitTest)

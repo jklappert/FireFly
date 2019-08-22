@@ -26,14 +26,16 @@
 namespace firefly {
 
   const std::unordered_set<char> ShuntingYardParser::chars = {{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
-      }
-    };
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+    }
+  };
 
   ShuntingYardParser::ShuntingYardParser() {}
 
-  ShuntingYardParser::ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars) {
-    INFO_MSG("Parsing functions in '" + file + "'");
+  ShuntingYardParser::ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars, bool verbose) {
+    if (verbose)
+      INFO_MSG("Parsing functions in '" + file + "'");
+
     auto time0 = std::chrono::high_resolution_clock::now();
     // Check if file exists
     std::ifstream infile(file);
@@ -71,9 +73,12 @@ namespace firefly {
 
     istream.close();
     auto time1 = std::chrono::high_resolution_clock::now();
-    INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions in "
-             + std::to_string(std::chrono::duration<double>(time1 - time0).count())
-             + " s");
+
+    if (verbose) {
+      INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions in "
+               + std::to_string(std::chrono::duration<double>(time1 - time0).count())
+               + " s");
+    }
   }
 
   void ShuntingYardParser::parse(const std::string& fun_) {

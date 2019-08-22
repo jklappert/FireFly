@@ -130,7 +130,9 @@ namespace firefly {
   }
 
   void Reconstructor::resume_from_saved_state(const std::vector<std::string>& file_paths_) {
-    INFO_MSG("Loading saved states");
+    if(verbosity > SILENT) {
+      INFO_MSG("Loading saved states");
+    }
 
     std::ifstream validation_file;
     validation_file.open("validation");

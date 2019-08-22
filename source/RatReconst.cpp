@@ -2793,6 +2793,7 @@ namespace firefly {
   }
 
   void RatReconst::reset() {
+    FFInt::set_new_prime(primes()[0]);
     std::unique_lock<std::mutex> lock(mutex_statics);
     shift = std::vector<FFInt> ();
     need_prime_shift = false;
