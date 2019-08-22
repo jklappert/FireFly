@@ -138,7 +138,7 @@ namespace firefly {
 
     if (validation_file.is_open()) {
       std::getline(validation_file, line);
-      std::vector<FFInt> values = parse_vector(line, "64");
+      std::vector<FFInt> values = parse_vector_FFInt(line);
 
       std::vector<FFInt> result = bb(values);
       size_t counter = 0;
@@ -263,10 +263,6 @@ namespace firefly {
     run_until_done();
 
     tp.kill_all();
-
-    if (save_states) {
-      std::remove("validation");
-    }
 
     if (verbosity > SILENT) {
       if (one_done || one_new_prime) {
@@ -568,7 +564,6 @@ namespace firefly {
 
     while (!done) {
       if (new_prime) {
-        //exit(-1);
         tp.kill_all();
 
         clean_reconst();

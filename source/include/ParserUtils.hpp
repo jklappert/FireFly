@@ -30,14 +30,14 @@ namespace firefly {
    *  @param number_of_parameters a limiting number how many entries should be parsed
    *  @return the parsed vector
    */
-  std::vector<uint32_t> parse_vector(std::string& line, int number_of_parameters = -1);
+  std::vector<uint32_t> parse_vector_32(std::string& line, int number_of_parameters = -1);
   /**
    *  Parses a vector from a file with a given number of maximal entries
    *  @param line a string representing the line which should be parsed
    *  @param number_of_parameters a limiting number how many entries should be parsed
    *  @return the parsed vector
    */
-  std::vector<FFInt> parse_vector(std::string& line, std::string tmp64, int number_of_parameters = -1);
+  std::vector<FFInt> parse_vector_FFInt(std::string& line, int number_of_parameters = -1);
   /**
    *  Parses a rational number from a file
    *  @param line the string that should be parsed to a rational number

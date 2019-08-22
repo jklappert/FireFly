@@ -19,8 +19,7 @@
 #include "ParserUtils.hpp"
 
 namespace firefly {
-  // TODO: Remove one function?
-  std::vector<uint32_t> parse_vector(std::string& line, int number_of_parameters) {
+  std::vector<uint32_t> parse_vector_32(std::string& line, int number_of_parameters) {
     size_t pos = 0;
     int i = 0;
     std::string delimiter = " ";
@@ -40,7 +39,7 @@ namespace firefly {
     return tmp;
   }
 
-  std::vector<FFInt> parse_vector(std::string& line, std::string tmp64, int number_of_parameters) {
+  std::vector<FFInt> parse_vector_FFInt(std::string& line, int number_of_parameters) {
     size_t pos = 0;
     int i = 0;
     std::string delimiter = " ";

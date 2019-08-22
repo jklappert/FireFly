@@ -2396,7 +2396,7 @@ namespace firefly {
               }
 
               case NORMALIZER_DEG: {
-                normalizer_deg = parse_vector(line);
+                normalizer_deg = parse_vector_32(line);
                 std::unique_lock<std::mutex> lock_status(mutex_status);
 
                 n = normalizer_deg.size();
@@ -2420,7 +2420,7 @@ namespace firefly {
 
               case SHIFT: {
                 if (!is_done()) {
-                  std::vector<uint32_t> tmp_vec = parse_vector(line);
+                  std::vector<uint32_t> tmp_vec = parse_vector_32(line);
                   std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
                   for (uint32_t i = 0; i != n; ++i) {
@@ -2440,8 +2440,8 @@ namespace firefly {
                   std::exit(EXIT_FAILURE);
                 }
 
-                uint32_t tmp_deg = parse_vector(line, 1)[0];
-                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                uint32_t tmp_deg = parse_vector_32(line, 1)[0];
+                std::vector<uint32_t> tmp_vec = parse_vector_32(line, n);
 
                 if (sub_num.find(tmp_deg) == sub_num.end())
                   sub_num[tmp_deg] = PolynomialFF(n, {{tmp_vec, 1}});
@@ -2457,8 +2457,8 @@ namespace firefly {
                   std::exit(EXIT_FAILURE);
                 }
 
-                uint32_t tmp_deg = parse_vector(line, 1)[0];
-                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                uint32_t tmp_deg = parse_vector_32(line, 1)[0];
+                std::vector<uint32_t> tmp_vec = parse_vector_32(line, n);
 
                 if (sub_den.find(tmp_deg) == sub_den.end())
                   sub_den[tmp_deg] = PolynomialFF(n, {{tmp_vec, 1}});
@@ -2469,7 +2469,7 @@ namespace firefly {
               }
 
               case ZERO_DEGS_NUM: {
-                std::vector<uint32_t> tmp_vec = parse_vector(line);
+                std::vector<uint32_t> tmp_vec = parse_vector_32(line);
 
                 for (const auto & el : tmp_vec) {
                   zero_degs_num.emplace(el);
@@ -2479,7 +2479,7 @@ namespace firefly {
               }
 
               case ZERO_DEGS_DEN: {
-                std::vector<uint32_t> tmp_vec = parse_vector(line);
+                std::vector<uint32_t> tmp_vec = parse_vector_32(line);
 
                 for (const auto & el : tmp_vec) {
                   zero_degs_den.emplace(el);
@@ -2494,7 +2494,7 @@ namespace firefly {
                   std::exit(EXIT_FAILURE);
                 }
 
-                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                std::vector<uint32_t> tmp_vec = parse_vector_32(line, n);
                 g_ni.emplace(std::make_pair(tmp_vec, parse_rational_number(line)));
 
                 break;
@@ -2506,7 +2506,7 @@ namespace firefly {
                   std::exit(EXIT_FAILURE);
                 }
 
-                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                std::vector<uint32_t> tmp_vec = parse_vector_32(line, n);
                 g_di.emplace(std::make_pair(tmp_vec, parse_rational_number(line)));
 
                 break;
@@ -2518,7 +2518,7 @@ namespace firefly {
                   std::exit(EXIT_FAILURE);
                 }
 
-                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                std::vector<uint32_t> tmp_vec = parse_vector_32(line, n);
                 combined_ni.emplace(std::make_pair(tmp_vec, mpz_class(line)));
 
                 break;
@@ -2530,7 +2530,7 @@ namespace firefly {
                   std::exit(EXIT_FAILURE);
                 }
 
-                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                std::vector<uint32_t> tmp_vec = parse_vector_32(line, n);
                 combined_di.emplace(std::make_pair(tmp_vec, mpz_class(line)));
 
                 break;
@@ -2542,7 +2542,7 @@ namespace firefly {
                   std::exit(EXIT_FAILURE);
                 }
 
-                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                std::vector<uint32_t> tmp_vec = parse_vector_32(line, n);
                 combined_primes_ni.emplace(std::make_pair(tmp_vec, mpz_class(line)));
 
                 break;
@@ -2554,7 +2554,7 @@ namespace firefly {
                   std::exit(EXIT_FAILURE);
                 }
 
-                std::vector<uint32_t> tmp_vec = parse_vector(line, n);
+                std::vector<uint32_t> tmp_vec = parse_vector_32(line, n);
                 combined_primes_di.emplace(std::make_pair(tmp_vec, mpz_class(line)));
 
                 break;
