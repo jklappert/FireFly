@@ -110,7 +110,7 @@ namespace firefly {
 using namespace firefly;
 int main() {
   INFO_MSG("Test safe mode");
-  ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"}, false);
+  ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_1(p_1, 1);
   Reconstructor r_1(4, 4, b_1, Reconstructor::SILENT);
   r_1.set_safe_interpolation();
@@ -119,7 +119,7 @@ int main() {
   INFO_MSG("Safe mode passed");
 
   INFO_MSG("Test 1 variable");
-  ShuntingYardParser p_2("../../parser_test/s_y_1_v.m", {"x"}, false);
+  ShuntingYardParser p_2("../../parser_test/s_y_1_v.m", {"x"});
   BlackBoxUser b_2(p_2, 2);
   Reconstructor r_2(1, 4, b_2, Reconstructor::SILENT);
   r_2.reconstruct();
@@ -127,7 +127,7 @@ int main() {
   INFO_MSG("1 variable passed");
 
   INFO_MSG("Test normal mode");
-  ShuntingYardParser p_0("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"}, false);
+  ShuntingYardParser p_0("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_0(p_0, 0);
   Reconstructor r_0(4, 4, b_0, Reconstructor::SILENT);
   r_0.enable_scan();
@@ -136,13 +136,13 @@ int main() {
   INFO_MSG("Normal mode passed");
 
   INFO_MSG("Test bunched evaluation");
-  ShuntingYardParser p_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"}, false);
+  ShuntingYardParser p_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_3(p_3, 3);
   Reconstructor r_3(4, 4, 4, b_3, Reconstructor::SILENT);
   r_3.enable_scan();
   r_3.reconstruct();
   RatReconst::reset();
-  ShuntingYardParser p_3_2("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"}, false);
+  ShuntingYardParser p_3_2("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_3_2(p_3_2, 3);
   Reconstructor r_3_2(4, 4, 4, b_3_2, Reconstructor::SILENT);
   r_3_2.set_safe_interpolation();
@@ -152,7 +152,7 @@ int main() {
 
   try {
     INFO_MSG("Test saving states and starting from them");
-    ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"}, false);
+    ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_4(p_4, 4);
     Reconstructor r_4(4, 4, b_4, Reconstructor::SILENT);
     r_4.enable_scan();
@@ -160,7 +160,7 @@ int main() {
     r_4.reconstruct();
   } catch (std::exception& e) {
     RatReconst::reset();
-    ShuntingYardParser p_5("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"}, false);
+    ShuntingYardParser p_5("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_5(p_5, 5);
     Reconstructor r_5(4, 4, b_5, Reconstructor::SILENT);
     r_5.set_tags();
