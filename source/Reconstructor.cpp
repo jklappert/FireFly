@@ -224,6 +224,11 @@ namespace firefly {
         scan = false;
       }
     }
+
+    if (verbosity > SILENT) {
+      INFO_MSG("All files loaded | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
+               " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+    }
   }
 
   void Reconstructor::set_safe_interpolation() {
@@ -232,6 +237,8 @@ namespace firefly {
 
   void Reconstructor::reconstruct() {
     start = std::chrono::high_resolution_clock::now();
+
+    bool done = false;
 
     if (!resume_from_state) {
       if (verbosity > SILENT) {
@@ -260,9 +267,15 @@ namespace firefly {
       }
     } else {
       scan = false;
+
+      if (items_done == items) {
+        done = true;
+      }
     }
 
-    run_until_done();
+    if (!done) {
+      run_until_done();
+    }
 
     tp.kill_all();
 
