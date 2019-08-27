@@ -208,4 +208,42 @@ namespace firefly {
     x ^= x >> 18;
     return rotr32(static_cast<uint32_t>((x >> 27)), count);
   }
+
+  /*uint64_t rol64(uint64_t x, int k) {
+    return (x << k) | (x >> (64 - k));
+  }
+
+
+  uint64_t xoshiro256ss() {
+    uint64_t const result = rol64(s[1] * 5, 7) * 9;
+    uint64_t const t = s[1] << 17;
+
+    s[2] ^= s[0];
+    s[3] ^= s[1];
+    s[1] ^= s[2];
+    s[0] ^= s[3];
+
+    s[2] ^= t;
+    s[3] = rol64(s[3], 45);
+
+    return result;
+  }
+
+  // only used for seeding xoshiro256ss
+  uint64_t splitmix64() {
+    uint64_t result = splitmit64_state;
+
+    splitmit64_state = result + 0x9E3779B97f4A7C15;
+    result = (result ^ (result >> 30)) * 0xBF58476D1CE4E5B9;
+    result = (result ^ (result >> 27)) * 0x94D049BB133111EB;
+    return result ^ (result >> 31);
+  }
+
+  void xoshiro256ss_init(uint64_t seed) {
+    //TODO set splitmix64 states
+    s[0] = splitmix64();
+    s[1] = splitmix64();
+    s[2] = splitmix64();
+    s[3] = splitmix64();
+  }*/
 }
