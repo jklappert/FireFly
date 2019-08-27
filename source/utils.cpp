@@ -276,7 +276,17 @@ namespace firefly {
     x ^= x << 25; // b
     x ^= x >> 27; // c
     xorshift64star_state = x;
-    return x * 0x2545F4914F6CDD1D;
+
+    if (x * 0x2545F4914F6CDD1D != 0)
+      return x * 0x2545F4914F6CDD1D;
+    else {
+      while (1) {
+        uint64_t tmp = xorshift64star();
+
+        if (tmp != 0)
+          return tmp;
+      }
+    }
   }
 
   void set_xorshift_seed(uint64_t seed) {
