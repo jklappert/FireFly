@@ -24,7 +24,8 @@
 #include "utils.hpp"
 
 #include <algorithm>
-#include <fstream>
+//#include <fstream>
+#include <gzstream.h>
 #include <map>
 #include <sys/stat.h>
 
@@ -106,9 +107,9 @@ namespace firefly {
                         const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
 
-    if (!done) {
+    if (!done && fed_prime == prime_number) {
       if (first_feed && !scan) {
-        if (num == 0 && fed_prime == prime_number) {
+        if (num == 0) {
           new_prime = true;
           zero_counter ++;
           fed_zero = true;
@@ -134,17 +135,15 @@ namespace firefly {
             g_ni[std::vector<uint32_t>(n)] = RationalNumber(0, 1);
             g_di[std::vector<uint32_t>(n)] = RationalNumber(1, 1);
           }
-        } else if (!done && fed_prime == prime_number) {
+        } else {
           if (!check_interpolation)
             new_prime = false;
 
           first_feed = false;
           queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
         }
-      } else {
-        if (!done && fed_prime == prime_number)
-          queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
-      }
+      } else
+        queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
     }
 
     return !is_interpolating;
@@ -1928,8 +1927,9 @@ namespace firefly {
 
   void RatReconst::accept_shift() {
     if (tag.size() > 0) {
-      std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
-      std::ofstream file;
+      std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".gz";
+      //std::ofstream file;
+      ogzstream file;
       file.open(file_name.c_str());
       file << "tag_name\n" << tag_name << "\n";
       file << "normalize_to_den\n" << std::to_string(normalize_to_den) << "\n";
@@ -2004,8 +2004,9 @@ namespace firefly {
     if (tag_name.size() == 0) {
       tag_name = tag_name_;
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-      std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
-      std::ofstream file;
+      std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".gz";
+      //std::ofstream file;
+      ogzstream file;
       file.open(file_name.c_str());
       file << "tag_name\n" << tag_name << "\n";
       file << "normalize_to_den\n1\n";
@@ -2015,8 +2016,9 @@ namespace firefly {
   }
 
   void RatReconst::save_zero_state() {
-    std::ofstream file;
-    std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
+    //std::ofstream file;
+    ogzstream file;
+    std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".gz";
     file.open(file_name.c_str());
     file << "ZERO\n";
     interpolations > 1 ? file << "1\n" : file << "0\n";
@@ -2026,16 +2028,17 @@ namespace firefly {
 
   void RatReconst::save_zero_consecutive_prime() {
     mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    std::string file_name_old = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
-    std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
+    std::string file_name_old = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".gz";
+    std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".gz";
 
     if (std::rename(file_name_old.c_str(), file_name_new.c_str()) != 0)
       WARNING_MSG("The previously saved file '" + file_name_old + "' could not be renamed.");
   }
 
   void RatReconst::save_state() {
-    std::ofstream file;
-    std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".txt";
+    //std::ofstream file;
+    ogzstream file;
+    std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".gz";
     file.open(file_name.c_str());
     file << "combined_prime\n" << combined_prime.get_str() << "\n";
     file << "tag_name\n" << tag_name << "\n";
@@ -2225,7 +2228,7 @@ namespace firefly {
     file.close();
 
     if (prime_number > 0) {
-      std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".txt";
+      std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".gz";
 
       if (std::remove(old_file_name.c_str()) != 0)
         WARNING_MSG("The previously saved file '" + old_file_name + "' could not be removed.");
@@ -2234,7 +2237,8 @@ namespace firefly {
 
   std::pair<bool, uint32_t> RatReconst::start_from_saved_file(const std::string& file_name) {
     std::string line;
-    std::ifstream file(file_name.c_str());
+    std::ifstream ifile(file_name.c_str());
+    igzstream file(file_name.c_str());
     bool first = true;
     prime_number = parse_prime_number(file_name) + 1;
     check_interpolation = true;
@@ -2242,7 +2246,7 @@ namespace firefly {
 
     bool is_zero = false;
 
-    if (file.is_open()) {
+    if (ifile.is_open()) {
       while (std::getline(file, line)) {
         if (first) {
           first = false;

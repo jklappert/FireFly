@@ -4,6 +4,9 @@ project(FireFly VERSION 1.3.0 LANGUAGES CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(GMP REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(MPI REQUIRED)
+include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 # decleare some colours
 if(NOT WIN32)
@@ -69,6 +72,7 @@ if("${WITH_FLINT}" STREQUAL true)
   include_directories(${FLINT_INCLUDE_DIR}/flint)
 endif()
 include_directories(${GMP_INCLUDE_DIR})
+include_directories(${ZLIB_INCLUDE_DIRS})
 
 # Firefly library files
 set(LIBSOURCES
@@ -76,6 +80,7 @@ set(LIBSOURCES
   ${SOURCE_PATH}/DenseSolver.cpp
   ${SOURCE_PATH}/FFInt.cpp
   ${SOURCE_PATH}/FFThieleInterpolator.cpp
+  ${SOURCE_PATH}/gzstream.cpp
   ${SOURCE_PATH}/HornerGenerator.cpp
   ${SOURCE_PATH}/Monomial.cpp
   ${SOURCE_PATH}/ParserUtils.cpp
@@ -96,6 +101,7 @@ set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/DenseSolver.cpp
   ${SOURCE_PATH}/FFInt.cpp
   ${SOURCE_PATH}/FFThieleInterpolator.cpp
+  ${SOURCE_PATH}/gzstream.cpp
   ${SOURCE_PATH}/HornerGenerator.cpp
   ${SOURCE_PATH}/Monomial.cpp
   ${SOURCE_PATH}/ParserUtils.cpp
@@ -127,10 +133,10 @@ if("${CUSTOM}" STREQUAL "true")
   message("-- ${Red}Using custom modular arithmetic. The example is thus not compiled.${ColourReset}")
 elseif("${WITH_FLINT}" STREQUAL "true")
   add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-  target_link_libraries(example FireFly_static gmp flint)
+  target_link_libraries(example FireFly_static gmp ${ZLIB_LIBRARIES} flint)
 else()
   add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-  target_link_libraries(example FireFly_static gmp)
+  target_link_libraries(example FireFly_static gmp ${ZLIB_LIBRARIES})
 endif()
 
 # install libraries
@@ -160,6 +166,7 @@ install(FILES
   "${INCLUDE_PATH}/DenseSolver.hpp"
   "${INCLUDE_PATH}/FFInt.hpp"
   "${INCLUDE_PATH}/FFThieleInterpolator.hpp"
+  "${INCLUDE_PATH}/gzstream.h"
   "${INCLUDE_PATH}/HornerGenerator.hpp"
   "${INCLUDE_PATH}/Logger.hpp"
   "${INCLUDE_PATH}/Monomial.hpp"

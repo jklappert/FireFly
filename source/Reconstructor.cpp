@@ -572,8 +572,8 @@ namespace firefly {
 
         if (save_states && prime_it) {
           for (uint32_t item = 0; item != items; ++item) {
-            std::string file_name_old = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".txt";
-            std::string file_name_new = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".txt";
+            std::string file_name_old = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".gz";
+            std::string file_name_new = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz";
             std::rename(file_name_old.c_str(), file_name_new.c_str());
           }
         }
@@ -751,8 +751,8 @@ namespace firefly {
 
     if (save_states && prime_it) {
       for (uint32_t item = 0; item != items; ++item) {
-        std::string file_name_old = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".txt";
-        std::string file_name_new = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".txt";
+        std::string file_name_old = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".gz";
+        std::string file_name_new = "ff_save/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz";
         std::rename(file_name_old.c_str(), file_name_new.c_str());
       }
     }

@@ -67,8 +67,10 @@ namespace firefly {
   uint32_t parse_prime_number(const std::string& file_name) {
     std::string reverse_file_name = file_name;
     std::reverse(reverse_file_name.begin(), reverse_file_name.end());
-    reverse_file_name.erase(0, 4);
+    reverse_file_name.erase(0, 3);
     size_t pos = reverse_file_name.find("_");
-    return std::stoi(reverse_file_name.substr(0, pos));
+    std::string prime = reverse_file_name.substr(0, pos);
+    std::reverse(prime.begin(), prime.end());
+    return std::stoi(prime);
   }
 }
