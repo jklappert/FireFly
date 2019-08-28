@@ -888,6 +888,32 @@ namespace firefly {
           std::vector<FFInt> values(n);
 
           FFInt t = tmp_rec.get_rand();
+
+          // check if t was already used for this zi_order
+          {
+            std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
+
+            auto it = chosen_t.find(zi_order);
+
+            if (it != chosen_t.end()) {
+              auto itt = it->second.find(t.n);
+
+              if (itt != it->second.end()) {
+                --i;
+
+                std::unique_lock<std::mutex> lock_print(print_control);
+
+                WARNING_MSG("Found a duplicate of t, choosing a new one");
+
+                continue;
+              } else {
+                it->second.emplace(t.n);
+              }
+            } else {
+              chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
+            }
+          }
+
           values[0] = t + shift[0];
 
           for (uint32_t i = 1; i != n; ++i) {
