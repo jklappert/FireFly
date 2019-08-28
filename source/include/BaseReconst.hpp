@@ -119,6 +119,8 @@ namespace firefly {
     static uint64_t state; /**< An integer which is needed for the random number generator */
     static uint64_t const multiplier; /**< An integer which is needed for the random number generator */
     static uint64_t const increment; /**< An integer which is needed for the random number generator */
+    static uint64_t splitmit64_state;
+    static uint64_t s[4];
     /**
      *  Helper function needed by the pcg32 random number generator
      */
@@ -132,5 +134,23 @@ namespace firefly {
      *  @param seed the seed
      */
     void pc32_init(uint64_t seed);
+    /**
+     *  Helper for the Xoshiro256**
+     */
+    uint64_t rol64(uint64_t x, int k);
+    /**
+     *  @return a 64 bit pseudo-random number
+     */
+    uint64_t xoshiro256ss();
+    /**
+     *  Initialize one seed for Xoshiro256**
+     *  @return a 64-bit seed
+     */
+    uint64_t splitmix64();
+    /**
+     *  Set the seeds for the Xoshiro256** PRNG
+     *  @param seed the seed
+     */
+    void xoshiro256ss_init(uint64_t seed);
   };
 }

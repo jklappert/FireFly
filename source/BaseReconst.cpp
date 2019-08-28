@@ -23,6 +23,8 @@ namespace firefly {
   uint64_t const BaseReconst::multiplier = 6364136223846793005u;
   uint64_t const BaseReconst::increment  = 1442695040888963407u;
   uint64_t BaseReconst::state = 0x4d595df4d0f33173;
+  uint64_t BaseReconst::splitmit64_state = 0x4d595df4d0f33173;
+  uint64_t BaseReconst::s[4];
   std::mutex BaseReconst::mutex_state;
 
   BaseReconst::BaseReconst() {}
@@ -118,13 +120,13 @@ namespace firefly {
   }
 
   FFInt BaseReconst::get_rand() {
-    FFInt rand(pcg32());
+    FFInt rand(xoshiro256ss()/*pcg32()*/);
 
     if (rand != 0)
       return rand;
     else {
       while (rand == 0) {
-        rand = FFInt(pcg32());
+        rand = FFInt(xoshiro256ss()/*pcg32()*/);
       }
 
       return rand;
@@ -132,7 +134,8 @@ namespace firefly {
   }
 
   void BaseReconst::set_seed(uint64_t seed) {
-    pc32_init(seed);
+    //pc32_init(seed);
+    xoshiro256ss_init(seed);
   }
 
   uint32_t BaseReconst::get_zi() const {
@@ -209,28 +212,32 @@ namespace firefly {
     return rotr32(static_cast<uint32_t>((x >> 27)), count);
   }
 
-  /*uint64_t rol64(uint64_t x, int k) {
+  uint64_t BaseReconst::rol64(uint64_t x, int k) {
     return (x << k) | (x >> (64 - k));
   }
 
 
-  uint64_t xoshiro256ss() {
-    uint64_t const result = rol64(s[1] * 5, 7) * 9;
-    uint64_t const t = s[1] << 17;
+  uint64_t BaseReconst::xoshiro256ss() {
+    uint64_t result;
+    {
+      std::unique_lock<std::mutex> lock_statics(mutex_state);
+      result = rol64(s[1] * 5, 7) * 9;
+      const uint64_t t = s[1] << 17;
 
-    s[2] ^= s[0];
-    s[3] ^= s[1];
-    s[1] ^= s[2];
-    s[0] ^= s[3];
+      s[2] ^= s[0];
+      s[3] ^= s[1];
+      s[1] ^= s[2];
+      s[0] ^= s[3];
 
-    s[2] ^= t;
-    s[3] = rol64(s[3], 45);
+      s[2] ^= t;
+      s[3] = rol64(s[3], 45);
 
+    }
     return result;
   }
 
   // only used for seeding xoshiro256ss
-  uint64_t splitmix64() {
+  uint64_t BaseReconst::splitmix64() {
     uint64_t result = splitmit64_state;
 
     splitmit64_state = result + 0x9E3779B97f4A7C15;
@@ -239,11 +246,15 @@ namespace firefly {
     return result ^ (result >> 31);
   }
 
-  void xoshiro256ss_init(uint64_t seed) {
-    //TODO set splitmix64 states
-    s[0] = splitmix64();
-    s[1] = splitmix64();
-    s[2] = splitmix64();
-    s[3] = splitmix64();
-  }*/
+  void BaseReconst::xoshiro256ss_init(uint64_t seed) {
+    {
+      std::unique_lock<std::mutex> lock_statics(mutex_state);
+      splitmit64_state = seed + increment;
+      set_xorshift_seed(state);
+      s[0] = splitmix64();
+      s[1] = splitmix64();
+      s[2] = splitmix64();
+      s[3] = splitmix64();
+    }
+  }
 }
