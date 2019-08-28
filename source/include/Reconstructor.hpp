@@ -169,6 +169,7 @@ namespace firefly {
     std::mutex print_control;
     std::mutex status_control;
     std::mutex clean;
+    std::mutex chosen_mutex;
     std::condition_variable condition_future;
     std::condition_variable condition_feed;
     // list containing the parameters and the future of the parallel tasks; t, zi_order, future
@@ -184,6 +185,7 @@ namespace firefly {
     std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes;
     uint32_t fed_ones = 0;
     uint32_t probes_for_next_prime = 0;
+    std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> chosen_t;
     uint32_t items = 0;
     uint32_t items_done = 0;
     uint32_t items_new_prime = 0;

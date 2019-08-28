@@ -626,6 +626,7 @@ namespace firefly {
         fed_ones = 0;
         jobs_finished = 0;
         started_probes.clear();
+        chosen_t.clear();
         feed_jobs = 0;
         interpolate_jobs = 0;
         new_prime = false;
@@ -795,6 +796,32 @@ namespace firefly {
 
       for (uint32_t j = 0; j != to_start; ++j) {
         t = tmp_rec.get_rand();
+
+        // check if t was already used for this zi_order
+        {
+          std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
+
+          auto it = chosen_t.find(zi_order);
+
+          if (it != chosen_t.end()) {
+            auto itt = it->second.find(t.n);
+
+            if (itt != it->second.end()) {
+              --j;
+
+              std::unique_lock<std::mutex> lock_print(print_control);
+
+              WARNING_MSG("Found a duplicate of t, choosing a new one");
+
+              continue;
+            } else {
+              it->second.emplace(t.n);
+            }
+          } else {
+            chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
+          }
+        }
+
         values[0] = t + shift[0];
 
         for (uint32_t i = 1; i != n; ++i) {
@@ -999,7 +1026,7 @@ namespace firefly {
             if (std::get<3>(rec)->feed(t, (*probe)[std::get<0>(rec)], zi_order, prime_it)) {
               ++counter;
 
-              tp.run_task([this, &rec]() {
+              tp.run_priority_task([this, &rec]() {
                 interpolate_job(rec);
               });
             }
