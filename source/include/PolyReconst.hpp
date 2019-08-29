@@ -179,23 +179,23 @@ namespace firefly {
      *  @param coeffs the coefficients of the interpolated polynomial
      */
     void check_for_tmp_solved_degs_for_bt(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& coeffs, const std::vector<size_t>& exponents);
-    std::list<std::tuple<FFInt, std::vector<uint32_t>>> queue;
-    int deg = -1;
-    bool with_rat_reconst = false;
-    Polynomial result;
-    PolynomialFF result_ff;
+    std::list<std::tuple<FFInt, std::vector<uint32_t>>> queue; /**< A queue which holds all unfeeded feeds */
+    int deg = -1; /**< The maximal degree of the to be interpolated polynomial */
+    bool with_rat_reconst = false; /**< A variable indicating whether this object is called from a RatReconst object */
+    Polynomial result; /**< The result of the interpolation with rational number coefficients */
+    PolynomialFF result_ff; /**< The result of the interpolation with coefficients in the current field */
     std::vector<std::vector<uint32_t>> rec_degs {};
-    ff_map solved_degs {};
-    ff_map tmp_solved_degs {};
-    std::vector<FFInt> nums {};
+    ff_map solved_degs {}; /**< A map holding already solved degrees used for permanent pruning*/
+    ff_map tmp_solved_degs {}; /**< A map holding degrees used for temporary pruning */
+    std::vector<FFInt> nums {}; /**< A vector holding evaluations of the polynomial */
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */
-    std::unordered_map<std::vector<uint32_t>, std::vector<FFInt>, UintHasher> ais {};
+    std::unordered_map<std::vector<uint32_t>, std::vector<FFInt>, UintHasher> ais {}; /*<< Coefficients used for Newton interpolation */
     std::unordered_map<uint32_t, int> max_deg {};
-    static std::mutex mutex_statics;
-    static ff_pair_map rand_zi;
+    static std::mutex mutex_statics; /**< A mutex for all static member variables */
+    static ff_pair_map rand_zi; /**< A static map holding all used potencies of the anchor points */
     std::vector<uint32_t> zero_element {};
-    bool combine_res = false;
+    bool combine_res = false; /**< A bool indicating whether the result should be combined using the Chinese Remainder Theorem */
     ff_map construct_tmp_canonical(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) const;
     void check_for_tmp_solved_degs_for_newton(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai);
     static size_t bt_threshold; // the amount of times the generator polynomial has to remain unchanged when the berlekamp_massey_step function gets called to terminate the Berlekamp/Massey algorithm, default is 1

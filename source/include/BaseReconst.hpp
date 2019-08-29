@@ -49,7 +49,7 @@ namespace firefly {
     BaseReconst& operator=(const BaseReconst& other);
     BaseReconst& operator=(BaseReconst && other);
     /**
-     *  @return a 32-bit random number as an FFInt
+     *  @return a 32-bit (64-bit) random number as an FFInt
      */
     FFInt get_rand();
     /**
@@ -119,8 +119,8 @@ namespace firefly {
     static uint64_t state; /**< An integer which is needed for the random number generator */
     static uint64_t const multiplier; /**< An integer which is needed for the random number generator */
     static uint64_t const increment; /**< An integer which is needed for the random number generator */
-    static uint64_t splitmit64_state;
-    static uint64_t s[4];
+    static uint64_t splitmix64_state; /**< The sate of the splitmix64 PRNG */
+    static uint64_t s[4]; /**< The state of the Xoshiro256** PRNG */
     /**
      *  Helper function needed by the pcg32 random number generator
      */

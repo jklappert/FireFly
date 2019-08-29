@@ -97,8 +97,8 @@ namespace firefly {
      */
     void remove_zero_coefs();
   private:
-    std::vector<uint32_t> min_degree {};
-    std::vector<uint32_t> max_degree {};
+    std::vector<uint32_t> min_degree {}; /**< The minimal degree of the polynomial. Only available after min_deg() is called */
+    std::vector<uint32_t> max_degree {}; /**< The maximal degree of the polynomial. Only available after max_deg() is called */
     /**
      *  Calculates a binomial coefficient n over k
      *  @param n the n
@@ -116,7 +116,7 @@ namespace firefly {
      *  Executes prerequired steps to generate a Horner form
      */
     void generate_hornerff();
-    ShuntingYardParser s_y_fun;
+    ShuntingYardParser s_y_fun; /**< A ShuntingYardParser object which is used to evaluate the polynomial in Horner form */
     /**
      *  Generates Horner scheme coefficients of a polynomial recursively
      *  @param var An integer representing the current variable
@@ -125,9 +125,9 @@ namespace firefly {
      *  @return A Horner form of a polynomial
      */
     std::string generate_horner_coefs(int var, const ff_map& monomials, const std::vector<std::string>& vars);
-    bool generate_new_horner = true;
-    bool eval_horner = false;
-    std::vector<std::string> vars {};
+    bool generate_new_horner = true; /**< Indicates whether one needs to generate a new Horner form */
+    bool eval_horner = false; /**< Indicates whether one should evaluate this polynomial in Horner form */
+    std::vector<std::string> vars {}; /**< A vector holding the variables of this polynomial as strings */
   };
   PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b);
   PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b);

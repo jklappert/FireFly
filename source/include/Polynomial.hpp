@@ -67,9 +67,9 @@ namespace firefly {
      *  @return The horner form for this polynomial
      */
     std::string generate_horner(std::vector<std::string> vars) const;
-    std::vector<Monomial> coefs;
+    std::vector<Monomial> coefs; /**< A vector of monomials which form the polynomial */
   private:
-    uint32_t n;
+    uint32_t n; /**< The number of variables */
   };
 
   std::ostream& operator<< (std::ostream& out, const Polynomial& pol);

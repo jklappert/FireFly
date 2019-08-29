@@ -39,7 +39,7 @@ namespace firefly {
     bool operator>(const Monomial&);
     Monomial operator*(const Monomial&);
     Monomial operator-() const;
-    std::vector<uint32_t> powers;
-    RationalNumber coef;
+    std::vector<uint32_t> powers; /**< The degree of the monomial */
+    RationalNumber coef; /**< The coefficient of the monomial */
   };
 }

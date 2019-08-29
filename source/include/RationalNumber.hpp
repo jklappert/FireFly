@@ -44,8 +44,8 @@ namespace firefly {
     RationalNumber operator-() const;
     std::string string() const;
 
-    mpz_class numerator;
-    mpz_class denominator;
+    mpz_class numerator; /**< The numerator of the rational number */
+    mpz_class denominator; /**< The denominator of the rational number */
   };
 
   std::ostream& operator<< (std::ostream& out, const RationalNumber&);
