@@ -52,7 +52,7 @@ gzstreambuf::gzstreambuf() : opened(0) {
         buffer + 4,     // read position
         buffer + 4);    // end position      
         // ASSERT: both input & output capabilities will not be used together
-};
+}
 
   
 gzstreambuf* gzstreambuf::open( const char* name, int open_mode) {
