@@ -675,7 +675,7 @@ namespace firefly {
 
     for (uint32_t tmp_zi = 1; tmp_zi <= n; ++tmp_zi) {
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
-      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), FFInt(xorshift64star())));
+      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), FFInt(get_rand_64())));
     }
   }
 

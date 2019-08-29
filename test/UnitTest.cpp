@@ -164,15 +164,15 @@ int main() {
     BlackBoxUser b_5(p_5, 5);
     Reconstructor r_5(4, 4, b_5, Reconstructor::SILENT);
     r_5.set_tags();
-    r_5.resume_from_saved_state("ff_save");
+    r_5.resume_from_saved_state();
     r_5.reconstruct();
-    std::remove("validation");
+    std::remove("ff_save/validation");
     INFO_MSG("Starting from saved states passed");
     std::cout << "\n";
 
     // Remove files
     tinydir_dir dir;
-    tinydir_open_sorted(&dir, "ff_save");
+    tinydir_open_sorted(&dir, "ff_save/states");
 
     std::vector<std::string> files;
     std::vector<std::string> paths;
@@ -188,12 +188,8 @@ int main() {
 
     tinydir_close(&dir);
 
-    std::sort(files.begin(), files.end(), [](const std::string & l, const std::string & r) {
-      return std::stoi(l.substr(0, l.find("_"))) < stoi(r.substr(0, r.find("_")));
-    });
-
     for (const auto & file : files) {
-      paths.emplace_back("ff_save/" + file);
+      paths.emplace_back("ff_save/states/" + file);
     }
 
     for (const auto & el : paths) {

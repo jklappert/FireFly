@@ -133,8 +133,22 @@ namespace firefly {
     }
   }
 
+  FFInt BaseReconst::get_rand_64() {
+    FFInt rand(xoshiro256ss()/*pcg32()*/);
+
+    if (rand != 0)
+      return rand;
+    else {
+      while (rand == 0) {
+        rand = FFInt(xoshiro256ss()/*pcg32()*/);
+      }
+
+      return rand;
+    }
+  }
+
   void BaseReconst::set_seed(uint64_t seed) {
-    //pc32_init(seed);
+    pc32_init(seed);
     xoshiro256ss_init(seed);
   }
 
@@ -193,7 +207,6 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_state);
       state = seed + increment;
-      set_xorshift_seed(state);
     }
     pcg32();
   }
@@ -250,7 +263,6 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_state);
       splitmix64_state = seed + increment;
-      set_xorshift_seed(state);
       s[0] = splitmix64();
       s[1] = splitmix64();
       s[2] = splitmix64();

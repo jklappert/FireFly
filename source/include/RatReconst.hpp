@@ -139,6 +139,11 @@ namespace firefly {
      */
     void accept_shift();
     /**
+     *  Sets the shift to the given tuple
+     *  @param shift_ the given shift
+     */
+    void set_shift(const std::vector<FFInt>& shift_);
+    /**
      *  @return is_interpolating
      */
     bool get_is_interpolating() const;
@@ -156,6 +161,15 @@ namespace firefly {
      *  @return The maximal degree of numerator (first) and denominator (second) as a pair
      */
     std::pair<uint32_t, uint32_t> get_max_deg();
+    /**
+     *  @return the anchor points
+     */
+    std::vector<FFInt> get_anchor_points();
+    /**
+     *  Sets the anchor points to the given tuple
+     *  @param anchor_points the anchor points
+     */
+    void set_anchor_points(const std::vector<FFInt>& anchor_points);
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -317,10 +331,6 @@ namespace firefly {
      *  @return true if the reconstruction is done
      */
     bool check_if_done(const FFInt& num, const FFInt& ti);
-    /**
-     *  @return the anchor points
-     */
-    std::vector<FFInt> get_anchor_points();
     bool scan = false; /**< Indicates whether this object scans for a sparse shift */
     std::vector<uint32_t> all_shift_max_degs {}; /**< Stores the maximal degree of numerator and denominator when shifting all variables */
     static std::vector<uint32_t> curr_shift; /**< Stores the current tested shift during a scan */
@@ -340,6 +350,14 @@ namespace firefly {
     std::unordered_set<uint32_t> zero_degs_den {}; /**< Stores all degrees of the denominator which have a zero coefficient */
     std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec {}; /**< Stores all needed feeds for the next prime field */
     bool restart_sparse_interpolation = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
+    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now(); /**< Timestamp that tracks the time until probes should be written to disk */
+    /**
+     *  Writes current feed to file to reuse this information 
+     *  @param fed_zi_ord the zi order corresponding to the feed
+     *  @param new_ti the t value corresponding to the feed
+     *  @param num the value of the probe
+     */
+    void write_food_to_file(const std::vector<uint32_t>& fed_zi_ord, const FFInt& new_ti, const FFInt& num);
     /**
      *  Calculates the polynomials emerging from a parameter shift effecting lower degrees
      *  @param poly the seed polynomial
@@ -350,6 +368,7 @@ namespace firefly {
     bool normalizer_den_num = false; /**< If true the real normalization degree is the denominator else the numerator */
     ThieleInterpolator t_interpolator; /**< An object for Thiele interpolations */
     uint32_t interpolations = 1;  /**< Indication how many interpolations should be made until one uses Vandermonde systems */
+    std::vector<std::tuple<std::vector<uint32_t>,FFInt, FFInt>> saved_food;
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,

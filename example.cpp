@@ -120,7 +120,7 @@ int main() {
   //reconst.set_tags();
 
   // Read in all saved states from the directory ./ff_save
-  //reconst.resume_from_saved_state("ff_save");
+  //reconst.resume_from_saved_state();
 
   // Reconstruct the black box
   reconst.reconstruct();

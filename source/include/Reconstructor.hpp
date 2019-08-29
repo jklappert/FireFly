@@ -132,6 +132,7 @@ namespace firefly {
      */
     void set_tags();
     /**
+     *  @deprecated
      *  Resumes the reconstruction of a set of given functions
      *  @param file_paths_ a vector to the absolute paths to the intermediate results of reconstruction objects
      */
@@ -140,9 +141,8 @@ namespace firefly {
      *  Resumes the reconstruction of a set of functions which are located in a directory.
      *  The corresponding interpolation objects are created in the same order as they were defined in the prior
      *  run, thus requiring the black box to be probed in the same order.
-     *  @param directory the directory in which the saved states are located
      */
-    void resume_from_saved_state(const std::string& directory);
+    void resume_from_saved_state();
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     enum RatReconst_status {RECONSTRUCTING, DONE, DELETED};

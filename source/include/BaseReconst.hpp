@@ -53,6 +53,10 @@ namespace firefly {
      */
     FFInt get_rand();
     /**
+     *  @return a 64-bit random number as an FFInt
+     */
+    FFInt get_rand_64();
+    /**
      *  @return the number of equations needed for the current zi_order
      */
     uint32_t get_num_eqn() const;

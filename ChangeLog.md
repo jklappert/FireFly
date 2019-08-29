@@ -9,8 +9,7 @@ Changes
 
  * Added a new member function for the `Reconstructor` class which can read in a whole
  directory of saved states of reconstruction objects. It can be called with
- `resume_from_saved_state($DIRECTORY)` where `$DIRECTORY` is a string routing to the
- directory in which the saved states are located.
+ `resume_from_saved_state()` requiring that the directory './ff_save' exist.
 
  * Added a unit test which checks different reconstruction modes. It can be executed
  by calling `make test` in the build directory.

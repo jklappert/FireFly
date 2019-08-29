@@ -21,8 +21,6 @@
 #include "ReconstHelper.hpp"
 
 namespace firefly {
-  static uint64_t xorshift64star_state = 0x4d595df4d0f33173;
-
   std::pair<mpz_class, mpz_class> run_chinese_remainder(
     const std::pair<mpz_class, mpz_class>& p1,
     const std::pair<mpz_class, mpz_class>& p2) {
@@ -269,31 +267,6 @@ namespace firefly {
 
     return PolynomialFF(n + 1, poly);
   }
-
-  uint64_t xorshift64star() {
-    uint64_t x = xorshift64star_state;
-    x ^= x >> 12; // a
-    x ^= x << 25; // b
-    x ^= x >> 27; // c
-    xorshift64star_state = x;
-
-    if (x * 0x2545F4914F6CDD1D != 0)
-      return x * 0x2545F4914F6CDD1D;
-    else {
-      while (1) {
-        uint64_t tmp = xorshift64star();
-
-        if (tmp != 0)
-          return tmp;
-      }
-    }
-  }
-
-  void set_xorshift_seed(uint64_t seed) {
-    xorshift64star_state = seed;
-  }
-
-
 
 #ifdef DEFAULT
   /*uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {

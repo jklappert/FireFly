@@ -18,14 +18,13 @@
 
 #include "RatReconst.hpp"
 #include "DenseSolver.hpp"
+#include "gzstream.h"
 #include "Logger.hpp"
 #include "ParserUtils.hpp"
 #include "ReconstHelper.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
-//#include <fstream>
-#include <gzstream.h>
 #include <map>
 #include <sys/stat.h>
 
@@ -52,7 +51,7 @@ namespace firefly {
         shift = std::vector<FFInt> (n);
 
         if (n > 1) {
-          for (auto & el : shift) el = FFInt(xorshift64star());
+          for (auto & el : shift) el = FFInt(get_rand_64());
 
           curr_shift = std::vector<uint32_t> (n, 1);
         }
@@ -97,7 +96,7 @@ namespace firefly {
 
       for (uint32_t i = 0; i < n; ++i) {
         if (shifted_zis[i] == 1)
-          shift[i] = FFInt(xorshift64star());
+          shift[i] = FFInt(get_rand_64());
       }
     }
   }
@@ -109,6 +108,7 @@ namespace firefly {
 
     if (!done && fed_prime == prime_number) {
       if (first_feed && !scan) {
+        start = std::chrono::high_resolution_clock::now();
         if (num == 0) {
           new_prime = true;
           zero_counter ++;
@@ -117,8 +117,8 @@ namespace firefly {
           if (zero_counter == prime_number + 1)
             combined_prime = primes()[prime_number + 1];
 
-          if (tag.size() > 0) {
-            if (prime_number > 0)
+          if (tag.size() != 0) {
+            if (prime_number != 0)
               save_zero_consecutive_prime();
             else
               save_zero_state();
@@ -140,6 +140,7 @@ namespace firefly {
             new_prime = false;
 
           first_feed = false;
+
           queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
         }
       } else
@@ -197,9 +198,11 @@ namespace firefly {
           if (check_if_done(num, new_ti))
             return;
 
-        if (max_deg_num == -1) // Use Thiele
+        if (max_deg_num == -1) {// Use Thiele
           check = t_interpolator.add_point(num, new_ti);
-        else {
+
+          write_food_to_file(fed_zi_ord, new_ti, num);
+        } else {
           std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
 
           // Prepare food for Gauss system
@@ -215,6 +218,8 @@ namespace firefly {
           for (auto & food : t_food) {
             FFInt tmp_ti = food.first;
             FFInt tmp_num = food.second;
+
+            write_food_to_file(fed_zi_ord, new_ti, num);
 
             // Get yi's for the current feed
             std::vector<FFInt> yis;
@@ -1472,7 +1477,7 @@ namespace firefly {
 
       if (prime_number + 1 >= interpolations) {
         // Check if the state should be written out after this prime
-        if (tag.size() > 0)
+        if (tag.size() != 0)
           save_state();
 
         if (is_singular_system) {
@@ -1513,7 +1518,7 @@ namespace firefly {
       }
 
       // Check if the state should be written out after this prime
-      if (tag.size() > 0)
+      if (tag.size() != 0)
         save_state();
     }
 
@@ -1834,7 +1839,7 @@ namespace firefly {
 
     for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
       rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
-      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), FFInt(xorshift64star())));
+      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), FFInt(get_rand_64())));
     }
 
     PolyReconst rec(n - 1, 0, true);
@@ -1850,6 +1855,27 @@ namespace firefly {
 
       for (auto & el : shift) el = FFInt(el.n);
     }
+  }
+
+  void RatReconst::set_anchor_points(const std::vector<FFInt>& anchor_points) {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+
+    rand_zi.clear();
+
+    for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
+      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
+      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), FFInt(anchor_points[tmp_zi - 2])));
+    }
+
+    PolyReconst rec(n - 1, 0, true);
+
+    rec.set_anchor_points(anchor_points, true);
+  }
+
+  void RatReconst::set_shift(const std::vector<FFInt>& shift_) {
+    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    if(n > 1)
+      shift = shift_;
   }
 
   void RatReconst::add_non_solved_num(const std::vector<uint32_t>& deg) {
@@ -1926,8 +1952,8 @@ namespace firefly {
   }
 
   void RatReconst::accept_shift() {
-    if (tag.size() > 0) {
-      std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".gz";
+    if (tag.size() != 0) {
+      std::string file_name = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
       //std::ofstream file;
       ogzstream file;
       file.open(file_name.c_str());
@@ -2003,22 +2029,22 @@ namespace firefly {
   void RatReconst::set_tag_name(const std::string& tag_name_) {
     if (tag_name.size() == 0) {
       tag_name = tag_name_;
-      mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-      std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".gz";
-      //std::ofstream file;
+      std::string file_name = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
       ogzstream file;
       file.open(file_name.c_str());
       file << "tag_name\n" << tag_name << "\n";
       file << "normalize_to_den\n1\n";
+      file.close();
+      file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
+      file.open(file_name.c_str());
       file.close();
     } else
       WARNING_MSG("This object has already a valid tag!");
   }
 
   void RatReconst::save_zero_state() {
-    //std::ofstream file;
     ogzstream file;
-    std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".gz";
+    std::string file_name = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
     file.open(file_name.c_str());
     file << "ZERO\n";
     interpolations > 1 ? file << "1\n" : file << "0\n";
@@ -2027,18 +2053,16 @@ namespace firefly {
   }
 
   void RatReconst::save_zero_consecutive_prime() {
-    mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    std::string file_name_old = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".gz";
-    std::string file_name_new = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".gz";
+    std::string file_name_old = "ff_save/states/" + tag + "_" + std::to_string(prime_number - 1) + ".gz";
+    std::string file_name_new = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
 
     if (std::rename(file_name_old.c_str(), file_name_new.c_str()) != 0)
       WARNING_MSG("The previously saved file '" + file_name_old + "' could not be renamed.");
   }
 
   void RatReconst::save_state() {
-    //std::ofstream file;
     ogzstream file;
-    std::string file_name = "ff_save/" + tag + "_" + std::to_string(prime_number) + ".gz";
+    std::string file_name = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
     file.open(file_name.c_str());
     file << "combined_prime\n" << combined_prime.get_str() << "\n";
     file << "tag_name\n" << tag_name << "\n";
@@ -2228,7 +2252,7 @@ namespace firefly {
     file.close();
 
     if (prime_number > 0) {
-      std::string old_file_name = "ff_save/" + tag + "_" + std::to_string(prime_number - 1) + ".gz";
+      std::string old_file_name = "ff_save/states/" + tag + "_" + std::to_string(prime_number - 1) + ".gz";
 
       if (std::remove(old_file_name.c_str()) != 0)
         WARNING_MSG("The previously saved file '" + old_file_name + "' could not be removed.");
@@ -2247,6 +2271,8 @@ namespace firefly {
     bool is_zero = false;
 
     if (ifile.is_open()) {
+      ifile.close();
+
       while (std::getline(file, line)) {
         if (first) {
           first = false;
@@ -2429,7 +2455,7 @@ namespace firefly {
 
                   for (uint32_t i = 0; i != n; ++i) {
                     if (tmp_vec[i] != 0 && shift[i] == 0)
-                      shift[i] = FFInt(xorshift64star());
+                      shift[i] = FFInt(get_rand_64());
                     else if (tmp_vec[i] == 0 && shift[i] != 0)
                       shift[i] = 0;
                   }
@@ -2837,7 +2863,7 @@ namespace firefly {
       if (done) {
         is_singular_system = false;
 
-        if (tag.size() > 0)
+        if (tag.size() != 0)
           save_state();
 
         std::unique_lock<std::mutex> lock(mutex_status);
@@ -3085,4 +3111,32 @@ namespace firefly {
   std::string RatReconst::get_tag_name() {
     return tag_name;
   }
+
+  void RatReconst::write_food_to_file(const std::vector<uint32_t>& fed_zi_ord, const FFInt& new_ti, const FFInt& num) {
+    if (tag.size() != 0) {
+      saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
+
+      // Write every 10 minutes
+      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600) {
+        ogzstream file;
+        std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
+
+        file.open(file_name.c_str(), std::ios_base::app);
+
+        for (const auto & el : saved_food) {
+          for (const auto & el2 : std::get<0>(el)) {
+            file << el2 << " ";
+          }
+
+          file << std::get<1>(el) << " " << std::get<2>(el) << "\n";
+        }
+
+        saved_food.clear();
+
+        file.close();
+        start = std::chrono::high_resolution_clock::now();
+      }
+    }
+  }
 }
+

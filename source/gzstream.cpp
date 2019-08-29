@@ -60,7 +60,7 @@ gzstreambuf* gzstreambuf::open( const char* name, int open_mode) {
         return (gzstreambuf*)0;
     mode = open_mode;
     // no append nor read/write mode
-    if ((mode & std::ios::ate) || (mode & std::ios::app)
+    if ((mode & std::ios::ate) /*|| (mode & std::ios::app)*/
         || ((mode & std::ios::in) && (mode & std::ios::out)))
         return (gzstreambuf*)0;
     char  fmode[10];
@@ -69,6 +69,8 @@ gzstreambuf* gzstreambuf::open( const char* name, int open_mode) {
         *fmodeptr++ = 'r';
     else if ( mode & std::ios::out)
         *fmodeptr++ = 'w';
+    else if(mode & std::ios::app)
+        *fmodeptr++ = 'a';
     *fmodeptr++ = 'b';
     *fmodeptr = '\0';
     file = gzopen( name, fmode);
