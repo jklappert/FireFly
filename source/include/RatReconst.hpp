@@ -22,6 +22,7 @@
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
 
+#include <map>
 #include <queue>
 
 namespace firefly {
@@ -121,6 +122,11 @@ namespace firefly {
      *  @return a pair of a bool which indicates if the current objects needs a shift and an uint32_t for the prime number
      */
     std::pair<bool, uint32_t> start_from_saved_file(const std::string & file_name);
+    /**
+     *  Parses all saved probes for the current prime field
+     *  @param file_name the absolute path to the probes save file
+     */
+    void read_in_probes(const std::string& file_name);
     /**
      *  Enables the scan for a sparsest shift
      */
@@ -368,7 +374,14 @@ namespace firefly {
     bool normalizer_den_num = false; /**< If true the real normalization degree is the denominator else the numerator */
     ThieleInterpolator t_interpolator; /**< An object for Thiele interpolations */
     uint32_t interpolations = 1;  /**< Indication how many interpolations should be made until one uses Vandermonde systems */
-    std::vector<std::tuple<std::vector<uint32_t>,FFInt, FFInt>> saved_food;
+    std::vector<std::tuple<std::vector<uint32_t>, FFInt, FFInt>> saved_food; /** Data structre used to write already used probes to a file from which one can resume if crashes occur. First FFInt is t second is num */
+    //std::vector<std::tuple<std::vector<uint32_t>, uint64_t, uint64_t>> parsed_probes; /** Data structre used for storing already used probes in prior runs to resume if crashes occur. First uint64_t is t second is num */
+    std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
+    bool from_save_state = false; /**< Indicates wether one resumes from a saved state */
+    bool write_probes = true;
+    FFInt num_comp;
+    FFInt t_comp;
+    std::vector<uint32_t> zi_ord_comp;
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,

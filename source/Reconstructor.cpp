@@ -134,6 +134,8 @@ namespace firefly {
       INFO_MSG("Loading saved states");
     }
 
+    set_anchor_points = true;
+
     std::ifstream validation_file;
     validation_file.open("ff_save/validation");
     std::string line;
@@ -179,9 +181,41 @@ namespace firefly {
 
     tmp_rec.start_from_saved_file(file_paths[0]);
 
+    // Get probe files
+    tinydir_dir dir;
+    tinydir_open_sorted(&dir, "ff_save/probes");
+
+    std::vector<std::string> files;
+    std::vector<std::string> probe_files;
+
+    for (size_t i = 0; i != dir.n_files; ++i) {
+      tinydir_file file;
+      tinydir_readfile_n(&dir, &file, i);
+
+      if (!file.is_dir) {
+        files.emplace_back(file.name);
+      }
+    }
+
+    tinydir_close(&dir);
+
+    std::sort(files.begin(), files.end(), [](const std::string & l, const std::string & r) {
+      return std::stoi(l.substr(0, l.find("_"))) < stoi(r.substr(0, r.find("_")));
+    });
+
+    for (const auto & file : files) {
+      probe_files.emplace_back("ff_save/probes/" + file);
+    }
+
+    if (probe_files.size() != items) {
+      ERROR_MSG("Mismatch in number of probe files");
+      std::exit(EXIT_FAILURE);
+    }
+
     for (uint32_t i = 0; i != items; ++i) {
       RatReconst* rec = new RatReconst(n);
       std::pair<bool, uint32_t> shift_prime = rec->start_from_saved_file(file_paths[i]);
+      rec->read_in_probes(probe_files[i]);
 
       if (shift_prime.first && shift_prime.second > min_prime_keep_shift) {
         min_prime_keep_shift = shift_prime.second;
@@ -189,7 +223,6 @@ namespace firefly {
 
       rec->set_tag(std::to_string(i));
 
-      //TODO Read in corresponding probe file
       if (rec->is_done()) {
         ++items_done;
         std::mutex* mut = new std::mutex;
@@ -207,13 +240,14 @@ namespace firefly {
       }
     }
 
-    if (prime_it == 0) {
+    if (prime_it == 0 && items != items_new_prime + items_done) {
+      set_anchor_points = false;
       std::ifstream anchor_point_file;
       anchor_point_file.open("ff_save/anchor_points");
 
       if (anchor_point_file.is_open()) {
         std::getline(anchor_point_file, line);
-        tmp_rec.set_anchor_points(parse_vector_FFInt(line));
+        tmp_rec.set_anchor_points(parse_vector_FFInt(line, n));
       } else {
         ERROR_MSG("Anchor point file not found!");
         std::exit(EXIT_FAILURE);
@@ -226,15 +260,12 @@ namespace firefly {
 
       if (shift_file.is_open()) {
         std::getline(shift_file, line);
-        tmp_rec.set_shift(parse_vector_FFInt(line));
+        tmp_rec.set_shift(parse_vector_FFInt(line, n));
       } else {
         ERROR_MSG("Shift file not found!");
         std::exit(EXIT_FAILURE);
       }
     }
-
-    //TODO set shift and anchor points in higher primes
-    //TODO schedule probes subtracting already done probes for higher primes
 
     if (scan) {
       if (prime_it == 0 && items_new_prime != items) {
@@ -304,7 +335,7 @@ namespace firefly {
     }
 
     if (!done) {
-      if (save_states) {
+      if (save_states && !set_anchor_points) {
         std::string tmp_str = "";
         std::ofstream file;
         file.open("ff_save/shift");
@@ -314,7 +345,6 @@ namespace firefly {
           tmp_str += std::to_string(el.n) + " ";
         }
 
-        tmp_str.substr(0, tmp_str.size() - 1);
         tmp_str += std::string("\n");
         file << tmp_str;
         file.close();
@@ -549,7 +579,6 @@ namespace firefly {
         tmp_str += std::to_string(el.n) + " ";
       }
 
-      tmp_str.substr(0, tmp_str.size() - 1);
       tmp_str += std::string("\n");
       file << tmp_str;
       file.close();
@@ -647,11 +676,11 @@ namespace firefly {
 
         if (save_states) {
           for (uint32_t item = 0; item != items; ++item) {
-            std::remove(("ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz").c_str());
-          }
+            std::string probes_file_old = "ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz";
+            std::string probes_file_new = "ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it + 1) + ".gz";
+            std::rename(probes_file_old.c_str(), probes_file_new.c_str());
 
-          if (prime_it) {
-            for (uint32_t item = 0; item != items; ++item) {
+            if (prime_it) {
               std::string file_name_old = "ff_save/states/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".gz";
               std::string file_name_new = "ff_save/states/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz";
               std::rename(file_name_old.c_str(), file_name_new.c_str());
@@ -659,9 +688,9 @@ namespace firefly {
           }
         }
 
-        if (save_states && prime_it == 0) {
+        /*if (save_states && prime_it == 0) {
           std::remove("ff_save/scan");
-        }
+        }*/
 
         total_iterations += iteration;
         ++prime_it;
@@ -719,8 +748,37 @@ namespace firefly {
           }
         }
 
-        shift = tmp_rec.get_zi_shift_vec();
-        tmp_rec.generate_anchor_points();
+        // Set anchor points and the shift to resume from saved probes
+        if (save_states && set_anchor_points) {
+          set_anchor_points = false;
+          std::string line;
+          std::ifstream anchor_point_file;
+          anchor_point_file.open("ff_save/anchor_points");
+
+          if (anchor_point_file.is_open()) {
+            std::getline(anchor_point_file, line);
+            tmp_rec.set_anchor_points(parse_vector_FFInt(line, n));
+          } else {
+            ERROR_MSG("Anchor point file not found!");
+            std::exit(EXIT_FAILURE);
+          }
+
+          anchor_point_file.close();
+
+          std::ifstream shift_file;
+          shift_file.open("ff_save/shift");
+
+          if (shift_file.is_open()) {
+            std::getline(shift_file, line);
+            tmp_rec.set_shift(parse_vector_FFInt(line, n));
+          } else {
+            ERROR_MSG("Shift file not found!");
+            std::exit(EXIT_FAILURE);
+          }
+        } else {
+          shift = tmp_rec.get_zi_shift_vec();
+          tmp_rec.generate_anchor_points();
+        }
 
         if (save_states) {
           std::remove("ff_save/anchor_points");
@@ -732,7 +790,6 @@ namespace firefly {
             tmp_str += std::to_string(el.n) + " ";
           }
 
-          tmp_str.substr(0, tmp_str.size() - 1);
           tmp_str += std::string("\n");
           file << tmp_str;
           file.close();
@@ -745,7 +802,6 @@ namespace firefly {
             tmp_str += std::to_string(el.n) + " ";
           }
 
-          tmp_str.substr(0, tmp_str.size() - 1);
           tmp_str += std::string("\n");
           file << tmp_str;
           file.close();
@@ -781,6 +837,9 @@ namespace firefly {
       get_probe(t, zi_order, probe, time);
 
       ++iteration;
+
+      //if (!scan && prime_it == 1 && iteration > 3)
+      //  std::exit(-1);
 
       average_black_box_time = (average_black_box_time * (total_iterations + iteration - 1) + time) / (total_iterations + iteration);
 
@@ -861,15 +920,15 @@ namespace firefly {
     }
 
     if (!scan && save_states) {
-      std::remove("ff_save/anchor_points");
-      std::remove("ff_save/shift");
-
       for (uint32_t item = 0; item != items; ++item) {
+        // remove probe files if the interpolation is done
         std::remove(("ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz").c_str());
-      }
+        ogzstream gzfile;
+        std::string file_name = "ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it + 1) + ".gz";
+        gzfile.open(file_name.c_str());
+        gzfile.close();
 
-      if (prime_it) {
-        for (uint32_t item = 0; item != items; ++item) {
+        if (prime_it) {
           std::string file_name_old = "ff_save/states/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".gz";
           std::string file_name_new = "ff_save/states/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz";
           std::rename(file_name_old.c_str(), file_name_new.c_str());
@@ -1432,3 +1491,4 @@ namespace firefly {
     }
   }
 }
+

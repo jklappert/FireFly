@@ -25,7 +25,6 @@
 #include "utils.hpp"
 
 #include <algorithm>
-#include <map>
 #include <sys/stat.h>
 
 namespace firefly {
@@ -109,6 +108,7 @@ namespace firefly {
     if (!done && fed_prime == prime_number) {
       if (first_feed && !scan) {
         start = std::chrono::high_resolution_clock::now();
+
         if (num == 0) {
           new_prime = true;
           zero_counter ++;
@@ -201,7 +201,8 @@ namespace firefly {
         if (max_deg_num == -1) {// Use Thiele
           check = t_interpolator.add_point(num, new_ti);
 
-          write_food_to_file(fed_zi_ord, new_ti, num);
+          if (!scan)
+            write_food_to_file(fed_zi_ord, new_ti, num);
         } else {
           std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
 
@@ -1874,7 +1875,8 @@ namespace firefly {
 
   void RatReconst::set_shift(const std::vector<FFInt>& shift_) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
-    if(n > 1)
+
+    if (n > 1)
       shift = shift_;
   }
 
@@ -2061,6 +2063,13 @@ namespace firefly {
   }
 
   void RatReconst::save_state() {
+    // Remove old probes and create new file
+    std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+    ogzstream gzfile;
+    std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
+    gzfile.open(probe_file_name.c_str());
+    gzfile.close();
+
     ogzstream file;
     std::string file_name = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
     file.open(file_name.c_str());
@@ -2267,6 +2276,7 @@ namespace firefly {
     prime_number = parse_prime_number(file_name) + 1;
     check_interpolation = true;
     bool tmp_need_shift = false;
+    from_save_state = true;
 
     bool is_zero = false;
 
@@ -3072,6 +3082,145 @@ namespace firefly {
       }
     }
 
+    if (from_save_state) {
+      from_save_state = false;
+
+      std::vector<uint32_t> largest_key(n - 1);
+
+      if (prime_number < interpolations) {
+        if (parsed_probes.size() > 0) {
+
+          for (const auto & el : parsed_probes) {
+
+            if (a_grt_b(el.first, largest_key))
+              largest_key = el.first;
+
+            for (const auto & el2 : el.second) {
+              queue.emplace(std::make_tuple(el2.first, el2.second, el.first));
+            }
+          }
+        }
+      } else {
+        std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_sub;
+        std::map<uint32_t, uint32_t> r_map {};
+
+        // Calculate the difference of already calculated probes and remaining ones
+        if (parsed_probes.size() != 0) {
+          for (const auto & el : parsed_probes) {
+
+            if (r_map.find(el.second.size()) == r_map.end())
+              r_map[el.second.size()] = 1;
+            else
+              r_map[el.second.size()] += 1;
+
+            if (a_grt_b(el.first, largest_key))
+              largest_key = el.first;
+
+            for (const auto & el2 : el.second) {
+              queue.emplace(std::make_tuple(el2.first, el2.second, el.first));
+              get_rand_zi_vec(el.first, true);
+            }
+          }
+
+          for (const auto & el : r_map) {
+            needed_feed_vec_sub.emplace_back(std::make_pair(el.second, el.first));
+          }
+
+          std::sort(needed_feed_vec_sub.begin(), needed_feed_vec_sub.end(),
+          [](const std::pair<uint32_t, uint32_t>& l, const std::pair<uint32_t, uint32_t>& r) {
+            return l.second > r.second;
+          });
+
+          int positions_done = -1;
+          uint32_t unfinished_pos = 0;
+          uint32_t partial_done_mult = 0;
+          uint32_t partial_done_num = 0;
+          uint32_t size = needed_feed_vec_sub.size();
+
+          // Check which feeds are already done and mark the position of the remaining ones
+          for (uint32_t i = 0; i != size; ++i) {
+            uint32_t req_mult = needed_feed_vec[i].first;
+            uint32_t req_num = needed_feed_vec[i].second;
+
+            uint32_t got_mult = needed_feed_vec_sub[i].first;
+            uint32_t got_num = needed_feed_vec_sub[i].second;
+
+            if (req_mult > got_mult) {
+              unfinished_pos = i;
+
+              if (got_num == req_num) {
+                partial_done_mult = got_mult;
+
+                if (i != size - 1)
+                  partial_done_num = needed_feed_vec_sub[i + 1].second;
+              } else
+                partial_done_num = got_num;
+
+              break;
+            } else if (req_mult == got_mult && req_num != got_num) {
+              unfinished_pos = i;
+              partial_done_num = got_num;
+            } else
+              positions_done ++;
+          }
+
+          needed_feed_vec_sub.clear();
+
+          // Rewrite the new needed feed vector by subtraction already calculated probes
+          if (positions_done != needed_feed_vec.size() - 1) {
+            // set the correct offset for appending unfinished jobs
+            uint32_t offset = 2;
+
+            for (int i = 0; i <= positions_done; ++i) {
+              uint32_t req_mult = needed_feed_vec[i].first;
+              uint32_t req_num = needed_feed_vec[i].second;
+
+              for (uint32_t j = 0; j != req_mult; ++j) {
+                needed_feed_vec_sub.emplace_back(std::make_pair(0, req_num));
+              }
+            }
+
+            if (positions_done != size - 1) {
+              uint32_t tmp_req_mult = needed_feed_vec[unfinished_pos].first;
+              uint32_t tmp_req_num = needed_feed_vec[unfinished_pos].second;
+
+              for (uint32_t i = 0; i != partial_done_mult; ++i) {
+                needed_feed_vec_sub.emplace_back(std::make_pair(0, tmp_req_num));
+              }
+
+              uint32_t diff = tmp_req_mult - partial_done_mult;
+
+              if (diff != 0) {
+                needed_feed_vec_sub.emplace_back(std::make_pair(1, tmp_req_num - partial_done_num));
+                ++partial_done_num;
+              }
+
+              if (diff != 0 && diff - 1 != 0)
+                needed_feed_vec_sub.emplace_back(std::make_pair(diff - 1, tmp_req_num));
+            } else
+              offset = 1;
+
+            // Append all required probes
+            for (uint32_t i = positions_done + offset; i < needed_feed_vec.size(); ++i) {
+              needed_feed_vec_sub.emplace_back(needed_feed_vec[i]);
+            }
+
+            needed_feed_vec = needed_feed_vec_sub;
+          } else
+            needed_feed_vec.clear();
+        }
+      }
+
+      if (parsed_probes.size() > 0) {
+        auto tmp = parsed_probes[largest_key].back();
+        t_comp = tmp.first;
+        num_comp = tmp.second;
+        zi_ord_comp = largest_key;
+      }
+
+      parsed_probes.clear();
+    }
+
     return false;
   }
 
@@ -3113,30 +3262,70 @@ namespace firefly {
   }
 
   void RatReconst::write_food_to_file(const std::vector<uint32_t>& fed_zi_ord, const FFInt& new_ti, const FFInt& num) {
-    if (tag.size() != 0) {
+    // Don't write probes to the save file if this probe has already been saved
+    if (!write_probes && new_ti == t_comp && num == num_comp && fed_zi_ord == zi_ord_comp) {
+      write_probes = true;
+      return;
+    }
+
+    if (tag.size() != 0 && write_probes) {
       saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
 
       // Write every 10 minutes
-      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600) {
-        ogzstream file;
-        std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
+      //if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600) {
+      ogzstream file;
+      std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
 
-        file.open(file_name.c_str(), std::ios_base::app);
+      file.open(file_name.c_str(), std::ios_base::app);
 
-        for (const auto & el : saved_food) {
-          for (const auto & el2 : std::get<0>(el)) {
-            file << el2 << " ";
-          }
-
-          file << std::get<1>(el) << " " << std::get<2>(el) << "\n";
+      for (const auto & el : saved_food) {
+        for (const auto & el2 : std::get<0>(el)) {
+          file << el2 << " ";
         }
 
-        saved_food.clear();
-
-        file.close();
-        start = std::chrono::high_resolution_clock::now();
+        file << std::get<1>(el) << " " << std::get<2>(el) << " \n";
       }
+
+      saved_food.clear();
+
+      file.close();
+      start = std::chrono::high_resolution_clock::now();
+      //}
     }
   }
-}
 
+  void RatReconst::read_in_probes(const std::string& file_name) {
+    std::string line;
+    std::ifstream ifile(file_name.c_str());
+    igzstream file(file_name.c_str());
+    bool first = true;
+    auto prime_it = parse_prime_number(file_name);
+
+    if (!done && prime_it == prime_number) {
+      while (std::getline(file, line)) {
+        std::vector<uint32_t> tmp_zi_ord = parse_vector_32(line, n - 1);
+        std::vector<FFInt> tmp_probe = parse_vector_FFInt(line, 2);
+
+        if (prime_it == 0)
+          queue.emplace(std::make_tuple(tmp_probe[0], tmp_probe[1], tmp_zi_ord));
+        else
+          parsed_probes[tmp_zi_ord].emplace_back(std::make_pair(tmp_probe[0].n, tmp_probe[1].n));
+      }
+    }
+
+    write_probes = false;
+
+    if (prime_it == 0) {
+      if (queue.size() != 0) {
+        auto tmp = queue.back();
+        t_comp = std::get<0> (tmp);
+        num_comp = std::get<1> (tmp);
+        zi_ord_comp = std::get<2> (tmp);
+      } else
+        write_probes = true;
+
+      from_save_state = false;
+    } else if (parsed_probes.size() == 0)
+      write_probes = true;
+  }
+}

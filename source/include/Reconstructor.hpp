@@ -199,6 +199,7 @@ namespace firefly {
     RatReconst tmp_rec;
     std::vector<FFInt> shift;
     uint32_t min_prime_keep_shift = 0;
+    bool set_anchor_points = false;
     /**
     *  Scan the black-box functions for a sparse shift
     */
