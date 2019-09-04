@@ -36,6 +36,9 @@ Bug fixes
  Thanks to Long Chen for providing an example which could be used for finding this
  error.
 
+ * Fixed a crash with `Nothing left to feed.` which was caused by queuing not
+ enough probes in the safe mode with bunch sizes larger than 1.
+
 
 FireFly 1.3.0
 =============
