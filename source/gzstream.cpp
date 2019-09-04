@@ -21,12 +21,13 @@
 // Revision      : $Revision: 1.7 $
 // Revision_date : $Date: 2003/01/08 14:41:27 $
 // Author(s)     : Deepak Bandyopadhyay, Lutz Kettner
-// 
-// Standard streambuf implementation following Nicolai Josuttis, "The 
+//
+// Standard streambuf implementation following Nicolai Josuttis, "The
 // Standard C++ Library".
 // ============================================================================
 
 //   modified by Johann Usovitsch April, 2017
+//   modified by Jonas Klappert September, 2019
 #include <gzstream.h>
 #include <iostream>
 #include <string.h>  // for memcpy
@@ -43,135 +44,154 @@ namespace GZSTREAM_NAMESPACE {
 // class gzstreambuf:
 // --------------------------------------
 
-int gzstreambuf::bufferSize = 47+1073741824;
+  int gzstreambuf::bufferSize = 47 + 1073741824;
 
-gzstreambuf::gzstreambuf() : opened(0) {
-  buffer = new char [bufferSize];
-  setp( buffer, buffer + (bufferSize-1));
-  setg( buffer + 4,     // beginning of putback area
-        buffer + 4,     // read position
-        buffer + 4);    // end position      
-        // ASSERT: both input & output capabilities will not be used together
-}
+  gzstreambuf::gzstreambuf() : opened(0) {
+    buffer = new char [bufferSize];
+    setp(buffer, buffer + (bufferSize - 1));
+    setg(buffer + 4,      // beginning of putback area
+         buffer + 4,     // read position
+         buffer + 4);    // end position
+    // ASSERT: both input & output capabilities will not be used together
+  }
 
-  
-gzstreambuf* gzstreambuf::open( const char* name, int open_mode) {
-    if ( is_open())
-        return (gzstreambuf*)0;
+
+  gzstreambuf* gzstreambuf::open(const char* name, int open_mode) {
+    if (is_open())
+      return (gzstreambuf*)0;
+
     mode = open_mode;
+
     // no append nor read/write mode
     if ((mode & std::ios::ate) /*|| (mode & std::ios::app)*/
         || ((mode & std::ios::in) && (mode & std::ios::out)))
-        return (gzstreambuf*)0;
+      return (gzstreambuf*)0;
+
     char  fmode[10];
     char* fmodeptr = fmode;
-    if ( mode & std::ios::in)
-        *fmodeptr++ = 'r';
-    else if ( mode & std::ios::out)
-        *fmodeptr++ = 'w';
-    else if(mode & std::ios::app)
-        *fmodeptr++ = 'a';
+
+    if (mode & std::ios::in)
+      *fmodeptr++ = 'r';
+    else if (mode & std::ios::out)
+      *fmodeptr++ = 'w';
+    else if (mode & std::ios::app)
+      *fmodeptr++ = 'a';
+
     *fmodeptr++ = 'b';
     *fmodeptr = '\0';
-    file = gzopen( name, fmode);
+    file = gzopen(name, fmode);
+
     if (file == 0)
-        return (gzstreambuf*)0;
+      return (gzstreambuf*)0;
+
     opened = 1;
     return this;
-}
+  }
 
-gzstreambuf * gzstreambuf::close() {
-    if ( is_open()) {
-        sync();
-        opened = 0;
-        if ( gzclose( file) == Z_OK)
-            return this;
+  gzstreambuf* gzstreambuf::close() {
+    if (is_open()) {
+      sync();
+      opened = 0;
+
+      if (gzclose(file) == Z_OK)
+        return this;
     }
+
 //     delete [] buffer;
     return (gzstreambuf*)0;
-}
+  }
 
-int gzstreambuf::underflow() { // used for input buffer only
-    if ( gptr() && ( gptr() < egptr()))
-        return * reinterpret_cast<unsigned char *>( gptr());
+  int gzstreambuf::underflow() { // used for input buffer only
+    if (gptr() && (gptr() < egptr()))
+      return * reinterpret_cast<unsigned char*>(gptr());
 
-    if ( ! (mode & std::ios::in) || ! opened)
-        return EOF;
+    if (!(mode & std::ios::in) || ! opened)
+      return EOF;
+
     // Josuttis' implementation of inbuf
     int n_putback = gptr() - eback();
-    if ( n_putback > 4)
-        n_putback = 4;
-    memcpy( buffer + (4 - n_putback), gptr() - n_putback, n_putback);
 
-    int num = gzread( file, buffer+4, bufferSize-4);
+    if (n_putback > 4)
+      n_putback = 4;
+
+    memcpy(buffer + (4 - n_putback), gptr() - n_putback, n_putback);
+
+    int num = gzread(file, buffer + 4, bufferSize - 4);
+
     if (num <= 0) // ERROR or EOF
-        return EOF;
+      return EOF;
 
     // reset buffer pointers
-    setg( buffer + (4 - n_putback),   // beginning of putback area
-          buffer + 4,                 // read position
-          buffer + 4 + num);          // end of buffer
+    setg(buffer + (4 - n_putback),    // beginning of putback area
+         buffer + 4,                 // read position
+         buffer + 4 + num);          // end of buffer
 
     // return next character
-    return * reinterpret_cast<unsigned char *>( gptr());    
-}
+    return * reinterpret_cast<unsigned char*>(gptr());
+  }
 
-int gzstreambuf::flush_buffer() {
+  int gzstreambuf::flush_buffer() {
     // Separate the writing of the buffer from overflow() and
     // sync() operation.
     int w = pptr() - pbase();
-    if ( gzwrite( file, pbase(), w) != w)
-        return EOF;
-    pbump( -w);
+
+    if (gzwrite(file, pbase(), w) != w)
+      return EOF;
+
+    pbump(-w);
     return w;
-}
+  }
 
-int gzstreambuf::overflow( int c) { // used for output buffer only
-    if ( ! ( mode & std::ios::out) || ! opened)
-        return EOF;
+  int gzstreambuf::overflow(int c) {  // used for output buffer only
+    if (!(mode & std::ios::out) || ! opened)
+      return EOF;
+
     if (c != EOF) {
-        *pptr() = c;
-        pbump(1);
+      *pptr() = c;
+      pbump(1);
     }
-    if ( flush_buffer() == EOF)
-        return EOF;
-    return c;
-}
 
-int gzstreambuf::sync() {
+    if (flush_buffer() == EOF)
+      return EOF;
+
+    return c;
+  }
+
+  int gzstreambuf::sync() {
     // Changed to use flush_buffer() instead of overflow( EOF)
     // which caused improper behavior with std::endl and flush(),
     // bug reported by Vincent Ricard.
-    if ( pptr() && pptr() > pbase()) {
-        if ( flush_buffer() == EOF)
-            return -1;
+    if (pptr() && pptr() > pbase()) {
+      if (flush_buffer() == EOF)
+        return -1;
     }
+
     return 0;
-}
+  }
 
 // --------------------------------------
 // class gzstreambase:
 // --------------------------------------
 
-gzstreambase::gzstreambase( const char* name, int mode) {
-    init( &buf);
-    open( name, mode);
-}
+  gzstreambase::gzstreambase(const char* name, int mode) {
+    init(&buf);
+    open(name, mode);
+  }
 
-gzstreambase::~gzstreambase() {
+  gzstreambase::~gzstreambase() {
     buf.close();
-}
+  }
 
-void gzstreambase::open( const char* name, int open_mode) {
-  if ( ! buf.open( name, open_mode))
-        clear( rdstate() | std::ios::badbit);
-}
+  void gzstreambase::open(const char* name, int open_mode) {
+    if (! buf.open(name, open_mode))
+      clear(rdstate() | std::ios::badbit);
+  }
 
-void gzstreambase::close() {
-    if ( buf.is_open())
-        if ( ! buf.close())
-            clear( rdstate() | std::ios::badbit);
-}
+  void gzstreambase::close() {
+    if (buf.is_open())
+      if (! buf.close())
+        clear(rdstate() | std::ios::badbit);
+  }
 
 #ifdef GZSTREAM_NAMESPACE
 } // namespace GZSTREAM_NAMESPACE

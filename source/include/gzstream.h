@@ -27,6 +27,7 @@
 // ============================================================================
 
 //   modified by Johann Usovitsch April, 2017
+//   modified by Jonas Klappert September, 2019
 #ifndef GZSTREAM_H
 #define GZSTREAM_H 1
 
