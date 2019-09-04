@@ -165,6 +165,7 @@ namespace firefly {
         auto food = queue.front();
         queue.pop();
         lock.unlock();
+
         interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food));
 
         while (saved_ti.find(curr_zi_order) != saved_ti.end()) {
@@ -220,7 +221,7 @@ namespace firefly {
             FFInt tmp_ti = food.first;
             FFInt tmp_num = food.second;
 
-            write_food_to_file(fed_zi_ord, new_ti, num);
+            write_food_to_file(fed_zi_ord, tmp_ti, tmp_num);
 
             // Get yi's for the current feed
             std::vector<FFInt> yis;
@@ -2628,10 +2629,10 @@ namespace firefly {
 
       for (const auto & el : combined_di) add_non_solved_den(el.first);
 
-      {
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
-        is_singular_system = need_prime_shift;
-      }
+//       {
+//         std::unique_lock<std::mutex> lock_statics(mutex_statics);
+//         is_singular_system = need_prime_shift;
+//       }
 
       {
         std::unique_lock<std::mutex> lock(mutex_status);
@@ -2641,8 +2642,6 @@ namespace firefly {
 
       if (prime_number >= interpolations) {
         if (is_singular_system) {
-          tmp_solved_coefs_den = 0;
-          tmp_solved_coefs_num = 0;
           {
             std::unique_lock<std::mutex> lock_statics(mutex_statics);
             need_prime_shift = true;
@@ -2949,9 +2948,6 @@ namespace firefly {
         else
           solved_degs_den[deg].coefs.emplace(std::make_pair(el.first, el.second));
       }
-
-      //solved_num = PolynomialFF(n, tmp_num);
-      //solved_den = PolynomialFF(n, tmp_den);
     }
 
     if (prime_number < interpolations) {
@@ -3272,25 +3268,25 @@ namespace firefly {
       saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
 
       // Write every 10 minutes
-      //if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600) {
-      ogzstream file;
-      std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
+      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600) {
+        ogzstream file;
+        std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
 
-      file.open(file_name.c_str(), std::ios_base::app);
+        file.open(file_name.c_str(), std::ios_base::app);
 
-      for (const auto & el : saved_food) {
-        for (const auto & el2 : std::get<0>(el)) {
-          file << el2 << " ";
+        for (const auto & el : saved_food) {
+          for (const auto & el2 : std::get<0>(el)) {
+            file << el2 << " ";
+          }
+
+          file << std::get<1>(el) << " " << std::get<2>(el) << " \n";
         }
 
-        file << std::get<1>(el) << " " << std::get<2>(el) << " \n";
+        saved_food.clear();
+
+        file.close();
+        start = std::chrono::high_resolution_clock::now();
       }
-
-      saved_food.clear();
-
-      file.close();
-      start = std::chrono::high_resolution_clock::now();
-      //}
     }
   }
 

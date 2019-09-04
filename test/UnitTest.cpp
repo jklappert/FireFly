@@ -107,6 +107,60 @@ namespace firefly {
   };
 }
 
+void remove_sates() {
+  tinydir_dir dir;
+  tinydir_open_sorted(&dir, "ff_save/states");
+
+  std::vector<std::string> files;
+  std::vector<std::string> paths;
+
+  for (size_t i = 0; i != dir.n_files; ++i) {
+    tinydir_file file;
+    tinydir_readfile_n(&dir, &file, i);
+
+    if (!file.is_dir) {
+      files.emplace_back(file.name);
+    }
+  }
+
+  tinydir_close(&dir);
+
+  for (const auto & file : files) {
+    paths.emplace_back("ff_save/states/" + file);
+  }
+
+  for (const auto & el : paths) {
+    std::remove(el.c_str());
+  }
+}
+
+void remove_probes() {
+  tinydir_dir dir;
+  tinydir_open_sorted(&dir, "ff_save/probes");
+
+  std::vector<std::string> files;
+  std::vector<std::string> paths;
+
+  for (size_t i = 0; i != dir.n_files; ++i) {
+    tinydir_file file;
+    tinydir_readfile_n(&dir, &file, i);
+
+    if (!file.is_dir) {
+      files.emplace_back(file.name);
+    }
+  }
+
+  tinydir_close(&dir);
+
+  for (const auto & file : files) {
+    paths.emplace_back("ff_save/probes/" + file);
+  }
+
+  for (const auto & el : paths) {
+    std::remove(el.c_str());
+  }
+}
+
 using namespace firefly;
 int main() {
   INFO_MSG("Test safe mode");
@@ -167,34 +221,16 @@ int main() {
     r_5.resume_from_saved_state();
     r_5.reconstruct();
     std::remove("ff_save/validation");
+    std::remove("ff_save/scan");
+    std::remove("ff_save/shift");
+    std::remove("ff_save/anchor_points");
     INFO_MSG("Starting from saved states passed");
     std::cout << "\n";
 
     // Remove files
-    tinydir_dir dir;
-    tinydir_open_sorted(&dir, "ff_save/states");
+    remove_sates();
 
-    std::vector<std::string> files;
-    std::vector<std::string> paths;
-
-    for (size_t i = 0; i != dir.n_files; ++i) {
-      tinydir_file file;
-      tinydir_readfile_n(&dir, &file, i);
-
-      if (!file.is_dir) {
-        files.emplace_back(file.name);
-      }
-    }
-
-    tinydir_close(&dir);
-
-    for (const auto & file : files) {
-      paths.emplace_back("ff_save/states/" + file);
-    }
-
-    for (const auto & el : paths) {
-      std::remove(el.c_str());
-    }
+    remove_probes();
 
     INFO_MSG("All tests passed");
   }

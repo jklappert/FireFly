@@ -217,6 +217,9 @@ namespace firefly {
       std::pair<bool, uint32_t> shift_prime = rec->start_from_saved_file(file_paths[i]);
       rec->read_in_probes(probe_files[i]);
 
+      if (safe_mode)
+        rec->set_safe_interpolation();
+
       if (shift_prime.first && shift_prime.second > min_prime_keep_shift) {
         min_prime_keep_shift = shift_prime.second;
       }
@@ -261,10 +264,15 @@ namespace firefly {
       if (shift_file.is_open()) {
         std::getline(shift_file, line);
         tmp_rec.set_shift(parse_vector_FFInt(line, n));
+        shift = tmp_rec.get_zi_shift_vec();
       } else {
         ERROR_MSG("Shift file not found!");
         std::exit(EXIT_FAILURE);
       }
+    }
+
+    if (safe_mode) {
+      scan = false;
     }
 
     if (scan) {
@@ -655,14 +663,21 @@ namespace firefly {
     bool new_prime = false;
 
     if (resume_from_state) {
-      if (prime_it == 0 && items_new_prime != items) {
+      if (prime_it == 0 && /*items_new_prime != items*/items != items_new_prime + items_done) {
         INFO_MSG("Resuming in prime field: F(" + std::to_string(primes()[prime_it]) + ")");
 
-        shift = tmp_rec.get_zi_shift_vec();
+        for (auto & rec : reconst) {
+          if (std::get<3>(rec)->get_prime() == 0) {
+            ++interpolate_jobs;
+            interpolate_job(rec);
+          }
+        }
+
+        /*shift = tmp_rec.get_zi_shift_vec();
 
         uint32_t start = thr_n * bunch_size;
         start_probe_jobs(std::vector<uint32_t>(n - 1, 1), start);
-        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), start);
+        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), start);*/
       } else {
         new_prime = true;
       }
@@ -739,12 +754,15 @@ namespace firefly {
           probes_for_next_prime = thr_n * bunch_size;
         }
 
+        bool shift_disabled = false;
+
         if (!safe_mode && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             if (verbosity > SILENT)
               INFO_MSG("Disable shift");
 
             tmp_rec.disable_shift();
+            shift_disabled = true;
           }
         }
 
@@ -765,20 +783,29 @@ namespace firefly {
 
           anchor_point_file.close();
 
-          std::ifstream shift_file;
-          shift_file.open("ff_save/shift");
+          if (!shift_disabled) {
+            std::ifstream shift_file;
+            shift_file.open("ff_save/shift");
 
-          if (shift_file.is_open()) {
-            std::getline(shift_file, line);
-            tmp_rec.set_shift(parse_vector_FFInt(line, n));
-          } else {
-            ERROR_MSG("Shift file not found!");
-            std::exit(EXIT_FAILURE);
+            if (shift_file.is_open()) {
+              std::getline(shift_file, line);
+              tmp_rec.set_shift(parse_vector_FFInt(line, n));
+            } else {
+              ERROR_MSG("Shift file not found!");
+              std::exit(EXIT_FAILURE);
+            }
+          }
+
+          for (auto & rec : reconst) {
+            if (!std::get<3>(rec)->is_done() && std::get<3>(rec)->get_prime() > prime_it) {
+              ++items_new_prime;
+            }
           }
         } else {
-          shift = tmp_rec.get_zi_shift_vec();
           tmp_rec.generate_anchor_points();
         }
+
+        shift = tmp_rec.get_zi_shift_vec();
 
         if (save_states) {
           std::remove("ff_save/anchor_points");
@@ -838,7 +865,7 @@ namespace firefly {
 
       ++iteration;
 
-      //if (!scan && prime_it == 1 && iteration > 3)
+      //if (!scan && prime_it == 0 && iteration > 446)
       //  std::exit(-1);
 
       average_black_box_time = (average_black_box_time * (total_iterations + iteration - 1) + time) / (total_iterations + iteration);
@@ -1286,6 +1313,11 @@ namespace firefly {
               uint32_t counter = 1;
 
               for (const auto & some_probes : all_required_probes) {
+                if (some_probes.first == 0) {
+                  ++counter;
+                  continue;
+                }
+
                 uint32_t required_probes = some_probes.second;
 
                 for (uint32_t i = 0; i != some_probes.first; ++i) {
@@ -1491,4 +1523,3 @@ namespace firefly {
     }
   }
 }
-
