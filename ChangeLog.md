@@ -1,6 +1,16 @@
 FireFly 1.3.1
 =============
 
+New features
+------------
+
+ * When writing out the states of reconstruction objects to resume in cases of
+ crashes, every 10 minutes all probes which are used in the interpolation are
+ written to corresponding files in the `ff_save/probes` directory. Starting from
+ saved states will now also read in all used probes up to the last saved timestamp
+ and start the reconstruction from this point. This feature helps to ease the
+ harm of crashes.
+
 Changes
 -------
 
@@ -14,7 +24,8 @@ Changes
  * Added a unit test which checks different reconstruction modes. It can be executed
  by calling `make test` in the build directory.
 
- * Added an implementation of the Xoshiro256** PRNG.
+ * Added an implementation of the Xoshiro256** PRNG which is partly used for the
+ generation of pseudo random numbers.
 
 Bug fixes
 ---------
