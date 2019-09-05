@@ -3163,7 +3163,7 @@ namespace firefly {
           needed_feed_vec_sub.clear();
 
           // Rewrite the new needed feed vector by subtraction already calculated probes
-          if (positions_done != needed_feed_vec.size() - 1) {
+          if (positions_done != static_cast<int>(needed_feed_vec.size() - 1)) {
             // set the correct offset for appending unfinished jobs
             uint32_t offset = 2;
 
@@ -3176,7 +3176,7 @@ namespace firefly {
               }
             }
 
-            if (positions_done != size - 1) {
+            if (positions_done != static_cast<int>(size - 1)) {
               uint32_t tmp_req_mult = needed_feed_vec[unfinished_pos].first;
               uint32_t tmp_req_num = needed_feed_vec[unfinished_pos].second;
 
@@ -3268,7 +3268,7 @@ namespace firefly {
       saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
 
       // Write every 10 minutes
-      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600) {
+      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
         ogzstream file;
         std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
 
@@ -3294,7 +3294,6 @@ namespace firefly {
     std::string line;
     std::ifstream ifile(file_name.c_str());
     igzstream file(file_name.c_str());
-    bool first = true;
     auto prime_it = parse_prime_number(file_name);
 
     if (!done && prime_it == prime_number) {
