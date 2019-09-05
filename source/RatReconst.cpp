@@ -2038,9 +2038,10 @@ namespace firefly {
       file << "tag_name\n" << tag_name << "\n";
       file << "normalize_to_den\n1\n";
       file.close();
+      ogzstream file_2;
       file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
-      file.open(file_name.c_str());
-      file.close();
+      file_2.open(file_name.c_str());
+      file_2.close();
     } else
       WARNING_MSG("This object has already a valid tag!");
   }
@@ -2064,8 +2065,10 @@ namespace firefly {
   }
 
   void RatReconst::save_state() {
+    saved_food.clear();
     // Remove old probes and create new file
     std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+
     ogzstream gzfile;
     std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
     gzfile.open(probe_file_name.c_str());
@@ -3268,7 +3271,7 @@ namespace firefly {
       saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
 
       // Write every 10 minutes
-      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
+      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 300) {
         ogzstream file;
         std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
 
@@ -3322,5 +3325,7 @@ namespace firefly {
       from_save_state = false;
     } else if (parsed_probes.size() == 0)
       write_probes = true;
+
+    file.close();
   }
 }
