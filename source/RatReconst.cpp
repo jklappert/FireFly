@@ -3271,7 +3271,7 @@ namespace firefly {
       saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
 
       // Write every 10 minutes
-      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 300) {
+      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
         ogzstream file;
         std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
 
