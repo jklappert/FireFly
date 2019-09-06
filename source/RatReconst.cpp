@@ -141,10 +141,16 @@ namespace firefly {
 
           first_feed = false;
 
+          write_food_to_file(feed_zi_ord, new_ti, num);
+
           queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
         }
-      } else
+      } else {
+        if (!scan)
+          write_food_to_file(feed_zi_ord, new_ti, num);
+
         queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
+      }
     }
 
     return !is_interpolating;
@@ -202,8 +208,8 @@ namespace firefly {
         if (max_deg_num == -1) {// Use Thiele
           check = t_interpolator.add_point(num, new_ti);
 
-          if (!scan)
-            write_food_to_file(fed_zi_ord, new_ti, num);
+          //if (!scan)
+          //  write_food_to_file(fed_zi_ord, new_ti, num);
         } else {
           std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
 
@@ -221,7 +227,7 @@ namespace firefly {
             FFInt tmp_ti = food.first;
             FFInt tmp_num = food.second;
 
-            write_food_to_file(fed_zi_ord, tmp_ti, tmp_num);
+            //write_food_to_file(fed_zi_ord, tmp_ti, tmp_num);
 
             // Get yi's for the current feed
             std::vector<FFInt> yis;
@@ -1526,6 +1532,11 @@ namespace firefly {
 
     {
       std::unique_lock<std::mutex> lock(mutex_status);
+
+      // Remove old probes and create new file
+      if (tag.size() > 0)
+        std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+
       ++prime_number;
       queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
       saved_ti.clear();
@@ -2066,8 +2077,6 @@ namespace firefly {
 
   void RatReconst::save_state() {
     saved_food.clear();
-    // Remove old probes and create new file
-    std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
 
     ogzstream gzfile;
     std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
@@ -3300,7 +3309,6 @@ namespace firefly {
 
   void RatReconst::read_in_probes(const std::string& file_name) {
     std::string line;
-    std::ifstream ifile(file_name.c_str());
     igzstream file(file_name.c_str());
     auto prime_it = parse_prime_number(file_name);
 
