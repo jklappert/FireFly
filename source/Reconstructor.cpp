@@ -674,10 +674,14 @@ namespace firefly {
         for (auto & rec : reconst) {
           if (std::get<3>(rec)->get_prime() == 0) {
             ++interpolate_jobs;
-            interpolate_job(rec);
+            tp.run_priority_task([this, &rec]() {
+              interpolate_job(rec);
+            });
           }
         }
 
+        start_probe_jobs(std::vector<uint32_t>(n - 1, 1), bunch_size);
+        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), bunch_size);
         /*shift = tmp_rec.get_zi_shift_vec();
 
         uint32_t start = thr_n * bunch_size;

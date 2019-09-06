@@ -122,6 +122,12 @@ namespace firefly {
               save_zero_consecutive_prime();
             else
               save_zero_state();
+
+            std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+            ogzstream gzfile;
+            std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
+            gzfile.open(probe_file_name.c_str());
+            gzfile.close();
           }
 
           ++prime_number;
@@ -3314,7 +3320,11 @@ namespace firefly {
 
     if (!done && prime_it == prime_number) {
       while (std::getline(file, line)) {
-        std::vector<uint32_t> tmp_zi_ord = parse_vector_32(line, n - 1);
+        std::vector<uint32_t> tmp_zi_ord;
+
+        if (n > 1)
+          tmp_zi_ord = parse_vector_32(line, n - 1);
+
         std::vector<FFInt> tmp_probe = parse_vector_FFInt(line, 2);
 
         if (prime_it == 0)
