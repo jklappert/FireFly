@@ -136,11 +136,13 @@ namespace firefly {
 
     set_anchor_points = true;
 
-    std::ifstream validation_file;
-    validation_file.open("ff_save/validation");
+    std::ifstream v_file;
+    igzstream validation_file;
+    validation_file.open("ff_save/validation.gz");
+    v_file.open("ff_save/validation.gz");
     std::string line;
 
-    if (validation_file.is_open()) {
+    if (v_file.is_open()) {
       std::getline(validation_file, line);
       std::vector<FFInt> values = parse_vector_FFInt(line);
 
@@ -165,6 +167,7 @@ namespace firefly {
       std::exit(EXIT_FAILURE);
     }
 
+    v_file.close();
     validation_file.close();
 
     save_states = true;
@@ -573,7 +576,8 @@ namespace firefly {
       std::exit(EXIT_FAILURE);
     }
 
-    std::ofstream file;
+    //std::ofstream file;
+    ogzstream file;
 
     if (save_states) {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -591,7 +595,7 @@ namespace firefly {
       file << tmp_str;
       file.close();
 
-      file.open("ff_save/validation");
+      file.open("ff_save/validation.gz");
 
       std::vector<FFInt> rand_zi;
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
