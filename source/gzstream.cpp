@@ -28,7 +28,7 @@
 
 //   modified by Johann Usovitsch April, 2017
 //   modified by Jonas Klappert, Fabian Lange September, 2019
-#include <gzstream.hpp>
+#include "gzstream.hpp"
 #include <iostream>
 #include <string.h>  // for memcpy
 
@@ -60,7 +60,7 @@ namespace firefly {
 
     mode = open_mode;
 
-    // no append nor read/write mode
+    // no read/write mode
     if ((mode & std::ios::ate) /*|| (mode & std::ios::app)*/
         || ((mode & std::ios::in) && (mode & std::ios::out)))
       return (gzstreambuf*)0;
