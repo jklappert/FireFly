@@ -583,7 +583,8 @@ namespace firefly {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       mkdir("ff_save/states", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       mkdir("ff_save/probes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-      file.open("ff_save/anchor_points");
+      std::ofstream anchor_file;
+      anchor_file.open("ff_save/anchor_points");
 
       std::string tmp_str = "";
 
@@ -592,8 +593,8 @@ namespace firefly {
       }
 
       tmp_str += std::string("\n");
-      file << tmp_str;
-      file.close();
+      anchor_file << tmp_str;
+      anchor_file.close();
 
       file.open("ff_save/validation.gz");
 
@@ -869,7 +870,7 @@ namespace firefly {
 
       ++iteration;
 
-      //if (!scan && prime_it == 0 && iteration > 446)
+      //if (!scan && prime_it == 0 && iteration > 450)
       //  std::exit(-1);
 
       average_black_box_time = (average_black_box_time * (total_iterations + iteration - 1) + time) / (total_iterations + iteration);
