@@ -18,7 +18,7 @@
 
 #include "RatReconst.hpp"
 #include "DenseSolver.hpp"
-#include "gzstream.h"
+#include "gzstream.hpp"
 #include "Logger.hpp"
 #include "ParserUtils.hpp"
 #include "ReconstHelper.hpp"
@@ -3268,11 +3268,16 @@ namespace firefly {
       saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
 
       // Write every 10 minutes
-      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600) {
+      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
         ogzstream file;
         std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
 
         file.open(file_name.c_str(), std::ios_base::app);
+
+        //if (file.fail()) {
+        //  ERROR_MSG("Failed opening probe file: " + file_name + "!");
+        //  std::exit(EXIT_FAILURE);
+        //}
 
         for (const auto & el : saved_food) {
           for (const auto & el2 : std::get<0>(el)) {

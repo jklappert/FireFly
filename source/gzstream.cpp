@@ -27,14 +27,12 @@
 // ============================================================================
 
 //   modified by Johann Usovitsch April, 2017
-//   modified by Jonas Klappert September, 2019
-#include <gzstream.h>
+//   modified by Jonas Klappert, Fabian Lange September, 2019
+#include <gzstream.hpp>
 #include <iostream>
 #include <string.h>  // for memcpy
 
-#ifdef GZSTREAM_NAMESPACE
-namespace GZSTREAM_NAMESPACE {
-#endif
+namespace firefly {
 
 // ----------------------------------------------------------------------------
 // Internal classes to implement gzstream. See header file for user classes.
@@ -192,10 +190,4 @@ namespace GZSTREAM_NAMESPACE {
       if (! buf.close())
         clear(rdstate() | std::ios::badbit);
   }
-
-#ifdef GZSTREAM_NAMESPACE
-} // namespace GZSTREAM_NAMESPACE
-#endif
-
-// ============================================================================
-// EOF //
+}

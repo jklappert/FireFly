@@ -22,7 +22,7 @@
 #include "tinydir.h"
 #include "utils.hpp"
 #include "version.hpp"
-#include "gzstream.h"
+#include "gzstream.hpp"
 
 #include <sys/stat.h>
 
