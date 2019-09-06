@@ -2038,9 +2038,10 @@ namespace firefly {
       file << "tag_name\n" << tag_name << "\n";
       file << "normalize_to_den\n1\n";
       file.close();
+      ogzstream file_2;
       file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
-      file.open(file_name.c_str());
-      file.close();
+      file_2.open(file_name.c_str());
+      file_2.close();
     } else
       WARNING_MSG("This object has already a valid tag!");
   }
@@ -2064,8 +2065,10 @@ namespace firefly {
   }
 
   void RatReconst::save_state() {
+    saved_food.clear();
     // Remove old probes and create new file
     std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+
     ogzstream gzfile;
     std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
     gzfile.open(probe_file_name.c_str());
@@ -3163,7 +3166,7 @@ namespace firefly {
           needed_feed_vec_sub.clear();
 
           // Rewrite the new needed feed vector by subtraction already calculated probes
-          if (positions_done != needed_feed_vec.size() - 1) {
+          if (positions_done != static_cast<int>(needed_feed_vec.size() - 1)) {
             // set the correct offset for appending unfinished jobs
             uint32_t offset = 2;
 
@@ -3176,7 +3179,7 @@ namespace firefly {
               }
             }
 
-            if (positions_done != size - 1) {
+            if (positions_done != static_cast<int>(size - 1)) {
               uint32_t tmp_req_mult = needed_feed_vec[unfinished_pos].first;
               uint32_t tmp_req_num = needed_feed_vec[unfinished_pos].second;
 
@@ -3299,7 +3302,6 @@ namespace firefly {
     std::string line;
     std::ifstream ifile(file_name.c_str());
     igzstream file(file_name.c_str());
-    bool first = true;
     auto prime_it = parse_prime_number(file_name);
 
     if (!done && prime_it == prime_number) {
@@ -3328,5 +3330,7 @@ namespace firefly {
       from_save_state = false;
     } else if (parsed_probes.size() == 0)
       write_probes = true;
+
+    file.close();
   }
 }

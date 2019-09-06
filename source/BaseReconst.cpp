@@ -229,7 +229,6 @@ namespace firefly {
     return (x << k) | (x >> (64 - k));
   }
 
-
   uint64_t BaseReconst::xoshiro256ss() {
     uint64_t result;
     {
