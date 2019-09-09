@@ -125,8 +125,9 @@ namespace firefly {
     /**
      *  Parses all saved probes for the current prime field
      *  @param file_name the absolute path to the probes save file
+     *  @return a map of all t values feeded for a specific zi_order
      */
-    void read_in_probes(const std::string& file_name);
+    std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> read_in_probes(const std::string& file_name);
     /**
      *  Enables the scan for a sparsest shift
      */
@@ -358,12 +359,12 @@ namespace firefly {
     bool restart_sparse_interpolation = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now(); /**< Timestamp that tracks the time until probes should be written to disk */
     /**
-     *  Writes current feed to file to reuse this information 
-     *  @param fed_zi_ord the zi order corresponding to the feed
+     *  Writes current feed to file to reuse this information
      *  @param new_ti the t value corresponding to the feed
      *  @param num the value of the probe
+     *  @param fed_zi_ord the zi order corresponding to the feed
      */
-    void write_food_to_file(const std::vector<uint32_t>& fed_zi_ord, const FFInt& new_ti, const FFInt& num);
+    void write_food_to_file(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord);
     /**
      *  Calculates the polynomials emerging from a parameter shift effecting lower degrees
      *  @param poly the seed polynomial
@@ -379,9 +380,6 @@ namespace firefly {
     std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
     bool from_save_state = false; /**< Indicates wether one resumes from a saved state */
     bool write_probes = true;
-    FFInt num_comp;
-    FFInt t_comp;
-    std::vector<uint32_t> zi_ord_comp;
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,

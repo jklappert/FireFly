@@ -218,7 +218,25 @@ namespace firefly {
     for (uint32_t i = 0; i != items; ++i) {
       RatReconst* rec = new RatReconst(n);
       std::pair<bool, uint32_t> shift_prime = rec->start_from_saved_file(file_paths[i]);
-      rec->read_in_probes(probe_files[i]);
+
+      // Fill in already used ts from prior run
+      auto tmp = rec->read_in_probes(probe_files[i]);
+
+      for (const auto & already_chosen_t : tmp) {
+        if (chosen_t.find(already_chosen_t.first) != chosen_t.end()) {
+          auto set = chosen_t[already_chosen_t.first];
+
+          for (const auto & ts : already_chosen_t.second) {
+            if (set.find(ts) == set.end()) {
+              set.emplace(ts);
+            }
+          }
+
+          chosen_t[already_chosen_t.first] = set;
+        } else {
+          chosen_t.emplace(std::make_pair(already_chosen_t.first, already_chosen_t.second));
+        }
+      }
 
       if (safe_mode)
         rec->set_safe_interpolation();
@@ -680,8 +698,9 @@ namespace firefly {
           }
         }
 
-        start_probe_jobs(std::vector<uint32_t>(n - 1, 1), bunch_size);
-        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), bunch_size);
+        // TODO don't start as much ones
+        start_probe_jobs(std::vector<uint32_t>(n - 1, 1), thr_n * bunch_size);
+        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), thr_n * bunch_size);
         /*shift = tmp_rec.get_zi_shift_vec();
 
         uint32_t start = thr_n * bunch_size;
@@ -747,7 +766,12 @@ namespace firefly {
         fed_ones = 0;
         jobs_finished = 0;
         started_probes.clear();
-        chosen_t.clear();
+
+        // Only reset chosen_t when not resuming from a saved state
+        if (!set_anchor_points) {
+          chosen_t.clear();
+        }
+
         feed_jobs = 0;
         interpolate_jobs = 0;
         new_prime = false;

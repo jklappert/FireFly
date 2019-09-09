@@ -101,7 +101,7 @@ namespace firefly {
   }
 
   bool RatReconst::feed(const FFInt& new_ti, const FFInt& num,
-                        const std::vector<uint32_t>& feed_zi_ord,
+                        const std::vector<uint32_t>& fed_zi_ord,
                         const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
 
@@ -147,15 +147,15 @@ namespace firefly {
 
           first_feed = false;
 
-          write_food_to_file(feed_zi_ord, new_ti, num);
+          write_food_to_file(new_ti, num, fed_zi_ord);
 
-          queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
+          queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
         }
       } else {
         if (!scan)
-          write_food_to_file(feed_zi_ord, new_ti, num);
+          write_food_to_file(new_ti, num, fed_zi_ord);
 
-        queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
+        queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
       }
     }
 
@@ -212,10 +212,7 @@ namespace firefly {
             return;
 
         if (max_deg_num == -1) {// Use Thiele
-          check = t_interpolator.add_point(num, new_ti);
-
-          //if (!scan)
-          //  write_food_to_file(fed_zi_ord, new_ti, num);
+          check = t_interpolator.add_point(num, new_ti);;
         } else {
           std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
 
@@ -232,8 +229,6 @@ namespace firefly {
           for (auto & food : t_food) {
             FFInt tmp_ti = food.first;
             FFInt tmp_num = food.second;
-
-            //write_food_to_file(fed_zi_ord, tmp_ti, tmp_num);
 
             // Get yi's for the current feed
             std::vector<FFInt> yis;
@@ -3225,13 +3220,6 @@ namespace firefly {
         }
       }
 
-      if (parsed_probes.size() > 0) {
-        auto tmp = parsed_probes[largest_key].back();
-        t_comp = tmp.first;
-        num_comp = tmp.second;
-        zi_ord_comp = largest_key;
-      }
-
       parsed_probes.clear();
     }
 
@@ -3275,14 +3263,8 @@ namespace firefly {
     return tag_name;
   }
 
-  void RatReconst::write_food_to_file(const std::vector<uint32_t>& fed_zi_ord, const FFInt& new_ti, const FFInt& num) {
-    // Don't write probes to the save file if this probe has already been saved
-    if (!write_probes && new_ti == t_comp && num == num_comp && fed_zi_ord == zi_ord_comp) {
-      write_probes = true;
-      return;
-    }
-
-    if (tag.size() != 0 && write_probes) {
+  void RatReconst::write_food_to_file(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord) {
+    if (tag.size() != 0) {
       saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
 
       // Write every 10 minutes
@@ -3291,11 +3273,6 @@ namespace firefly {
         std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
 
         file.open(file_name.c_str(), std::ios_base::app);
-
-        //if (file.fail()) {
-        //  ERROR_MSG("Failed opening probe file: " + file_name + "!");
-        //  std::exit(EXIT_FAILURE);
-        //}
 
         for (const auto & el : saved_food) {
           for (const auto & el2 : std::get<0>(el)) {
@@ -3313,7 +3290,8 @@ namespace firefly {
     }
   }
 
-  void RatReconst::read_in_probes(const std::string& file_name) {
+  std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> RatReconst::read_in_probes(const std::string& file_name) {
+    std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> tmp {};
     std::string line;
     igzstream file(file_name.c_str());
     auto prime_it = parse_prime_number(file_name);
@@ -3327,6 +3305,8 @@ namespace firefly {
 
         std::vector<FFInt> tmp_probe = parse_vector_FFInt(line, 2);
 
+        tmp[tmp_zi_ord].emplace(tmp_probe[0].n);
+
         if (prime_it == 0)
           queue.emplace(std::make_tuple(tmp_probe[0], tmp_probe[1], tmp_zi_ord));
         else
@@ -3334,21 +3314,8 @@ namespace firefly {
       }
     }
 
-    write_probes = false;
-
-    if (prime_it == 0) {
-      if (queue.size() != 0) {
-        auto tmp = queue.back();
-        t_comp = std::get<0> (tmp);
-        num_comp = std::get<1> (tmp);
-        zi_ord_comp = std::get<2> (tmp);
-      } else
-        write_probes = true;
-
-      from_save_state = false;
-    } else if (parsed_probes.size() == 0)
-      write_probes = true;
-
     file.close();
+
+    return tmp;
   }
 }
