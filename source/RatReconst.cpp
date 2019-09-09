@@ -100,9 +100,9 @@ namespace firefly {
     }
   }
 
-  bool RatReconst::feed(const FFInt& new_ti, const FFInt& num,
-                        const std::vector<uint32_t>& fed_zi_ord,
-                        const uint32_t fed_prime) {
+  std::pair<bool, bool> RatReconst::feed(const FFInt& new_ti, const FFInt& num,
+                                         const std::vector<uint32_t>& fed_zi_ord,
+                                         const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
 
     if (!done && fed_prime == prime_number) {
@@ -147,19 +147,26 @@ namespace firefly {
 
           first_feed = false;
 
-          write_food_to_file(new_ti, num, fed_zi_ord);
+          if (tag.size() != 0)
+            saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
 
           queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
         }
       } else {
-        if (!scan)
-          write_food_to_file(new_ti, num, fed_zi_ord);
+        if (!scan && tag.size() != 0)
+          saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
 
         queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
       }
     }
 
-    return !is_interpolating;
+    bool write_to_file = false;
+
+    if (tag.size() != 0 && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
+      write_to_file = true;
+    }
+
+    return std::make_pair(!is_interpolating, write_to_file);
   }
 
   std::tuple<bool, bool, uint32_t> RatReconst::interpolate() {
@@ -1534,16 +1541,20 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock(mutex_status);
 
+      ++prime_number;
+
       // Remove old probes and create new file
       if (tag.size() != 0) {
-        std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+        while (is_writing_probes) {}
+
+        saved_food.clear();
+        std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number - 1) + ".gz").c_str());
         ogzstream gzfile;
-        std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
+        std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
         gzfile.open(probe_file_name.c_str());
         gzfile.close();
       }
 
-      ++prime_number;
       queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
       saved_ti.clear();
       zi = 1;
@@ -3263,30 +3274,32 @@ namespace firefly {
     return tag_name;
   }
 
-  void RatReconst::write_food_to_file(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord) {
-    if (tag.size() != 0) {
-      saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
+  void RatReconst::write_food_to_file() {
+    // Write every 10 minutes
+    std::unique_lock<std::mutex> lock(mutex_status);
 
-      // Write every 10 minutes
-      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
-        ogzstream file;
-        std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
+    if (!is_writing_probes && saved_food.size() != 0) {
+      is_writing_probes = true;
+      start = std::chrono::high_resolution_clock::now();
+      auto tmp = std::move(saved_food);
+      saved_food.clear();
+      ogzstream file;
+      std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
+      lock.unlock();
 
-        file.open(file_name.c_str(), std::ios_base::app);
+      file.open(file_name.c_str(), std::ios_base::app);
 
-        for (const auto & el : saved_food) {
-          for (const auto & el2 : std::get<0>(el)) {
-            file << el2 << " ";
-          }
-
-          file << std::get<1>(el) << " " << std::get<2>(el) << " \n";
+      for (const auto & el : tmp) {
+        for (const auto & el2 : std::get<0>(el)) {
+          file << el2 << " ";
         }
 
-        saved_food.clear();
-
-        file.close();
-        start = std::chrono::high_resolution_clock::now();
+        file << std::get<1>(el) << " " << std::get<2>(el) << " \n";
       }
+
+      file.close();
+      lock.lock();
+      is_writing_probes = false;
     }
   }
 

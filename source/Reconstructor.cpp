@@ -1274,11 +1274,19 @@ namespace firefly {
 
         if (!done_prime.first) {
           if (done_prime.second == prime_it) {
-            if (std::get<3>(rec)->feed(t, (*probe)[std::get<0>(rec)], zi_order, prime_it)) {
+            auto interpolate_and_write = std::get<3>(rec)->feed(t, (*probe)[std::get<0>(rec)], zi_order, prime_it);
+
+            if (interpolate_and_write.first) {
               ++counter;
 
               tp.run_priority_task([this, &rec]() {
                 interpolate_job(rec);
+              });
+            }
+
+            if (interpolate_and_write.second) {
+              tp.run_priority_task([this, &rec]() {
+                std::get<3>(rec)->write_food_to_file();
               });
             }
           }

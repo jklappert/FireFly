@@ -50,7 +50,7 @@ namespace firefly {
      *  @param fed_prime the corresponding prime number to this feed
      *  @return true if no interpolation is running, false otherwise
      */
-    bool feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord, const uint32_t fed_prime);
+    std::pair<bool, bool> feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord, const uint32_t fed_prime);
     /**
      *  @return the result of the reconstruction as a RationalFunction object
      */
@@ -177,6 +177,13 @@ namespace firefly {
      *  @param anchor_points the anchor points
      */
     void set_anchor_points(const std::vector<FFInt>& anchor_points);
+    /**
+     *  Writes current feed to file to reuse this information
+     *  @param new_ti the t value corresponding to the feed
+     *  @param num the value of the probe
+     *  @param fed_zi_ord the zi order corresponding to the feed
+     */
+    void write_food_to_file();
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -359,13 +366,6 @@ namespace firefly {
     bool restart_sparse_interpolation = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now(); /**< Timestamp that tracks the time until probes should be written to disk */
     /**
-     *  Writes current feed to file to reuse this information
-     *  @param new_ti the t value corresponding to the feed
-     *  @param num the value of the probe
-     *  @param fed_zi_ord the zi order corresponding to the feed
-     */
-    void write_food_to_file(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord);
-    /**
      *  Calculates the polynomials emerging from a parameter shift effecting lower degrees
      *  @param poly the seed polynomial
      *  @param deg the degree of the polynomial
@@ -379,7 +379,7 @@ namespace firefly {
     //std::vector<std::tuple<std::vector<uint32_t>, uint64_t, uint64_t>> parsed_probes; /** Data structre used for storing already used probes in prior runs to resume if crashes occur. First uint64_t is t second is num */
     std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
     bool from_save_state = false; /**< Indicates wether one resumes from a saved state */
-    bool write_probes = true;
+    bool is_writing_probes = false;
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
