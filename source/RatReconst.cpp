@@ -1535,8 +1535,13 @@ namespace firefly {
       std::unique_lock<std::mutex> lock(mutex_status);
 
       // Remove old probes and create new file
-      if (tag.size() > 0)
+      if (tag.size() != 0) {
         std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+        ogzstream gzfile;
+        std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
+        gzfile.open(probe_file_name.c_str());
+        gzfile.close();
+      }
 
       ++prime_number;
       queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
@@ -2078,11 +2083,6 @@ namespace firefly {
 
   void RatReconst::save_state() {
     saved_food.clear();
-
-    ogzstream gzfile;
-    std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
-    gzfile.open(probe_file_name.c_str());
-    gzfile.close();
 
     ogzstream file;
     std::string file_name = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
