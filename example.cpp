@@ -107,7 +107,9 @@ int main() {
   BlackBoxUser bb(par);
 
   // Initialize the Reconstructor
-  Reconstructor reconst(4 /*n_vars*/, 4 /*n_threads*/, 1 /*bunch size*/, bb /*black box*//*, Reconstructor::CHATTY*/);
+  Reconstructor reconst(4 /*n_vars*/, 4 /*n_threads*/, 1 /*bunch size*/,
+                        bb /*black box*//*,
+                        Reconstructor::CHATTY*/ /* verbosity mode*/);
 
   // Enables a scan for a sparse shift
   reconst.enable_scan();
