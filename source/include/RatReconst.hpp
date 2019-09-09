@@ -43,6 +43,7 @@ namespace firefly {
      */
     static void reset();
     /**
+     * TODO
      *  Feeds a black-box probe which will be processed by the class.
      *  @param new_ti the value of t for the current feed
      *  @param num the black-box probe

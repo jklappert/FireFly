@@ -160,13 +160,20 @@ namespace firefly {
       }
     }
 
+    bool interpolate = false;
+
+    if (!is_interpolating) {
+      is_interpolating = true;
+      interpolate = true;
+    }
+
     bool write_to_file = false;
 
     if (tag.size() != 0 && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
       write_to_file = true;
     }
 
-    return std::make_pair(!is_interpolating, write_to_file);
+    return std::make_pair(interpolate, write_to_file);
   }
 
   std::tuple<bool, bool, uint32_t> RatReconst::interpolate() {
@@ -174,11 +181,11 @@ namespace firefly {
 
     if (fed_zero) {
       fed_zero = false;
+      is_interpolating = false;
       return std::make_tuple(true, done, prime_number);
-    } else if (is_interpolating || queue.empty())
-      return std::make_tuple(false, done, prime_number);
-    else {
-      is_interpolating = true;
+    } else {
+      is_interpolating = true; // required for resuming from a saved state
+      // TODO: make this absolutely safe: by setting it in resume?
 
       while (!queue.empty()) {
         auto food = queue.front();
@@ -1545,7 +1552,11 @@ namespace firefly {
 
       // Remove old probes and create new file
       if (tag.size() != 0) {
-        while (is_writing_probes) {}
+        while (is_writing_probes) {
+          // TODO: better with condition variable: as pointer?
+          lock.unlock();
+          lock.lock();
+        }
 
         saved_food.clear();
         std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number - 1) + ".gz").c_str());
@@ -2093,8 +2104,6 @@ namespace firefly {
   }
 
   void RatReconst::save_state() {
-    saved_food.clear();
-
     ogzstream file;
     std::string file_name = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
     file.open(file_name.c_str());
@@ -3275,7 +3284,6 @@ namespace firefly {
   }
 
   void RatReconst::write_food_to_file() {
-    // Write every 10 minutes
     std::unique_lock<std::mutex> lock(mutex_status);
 
     if (!is_writing_probes && saved_food.size() != 0) {
