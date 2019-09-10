@@ -690,7 +690,7 @@ namespace firefly {
         INFO_MSG("Resuming in prime field: F(" + std::to_string(primes()[prime_it]) + ")");
 
         {
-          std::unique_lock<std::mutex> lock_status(status_control);
+          std::unique_lock<std::mutex> lock_status(feed_control);
 
           interpolate_jobs += items;
         }
@@ -708,7 +708,7 @@ namespace firefly {
         }
 
         {
-          std::unique_lock<std::mutex> lock_status(status_control);
+          std::unique_lock<std::mutex> lock_status(feed_control);
 
           interpolate_jobs -= (items - counter);
         }
