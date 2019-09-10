@@ -973,7 +973,7 @@ namespace firefly {
             new_prime = true;
             continue;
           } else {
-            throw std::runtime_error("Nothing left to feed.");
+            throw std::runtime_error("Nothing left to feed: " + std::to_string(items) + " " + std::to_string(items_new_prime) + " " + std::to_string(items_done) + " | " + std::to_string(jobs_finished) + " " + std::to_string(probes.empty()) + " " + std::to_string(bunch.empty()) + " " + std::to_string(probes_bunch.empty()) + " | " + std::to_string(feed_jobs) + " " + std::to_string(interpolate_jobs) + "\n");
           }
         }
       }

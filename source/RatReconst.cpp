@@ -181,8 +181,6 @@ namespace firefly {
 
     if (fed_zero) {
       fed_zero = false;
-      is_interpolating = false;
-      return std::make_tuple(true, done, prime_number);
     } else {
       is_interpolating = true; // required for resuming from a saved state
       // TODO: make this absolutely safe: by setting it in resume?
