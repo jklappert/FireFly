@@ -104,6 +104,8 @@ namespace firefly {
                                          const std::vector<uint32_t>& fed_zi_ord,
                                          const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
+    bool write_to_file = false;
+    bool interpolate = false;
 
     if (!done && fed_prime == prime_number) {
       if (first_feed && !scan) {
@@ -158,19 +160,15 @@ namespace firefly {
 
         queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
       }
-    }
 
-    bool interpolate = false;
+      if (!is_interpolating) {
+        is_interpolating = true;
+        interpolate = true;
+      }
 
-    if (!is_interpolating) {
-      is_interpolating = true;
-      interpolate = true;
-    }
-
-    bool write_to_file = false;
-
-    if (tag.size() != 0 && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
-      write_to_file = true;
+      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
+        write_to_file = true;
+      }
     }
 
     return std::make_pair(interpolate, write_to_file);
@@ -190,6 +188,7 @@ namespace firefly {
       while (!queue.empty()) {
         auto food = queue.front();
         queue.pop();
+
         lock.unlock();
 
         interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food));
@@ -210,6 +209,7 @@ namespace firefly {
     }
 
     is_interpolating = false;
+
     return std::make_tuple(true, done, prime_number);
   }
 
