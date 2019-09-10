@@ -691,7 +691,10 @@ namespace firefly {
 
         for (auto & rec : reconst) {
           if (std::get<3>(rec)->get_prime() == 0) {
-            ++interpolate_jobs;
+            {
+              std::unique_lock<std::mutex> lock_status(status_control);
+              ++interpolate_jobs;
+            }
             tp.run_priority_task([this, &rec]() {
               interpolate_job(rec);
             });
