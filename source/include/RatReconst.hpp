@@ -381,6 +381,7 @@ namespace firefly {
     std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
     bool from_save_state = false; /**< Indicates wether one resumes from a saved state */
     bool is_writing_probes = false;
+    bool start_interpolation = true;
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,

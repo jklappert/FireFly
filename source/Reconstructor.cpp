@@ -689,16 +689,28 @@ namespace firefly {
       if (prime_it == 0 && /*items_new_prime != items*/items != items_new_prime + items_done) {
         INFO_MSG("Resuming in prime field: F(" + std::to_string(primes()[prime_it]) + ")");
 
+        {
+          std::unique_lock<std::mutex> lock_status(status_control);
+
+          interpolate_jobs += items;
+        }
+
+        uint32_t counter = 0;
+
         for (auto & rec : reconst) {
           if (std::get<3>(rec)->get_prime() == 0) {
-            {
-              std::unique_lock<std::mutex> lock_status(status_control);
-              ++interpolate_jobs;
-            }
+            ++counter;
+
             tp.run_priority_task([this, &rec]() {
               interpolate_job(rec);
             });
           }
+        }
+
+        {
+          std::unique_lock<std::mutex> lock_status(status_control);
+
+          interpolate_jobs -= (items - counter);
         }
 
         // TODO don't start as much ones

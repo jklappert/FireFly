@@ -108,6 +108,10 @@ namespace firefly {
     bool interpolate = false;
 
     if (!done && fed_prime == prime_number) {
+      if (first_feed) {
+        start_interpolation = true;
+      }
+
       if (first_feed && !scan) {
         start = std::chrono::high_resolution_clock::now();
 
@@ -161,7 +165,8 @@ namespace firefly {
         queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
       }
 
-      if (!is_interpolating) {
+      if (start_interpolation) {
+        start_interpolation = false;
         interpolate = true;
       }
 
@@ -206,6 +211,7 @@ namespace firefly {
       }
 
       is_interpolating = false;
+      start_interpolation = true;
     }
 
     return std::make_tuple(true, done, prime_number);
