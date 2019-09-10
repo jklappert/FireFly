@@ -162,11 +162,10 @@ namespace firefly {
       }
 
       if (!is_interpolating) {
-        is_interpolating = true;
         interpolate = true;
       }
 
-      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
+      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 60.) {
         write_to_file = true;
       }
     }
@@ -179,9 +178,10 @@ namespace firefly {
 
     if (fed_zero) {
       fed_zero = false;
+    } else if (is_interpolating || queue.empty()) {
+      return std::make_tuple(false, done, prime_number);
     } else {
-      is_interpolating = true; // required for resuming from a saved state
-      // TODO: make this absolutely safe: by setting it in resume?
+      is_interpolating = true;
 
       while (!queue.empty()) {
         auto food = queue.front();
@@ -204,9 +204,9 @@ namespace firefly {
 
         lock.lock();
       }
-    }
 
-    is_interpolating = false;
+      is_interpolating = false;
+    }
 
     return std::make_tuple(true, done, prime_number);
   }
