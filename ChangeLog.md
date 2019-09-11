@@ -5,7 +5,7 @@ New features
 ------------
 
  * When writing out the states of reconstruction objects to resume in cases of
- crashes, every 10 minutes all probes which are used during the interpolation are
+ crashes, every 30 minutes all probes which are calculated and potentially needed are
  written to corresponding files in the `ff_save/probes` directory. Starting from
  saved states will now also read in all used probes up to the last saved timestamp
  and start the reconstruction from this point. This feature helps to ease the
