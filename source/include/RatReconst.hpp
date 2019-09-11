@@ -43,13 +43,12 @@ namespace firefly {
      */
     static void reset();
     /**
-     * TODO
      *  Feeds a black-box probe which will be processed by the class.
      *  @param new_ti the value of t for the current feed
      *  @param num the black-box probe
      *  @param fed_zi_ord the corresponding zi_order to this feed
      *  @param fed_prime the corresponding prime number to this feed
-     *  @return true if no interpolation is running, false otherwise
+     *  @return true if no interpolation is running, false otherwise, second true if one should write saved probes to file
      */
     std::pair<bool, bool> feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord, const uint32_t fed_prime);
     /**
@@ -180,9 +179,6 @@ namespace firefly {
     void set_anchor_points(const std::vector<FFInt>& anchor_points);
     /**
      *  Writes current feed to file to reuse this information
-     *  @param new_ti the t value corresponding to the feed
-     *  @param num the value of the probe
-     *  @param fed_zi_ord the zi order corresponding to the feed
      */
     void write_food_to_file();
   private:
@@ -376,7 +372,7 @@ namespace firefly {
     bool normalizer_den_num = false; /**< If true the real normalization degree is the denominator else the numerator */
     ThieleInterpolator t_interpolator; /**< An object for Thiele interpolations */
     uint32_t interpolations = 1;  /**< Indication how many interpolations should be made until one uses Vandermonde systems */
-    std::vector<std::tuple<std::vector<uint32_t>, FFInt, FFInt>> saved_food; /** Data structre used to write already used probes to a file from which one can resume if crashes occur. First FFInt is t second is num */
+    std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> saved_food; /** Data structre used to write already used probes to a file from which one can resume if crashes occur. First FFInt is t second is num */
     //std::vector<std::tuple<std::vector<uint32_t>, uint64_t, uint64_t>> parsed_probes; /** Data structre used for storing already used probes in prior runs to resume if crashes occur. First uint64_t is t second is num */
     std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
     bool from_save_state = false; /**< Indicates wether one resumes from a saved state */
