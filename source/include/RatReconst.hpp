@@ -376,8 +376,8 @@ namespace firefly {
     //std::vector<std::tuple<std::vector<uint32_t>, uint64_t, uint64_t>> parsed_probes; /** Data structre used for storing already used probes in prior runs to resume if crashes occur. First uint64_t is t second is num */
     std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
     bool from_save_state = false; /**< Indicates wether one resumes from a saved state */
-    bool is_writing_probes = false;
-    bool start_interpolation = true;
+    bool is_writing_probes = false; /**< Indicates wether this object is currently writing to a file */
+    bool start_interpolation = true; /**< Indicats wether one can start the interpolation */
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
