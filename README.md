@@ -23,6 +23,11 @@ FireFly requires:
 * [GMP](https://gmplib.org/) >= 6.1.2
 * [zlib](https://www.zlib.net/) >= 1.2.11
 
+## 3rd party code
+FireFly uses the following 3rd party code:
+* [tinydir](https://github.com/cxong/tinydir)
+* [gzstream](https://www.cs.unc.edu/Research/compgeom/gzstream/)
+
 ## Building FireFly
 FireFly uses CMake to generate files for build automation. To build FireFly one should first create a separate `build` directory inside FireFly's top directory. Afterwards, `cmake` should be called:
 
