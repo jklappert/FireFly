@@ -17,6 +17,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #==================================================================================
 
+# Script to convert a Mathematica expression list to parsable format
 file=$1
 suff="_c"
 file_c="$file$suff"
@@ -32,5 +33,3 @@ sed -i 's/{//g' $file_c
 sed -i 's/}/;/g' $file_c
 sed -i 's/\\//g' $file_c
 sed -i 's/,/;\n/g' $file_c
-
-
