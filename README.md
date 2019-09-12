@@ -23,8 +23,8 @@ FireFly requires:
 * [GMP](https://gmplib.org/) >= 6.1.2
 * [zlib](https://www.zlib.net/) >= 1.2.11
 
-## 3rd party code
-FireFly uses the following 3rd party code:
+#####  Third party code
+FireFly uses the following third party code:
 * [tinydir](https://github.com/cxong/tinydir)
 * [gzstream](https://www.cs.unc.edu/Research/compgeom/gzstream/)
 
