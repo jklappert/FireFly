@@ -16,13 +16,17 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
+#include "gzstream.h"
 #include "ParserUtils.hpp"
 #include "Reconstructor.hpp"
 #include "ReconstHelper.hpp"
 #include "tinydir.h"
 #include "utils.hpp"
 #include "version.hpp"
-#include "gzstream.h"
+
+#ifdef WITH_MPI
+#include "MPIWorker.hpp"
+#endif
 
 #include <sys/stat.h>
 
@@ -268,7 +272,20 @@ namespace firefly {
   void Reconstructor::reconstruct() {
     start = std::chrono::high_resolution_clock::now();
 
-    bool done = false;
+    done = false;
+
+#ifdef WITH_MPI
+    mpi_setup();
+    ThreadPool tp_comm(1);
+    tp_comm.run_priority_task([this]() {
+      {
+        std::unique_lock<std::mutex> lock(mut_val);
+        cond_val.wait(lock);
+      }
+
+      mpi_communicate();
+    });
+#endif
 
     if (!resume_from_state) {
       if (verbosity > SILENT) {
@@ -457,6 +474,7 @@ namespace firefly {
       interpolate_jobs = 0;
       iteration = 0;
       items_done = 0;
+      done = false;
     }
 
     if (found_shift) {
@@ -510,15 +528,62 @@ namespace firefly {
     shift = tmp_rec.get_zi_shift_vec();
     std::vector<uint32_t> zi_order(n - 1, 1);
 
+#ifdef WITH_MPI
+    send_first_jobs();
+#else
     uint32_t start = thr_n * bunch_size;
 
     start_probe_jobs(zi_order, start);
     started_probes.emplace(zi_order, start);
+#endif
 
     FFInt t = 1;
     std::vector<FFInt>* probe = new std::vector<FFInt>;
 
+#ifdef WITH_MPI
+    ++started_probes[zi_order];
+
+    std::vector<FFInt> values(n);
+
+    // check if t was already used for this zi_order
+    {
+      std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
+
+      auto it = chosen_t.find(zi_order);
+
+      if (it != chosen_t.end()) {
+        while (true) {
+          t = tmp_rec.get_rand();
+
+          auto itt = it->second.find(t.n);
+
+          if (itt != it->second.end()) {
+            std::unique_lock<std::mutex> lock_print(print_control);
+
+            WARNING_MSG("Found a duplicate of t, choosing a new one");
+          } else {
+            it->second.emplace(t.n);
+            break;
+          }
+        }
+      } else {
+        t = tmp_rec.get_rand();
+        chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
+      }
+    }
+
+    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
+
+    values[0] = t + shift[0];
+
+    for (uint32_t i = 1; i != n; ++i) {
+      values[i] = rand_zi[i - 1] * t + shift[i];
+    }
+
+    *probe = bb(values);
+#else
     get_probe(t, zi_order, probe, average_black_box_time);
+#endif
 
     ++iteration;
 
@@ -529,6 +594,11 @@ namespace firefly {
     ++fed_ones;
     items = probe->size();
     size_t tag_size = tags.size();
+
+    feeds = std::vector<uint64_t>(items, 1);
+#ifdef WITH_MPI
+    cond_val.notify_one();
+#endif
 
     if (tag_size != 0 && tag_size != items) {
       ERROR_MSG("Number of tags does not match the black box!");
@@ -622,8 +692,7 @@ namespace firefly {
     FFInt t = 1;
     std::vector<uint32_t> zi_order(n - 1, 1);
 
-    bool done = false;
-    bool new_prime = false;
+    new_prime = false;
 
     if (resume_from_state) {
       if (prime_it == 0 && items_new_prime != items) {
@@ -641,6 +710,16 @@ namespace firefly {
 
     while (!done) {
       if (new_prime) {
+#ifdef WITH_MPI
+        {
+          std::unique_lock<std::mutex> lock_val(mut_val);
+
+          value_queue = std::queue<std::vector<uint64_t>>();
+
+          cond_val.wait(lock_val);
+        }
+#endif
+
         tp.kill_all();
 
         clean_reconst();
@@ -701,13 +780,32 @@ namespace firefly {
         items_new_prime = 0;
         one_done = false;
         one_new_prime = false;
+#ifdef WITH_MPI
+        probes_queued = 0;
+#endif
+
+        for (uint64_t i = 0; i != items; ++i) {
+          feeds[i] = 0;
+        }
 
         FFInt::set_new_prime(primes()[prime_it]);
         bb.prime_changed();
 
+#ifdef WITH_MPI
+        {
+          std::unique_lock<std::mutex> lock(future_control);
+
+          results_queue = std::queue<std::pair<uint64_t, std::vector<FFInt>>>();
+        }
+#endif
+
         // if only a small constant is reconstructed it will not ask for new run
         if (probes_for_next_prime == 0) {
+#ifdef WITH_MPI
+          probes_for_next_prime = static_cast<uint32_t>(world_size) * bunch_size; // start even more?
+#else
           probes_for_next_prime = thr_n * bunch_size;
+#endif
         }
 
         if (!safe_mode && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
@@ -772,6 +870,10 @@ namespace firefly {
           started_probes.emplace(std::vector<uint32_t>(n - 1, 1), start);
         }
 
+#ifdef WITH_MPI
+        cond_val.notify_one();
+#endif
+
         probes_for_next_prime = 0;
       }
 
@@ -827,7 +929,13 @@ namespace firefly {
               lock_feed.unlock();
               lock_future.lock();
 
+#ifndef WITH_MPI
               if (jobs_finished > 0 || !probes.empty() || !bunch.empty() || !probes_bunch.empty()) {
+#else
+              std::unique_lock<std::mutex> lck(mut_val);
+
+              if (probes_queued != 0) {
+#endif
                 lock_future.unlock();
 
                 break;
@@ -839,7 +947,13 @@ namespace firefly {
 
             lock_future.lock();
 
+#ifndef WITH_MPI
             if (jobs_finished > 0 || !probes.empty() || !bunch.empty() || !probes_bunch.empty()) {
+#else
+            std::unique_lock<std::mutex> lck(mut_val);
+
+            if (probes_queued != 0) {
+#endif
               continue;
             }
 
@@ -854,7 +968,23 @@ namespace firefly {
             new_prime = true;
             continue;
           } else {
-            throw std::runtime_error("Nothing left to feed.");
+            uint64_t tmpi = 0;
+
+            for (const auto & rec : reconst) {
+              auto tmp = std::get<3>(rec)->get_done_and_prime();
+              std::cout << tmp.first << " " << tmp.second << " " << feeds[tmpi] << "\n";
+              ++tmpi;
+            }
+
+            std::cout << "\n";
+
+            for (const auto & rec : reconst) {
+              std::get<3>(rec)->interpolate();
+              auto tmp = std::get<3>(rec)->get_done_and_prime();
+              std::cout << tmp.first << " " << tmp.second << "\n";
+            }
+
+            throw std::runtime_error("Nothing left to feed: " + std::to_string(iteration) + " | " + std::to_string(probes_queued) + " " + std::to_string(results_queue.size()) + " " + std::to_string(value_queue.size()) + " | " + std::to_string(feed_jobs) + " " + std::to_string(interpolate_jobs));
           }
         }
       }
@@ -897,10 +1027,15 @@ namespace firefly {
     }
 
     if (bunch_size == 1) {
+#ifndef WITH_MPI
       std::vector<FFInt> values(n);
+#endif
       FFInt t;
 
       for (uint32_t j = 0; j != to_start; ++j) {
+#ifdef WITH_MPI
+        std::vector<uint64_t> values(n + 1);
+#endif
         t = tmp_rec.get_rand();
 
         // check if t was already used for this zi_order
@@ -924,10 +1059,26 @@ namespace firefly {
               it->second.emplace(t.n);
             }
           } else {
-            chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
+            chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
           }
         }
 
+#ifdef WITH_MPI
+        values[1] = (t + shift[0]).n;
+
+        for (uint32_t i = 1; i != n; ++i) {
+          values[i + 1] = (rand_zi[i - 1] * t + shift[i]).n;
+        }
+
+        std::unique_lock<std::mutex> lock_val(mut_val);
+
+        values[0] = ind;
+
+        index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
+        ++ind;
+
+        value_queue.emplace(std::move(values));
+#else
         values[0] = t + shift[0];
 
         for (uint32_t i = 1; i != n; ++i) {
@@ -982,7 +1133,15 @@ namespace firefly {
 
           std::get<2>(*it) = std::move(future);
         }
+#endif
       }
+
+#ifdef WITH_MPI
+      std::unique_lock<std::mutex> lock_val(mut_val);
+
+      probes_queued += static_cast<uint64_t>(to_start);
+      new_jobs = true;
+#endif
     } else {
       for (uint32_t j = 0; j != to_start / bunch_size; ++j) {
         std::vector<FFInt> t_vec;
@@ -1016,7 +1175,7 @@ namespace firefly {
                 it->second.emplace(t.n);
               }
             } else {
-              chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
+              chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
             }
           }
 
@@ -1090,21 +1249,38 @@ namespace firefly {
     }
 
     if (bunch_size == 1) {
-      auto it = finished_probes_it.front();
-      finished_probes_it.pop();
+#ifdef WITH_MPI
+      if (!finished_probes_it.empty()) {
+#endif
+        auto it = finished_probes_it.front();
+        finished_probes_it.pop();
 
-      //auto start = std::chrono::high_resolution_clock::now();
-      (std::get<2>(*it)).wait();
-      //auto end = std::chrono::high_resolution_clock::now();
-      //std::chrono::duration<double, std::micro> elapsed = end-start;
-      //std::cout << "Waited " << elapsed.count() << " micro s\n";
+        //auto start = std::chrono::high_resolution_clock::now();
+        (std::get<2>(*it)).wait();
+        //auto end = std::chrono::high_resolution_clock::now();
+        //std::chrono::duration<double, std::micro> elapsed = end-start;
+        //std::cout << "Waited " << elapsed.count() << " micro s\n";
 
-      t = std::get<0>(*it);
-      zi_order = std::get<1>(*it);
-      std::pair<std::vector<FFInt>, double> tmp = (std::get<2>(*it)).get();
-      *probe = std::move(tmp.first);
-      time = tmp.second;
-      probes.erase(it);
+        t = std::get<0>(*it);
+        zi_order = std::get<1>(*it);
+        std::pair<std::vector<FFInt>, double> tmp = (std::get<2>(*it)).get();
+        *probe = std::move(tmp.first);
+        time = tmp.second;
+        probes.erase(it);
+#ifdef WITH_MPI
+      } else {
+        auto tmp = std::move(results_queue.front());
+        results_queue.pop();
+        *probe = std::move(tmp.second);
+        auto tmp2 = index_map[tmp.first];
+        t = tmp2.first;
+        zi_order = std::move(tmp2.second);
+
+        std::unique_lock<std::mutex> lck(mut_val);
+
+        --probes_queued;
+      }
+#endif
     } else {
       if (bunch.empty()) {
         auto it = finished_probes_bunch_it.front();
@@ -1145,6 +1321,8 @@ namespace firefly {
 
     uint32_t counter = 0;
 
+    uint64_t tmp = 0;
+
     for (auto & rec : reconst) {
       std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
@@ -1155,7 +1333,12 @@ namespace firefly {
 
         if (!done_prime.first) {
           if (done_prime.second == prime_it) {
-            if (std::get<3>(rec)->feed(t, (*probe)[std::get<0>(rec)], zi_order, prime_it)) {
+            {
+              std::unique_lock<std::mutex> lock(feed_control);
+              ++feeds[tmp];
+            }
+
+            if (std::get<3>(rec)->feed(t, (*probe)[std::get<0>(rec)], zi_order, prime_it) || true) {
               ++counter;
 
               tp.run_priority_task([this, &rec]() {
@@ -1165,6 +1348,7 @@ namespace firefly {
           }
         }
       }
+      ++tmp;
     }
 
     delete probe;
@@ -1431,4 +1615,287 @@ namespace firefly {
       }
     }
   }
+
+#ifdef WITH_MPI
+  void Reconstructor::mpi_setup() {
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Bcast(&prime_it, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
+  }
+
+  void Reconstructor::send_first_jobs() {
+    std::vector<uint32_t> zi_order = std::vector<uint32_t>(n - 1, 1);
+    started_probes.emplace(std::make_pair(zi_order, 0));
+
+    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(std::vector<uint32_t>(n - 1, 1), true);
+
+    for (int i = 1; i != world_size; ++i) {
+      uint64_t start;
+      MPI_Recv(&start, 1, MPI_UINT64_T, i, RESULT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+      //std::cout << "starting " << start << " jobs on worker " << i << "\n";
+
+      nodes.emplace(std::make_pair(i, start));
+
+      probes_queued += start;
+      started_probes[zi_order] += start;
+      uint64_t values[static_cast<uint32_t>(start) * (n + 1)];
+
+      for (uint32_t ii = 0; ii != static_cast<uint32_t>(start); ++ii) {
+        values[ii * (n + 1)] = ind;
+
+        FFInt t = tmp_rec.get_rand();
+
+        // check if t was already used for this zi_order
+        auto it = chosen_t.find(zi_order);
+
+        if (it != chosen_t.end()) {
+          auto itt = it->second.find(t.n);
+
+          if (itt != it->second.end()) {
+            --ii;
+
+            std::unique_lock<std::mutex> lock_print(print_control);
+
+            WARNING_MSG("Found a duplicate of t, choosing a new one");
+
+            continue;
+          } else {
+            it->second.emplace(t.n);
+          }
+        } else {
+          chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
+        }
+
+        values[ii * (n + 1) + 1] = (t + shift[0]).n;
+
+        for (uint32_t j = 1; j != n; ++j) {
+          values[ii * (n + 1) + j + 1] = (t * rand_zi[j - 1] + shift[j]).n;
+        }
+
+        index_map.emplace(std::make_pair(ind, std::make_pair(t, std::vector<uint32_t>(n - 1, 1))));
+        ++ind;
+      }
+
+      MPI_Send(&values, static_cast<int>(static_cast<uint32_t>(start) * (n + 1)), MPI_UINT64_T, i, VALUES, MPI_COMM_WORLD);
+    }
+  }
+
+  void Reconstructor::mpi_communicate() {
+    while (true) {
+      int flag_ext = 0;
+      MPI_Status status;
+
+      bool restart_empty_nodes = false;
+
+      while (!flag_ext) {
+        MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag_ext, &status);
+
+        //std::cout << "empty size: " << empty_nodes.size() << " " << new_jobs.load() << "\n";
+
+        if (new_prime || done) {
+          break;
+        } else if (!empty_nodes.empty() && new_jobs) {
+          restart_empty_nodes = true;
+          break;
+        }
+      }
+
+      if (done) {
+        MPI_Request requests[world_size - 1];
+
+        for (int i = 1; i != world_size; ++i) {
+          uint64_t tmp;
+          MPI_Isend(&tmp, 1, MPI_UINT64_T, i, END, MPI_COMM_WORLD, &requests[i - 1]);
+        }
+
+        MPI_Waitall(world_size - 1, requests, MPI_STATUSES_IGNORE);
+
+        int flag = 1;
+        MPI_Status status;
+
+        while (flag) {
+          MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag, &status);
+
+          if (flag) {
+            int amount;
+            MPI_Get_count(&status, MPI_UINT64_T, &amount);
+
+            uint64_t tmp[amount];
+            MPI_Recv(tmp, amount, MPI_UINT64_T, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
+          }
+        }
+
+        break;
+      } else if (new_prime) {
+        MPI_Request requests[world_size - 1];
+
+        //std::cout << "com np\n";
+
+        for (int i = 1; i != world_size; ++i) {
+          uint64_t prime_tmp = 1 + static_cast<uint64_t>(prime_it);
+          MPI_Isend(&prime_tmp, 1, MPI_UINT64_T, i, NEW_PRIME, MPI_COMM_WORLD, &requests[i - 1]);
+        }
+
+        MPI_Waitall(world_size - 1, requests, MPI_STATUSES_IGNORE);
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        int flag = 1;
+        MPI_Status status;
+
+        while (flag) {
+          MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag, &status);
+
+          if (flag) {
+            int amount;
+            MPI_Get_count(&status, MPI_UINT64_T, &amount);
+
+            //std::cout << "garbage recieved: " << (static_cast<uint32_t>(amount) - 1) / (items + 1) << "\n";
+
+            uint64_t tmp[amount];
+            MPI_Recv(tmp, amount, MPI_UINT64_T, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
+          }
+        }
+
+        //std::cout << "com rec\n";
+
+        cond_val.notify_one();
+
+        std::unique_lock<std::mutex> lock_val(mut_val);
+        cond_val.wait(lock_val);
+
+        empty_nodes = std::queue<std::pair<int, uint64_t>>();
+
+        //std::cout << "com through\n";
+
+        for (int i = 1; i != world_size; ++i) {
+          uint64_t free_slots;
+          MPI_Recv(&free_slots, 1, MPI_UINT64_T, i, RESULT, MPI_COMM_WORLD, &status);
+
+          uint64_t size = std::min(free_slots, static_cast<uint64_t>(value_queue.size()));
+
+          //std::cout << "sending " << size << " jobs\n";
+
+          if (size != 0) {
+            uint64_t values[size * (n + 1)];
+
+            for (uint64_t i = 0; i != size; ++i) {
+              values[i * (n + 1)] = value_queue.front()[0];
+
+              for (uint64_t j = 0; j != n; ++j) {
+                values[i * (n + 1) + 1 + j] = value_queue.front()[1 + j];
+              }
+
+              value_queue.pop();
+            }
+
+            MPI_Send(&values, static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+          } else if (free_slots == nodes[status.MPI_SOURCE]) {
+            //std::cout << "com np empty nodes " << status.MPI_SOURCE << " " << free_slots << "\n";
+            empty_nodes.emplace(std::make_pair(status.MPI_SOURCE, free_slots));
+          }
+        }
+      } else if (restart_empty_nodes) {
+        std::unique_lock<std::mutex> lock_val(mut_val);
+
+        while (!empty_nodes.empty() && !value_queue.empty()) {
+          auto node = empty_nodes.front();
+          empty_nodes.pop();
+
+          uint64_t available_jobs = static_cast<uint64_t>(value_queue.size());
+          uint64_t size = std::min(node.second, available_jobs);
+          uint64_t values[size * (n + 1)];
+
+          for (uint64_t i = 0; i != size; ++i) {
+            values[i * (n + 1)] = value_queue.front()[0];
+
+            for (uint64_t j = 0; j != n; ++j) {
+              values[i * (n + 1) + 1 + j] = value_queue.front()[1 + j];
+            }
+
+            value_queue.pop();
+          }
+
+          //std::cout << "restart: sending " << size << " jobs\n";
+
+          MPI_Send(&values, static_cast<int>(size * (n + 1)), MPI_UINT64_T, node.first, VALUES, MPI_COMM_WORLD);
+        }
+
+        if (value_queue.empty()) {
+          new_jobs = false;
+        }
+      } else {
+        //while (items == 0) {} // wait until items is set
+
+        int amount;
+        MPI_Get_count(&status, MPI_UINT64_T, &amount);
+
+        if ((static_cast<uint32_t>(amount) - 1) % (items + 1) != 0) {
+          ERROR_MSG("Corrupted results recieved: " + std::to_string(amount - 1));
+          std::exit(EXIT_FAILURE);
+        }
+
+        uint32_t new_results = (static_cast<uint32_t>(amount) - 1) / (items + 1);
+
+        //std::cout << "comm recieving " << new_results << " results \n";
+
+        uint64_t results_list[amount];
+        MPI_Recv(results_list, amount, MPI_UINT64_T, status.MPI_SOURCE, RESULT, MPI_COMM_WORLD, &status);
+
+        for (uint32_t i = 0; i != new_results; ++i) {
+          uint64_t index = results_list[i * (items + 1)];
+          std::vector<FFInt> results;
+          results.reserve(items);
+
+          for (uint32_t j = 1; j != items + 1; ++j) {
+            results.emplace_back(results_list[i * (items + 1) + j]);
+          }
+
+          std::unique_lock<std::mutex> lock_res(future_control);
+
+          results_queue.emplace(std::make_pair(index, std::move(results)));
+        }
+
+        {
+          std::unique_lock<std::mutex> lock_res(future_control);
+
+          jobs_finished += new_results;
+
+          condition_future.notify_one();
+        }
+
+        uint64_t free_slots = results_list[amount - 1];
+
+        std::unique_lock<std::mutex> lock_val(mut_val);
+
+        uint64_t size = std::min(free_slots, static_cast<uint64_t>(value_queue.size()));
+
+        if (size != 0) {
+          uint64_t values[size * (n + 1)];
+
+          for (uint64_t i = 0; i != size; ++i) {
+            values[i * (n + 1)] = value_queue.front()[0];
+
+            for (uint64_t j = 0; j != n; ++j) {
+              values[i * (n + 1) + 1 + j] = value_queue.front()[1 + j];
+            }
+
+            value_queue.pop();
+          }
+
+          lock_val.unlock();
+
+          //std::cout << "sending " << size << " jobs\n";
+
+          MPI_Send(&values, static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+        } else if (free_slots == nodes[status.MPI_SOURCE]) {
+          //std::cout << "empty node " << status.MPI_SOURCE << " " << free_slots << "\n";
+          empty_nodes.emplace(std::make_pair(status.MPI_SOURCE, free_slots));
+        } else {
+          MPI_Send(NULL, 0, MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+        }
+      }
+    }
+  }
+#endif
 }

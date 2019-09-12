@@ -146,6 +146,7 @@ namespace firefly {
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     enum RatReconst_status {RECONSTRUCTING, DONE, DELETED};
+
   private:
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     std::chrono::high_resolution_clock::time_point prime_start = std::chrono::high_resolution_clock::now();
@@ -162,6 +163,9 @@ namespace firefly {
     std::vector<std::string> file_paths;
     bool safe_mode = false;
     uint32_t prime_it = 0;
+    std::atomic<bool> new_prime = {false};
+    std::atomic<bool> done = {false};
+    std::atomic<bool> new_jobs = {false};
     ThreadPool tp;
     std::mutex future_control;
     std::mutex job_control;
@@ -241,5 +245,27 @@ namespace firefly {
      *  Removes all RatReconst from reconst which are flagged as DELETE
      */
     void clean_reconst();
+    uint64_t probes_queued = 0;
+    std::vector<uint64_t> feeds;
+    std::queue<std::vector<uint64_t>> value_queue;
+    std::queue<std::pair<uint64_t, std::vector<FFInt>>> results_queue;
+#ifdef WITH_MPI
+    int world_size;
+    uint64_t ind = 0;
+    std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
+    std::unordered_map<int, uint64_t> nodes;
+    std::queue<std::pair<int, uint64_t>> empty_nodes;
+    std::mutex mut_val;
+    std::condition_variable cond_val;
+    //std::queue<std::vector<uint64_t>> value_queue;
+    //std::queue<std::pair<uint64_t, std::vector<FFInt>>> results_queue;
+    //uint64_t probes_queued = 0;
+    /**
+     *  TODO
+     */
+    void mpi_setup();
+    void send_first_jobs();
+    void mpi_communicate();
+#endif
   };
 }

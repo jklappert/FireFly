@@ -32,7 +32,6 @@
 #include <vector>
 
 namespace firefly {
-
   /**
    * @class ThreadPool
    * @brief A pool of threads
@@ -220,5 +219,4 @@ namespace firefly {
       }
     }
   };
-
 }

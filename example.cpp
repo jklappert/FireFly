@@ -21,6 +21,10 @@
 #include "ShuntingYardParser.hpp"
 #include "Tests.hpp"
 
+#ifdef WITH_MPI
+#include "MPIWorker.hpp"
+#endif
+
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
   class BlackBoxUser : public BlackBoxBase {
@@ -100,12 +104,25 @@ namespace firefly {
 
 using namespace firefly;
 int main() {
+#ifdef WITH_MPI
+  int provided;
+  MPI_Init_thread(NULL, NULL, MPI_THREAD_SERIALIZED, &provided);
+
+  int process;
+  MPI_Comm_rank(MPI_COMM_WORLD, &process);
+
+  char processor_name[MPI_MAX_PROCESSOR_NAME];
+  int name_len;
+  MPI_Get_processor_name(processor_name, &name_len);
+#endif
+
   // Parse the functions from "../s_y_4_v.m" with the variables x1, y, zZ, W
   ShuntingYardParser par("../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
 
   // Create the user defined black box
   BlackBoxUser bb(par);
 
+#ifndef WITH_MPI
   // Initialize the Reconstructor
   Reconstructor reconst(4 /*n_vars*/, 4 /*n_threads*/, 1 /*bunch size*/, bb /*black box*//*, Reconstructor::CHATTY*/);
 
@@ -139,6 +156,21 @@ int main() {
 
   // Resets all statics in RatReconst to start a new reconstruction
   //RatReconst::reset();
+#else
+  if (process == master) {
+    std::cout << "master on " << processor_name << ": " << std::thread::hardware_concurrency() << "\n";
+
+    Reconstructor reconst(4 /*n_vars*/, std::thread::hardware_concurrency() - 1 /*n_threads*/, 1 /*bunch size*/, bb /*black box*//*, Reconstructor::CHATTY*/);
+
+    reconst.reconstruct();
+  } else {
+    std::cout << "worker " << process << " on " << processor_name << ": " << std::thread::hardware_concurrency() << "\n";
+
+    MPIWorker(4, std::thread::hardware_concurrency(), bb);
+  }
+
+  MPI_Finalize();
+#endif
 
   return 0;
 }

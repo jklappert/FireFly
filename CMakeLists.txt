@@ -3,11 +3,6 @@ project(FireFly VERSION 1.3.0 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
-find_package(GMP REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(MPI REQUIRED)
-include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-
 # decleare some colours
 if(NOT WIN32)
   string(ASCII 27 Esc)
@@ -29,6 +24,9 @@ if(NOT WIN32)
   set(BoldWhite   "${Esc}[1;37m")
 endif()
 
+find_package(GMP REQUIRED)
+find_package(ZLIB REQUIRED)
+
 # if you want to use FLINT instead of our default implementation, call cmake with
 # cmake -DWITH_FLINT=true ..
 # set(WITH_FLINT false)
@@ -40,6 +38,11 @@ elseif("${WITH_FLINT}" STREQUAL true)
 else()
   message("-- ${Red}Using default implementation of modular arithmetic. This can be much slower than FLINT!${ColourReset}")
   add_definitions(-DDEFAULT)
+endif()
+
+if("${MPI}" STREQUAL true)
+  find_package(MPI REQUIRED)
+  add_definitions(-DWITH_MPI)
 endif()
 
 # set the build type to release. If one needs debugging symbols, compile
@@ -68,11 +71,14 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 
 # include headers
 include_directories(${INCLUDE_PATH})
+include_directories(${GMP_INCLUDE_DIR})
+include_directories(${ZLIB_INCLUDE_DIRS})
 if("${WITH_FLINT}" STREQUAL true)
   include_directories(${FLINT_INCLUDE_DIR}/flint)
 endif()
-include_directories(${GMP_INCLUDE_DIR})
-include_directories(${ZLIB_INCLUDE_DIRS})
+if("${MPI}" STREQUAL true)
+  include_directories(${MPI_INCLUDE_PATH})
+endif()
 
 # Firefly library files
 set(LIBSOURCES
@@ -117,6 +123,11 @@ set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/ShuntingYardParser.cpp
   ${SOURCE_PATH}/utils.cpp)
 
+if("${MPI}" STREQUAL "true")
+  set(LIBSOURCES ${LIBSOURCES} ${SOURCE_PATH}/MPIWorker.cpp)
+  set(LIBSOURCES_SHRD ${LIBSOURCES_SHRD} ${SOURCE_PATH}/MPIWorker.cpp)
+endif()
+
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
@@ -129,14 +140,19 @@ set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
 add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
 set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 
+set(LIBS FireFly_static gmp ${ZLIB_LIBRARIES})
+if("${WITH_FLINT}" STREQUAL true)
+  set(LIBS ${LIBS} flint)
+endif()
+if("${MPI}" STREQUAL true)
+  set(LIBS ${LIBS} ${MPI_CXX_LIBRARIES})
+endif()
+
 if("${CUSTOM}" STREQUAL "true")
   message("-- ${Red}Using custom modular arithmetic. The example is thus not compiled.${ColourReset}")
-elseif("${WITH_FLINT}" STREQUAL "true")
-  add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-  target_link_libraries(example FireFly_static gmp ${ZLIB_LIBRARIES} flint)
 else()
   add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-  target_link_libraries(example FireFly_static gmp ${ZLIB_LIBRARIES})
+  target_link_libraries(example ${LIBS})
 endif()
 
 # install libraries
@@ -146,10 +162,12 @@ install(
   LIBRARY DESTINATION lib
 )
 
+set(PKG_LIBS "-lfirefly -lgmp")
 if("${WITH_FLINT}" STREQUAL "true")
-  set(PKG_LIBS "-lfirefly -lgmp -lflint")
-else()
-  set(PKG_LIBS "-lfirefly -lgmp")
+  set(PKG_LIBS "${PKG_LIBS} -lflint")
+endif()
+if("${MPI}" STREQUAL "true")
+  set(PKG_LIBS "${PKG_LIBS} ${MPI_CXX_LIBRARIES}")
 endif()
 
 configure_file("cmake/pc.in" "firefly.pc" @ONLY)
@@ -187,6 +205,10 @@ install(FILES
   "${INCLUDE_PATH}/utils.hpp"
   "${INCLUDE_PATH}/version.hpp"
   DESTINATION "${INCLUDE_INSTALL_DIR}")
+
+if("${MPI}" STREQUAL "true")
+  install(FILES "${INCLUDE_PATH}/MPIWorker.hpp" DESTINATION "${INCLUDE_INSTALL_DIR}")
+endif()
 
 # adding documentation
 add_subdirectory(doc)
