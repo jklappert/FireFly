@@ -340,7 +340,14 @@ namespace firefly {
     tp_comm.run_priority_task([this]() {
       {
         std::unique_lock<std::mutex> lock(mut_val);
-        cond_val.wait(lock);
+
+        while (!new_jobs) {
+          cond_val.wait(lock);
+        }
+
+        if (value_queue.empty()) {
+          new_jobs = false;
+        }
       }
 
       mpi_communicate();
@@ -656,7 +663,13 @@ namespace firefly {
 
     feeds = std::vector<uint64_t>(items, 1);
 #ifdef WITH_MPI
-    cond_val.notify_one();
+    {
+      std::unique_lock<std::mutex> lock_val(mut_val);
+
+      new_jobs = true;
+
+      cond_val.notify_one();
+    }
 #endif
 
     if (tag_size != 0 && tag_size != items) {
@@ -802,6 +815,7 @@ namespace firefly {
           std::unique_lock<std::mutex> lock_val(mut_val);
 
           value_queue = std::queue<std::vector<uint64_t>>();
+          new_jobs = false;
 
           cond_val.wait(lock_val);
         }
@@ -1885,8 +1899,6 @@ namespace firefly {
 
         MPI_Waitall(world_size - 1, requests, MPI_STATUSES_IGNORE);
 
-        MPI_Barrier(MPI_COMM_WORLD);
-
         int flag = 1;
         MPI_Status status;
 
@@ -1904,12 +1916,17 @@ namespace firefly {
           }
         }
 
+        MPI_Barrier(MPI_COMM_WORLD);
+
         //std::cout << "com rec\n";
 
         cond_val.notify_one();
 
         std::unique_lock<std::mutex> lock_val(mut_val);
-        cond_val.wait(lock_val);
+
+        while (!new_jobs) {
+          cond_val.wait(lock_val);
+        }
 
         empty_nodes = std::queue<std::pair<int, uint64_t>>();
 
@@ -1972,8 +1989,6 @@ namespace firefly {
           new_jobs = false;
         }
       } else {
-        //while (items == 0) {} // wait until items is set
-
         int amount;
         MPI_Get_count(&status, MPI_UINT64_T, &amount);
 
@@ -2028,6 +2043,10 @@ namespace firefly {
             }
 
             value_queue.pop();
+          }
+
+          if (value_queue.empty()) {
+            new_jobs = false;
           }
 
           lock_val.unlock();

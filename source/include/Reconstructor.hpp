@@ -166,7 +166,6 @@ namespace firefly {
     uint32_t prime_it = 0;
     std::atomic<bool> new_prime = {false};
     std::atomic<bool> done = {false};
-    std::atomic<bool> new_jobs = {false};
     ThreadPool tp;
     std::mutex future_control;
     std::mutex job_control;
@@ -259,6 +258,7 @@ namespace firefly {
     std::queue<std::pair<int, uint64_t>> empty_nodes;
     std::mutex mut_val;
     std::condition_variable cond_val;
+    std::atomic<bool> new_jobs = {false};
     //std::queue<std::vector<uint64_t>> value_queue;
     //std::queue<std::pair<uint64_t, std::vector<FFInt>>> results_queue;
     //uint64_t probes_queued = 0;
