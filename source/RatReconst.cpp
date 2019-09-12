@@ -178,6 +178,7 @@ namespace firefly {
     return std::make_pair(interpolate, write_to_file);
   }
 
+  // TODO Change return type since the first bool should not be needed anymore
   std::tuple<bool, bool, uint32_t> RatReconst::interpolate() {
     std::unique_lock<std::mutex> lock(mutex_status);
 

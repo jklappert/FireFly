@@ -594,7 +594,6 @@ namespace firefly {
       std::exit(EXIT_FAILURE);
     }
 
-    //std::ofstream file;
     ogzstream file;
 
     if (save_states) {

@@ -3,11 +3,6 @@ project(FireFly VERSION 1.3.0 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
-find_package(GMP REQUIRED)
-find_package(ZLIB REQUIRED)
-#find_package(MPI REQUIRED)
-#include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-
 # decleare some colours
 if(NOT WIN32)
   string(ASCII 27 Esc)
@@ -28,6 +23,9 @@ if(NOT WIN32)
   set(BoldCyan    "${Esc}[1;36m")
   set(BoldWhite   "${Esc}[1;37m")
 endif()
+
+find_package(GMP REQUIRED)
+find_package(ZLIB REQUIRED)
 
 # if you want to use FLINT instead of our default implementation, call cmake with
 # cmake -DWITH_FLINT=true ..
@@ -68,11 +66,11 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 
 # include headers
 include_directories(${INCLUDE_PATH})
+include_directories(${GMP_INCLUDE_DIR})
+include_directories(${ZLIB_INCLUDE_DIRS})
 if("${WITH_FLINT}" STREQUAL true)
   include_directories(${FLINT_INCLUDE_DIR}/flint)
 endif()
-include_directories(${GMP_INCLUDE_DIR})
-include_directories(${ZLIB_INCLUDE_DIRS})
 
 # Firefly library files
 set(LIBSOURCES
@@ -129,14 +127,16 @@ set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
 add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
 set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 
+set(LIBS FireFly_static gmp ${ZLIB_LIBRARIES})
+if("${WITH_FLINT}" STREQUAL true)
+  set(LIBS ${LIBS} flint)
+endif()
+
 if("${CUSTOM}" STREQUAL "true")
   message("-- ${Red}Using custom modular arithmetic. The example is thus not compiled.${ColourReset}")
-elseif("${WITH_FLINT}" STREQUAL "true")
-  add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-  target_link_libraries(example FireFly_static gmp ${ZLIB_LIBRARIES} flint)
 else()
   add_executable(example ${PROJECT_SOURCE_DIR}/example.cpp ${SOURCE_PATH}/Tests.cpp)
-  target_link_libraries(example FireFly_static gmp ${ZLIB_LIBRARIES})
+  target_link_libraries(example ${LIBS})
 endif()
 
 # install libraries
@@ -146,10 +146,9 @@ install(
   LIBRARY DESTINATION lib
 )
 
+set(PKG_LIBS "-lfirefly -lgmp -lz")
 if("${WITH_FLINT}" STREQUAL "true")
-  set(PKG_LIBS "-lfirefly -lgmp -lflint -lz")
-else()
-  set(PKG_LIBS "-lfirefly -lgmp -lz")
+  set(PKG_LIBS "${PKG_LIBS} -lflint")
 endif()
 
 configure_file("cmake/pc.in" "firefly.pc" @ONLY)
