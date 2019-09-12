@@ -1420,12 +1420,12 @@ namespace firefly {
         auto tmp = std::move(results_queue.front());
         results_queue.pop();
         *probe = std::move(tmp.second);
-        auto tmp2 = index_map[tmp.first];
-        t = tmp2.first;
-        zi_order = std::move(tmp2.second);
 
         std::unique_lock<std::mutex> lck(mut_val);
 
+        auto tmp2 = std::move(index_map[tmp.first]);
+        t = tmp2.first;
+        zi_order = std::move(tmp2.second);
         --probes_queued;
       }
 #endif
