@@ -22,6 +22,7 @@
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
 
+#include <map>
 #include <queue>
 
 namespace firefly {
@@ -42,6 +43,7 @@ namespace firefly {
      */
     static void reset();
     /**
+     * TODO
      *  Feeds a black-box probe which will be processed by the class.
      *  @param new_ti the value of t for the current feed
      *  @param num the black-box probe
@@ -49,7 +51,7 @@ namespace firefly {
      *  @param fed_prime the corresponding prime number to this feed
      *  @return true if no interpolation is running, false otherwise
      */
-    bool feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord, const uint32_t fed_prime);
+    std::pair<bool, bool> feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord, const uint32_t fed_prime);
     /**
      *  @return the result of the reconstruction as a RationalFunction object
      */
@@ -122,6 +124,12 @@ namespace firefly {
      */
     std::pair<bool, uint32_t> start_from_saved_file(const std::string & file_name);
     /**
+     *  Parses all saved probes for the current prime field
+     *  @param file_name the absolute path to the probes save file
+     *  @return a map of all t values feeded for a specific zi_order
+     */
+    std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> read_in_probes(const std::string& file_name);
+    /**
      *  Enables the scan for a sparsest shift
      */
     void scan_for_sparsest_shift();
@@ -170,6 +178,13 @@ namespace firefly {
      *  @param anchor_points the anchor points
      */
     void set_anchor_points(const std::vector<FFInt>& anchor_points);
+    /**
+     *  Writes current feed to file to reuse this information
+     *  @param new_ti the t value corresponding to the feed
+     *  @param num the value of the probe
+     *  @param fed_zi_ord the zi order corresponding to the feed
+     */
+    void write_food_to_file();
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -352,13 +367,6 @@ namespace firefly {
     bool restart_sparse_interpolation = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now(); /**< Timestamp that tracks the time until probes should be written to disk */
     /**
-     *  Writes current feed to file to reuse this information 
-     *  @param fed_zi_ord the zi order corresponding to the feed
-     *  @param new_ti the t value corresponding to the feed
-     *  @param num the value of the probe
-     */
-    void write_food_to_file(const std::vector<uint32_t>& fed_zi_ord, const FFInt& new_ti, const FFInt& num);
-    /**
      *  Calculates the polynomials emerging from a parameter shift effecting lower degrees
      *  @param poly the seed polynomial
      *  @param deg the degree of the polynomial
@@ -368,7 +376,12 @@ namespace firefly {
     bool normalizer_den_num = false; /**< If true the real normalization degree is the denominator else the numerator */
     ThieleInterpolator t_interpolator; /**< An object for Thiele interpolations */
     uint32_t interpolations = 1;  /**< Indication how many interpolations should be made until one uses Vandermonde systems */
-    std::vector<std::tuple<std::vector<uint32_t>,FFInt, FFInt>> saved_food;
+    std::vector<std::tuple<std::vector<uint32_t>, FFInt, FFInt>> saved_food; /** Data structre used to write already used probes to a file from which one can resume if crashes occur. First FFInt is t second is num */
+    //std::vector<std::tuple<std::vector<uint32_t>, uint64_t, uint64_t>> parsed_probes; /** Data structre used for storing already used probes in prior runs to resume if crashes occur. First uint64_t is t second is num */
+    std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
+    bool from_save_state = false; /**< Indicates wether one resumes from a saved state */
+    bool is_writing_probes = false;
+    bool start_interpolation = true;
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,

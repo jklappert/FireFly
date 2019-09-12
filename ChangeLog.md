@@ -1,6 +1,16 @@
 FireFly 1.3.1
 =============
 
+New features
+------------
+
+ * When writing out the states of reconstruction objects to resume in cases of
+ crashes, every 10 minutes all probes which are used during the interpolation are
+ written to corresponding files in the `ff_save/probes` directory. Starting from
+ saved states will now also read in all used probes up to the last saved timestamp
+ and start the reconstruction from this point. This feature helps to ease the
+ harm of crashes.
+
 Changes
 -------
 
@@ -9,12 +19,13 @@ Changes
 
  * Added a new member function for the `Reconstructor` class which can read in a whole
  directory of saved states of reconstruction objects. It can be called with
- `resume_from_saved_state()` requiring that the directory './ff_save' exist.
+ `resume_from_saved_state()` requiring that the directory `./ff_save` exist.
 
  * Added a unit test which checks different reconstruction modes. It can be executed
  by calling `make test` in the build directory.
 
- * Added an implementation of the Xoshiro256** PRNG.
+ * Added an implementation of the Xoshiro256** PRNG which is partly used for the
+ generation of pseudo random numbers.
 
 Bug fixes
 ---------
@@ -24,6 +35,9 @@ Bug fixes
  We now check the sequences for each zi_order for duplicates and omit such cases.
  Thanks to Long Chen for providing an example which could be used for finding this
  error.
+
+ * Fixed a crash with `Nothing left to feed.` which was caused by queuing not
+ enough probes in the safe mode with bunch sizes larger than 1.
 
 
 FireFly 1.3.0

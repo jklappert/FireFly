@@ -184,7 +184,7 @@ install(FILES
   "${INCLUDE_PATH}/DenseSolver.hpp"
   "${INCLUDE_PATH}/FFInt.hpp"
   "${INCLUDE_PATH}/FFThieleInterpolator.hpp"
-  "${INCLUDE_PATH}/gzstream.h"
+  "${INCLUDE_PATH}/gzstream.hpp"
   "${INCLUDE_PATH}/HornerGenerator.hpp"
   "${INCLUDE_PATH}/Logger.hpp"
   "${INCLUDE_PATH}/Monomial.hpp"

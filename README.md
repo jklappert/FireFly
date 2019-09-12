@@ -21,6 +21,7 @@ FireFly requires:
 * [CMake](https://cmake.org/) >= 3.1
 * [FLINT](http://www.flintlib.org/) >= 2.5 (optional)
 * [GMP](https://gmplib.org/) >= 6.1.2
+* [zlib](https://www.zlib.net/) >= 1.2.11
 
 ## Building FireFly
 FireFly uses CMake to generate files for build automation. To build FireFly one should first create a separate `build` directory inside FireFly's top directory. Afterwards, `cmake` should be called:

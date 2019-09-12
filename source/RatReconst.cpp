@@ -18,14 +18,13 @@
 
 #include "RatReconst.hpp"
 #include "DenseSolver.hpp"
-#include "gzstream.h"
+#include "gzstream.hpp"
 #include "Logger.hpp"
 #include "ParserUtils.hpp"
 #include "ReconstHelper.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
-#include <map>
 #include <sys/stat.h>
 
 namespace firefly {
@@ -101,14 +100,21 @@ namespace firefly {
     }
   }
 
-  bool RatReconst::feed(const FFInt& new_ti, const FFInt& num,
-                        const std::vector<uint32_t>& feed_zi_ord,
-                        const uint32_t fed_prime) {
+  std::pair<bool, bool> RatReconst::feed(const FFInt& new_ti, const FFInt& num,
+                                         const std::vector<uint32_t>& fed_zi_ord,
+                                         const uint32_t fed_prime) {
     std::unique_lock<std::mutex> lock(mutex_status);
+    bool write_to_file = false;
+    bool interpolate = false;
 
     if (!done && fed_prime == prime_number) {
+      if (first_feed) {
+        start_interpolation = true;
+      }
+
       if (first_feed && !scan) {
         start = std::chrono::high_resolution_clock::now();
+
         if (num == 0) {
           new_prime = true;
           zero_counter ++;
@@ -122,6 +128,12 @@ namespace firefly {
               save_zero_consecutive_prime();
             else
               save_zero_state();
+
+            std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+            ogzstream gzfile;
+            std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
+            gzfile.open(probe_file_name.c_str());
+            gzfile.close();
           }
 
           ++prime_number;
@@ -141,13 +153,29 @@ namespace firefly {
 
           first_feed = false;
 
-          queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
+          if (tag.size() != 0)
+            saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
+
+          queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
         }
-      } else
-        queue.emplace(std::make_tuple(new_ti, num, feed_zi_ord));
+      } else {
+        if (!scan && tag.size() != 0)
+          saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
+
+        queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
+      }
+
+      if (start_interpolation) {
+        start_interpolation = false;
+        interpolate = true;
+      }
+
+      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
+        write_to_file = true;
+      }
     }
 
-    return !is_interpolating;
+    return std::make_pair(interpolate, write_to_file);
   }
 
   std::tuple<bool, bool, uint32_t> RatReconst::interpolate() {
@@ -155,16 +183,17 @@ namespace firefly {
 
     if (fed_zero) {
       fed_zero = false;
-      return std::make_tuple(true, done, prime_number);
-    } else if (is_interpolating || queue.empty())
+    } else if (is_interpolating || queue.empty()) {
       return std::make_tuple(false, done, prime_number);
-    else {
+    } else {
       is_interpolating = true;
 
       while (!queue.empty()) {
         auto food = queue.front();
         queue.pop();
+
         lock.unlock();
+
         interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food));
 
         while (saved_ti.find(curr_zi_order) != saved_ti.end()) {
@@ -180,9 +209,11 @@ namespace firefly {
 
         lock.lock();
       }
+
+      is_interpolating = false;
+      start_interpolation = true;
     }
 
-    is_interpolating = false;
     return std::make_tuple(true, done, prime_number);
   }
 
@@ -199,9 +230,7 @@ namespace firefly {
             return;
 
         if (max_deg_num == -1) {// Use Thiele
-          check = t_interpolator.add_point(num, new_ti);
-
-          write_food_to_file(fed_zi_ord, new_ti, num);
+          check = t_interpolator.add_point(num, new_ti);;
         } else {
           std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
 
@@ -218,8 +247,6 @@ namespace firefly {
           for (auto & food : t_food) {
             FFInt tmp_ti = food.first;
             FFInt tmp_num = food.second;
-
-            write_food_to_file(fed_zi_ord, new_ti, num);
 
             // Get yi's for the current feed
             std::vector<FFInt> yis;
@@ -1524,7 +1551,25 @@ namespace firefly {
 
     {
       std::unique_lock<std::mutex> lock(mutex_status);
+
       ++prime_number;
+
+      // Remove old probes and create new file
+      if (tag.size() != 0) {
+        while (is_writing_probes) {
+          // TODO: better with condition variable: as pointer?
+          lock.unlock();
+          lock.lock();
+        }
+
+        saved_food.clear();
+        std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number - 1) + ".gz").c_str());
+        ogzstream gzfile;
+        std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
+        gzfile.open(probe_file_name.c_str());
+        gzfile.close();
+      }
+
       queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
       saved_ti.clear();
       zi = 1;
@@ -1874,7 +1919,8 @@ namespace firefly {
 
   void RatReconst::set_shift(const std::vector<FFInt>& shift_) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
-    if(n > 1)
+
+    if (n > 1)
       shift = shift_;
   }
 
@@ -2035,9 +2081,10 @@ namespace firefly {
       file << "tag_name\n" << tag_name << "\n";
       file << "normalize_to_den\n1\n";
       file.close();
+      ogzstream file_2;
       file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
-      file.open(file_name.c_str());
-      file.close();
+      file_2.open(file_name.c_str());
+      file_2.close();
     } else
       WARNING_MSG("This object has already a valid tag!");
   }
@@ -2267,6 +2314,7 @@ namespace firefly {
     prime_number = parse_prime_number(file_name) + 1;
     check_interpolation = true;
     bool tmp_need_shift = false;
+    from_save_state = true;
 
     bool is_zero = false;
 
@@ -2618,10 +2666,10 @@ namespace firefly {
 
       for (const auto & el : combined_di) add_non_solved_den(el.first);
 
-      {
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
-        is_singular_system = need_prime_shift;
-      }
+//       {
+//         std::unique_lock<std::mutex> lock_statics(mutex_statics);
+//         is_singular_system = need_prime_shift;
+//       }
 
       {
         std::unique_lock<std::mutex> lock(mutex_status);
@@ -2631,8 +2679,6 @@ namespace firefly {
 
       if (prime_number >= interpolations) {
         if (is_singular_system) {
-          tmp_solved_coefs_den = 0;
-          tmp_solved_coefs_num = 0;
           {
             std::unique_lock<std::mutex> lock_statics(mutex_statics);
             need_prime_shift = true;
@@ -2939,9 +2985,6 @@ namespace firefly {
         else
           solved_degs_den[deg].coefs.emplace(std::make_pair(el.first, el.second));
       }
-
-      //solved_num = PolynomialFF(n, tmp_num);
-      //solved_den = PolynomialFF(n, tmp_den);
     }
 
     if (prime_number < interpolations) {
@@ -3072,6 +3115,138 @@ namespace firefly {
       }
     }
 
+    if (from_save_state) {
+      from_save_state = false;
+
+      std::vector<uint32_t> largest_key(n - 1);
+
+      if (prime_number < interpolations) {
+        if (parsed_probes.size() > 0) {
+
+          for (const auto & el : parsed_probes) {
+
+            if (a_grt_b(el.first, largest_key))
+              largest_key = el.first;
+
+            for (const auto & el2 : el.second) {
+              queue.emplace(std::make_tuple(el2.first, el2.second, el.first));
+            }
+          }
+        }
+      } else {
+        std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_sub;
+        std::map<uint32_t, uint32_t> r_map {};
+
+        // Calculate the difference of already calculated probes and remaining ones
+        if (parsed_probes.size() != 0) {
+          for (const auto & el : parsed_probes) {
+
+            if (r_map.find(el.second.size()) == r_map.end())
+              r_map[el.second.size()] = 1;
+            else
+              r_map[el.second.size()] += 1;
+
+            if (a_grt_b(el.first, largest_key))
+              largest_key = el.first;
+
+            for (const auto & el2 : el.second) {
+              queue.emplace(std::make_tuple(el2.first, el2.second, el.first));
+              get_rand_zi_vec(el.first, true);
+            }
+          }
+
+          for (const auto & el : r_map) {
+            needed_feed_vec_sub.emplace_back(std::make_pair(el.second, el.first));
+          }
+
+          std::sort(needed_feed_vec_sub.begin(), needed_feed_vec_sub.end(),
+          [](const std::pair<uint32_t, uint32_t>& l, const std::pair<uint32_t, uint32_t>& r) {
+            return l.second > r.second;
+          });
+
+          int positions_done = -1;
+          uint32_t unfinished_pos = 0;
+          uint32_t partial_done_mult = 0;
+          uint32_t partial_done_num = 0;
+          uint32_t size = needed_feed_vec_sub.size();
+
+          // Check which feeds are already done and mark the position of the remaining ones
+          for (uint32_t i = 0; i != size; ++i) {
+            uint32_t req_mult = needed_feed_vec[i].first;
+            uint32_t req_num = needed_feed_vec[i].second;
+
+            uint32_t got_mult = needed_feed_vec_sub[i].first;
+            uint32_t got_num = needed_feed_vec_sub[i].second;
+
+            if (req_mult > got_mult) {
+              unfinished_pos = i;
+
+              if (got_num == req_num) {
+                partial_done_mult = got_mult;
+
+                if (i != size - 1)
+                  partial_done_num = needed_feed_vec_sub[i + 1].second;
+              } else
+                partial_done_num = got_num;
+
+              break;
+            } else if (req_mult == got_mult && req_num != got_num) {
+              unfinished_pos = i;
+              partial_done_num = got_num;
+            } else
+              positions_done ++;
+          }
+
+          needed_feed_vec_sub.clear();
+
+          // Rewrite the new needed feed vector by subtraction already calculated probes
+          if (positions_done != static_cast<int>(needed_feed_vec.size() - 1)) {
+            // set the correct offset for appending unfinished jobs
+            uint32_t offset = 2;
+
+            for (int i = 0; i <= positions_done; ++i) {
+              uint32_t req_mult = needed_feed_vec[i].first;
+              uint32_t req_num = needed_feed_vec[i].second;
+
+              for (uint32_t j = 0; j != req_mult; ++j) {
+                needed_feed_vec_sub.emplace_back(std::make_pair(0, req_num));
+              }
+            }
+
+            if (positions_done != static_cast<int>(size - 1)) {
+              uint32_t tmp_req_mult = needed_feed_vec[unfinished_pos].first;
+              uint32_t tmp_req_num = needed_feed_vec[unfinished_pos].second;
+
+              for (uint32_t i = 0; i != partial_done_mult; ++i) {
+                needed_feed_vec_sub.emplace_back(std::make_pair(0, tmp_req_num));
+              }
+
+              uint32_t diff = tmp_req_mult - partial_done_mult;
+
+              if (diff != 0) {
+                needed_feed_vec_sub.emplace_back(std::make_pair(1, tmp_req_num - partial_done_num));
+                ++partial_done_num;
+              }
+
+              if (diff != 0 && diff - 1 != 0)
+                needed_feed_vec_sub.emplace_back(std::make_pair(diff - 1, tmp_req_num));
+            } else
+              offset = 1;
+
+            // Append all required probes
+            for (uint32_t i = positions_done + offset; i < needed_feed_vec.size(); ++i) {
+              needed_feed_vec_sub.emplace_back(needed_feed_vec[i]);
+            }
+
+            needed_feed_vec = needed_feed_vec_sub;
+          } else
+            needed_feed_vec.clear();
+        }
+      }
+
+      parsed_probes.clear();
+    }
+
     return false;
   }
 
@@ -3112,31 +3287,60 @@ namespace firefly {
     return tag_name;
   }
 
-  void RatReconst::write_food_to_file(const std::vector<uint32_t>& fed_zi_ord, const FFInt& new_ti, const FFInt& num) {
-    if (tag.size() != 0) {
-      saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
+  void RatReconst::write_food_to_file() {
+    std::unique_lock<std::mutex> lock(mutex_status);
 
-      // Write every 10 minutes
-      if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600) {
-        ogzstream file;
-        std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
+    if (!is_writing_probes && saved_food.size() != 0) {
+      is_writing_probes = true;
+      start = std::chrono::high_resolution_clock::now();
+      auto tmp = std::move(saved_food);
+      saved_food.clear();
+      ogzstream file;
+      std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
+      lock.unlock();
 
-        file.open(file_name.c_str(), std::ios_base::app);
+      file.open(file_name.c_str(), std::ios_base::app);
 
-        for (const auto & el : saved_food) {
-          for (const auto & el2 : std::get<0>(el)) {
-            file << el2 << " ";
-          }
-
-          file << std::get<1>(el) << " " << std::get<2>(el) << "\n";
+      for (const auto & el : tmp) {
+        for (const auto & el2 : std::get<0>(el)) {
+          file << el2 << " ";
         }
 
-        saved_food.clear();
-
-        file.close();
-        start = std::chrono::high_resolution_clock::now();
+        file << std::get<1>(el) << " " << std::get<2>(el) << " \n";
       }
+
+      file.close();
+      lock.lock();
+      is_writing_probes = false;
     }
   }
-}
 
+  std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> RatReconst::read_in_probes(const std::string& file_name) {
+    std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> tmp {};
+    std::string line;
+    igzstream file(file_name.c_str());
+    auto prime_it = parse_prime_number(file_name);
+
+    if (!done && prime_it == prime_number) {
+      while (std::getline(file, line)) {
+        std::vector<uint32_t> tmp_zi_ord;
+
+        if (n > 1)
+          tmp_zi_ord = parse_vector_32(line, n - 1);
+
+        std::vector<FFInt> tmp_probe = parse_vector_FFInt(line, 2);
+
+        tmp[tmp_zi_ord].emplace(tmp_probe[0].n);
+
+        if (prime_it == 0)
+          queue.emplace(std::make_tuple(tmp_probe[0], tmp_probe[1], tmp_zi_ord));
+        else
+          parsed_probes[tmp_zi_ord].emplace_back(std::make_pair(tmp_probe[0].n, tmp_probe[1].n));
+      }
+    }
+
+    file.close();
+
+    return tmp;
+  }
+}
