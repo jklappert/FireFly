@@ -123,7 +123,7 @@ The functions have to be parsed only once and can be evaluated afterwards callin
 ```cpp
 parser.evaluate(values);
 // Evaluates the black-box functions with precomputed values which is faster than evaluate().
-//Its usage requires parser.precompute_tokens() after the field has changed.
+// Its usage requires parser.precompute_tokens() after the field has changed.
 //parser.evaluate_pre(values);
 ```
 
