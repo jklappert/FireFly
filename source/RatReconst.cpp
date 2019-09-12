@@ -154,13 +154,13 @@ namespace firefly {
           first_feed = false;
 
           if (tag.size() != 0)
-            saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
+            saved_food.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
 
           queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
         }
       } else {
         if (!scan && tag.size() != 0)
-          saved_food.emplace_back(std::make_tuple(fed_zi_ord, new_ti, num));
+          saved_food.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
 
         queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
       }
@@ -170,7 +170,7 @@ namespace firefly {
         interpolate = true;
       }
 
-      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 600.) {
+      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 1800.) {
         write_to_file = true;
       }
     }
@@ -1562,7 +1562,8 @@ namespace firefly {
           lock.lock();
         }
 
-        saved_food.clear();
+        std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> tmp_;
+        saved_food.swap(tmp_);
         std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number - 1) + ".gz").c_str());
         ogzstream gzfile;
         std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
@@ -3293,20 +3294,23 @@ namespace firefly {
     if (!is_writing_probes && saved_food.size() != 0) {
       is_writing_probes = true;
       start = std::chrono::high_resolution_clock::now();
-      auto tmp = std::move(saved_food);
-      saved_food.clear();
+      std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> tmp;
+      tmp.swap(saved_food);
       ogzstream file;
       std::string file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
       lock.unlock();
 
       file.open(file_name.c_str(), std::ios_base::app);
 
-      for (const auto & el : tmp) {
-        for (const auto & el2 : std::get<0>(el)) {
+      while (!tmp.empty()) {
+        auto tmp_el = tmp.front();
+        tmp.pop();
+
+        for (const auto & el2 : std::get<2>(tmp_el)) {
           file << el2 << " ";
         }
 
-        file << std::get<1>(el) << " " << std::get<2>(el) << " \n";
+        file << std::get<0>(tmp_el) << " " << std::get<1>(tmp_el) << " \n";
       }
 
       file.close();

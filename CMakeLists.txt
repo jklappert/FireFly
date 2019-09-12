@@ -26,6 +26,8 @@ endif()
 
 find_package(GMP REQUIRED)
 find_package(ZLIB REQUIRED)
+find_package(MPI REQUIRED)
+include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 # if you want to use FLINT instead of our default implementation, call cmake with
 # cmake -DWITH_FLINT=true ..
@@ -162,7 +164,7 @@ install(
   LIBRARY DESTINATION lib
 )
 
-set(PKG_LIBS "-lfirefly -lgmp")
+set(PKG_LIBS "-lfirefly -lgmp -lz")
 if("${WITH_FLINT}" STREQUAL "true")
   set(PKG_LIBS "${PKG_LIBS} -lflint")
 endif()

@@ -243,7 +243,6 @@ namespace firefly {
 
       s[2] ^= t;
       s[3] = rol64(s[3], 45);
-
     }
     return result;
   }

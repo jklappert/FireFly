@@ -1186,7 +1186,7 @@ namespace firefly {
 
               std::unique_lock<std::mutex> lock_print(print_control);
 
-              WARNING_MSG("Found a duplicate of t, choosing a new one");
+              //WARNING_MSG("Found a duplicate of t, choosing a new one");
 
               continue;
             } else {

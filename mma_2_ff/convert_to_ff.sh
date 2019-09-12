@@ -17,6 +17,8 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #==================================================================================
 
+# @Obsolete
+# Script to convert a mathematica list to compilabale C++ code
 mkdir -p ff_conv
 
 funs=$1
