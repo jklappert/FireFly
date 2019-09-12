@@ -147,9 +147,9 @@ install(
 )
 
 if("${WITH_FLINT}" STREQUAL "true")
-  set(PKG_LIBS "-lfirefly -lgmp -lflint")
+  set(PKG_LIBS "-lfirefly -lgmp -lflint -lz")
 else()
-  set(PKG_LIBS "-lfirefly -lgmp")
+  set(PKG_LIBS "-lfirefly -lgmp -lz")
 endif()
 
 configure_file("cmake/pc.in" "firefly.pc" @ONLY)
