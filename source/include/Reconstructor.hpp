@@ -247,9 +247,6 @@ namespace firefly {
      */
     void clean_reconst();
     uint64_t probes_queued = 0;
-    std::vector<uint64_t> feeds;
-    std::queue<std::vector<uint64_t>> value_queue;
-    std::queue<std::pair<uint64_t, std::vector<FFInt>>> results_queue;
 #ifdef WITH_MPI
     int world_size;
     uint64_t ind = 0;
@@ -259,8 +256,8 @@ namespace firefly {
     std::mutex mut_val;
     std::condition_variable cond_val;
     std::atomic<bool> new_jobs = {false};
-    //std::queue<std::vector<uint64_t>> value_queue;
-    //std::queue<std::pair<uint64_t, std::vector<FFInt>>> results_queue;
+    std::queue<std::vector<uint64_t>> value_queue;
+    std::queue<std::pair<uint64_t, std::vector<FFInt>>> results_queue;
     //uint64_t probes_queued = 0;
     /**
      *  TODO

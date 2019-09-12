@@ -372,10 +372,18 @@ namespace firefly {
       if (scan) {
         scan_for_shift();
 
+#ifndef WITH_MPI
         uint32_t start = thr_n * bunch_size;
+#else
+        uint32_t start = 6 * static_cast<uint32_t>(world_size) * bunch_size; // start even more?
+#endif
 
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
         started_probes.emplace(std::vector<uint32_t> (n - 1, 1), start);
+
+#ifdef WITH_MPI
+        cond_val.notify_one();
+#endif
       } else {
         start_first_runs();
       }
@@ -487,16 +495,38 @@ namespace firefly {
         tmp_rec.set_zi_shift(shift_vec[counter]);
         shift = tmp_rec.get_zi_shift_vec();
 
+#ifndef WITH_MPI
         uint32_t start = thr_n * bunch_size;
+#else
+        uint32_t start = 6 * static_cast<uint32_t>(world_size) * bunch_size; // start even more?
+#endif
 
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
         started_probes.emplace(std::vector<uint32_t> (n - 1, 1), start);
+
+#ifdef WITH_MPI
+        cond_val.notify_one();
+#endif
       }
 
       run_until_done();
 
       // Kill all jobs
       // otherwise it can happen that a RatReconst is fed with old data
+#ifdef WITH_MPI
+      {
+        std::unique_lock<std::mutex> lock_val(mut_val);
+
+        value_queue = std::queue<std::vector<uint64_t>>();
+        new_jobs = false;
+
+        index_map.clear();
+        ind = 0;
+
+        cond_val.wait(lock_val);
+      }
+#endif
+
       tp.kill_all();
 
       found_shift = true;
@@ -541,6 +571,16 @@ namespace firefly {
       iteration = 0;
       items_done = 0;
       done = false;
+
+#ifdef WITH_MPI
+      probes_queued = 0;
+
+      {
+        std::unique_lock<std::mutex> lock(future_control);
+
+        results_queue = std::queue<std::pair<uint64_t, std::vector<FFInt>>>();
+      }
+#endif
     }
 
     if (found_shift) {
@@ -661,7 +701,6 @@ namespace firefly {
     items = probe->size();
     size_t tag_size = tags.size();
 
-    feeds = std::vector<uint64_t>(items, 1);
 #ifdef WITH_MPI
     {
       std::unique_lock<std::mutex> lock_val(mut_val);
@@ -817,6 +856,9 @@ namespace firefly {
           value_queue = std::queue<std::vector<uint64_t>>();
           new_jobs = false;
 
+          index_map.clear();
+          ind = 0;
+
           cond_val.wait(lock_val);
         }
 #endif
@@ -886,18 +928,13 @@ namespace firefly {
         items_new_prime = 0;
         one_done = false;
         one_new_prime = false;
-#ifdef WITH_MPI
-        probes_queued = 0;
-#endif
-
-        for (uint64_t i = 0; i != items; ++i) {
-          feeds[i] = 0;
-        }
 
         FFInt::set_new_prime(primes()[prime_it]);
         bb.prime_changed();
 
 #ifdef WITH_MPI
+        probes_queued = 0;
+
         {
           std::unique_lock<std::mutex> lock(future_control);
 
@@ -1116,23 +1153,11 @@ namespace firefly {
             new_prime = true;
             continue;
           } else {
-            uint64_t tmpi = 0;
-
-            for (const auto & rec : reconst) {
-              auto tmp = std::get<3>(rec)->get_done_and_prime();
-              std::cout << tmp.first << " " << tmp.second << " " << feeds[tmpi] << "\n";
-              ++tmpi;
-            }
-
-            std::cout << "\n";
-
-            for (const auto & rec : reconst) {
-              std::get<3>(rec)->interpolate();
-              auto tmp = std::get<3>(rec)->get_done_and_prime();
-              std::cout << tmp.first << " " << tmp.second << "\n";
-            }
-
+#ifndef MPI
+            throw std::runtime_error("Nothing left to feed: " + std::to_string(iteration) + " | " + std::to_string(items) + " " + std::to_string(items_new_prime) + " " + std::to_string(items_done) + " | " + std::to_string(jobs_finished) + " " + std::to_string(probes.empty()) + " " + std::to_string(bunch.empty()) + " " + std::to_string(probes_bunch.empty()) + " | " + std::to_string(feed_jobs) + " " + std::to_string(interpolate_jobs) + "\n");
+#else
             throw std::runtime_error("Nothing left to feed: " + std::to_string(items) + " " + std::to_string(items_new_prime) + " " + std::to_string(items_done) + " | " + std::to_string(jobs_finished) + " " + std::to_string(probes.empty()) + " " + std::to_string(bunch.empty()) + " " + std::to_string(probes_bunch.empty()) + " | " + std::to_string(feed_jobs) + " " + std::to_string(interpolate_jobs) + " | " + std::to_string(iteration) + " | " + std::to_string(probes_queued) + " " + std::to_string(results_queue.size()) + " " + std::to_string(value_queue.size()) + "\n");
+#endif
           }
         }
       }
@@ -1481,11 +1506,6 @@ namespace firefly {
 
         if (!done_prime.first) {
           if (done_prime.second == prime_it) {
-            {
-              std::unique_lock<std::mutex> lock(feed_control);
-              ++feeds[tmp];
-            }
-
             auto interpolate_and_write = std::get<3>(rec)->feed(t, (*probe)[std::get<0>(rec)], zi_order, prime_it);
 
             if (interpolate_and_write.first) {
@@ -1861,7 +1881,7 @@ namespace firefly {
         }
       }
 
-      if (done) {
+      if (done && !scan) {
         MPI_Request requests[world_size - 1];
 
         for (int i = 1; i != world_size; ++i) {
@@ -1887,13 +1907,18 @@ namespace firefly {
         }
 
         break;
-      } else if (new_prime) {
+      } else if (new_prime || done && scan) {
         MPI_Request requests[world_size - 1];
 
         //std::cout << "com np\n";
 
+        uint64_t prime_tmp = static_cast<uint64_t>(prime_it);
+
+        if (!scan) {
+          ++prime_tmp;
+        }
+
         for (int i = 1; i != world_size; ++i) {
-          uint64_t prime_tmp = 1 + static_cast<uint64_t>(prime_it);
           MPI_Isend(&prime_tmp, 1, MPI_UINT64_T, i, NEW_PRIME, MPI_COMM_WORLD, &requests[i - 1]);
         }
 

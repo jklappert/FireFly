@@ -164,6 +164,8 @@ int main() {
 
     Reconstructor reconst(4 /*n_vars*/, std::thread::hardware_concurrency() - 1 /*n_threads*/, 1 /*bunch size*/, bb /*black box*//*, Reconstructor::CHATTY*/);
 
+    reconst.enable_scan();
+
     reconst.reconstruct();
   } else {
     std::cout << "worker " << process << " on " << processor_name << ": " << std::thread::hardware_concurrency() << "\n";
