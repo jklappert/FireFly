@@ -2031,6 +2031,7 @@ namespace firefly {
     }
 
     bool tmp = need_prime_shift;
+
     set_singular_system = need_prime_shift;
     need_prime_shift = false;
     return tmp;
@@ -2889,7 +2890,7 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-      if (!is_singular_system && set_singular_system && prime_number >= interpolations) {
+      if (!is_singular_system && (set_singular_system || need_prime_shift) && prime_number >= interpolations) {
         lock_statics.unlock();
         set_singular_system_vars();
       }
