@@ -674,7 +674,7 @@ namespace firefly {
         }
       } else {
         t = tmp_rec.get_rand();
-        chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
+        chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
       }
     }
 
@@ -1115,6 +1115,7 @@ namespace firefly {
               lock_future.lock();
 
 #ifndef WITH_MPI
+
               if (jobs_finished > 0 || !probes.empty() || !bunch.empty() || !probes_bunch.empty()) {
 #else
               std::unique_lock<std::mutex> lck(mut_val);
@@ -1133,6 +1134,7 @@ namespace firefly {
             lock_future.lock();
 
 #ifndef WITH_MPI
+
             if (jobs_finished > 0 || !probes.empty() || !bunch.empty() || !probes_bunch.empty()) {
 #else
             std::unique_lock<std::mutex> lck(mut_val);
@@ -1232,7 +1234,7 @@ namespace firefly {
               it->second.emplace(t.n);
             }
           } else {
-            chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
+            chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
           }
         }
 
@@ -1306,6 +1308,7 @@ namespace firefly {
 
           std::get<2>(*it) = std::move(future);
         }
+
 #endif
       }
 
@@ -1348,7 +1351,7 @@ namespace firefly {
                 it->second.emplace(t.n);
               }
             } else {
-              chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
+              chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
             }
           }
 
@@ -1423,6 +1426,7 @@ namespace firefly {
 
     if (bunch_size == 1) {
 #ifdef WITH_MPI
+
       if (!finished_probes_it.empty()) {
 #endif
         auto it = finished_probes_it.front();
@@ -1453,6 +1457,7 @@ namespace firefly {
         zi_order = std::move(tmp2.second);
         --probes_queued;
       }
+
 #endif
     } else {
       if (bunch.empty()) {
@@ -1524,6 +1529,7 @@ namespace firefly {
           }
         }
       }
+
       ++tmp;
     }
 
@@ -1844,7 +1850,7 @@ namespace firefly {
             it->second.emplace(t.n);
           }
         } else {
-          chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
+          chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
         }
 
         values[ii * (n + 1) + 1] = (t + shift[0]).n;
