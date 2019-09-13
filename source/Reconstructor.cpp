@@ -114,7 +114,7 @@ namespace firefly {
     tinydir_close(&dir);
 
     std::sort(files.begin(), files.end(), [](const std::string & l, const std::string & r) {
-      return std::stoi(l.substr(0, l.find("_"))) < stoi(r.substr(0, r.find("_")));
+      return std::stoi(l.substr(0, l.find("_"))) < std::stoi(r.substr(0, r.find("_")));
     });
 
     for (const auto & file : files) {
@@ -124,8 +124,10 @@ namespace firefly {
     if (paths.size() != 0) {
       resume_from_saved_state(paths);
     } else {
-      ERROR_MSG("Directory './ff_save' does not exist or has no content.");
-      std::exit(EXIT_FAILURE);
+      save_states = true;
+      WARNING_MSG("Directory './ff_save' does not exist or has no content");
+      INFO_MSG("Starting new reconstruction and saving states");
+      return;
     }
   }
 
@@ -203,7 +205,7 @@ namespace firefly {
     tinydir_close(&dir);
 
     std::sort(files.begin(), files.end(), [](const std::string & l, const std::string & r) {
-      return std::stoi(l.substr(0, l.find("_"))) < stoi(r.substr(0, r.find("_")));
+      return std::stoi(l.substr(0, l.find("_"))) < std::stoi(r.substr(0, r.find("_")));
     });
 
     for (const auto & file : files) {
