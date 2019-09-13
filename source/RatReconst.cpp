@@ -2349,7 +2349,7 @@ namespace firefly {
           curr_parsed_variable = COMBINED_PRIME;
           parsed_variables[COMBINED_PRIME] = true;
         } else if (is_zero) {
-          if (prime_number >= 2) {
+          if (prime_number > 2) {
             std::unique_lock<std::mutex> lock_status(mutex_status);
             new_prime = false;
             done = true;
