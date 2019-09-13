@@ -94,7 +94,7 @@ namespace firefly {
       par.precompute_tokens();
       c++;
 
-      if (mode == 4 && c == 1)
+      if (mode == 4 && c == 1 || mode == 5 && c == 2)
         throw std::runtime_error("Abort for save test.");
     }
 
@@ -211,7 +211,7 @@ int main() {
   INFO_MSG("Bunched evaluation passed");
 
   try {
-    INFO_MSG("Test saving states and starting from them");
+    INFO_MSG("Test saving states and starting from them in prime 1");
     ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_4(p_4, 4);
     Reconstructor r_4(4, 4, b_4, Reconstructor::SILENT);
@@ -221,25 +221,52 @@ int main() {
   } catch (std::exception& e) {
     RatReconst::reset();
     ShuntingYardParser p_5("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-    BlackBoxUser b_5(p_5, 5);
+    BlackBoxUser b_5(p_5, 6);
     Reconstructor r_5(4, 4, b_5, Reconstructor::SILENT);
     r_5.set_tags();
     r_5.resume_from_saved_state();
     r_5.reconstruct();
-    std::remove("ff_save/validation");
+    std::remove("ff_save/validation.gz");
+    std::remove("ff_save/scan");
+    std::remove("ff_save/shift");
+    std::remove("ff_save/anchor_points");
+    INFO_MSG("Starting from saved states passed");
+  }
+
+  // Remove files
+  remove_sates();
+  remove_probes();
+  RatReconst::reset();
+
+  try {
+    INFO_MSG("Test saving states and starting from them in prime 2");
+    ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_4(p_4, 5);
+    Reconstructor r_4(4, 4, b_4, Reconstructor::SILENT);
+    r_4.enable_scan();
+    r_4.set_tags();
+    r_4.reconstruct();
+  } catch (std::exception& e) {
+    RatReconst::reset();
+    ShuntingYardParser p_5("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_5(p_5, 6);
+    Reconstructor r_5(4, 4, b_5, Reconstructor::SILENT);
+    r_5.set_tags();
+    r_5.resume_from_saved_state();
+    r_5.reconstruct();
+    std::remove("ff_save/validation.gz");
     std::remove("ff_save/scan");
     std::remove("ff_save/shift");
     std::remove("ff_save/anchor_points");
     INFO_MSG("Starting from saved states passed");
     std::cout << "\n";
-
-    // Remove files
-    remove_sates();
-
-    remove_probes();
-
-    INFO_MSG("All tests passed");
   }
+
+  // Remove files
+  remove_sates();
+  remove_probes();
+
+  INFO_MSG("All tests passed");
 
   return 0;
 }
