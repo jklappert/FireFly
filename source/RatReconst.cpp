@@ -170,7 +170,7 @@ namespace firefly {
         interpolate = true;
       }
 
-      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 1800.) {
+      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 0.000006) {
         write_to_file = true;
       }
     }
@@ -2314,7 +2314,10 @@ namespace firefly {
     std::ifstream ifile(file_name.c_str());
     igzstream file(file_name.c_str());
     bool first = true;
-    prime_number = parse_prime_number(file_name) + 1;
+    {
+      std::unique_lock<std::mutex> lock_status(mutex_status);
+      prime_number = parse_prime_number(file_name) + 1;
+    }
     check_interpolation = true;
     bool tmp_need_shift = false;
     from_save_state = true;
@@ -2337,6 +2340,7 @@ namespace firefly {
             std::getline(file, line);
             normalize_to_den = std::stoi(line);
             file.close();
+            std::unique_lock<std::mutex> lock_status(mutex_status);
             prime_number = 0;
             check_interpolation = false;
             return std::make_pair(true, 0);
@@ -2669,11 +2673,6 @@ namespace firefly {
 
       for (const auto & el : combined_di) add_non_solved_den(el.first);
 
-//       {
-//         std::unique_lock<std::mutex> lock_statics(mutex_statics);
-//         is_singular_system = need_prime_shift;
-//       }
-
       {
         std::unique_lock<std::mutex> lock(mutex_status);
         std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
@@ -2681,17 +2680,8 @@ namespace firefly {
       }
 
       if (prime_number >= interpolations) {
-        if (is_singular_system) {
-          {
-            std::unique_lock<std::mutex> lock_statics(mutex_statics);
-            need_prime_shift = true;
-          }
-          set_singular_system_vars();
-
-        } else {
-          std::unique_lock<std::mutex> lock(mutex_status);
-          num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
-        }
+        std::unique_lock<std::mutex> lock(mutex_status);
+        num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
       }
 
       for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<FFInt> {};
@@ -2890,7 +2880,8 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-      if (!is_singular_system && (set_singular_system || need_prime_shift) && prime_number >= interpolations) {
+      // TODO clean up
+      if (!is_singular_system && (set_singular_system || need_prime_shift || shift != std::vector<FFInt> (n)) && prime_number >= interpolations) {
         lock_statics.unlock();
         set_singular_system_vars();
       }

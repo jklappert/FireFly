@@ -803,7 +803,7 @@ namespace firefly {
 
         bool shift_disabled = false;
 
-        if (!safe_mode && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
+        if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             if (verbosity > SILENT)
               INFO_MSG("Disable shift");
@@ -911,9 +911,6 @@ namespace firefly {
       get_probe(t, zi_order, probe, time);
 
       ++iteration;
-
-      //if (!scan && prime_it == 0 && iteration > 450)
-      //  std::exit(-1);
 
       average_black_box_time = (average_black_box_time * (total_iterations + iteration - 1) + time) / (total_iterations + iteration);
 
