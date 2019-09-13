@@ -198,14 +198,9 @@ namespace firefly {
         interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food));
 
         while (saved_ti.find(curr_zi_order) != saved_ti.end()) {
-          /*
-          * If not finished, check if we can use some saved runs
-          */
-          if (saved_ti.find(curr_zi_order) != saved_ti.end()) {
-            std::pair<FFInt, FFInt> key_val = saved_ti[curr_zi_order].back();
-            saved_ti[curr_zi_order].pop_back();
-            interpolate(key_val.first, key_val.second, curr_zi_order);
-          }
+          std::pair<FFInt, FFInt> key_val = saved_ti[curr_zi_order].front();
+          saved_ti[curr_zi_order].pop();
+          interpolate(key_val.first, key_val.second, curr_zi_order);
         }
 
         lock.lock();
@@ -233,19 +228,23 @@ namespace firefly {
         if (max_deg_num == -1) {// Use Thiele
           check = t_interpolator.add_point(num, new_ti);;
         } else {
-          std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
+          std::queue<std::pair<FFInt, FFInt>> t_food;
 
           // Prepare food for Gauss system
           if (n > 1) {
             if (saved_ti.find(curr_zi_order) != saved_ti.end()) {
-              t_food.insert(t_food.end(), saved_ti[curr_zi_order].begin(), saved_ti[curr_zi_order].end());
+              t_food = saved_ti[curr_zi_order];
               saved_ti.erase(curr_zi_order);
             }
           }
 
+          t_food.emplace(std::make_pair(new_ti, num));
+
           // Iterate through all feeds and build the uni/multivariate Gauss
           // system
-          for (auto & food : t_food) {
+          while (!t_food.empty()) {
+            auto food = t_food.front();
+            t_food.pop();
             FFInt tmp_ti = food.first;
             FFInt tmp_num = food.second;
 
@@ -1074,10 +1073,11 @@ namespace firefly {
         }
       } else {
         if (saved_ti.find(fed_zi_ord) == saved_ti.end()) {
-          std::vector<std::pair<FFInt, FFInt>> tmp_ti = {std::make_pair(new_ti, num)};
-          saved_ti[fed_zi_ord] = tmp_ti;
+          std::queue<std::pair<FFInt, FFInt>> tmp_;
+          tmp_.emplace(std::make_pair(new_ti, num));
+          saved_ti[fed_zi_ord] = tmp_;
         } else
-          saved_ti[fed_zi_ord].emplace_back(std::make_pair(new_ti, num));
+          saved_ti[fed_zi_ord].emplace(std::make_pair(new_ti, num));
       }
     }
   }
@@ -1203,7 +1203,7 @@ namespace firefly {
     std::vector<uint32_t> tmp_deg_num {};
     std::vector<uint32_t> tmp_deg_den {};
 
-    saved_ti = ff_vec_map();
+    saved_ti = ff_queue_map();
     max_num_coef_num = std::make_pair(0, 0);
     max_num_coef_den = std::make_pair(0, 0);
 

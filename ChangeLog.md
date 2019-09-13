@@ -26,7 +26,7 @@ Changes
  * Added an implementation of the Xoshiro256** PRNG which is partly used for the
  generation of pseudo random numbers.
 
- * Small performance and memory improvements.
+ * Minor performance and memory improvements.
 
 Bug fixes
 ---------

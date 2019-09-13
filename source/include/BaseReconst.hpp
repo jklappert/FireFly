@@ -22,6 +22,7 @@
 #include "UintHasher.hpp"
 
 #include <mutex>
+#include <queue>
 
 namespace firefly {
   typedef std::unordered_map<std::vector<uint32_t>, mpz_class, UintHasher> mpz_map;
@@ -29,7 +30,7 @@ namespace firefly {
   typedef std::unordered_map<std::pair<uint32_t, uint32_t>, FFInt, UintPairHasher> ff_pair_map;
   typedef std::unordered_map<std::vector<uint32_t>, RationalNumber, UintHasher> rn_map;
   typedef std::unordered_map<std::vector<uint32_t>, std::unordered_map<std::vector<uint32_t>, FFInt, UintHasher>, UintHasher> ff_map_map;
-  typedef std::unordered_map<std::vector<uint32_t>, std::vector<std::pair<FFInt, FFInt>>, UintHasher> ff_vec_map;
+  typedef std::unordered_map<std::vector<uint32_t>, std::queue<std::pair<FFInt, FFInt>>, UintHasher> ff_queue_map;
   typedef std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> uint32_t_map;
   typedef std::unordered_map<uint32_t, std::vector<PolynomialFF>> polff_vec_map;
   typedef std::unordered_map<uint32_t, PolynomialFF> polff_map;
