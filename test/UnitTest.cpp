@@ -170,6 +170,12 @@ int main() {
   r_1.set_safe_interpolation();
   r_1.reconstruct();
   RatReconst::reset();
+  ShuntingYardParser p_1_2("../../parser_test/s_y_1_v.m", {"x"});
+  BlackBoxUser b_1_2(p_1_2, 2);
+  Reconstructor r_1_2(1, 4, b_1_2, Reconstructor::SILENT);
+  r_1_2.set_safe_interpolation();
+  r_1_2.reconstruct();
+  RatReconst::reset();
   INFO_MSG("Safe mode passed");
 
   INFO_MSG("Test 1 variable");
