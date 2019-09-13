@@ -3252,9 +3252,6 @@ namespace firefly {
   }
 
   std::vector<std::pair<uint32_t, uint32_t>> RatReconst::get_needed_feed_vec() {
-    if(prime_number == 0){
-      std::cout << queue.size() << " " << curr_zi_order[0] << " " << curr_zi_order[1] << " " << curr_zi_order[2] << " " << num_eqn << " " << coef_mat.size() << " " << saved_ti[curr_zi_order].size() << " " << saved_ti.size() << "\n";
-    }
     std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_tmp = std::move(needed_feed_vec);
     needed_feed_vec.clear();
 
