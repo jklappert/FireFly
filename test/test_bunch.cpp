@@ -24,7 +24,7 @@
 namespace firefly {
   class BlackBoxUser : public BlackBoxBase {
   public:
-    BlackBoxUser(const ShuntingYardParser& par_, int mode_) : par(par_), mode(mode_) {};
+    BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
 
     virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
       //std::vector<FFInt> result;
@@ -70,7 +70,6 @@ namespace firefly {
 
   private:
     ShuntingYardParser par;
-    int mode = 0;
   };
 }
 
@@ -78,14 +77,14 @@ using namespace firefly;
 int main() {
   INFO_MSG("Test bunched evaluation");
   ShuntingYardParser p_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-  BlackBoxUser b_3(p_3, 3);
+  BlackBoxUser b_3(p_3);
   Reconstructor r_3(4, 4, 4, b_3);
   r_3.enable_scan();
   r_3.reconstruct();
   RatReconst::reset();
 
   ShuntingYardParser p_3_2("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
-  BlackBoxUser b_3_2(p_3_2, 3);
+  BlackBoxUser b_3_2(p_3_2);
   Reconstructor r_3_2(4, 4, 4, b_3_2);
   r_3_2.set_safe_interpolation();
   r_3_2.reconstruct();

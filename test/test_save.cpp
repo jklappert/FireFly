@@ -59,7 +59,7 @@ namespace firefly {
       par.precompute_tokens();
       c++;
 
-      if (mode == 4 && c == 1 || mode == 5 && c == 2)
+      if ((mode == 4 && c == 1) || (mode == 5 && c == 2))
         throw std::runtime_error("Abort for save test.");
     }
 
