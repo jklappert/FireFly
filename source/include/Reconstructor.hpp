@@ -262,6 +262,7 @@ namespace firefly {
     /**
      *  TODO
      */
+    void get_a_job();
     void mpi_setup();
     void send_first_jobs();
     void mpi_communicate();

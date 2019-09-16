@@ -377,7 +377,7 @@ namespace firefly {
 #ifndef WITH_MPI
         uint32_t start = thr_n * bunch_size;
 #else
-        uint32_t start = 6 * static_cast<uint32_t>(world_size) * bunch_size; // start even more?
+        uint32_t start = static_cast<uint32_t>(world_size) * thr_n * bunch_size; // TODO: start even more?
 #endif
 
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
@@ -500,7 +500,7 @@ namespace firefly {
 #ifndef WITH_MPI
         uint32_t start = thr_n * bunch_size;
 #else
-        uint32_t start = 6 * static_cast<uint32_t>(world_size) * bunch_size; // start even more?
+        uint32_t start = static_cast<uint32_t>(world_size) * thr_n * bunch_size; // TODO: start even more?
 #endif
 
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
@@ -704,6 +704,15 @@ namespace firefly {
     size_t tag_size = tags.size();
 
 #ifdef WITH_MPI
+    uint32_t start = thr_n * bunch_size;
+
+    start_probe_jobs(zi_order, start);
+    started_probes[zi_order] += start;
+
+    for (uint32_t i = 0; i != thr_n; ++i) {
+      get_a_job();
+    }
+
     {
       std::unique_lock<std::mutex> lock_val(mut_val);
 
@@ -1033,8 +1042,14 @@ namespace firefly {
         }
 
         // start only thr_n jobs first, because the reconstruction can be done after the first feed
+        // TODO: MPI
+#ifndef WITH_MPI
         if (probes_for_next_prime > thr_n * bunch_size) {
           uint32_t start = thr_n * bunch_size;
+#else
+        if (probes_for_next_prime > static_cast<uint32_t>(world_size) * thr_n * bunch_size) {
+          uint32_t start = static_cast<uint32_t>(world_size) * thr_n * bunch_size;
+#endif
 
           if (verbosity == CHATTY) {
             INFO_MSG("Starting " + std::to_string(start) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - start) + " jobs will be started later");
@@ -1054,6 +1069,10 @@ namespace firefly {
         }
 
 #ifdef WITH_MPI
+        for (uint32_t i = 0; i != thr_n; ++i) {
+          get_a_job();
+        }
+
         cond_val.notify_one();
 #endif
 
@@ -1083,6 +1102,9 @@ namespace firefly {
 
       tp.run_priority_task([this, zi_order, t, probe]() {
         feed_job(zi_order, t, probe);
+#ifdef WITH_MPI
+        get_a_job();
+#endif
       });
 
       {
@@ -1443,6 +1465,10 @@ namespace firefly {
         time = tmp.second;
         probes.erase(it);
 #ifdef WITH_MPI
+
+        std::unique_lock<std::mutex> lck(mut_val);
+
+        --probes_queued;
       } else {
         auto tmp = std::move(results_queue.front());
         results_queue.pop();
@@ -1516,12 +1542,18 @@ namespace firefly {
 
               tp.run_priority_task([this, &rec]() {
                 interpolate_job(rec);
+#ifdef WITH_MPI
+                get_a_job();
+#endif
               });
             }
 
             if (interpolate_and_write.second) {
-              tp.run_priority_task([&rec]() {
+              tp.run_priority_task([this, &rec]() {
                 std::get<3>(rec)->write_food_to_file();
+#ifdef WITH_MPI
+                get_a_job();
+#endif
               });
             }
           }
@@ -1802,6 +1834,59 @@ namespace firefly {
   }
 
 #ifdef WITH_MPI
+  void Reconstructor::get_a_job() {
+    if (tp.queue_size() == 0) {
+      std::unique_lock<std::mutex> lock_val(mut_val);
+
+      if (!value_queue.empty()) {
+        std::vector<uint64_t> val = std::move(value_queue.front());
+        value_queue.pop();
+
+        if (value_queue.empty()) {
+          new_jobs = false;
+        }
+
+        auto tmp = index_map[val.front()];
+
+        lock_val.unlock();
+
+        FFInt t = tmp.first;
+        std::vector<uint32_t> zi_order = std::move(tmp.second);
+
+        std::vector<FFInt> values;
+        values.reserve(val.size() - 1);
+
+        for (size_t i = 1; i != val.size(); ++i) {
+          values.emplace_back(val[i]);
+        }
+
+        std::unique_lock<std::mutex> lock(future_control);
+
+        probes.emplace_back(std::make_tuple(t, zi_order, probe_future()));
+        auto it = --(probes.end());
+
+        probe_future future = tp.run_packaged_task([this, values, it]() {
+          auto time0 = std::chrono::high_resolution_clock::now();
+
+          std::vector<FFInt> probe = bb(values);
+
+          auto time1 = std::chrono::high_resolution_clock::now();
+
+          std::unique_lock<std::mutex> lock(future_control);
+
+          ++jobs_finished;
+          finished_probes_it.emplace(it);
+
+          condition_future.notify_one();
+
+          return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
+        });
+
+        std::get<2>(*it) = std::move(future);
+      }
+    }
+  }
+
   void Reconstructor::mpi_setup() {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Bcast(&prime_it, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
