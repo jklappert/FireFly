@@ -763,7 +763,7 @@ namespace firefly {
 
           INFO_MSG("Completed current prime field in " +
                    std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
-                   " s | " + std::to_string(total_iterations) + " probes in total.");
+                   " s | " + std::to_string(total_iterations) + " probes in total");
           INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
           std::cout << "\n";
           INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
