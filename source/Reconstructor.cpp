@@ -357,6 +357,10 @@ namespace firefly {
           cond_val.wait(lock);
         }
 
+        proceed = true;
+
+        cond_val.notify_one();
+
         if (value_queue.empty()) {
           new_jobs = false;
         }
@@ -395,6 +399,20 @@ namespace firefly {
 
 #ifdef WITH_MPI
         cond_val.notify_one();
+
+        {
+          std::unique_lock<std::mutex> lock_val(mut_val);
+
+          while (!proceed) {
+            cond_val.wait(lock_val);
+          }
+
+          proceed = false;
+        }
+
+        for (uint32_t i = 0; i != thr_n; ++i) {
+          get_a_job();
+        }
 #endif
       } else {
         start_first_runs();
@@ -518,6 +536,20 @@ namespace firefly {
 
 #ifdef WITH_MPI
         cond_val.notify_one();
+
+        {
+          std::unique_lock<std::mutex> lock_val(mut_val);
+
+          while (!proceed) {
+            cond_val.wait(lock_val);
+          }
+
+          proceed = false;
+        }
+
+        for (uint32_t i = 0; i != thr_n; ++i) {
+          get_a_job();
+        }
 #endif
       }
 
@@ -714,6 +746,20 @@ namespace firefly {
     size_t tag_size = tags.size();
 
 #ifdef WITH_MPI
+    {
+      std::unique_lock<std::mutex> lock_val(mut_val);
+
+      new_jobs = true;
+
+      cond_val.notify_one();
+
+      while (!proceed) {
+        cond_val.wait(lock_val);
+      }
+
+      proceed = false;
+    }
+
     uint32_t start = thr_n * bunch_size;
 
     start_probe_jobs(zi_order, start);
@@ -721,14 +767,6 @@ namespace firefly {
 
     for (uint32_t i = 0; i != thr_n; ++i) {
       get_a_job();
-    }
-
-    {
-      std::unique_lock<std::mutex> lock_val(mut_val);
-
-      new_jobs = true;
-
-      cond_val.notify_one();
     }
 #endif
 
@@ -1079,11 +1117,21 @@ namespace firefly {
         }
 
 #ifdef WITH_MPI
+        cond_val.notify_one();
+
+        {
+          std::unique_lock<std::mutex> lock_val(mut_val);
+
+          while (!proceed) {
+            cond_val.wait(lock_val);
+          }
+
+          proceed = false;
+        }
+
         for (uint32_t i = 0; i != thr_n; ++i) {
           get_a_job();
         }
-
-        cond_val.notify_one();
 #endif
 
         probes_for_next_prime = 0;
@@ -2051,6 +2099,10 @@ namespace firefly {
         while (!new_jobs) {
           cond_val.wait(lock_val);
         }
+
+        proceed = true;
+
+        cond_val.notify_one();
 
         empty_nodes = std::queue<std::pair<int, uint64_t>>();
 

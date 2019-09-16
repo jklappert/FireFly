@@ -258,6 +258,7 @@ namespace firefly {
     std::atomic<bool> new_jobs = {false};
     std::queue<std::vector<uint64_t>> value_queue;
     std::queue<std::pair<uint64_t, std::vector<FFInt>>> results_queue;
+    bool proceed = false;
     //uint64_t probes_queued = 0;
     /**
      *  TODO
