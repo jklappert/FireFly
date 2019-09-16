@@ -162,7 +162,7 @@ int main() {
   if (process == master) {
     std::cout << "master on " << processor_name << ": " << std::thread::hardware_concurrency() << "\n";
 
-    Reconstructor reconst(4 /*n_vars*/, std::thread::hardware_concurrency() - 1 /*n_threads*/, 1 /*bunch size*/, bb /*black box*//*, Reconstructor::CHATTY*/);
+    Reconstructor reconst(4 /*n_vars*/, std::thread::hardware_concurrency() /*n_threads*/, 1 /*bunch size*/, bb /*black box*//*, Reconstructor::CHATTY*/);
 
     reconst.enable_scan();
 
