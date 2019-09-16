@@ -178,6 +178,7 @@ namespace firefly {
     return std::make_pair(interpolate, write_to_file);
   }
 
+  // TODO Change return type since the first bool should not be needed anymore
   std::tuple<bool, bool, uint32_t> RatReconst::interpolate() {
     std::unique_lock<std::mutex> lock(mutex_status);
 
@@ -197,14 +198,9 @@ namespace firefly {
         interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food));
 
         while (saved_ti.find(curr_zi_order) != saved_ti.end()) {
-          /*
-          * If not finished, check if we can use some saved runs
-          */
-          if (saved_ti.find(curr_zi_order) != saved_ti.end()) {
-            std::pair<FFInt, FFInt> key_val = saved_ti[curr_zi_order].back();
-            saved_ti[curr_zi_order].pop_back();
-            interpolate(key_val.first, key_val.second, curr_zi_order);
-          }
+          std::pair<FFInt, FFInt> key_val = saved_ti[curr_zi_order].front();
+          saved_ti[curr_zi_order].pop();
+          interpolate(key_val.first, key_val.second, curr_zi_order);
         }
 
         lock.lock();
@@ -232,19 +228,23 @@ namespace firefly {
         if (max_deg_num == -1) {// Use Thiele
           check = t_interpolator.add_point(num, new_ti);;
         } else {
-          std::vector<std::pair<FFInt, FFInt>> t_food = {std::make_pair(new_ti, num)};
+          std::queue<std::pair<FFInt, FFInt>> t_food;
 
           // Prepare food for Gauss system
           if (n > 1) {
             if (saved_ti.find(curr_zi_order) != saved_ti.end()) {
-              t_food.insert(t_food.end(), saved_ti[curr_zi_order].begin(), saved_ti[curr_zi_order].end());
+              t_food = saved_ti[curr_zi_order];
               saved_ti.erase(curr_zi_order);
             }
           }
 
+          t_food.emplace(std::make_pair(new_ti, num));
+
           // Iterate through all feeds and build the uni/multivariate Gauss
           // system
-          for (auto & food : t_food) {
+          while (!t_food.empty()) {
+            auto food = t_food.front();
+            t_food.pop();
             FFInt tmp_ti = food.first;
             FFInt tmp_num = food.second;
 
@@ -1073,10 +1073,11 @@ namespace firefly {
         }
       } else {
         if (saved_ti.find(fed_zi_ord) == saved_ti.end()) {
-          std::vector<std::pair<FFInt, FFInt>> tmp_ti = {std::make_pair(new_ti, num)};
-          saved_ti[fed_zi_ord] = tmp_ti;
+          std::queue<std::pair<FFInt, FFInt>> tmp_;
+          tmp_.emplace(std::make_pair(new_ti, num));
+          saved_ti[fed_zi_ord] = tmp_;
         } else
-          saved_ti[fed_zi_ord].emplace_back(std::make_pair(new_ti, num));
+          saved_ti[fed_zi_ord].emplace(std::make_pair(new_ti, num));
       }
     }
   }
@@ -1202,7 +1203,7 @@ namespace firefly {
     std::vector<uint32_t> tmp_deg_num {};
     std::vector<uint32_t> tmp_deg_den {};
 
-    saved_ti = ff_vec_map();
+    saved_ti = ff_queue_map();
     max_num_coef_num = std::make_pair(0, 0);
     max_num_coef_den = std::make_pair(0, 0);
 
@@ -2030,6 +2031,7 @@ namespace firefly {
     }
 
     bool tmp = need_prime_shift;
+
     set_singular_system = need_prime_shift;
     need_prime_shift = false;
     return tmp;
@@ -2312,7 +2314,10 @@ namespace firefly {
     std::ifstream ifile(file_name.c_str());
     igzstream file(file_name.c_str());
     bool first = true;
-    prime_number = parse_prime_number(file_name) + 1;
+    {
+      std::unique_lock<std::mutex> lock_status(mutex_status);
+      prime_number = parse_prime_number(file_name) + 1;
+    }
     check_interpolation = true;
     bool tmp_need_shift = false;
     from_save_state = true;
@@ -2335,6 +2340,7 @@ namespace firefly {
             std::getline(file, line);
             normalize_to_den = std::stoi(line);
             file.close();
+            std::unique_lock<std::mutex> lock_status(mutex_status);
             prime_number = 0;
             check_interpolation = false;
             return std::make_pair(true, 0);
@@ -2347,7 +2353,7 @@ namespace firefly {
           curr_parsed_variable = COMBINED_PRIME;
           parsed_variables[COMBINED_PRIME] = true;
         } else if (is_zero) {
-          if (prime_number >= 2) {
+          if (prime_number > 2) {
             std::unique_lock<std::mutex> lock_status(mutex_status);
             new_prime = false;
             done = true;
@@ -2667,11 +2673,6 @@ namespace firefly {
 
       for (const auto & el : combined_di) add_non_solved_den(el.first);
 
-//       {
-//         std::unique_lock<std::mutex> lock_statics(mutex_statics);
-//         is_singular_system = need_prime_shift;
-//       }
-
       {
         std::unique_lock<std::mutex> lock(mutex_status);
         std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
@@ -2679,17 +2680,8 @@ namespace firefly {
       }
 
       if (prime_number >= interpolations) {
-        if (is_singular_system) {
-          {
-            std::unique_lock<std::mutex> lock_statics(mutex_statics);
-            need_prime_shift = true;
-          }
-          set_singular_system_vars();
-
-        } else {
-          std::unique_lock<std::mutex> lock(mutex_status);
-          num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
-        }
+        std::unique_lock<std::mutex> lock(mutex_status);
+        num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
       }
 
       for (const auto & el : non_solved_degs_num) coef_mat_num[el.first] = std::vector<FFInt> {};
@@ -2888,7 +2880,8 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-      if (!is_singular_system && set_singular_system && prime_number >= interpolations) {
+      // TODO clean up
+      if (!is_singular_system && (set_singular_system || need_prime_shift || shift != std::vector<FFInt> (n)) && prime_number >= interpolations) {
         lock_statics.unlock();
         set_singular_system_vars();
       }

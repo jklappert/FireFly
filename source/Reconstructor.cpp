@@ -118,7 +118,7 @@ namespace firefly {
     tinydir_close(&dir);
 
     std::sort(files.begin(), files.end(), [](const std::string & l, const std::string & r) {
-      return std::stoi(l.substr(0, l.find("_"))) < stoi(r.substr(0, r.find("_")));
+      return std::stoi(l.substr(0, l.find("_"))) < std::stoi(r.substr(0, r.find("_")));
     });
 
     for (const auto & file : files) {
@@ -128,8 +128,10 @@ namespace firefly {
     if (paths.size() != 0) {
       resume_from_saved_state(paths);
     } else {
-      ERROR_MSG("Directory './ff_save' does not exist or has no content.");
-      std::exit(EXIT_FAILURE);
+      save_states = true;
+      WARNING_MSG("Directory './ff_save' does not exist or has no content");
+      INFO_MSG("Starting new reconstruction and saving states");
+      return;
     }
   }
 
@@ -207,7 +209,7 @@ namespace firefly {
     tinydir_close(&dir);
 
     std::sort(files.begin(), files.end(), [](const std::string & l, const std::string & r) {
-      return std::stoi(l.substr(0, l.find("_"))) < stoi(r.substr(0, r.find("_")));
+      return std::stoi(l.substr(0, l.find("_"))) < std::stoi(r.substr(0, r.find("_")));
     });
 
     for (const auto & file : files) {
@@ -716,7 +718,6 @@ namespace firefly {
       std::exit(EXIT_FAILURE);
     }
 
-    //std::ofstream file;
     ogzstream file;
 
     if (save_states) {
@@ -897,7 +898,7 @@ namespace firefly {
 
           INFO_MSG("Completed current prime field in " +
                    std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
-                   " s | " + std::to_string(total_iterations) + " probes in total.");
+                   " s | " + std::to_string(total_iterations) + " probes in total");
           INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
           std::cout << "\n";
           INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
@@ -953,7 +954,7 @@ namespace firefly {
 
         bool shift_disabled = false;
 
-        if (!safe_mode && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
+        if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             if (verbosity > SILENT)
               INFO_MSG("Disable shift");
@@ -1065,9 +1066,6 @@ namespace firefly {
       get_probe(t, zi_order, probe, time);
 
       ++iteration;
-
-      //if (!scan && prime_it == 0 && iteration > 450)
-      //  std::exit(-1);
 
       average_black_box_time = (average_black_box_time * (total_iterations + iteration - 1) + time) / (total_iterations + iteration);
 
@@ -1522,7 +1520,7 @@ namespace firefly {
             }
 
             if (interpolate_and_write.second) {
-              tp.run_priority_task([this, &rec]() {
+              tp.run_priority_task([&rec]() {
                 std::get<3>(rec)->write_food_to_file();
               });
             }

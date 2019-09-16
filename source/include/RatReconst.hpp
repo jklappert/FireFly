@@ -23,7 +23,6 @@
 #include "RationalFunction.hpp"
 
 #include <map>
-#include <queue>
 
 namespace firefly {
   /**
@@ -255,7 +254,7 @@ namespace firefly {
     std::unordered_map<uint32_t, std::vector<FFInt>> coef_mat_den {}; /**< A matrix that holds systems of equations for the Vandermonde systems of the denominator */
     PolynomialFF solved_num; /**< Stores already solved monomials of the numerator */
     PolynomialFF solved_den; /**< Stores already solved monomials of the denominator */
-    ff_vec_map saved_ti {}; /**< Stores values of the homogenization variable t */
+    ff_queue_map saved_ti {}; /**< Stores values of the homogenization variable t */
     std::list<std::pair<uint32_t, PolyReconst>> coef_n {}; /**< Stores PolyReconst objects for the numerator */
     std::list<std::pair<uint32_t, PolyReconst>> coef_d {}; /**< Stores PolyReconst objects for the denominator */
     // a vector entry should be just a pointer to save memor
@@ -373,7 +372,6 @@ namespace firefly {
     ThieleInterpolator t_interpolator; /**< An object for Thiele interpolations */
     uint32_t interpolations = 1;  /**< Indication how many interpolations should be made until one uses Vandermonde systems */
     std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> saved_food; /** Data structre used to write already used probes to a file from which one can resume if crashes occur. First FFInt is t second is num */
-    //std::vector<std::tuple<std::vector<uint32_t>, uint64_t, uint64_t>> parsed_probes; /** Data structre used for storing already used probes in prior runs to resume if crashes occur. First uint64_t is t second is num */
     std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
     bool from_save_state = false; /**< Indicates wether one resumes from a saved state */
     bool is_writing_probes = false; /**< Indicates wether this object is currently writing to a file */

@@ -8,4 +8,4 @@ script:
   - cd build
   - cmake -DDO_NOT_CHECK_GMP_VERSION=true ..
   - make
-  - ./example
+  - make test
