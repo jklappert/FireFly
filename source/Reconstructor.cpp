@@ -37,6 +37,11 @@ namespace firefly {
     BaseReconst().set_seed(seed);
     tmp_rec = RatReconst(n);
 
+#ifdef WITH_MPI
+    --thr_n_;
+    --thr_n;
+#endif
+
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
       INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size 1");
@@ -49,6 +54,11 @@ namespace firefly {
     uint64_t seed = static_cast<uint64_t>(std::time(0));
     BaseReconst().set_seed(seed);
     tmp_rec = RatReconst(n);
+
+#ifdef WITH_MPI
+    --thr_n_;
+    --thr_n;
+#endif
 
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
