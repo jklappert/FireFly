@@ -42,7 +42,7 @@ else()
   add_definitions(-DDEFAULT)
 endif()
 
-if("${MPI}" STREQUAL true)
+if("${WITH_MPI}" STREQUAL true)
   find_package(MPI REQUIRED)
   add_definitions(-DWITH_MPI)
 endif()
@@ -78,7 +78,7 @@ include_directories(${ZLIB_INCLUDE_DIRS})
 if("${WITH_FLINT}" STREQUAL true)
   include_directories(${FLINT_INCLUDE_DIR}/flint)
 endif()
-if("${MPI}" STREQUAL true)
+if("${WITH_MPI}" STREQUAL true)
   include_directories(${MPI_INCLUDE_PATH})
 endif()
 
@@ -125,7 +125,7 @@ set(LIBSOURCES_SHRD
   ${SOURCE_PATH}/ShuntingYardParser.cpp
   ${SOURCE_PATH}/utils.cpp)
 
-if("${MPI}" STREQUAL "true")
+if("${WITH_MPI}" STREQUAL "true")
   set(LIBSOURCES ${LIBSOURCES} ${SOURCE_PATH}/MPIWorker.cpp)
   set(LIBSOURCES_SHRD ${LIBSOURCES_SHRD} ${SOURCE_PATH}/MPIWorker.cpp)
 endif()
@@ -146,7 +146,7 @@ set(LIBS FireFly_static gmp ${ZLIB_LIBRARIES})
 if("${WITH_FLINT}" STREQUAL true)
   set(LIBS ${LIBS} flint)
 endif()
-if("${MPI}" STREQUAL true)
+if("${WITH_MPI}" STREQUAL true)
   set(LIBS ${LIBS} ${MPI_CXX_LIBRARIES})
 endif()
 
@@ -168,7 +168,7 @@ set(PKG_LIBS "-lfirefly -lgmp -lz")
 if("${WITH_FLINT}" STREQUAL "true")
   set(PKG_LIBS "${PKG_LIBS} -lflint")
 endif()
-if("${MPI}" STREQUAL "true")
+if("${WITH_MPI}" STREQUAL "true")
   set(PKG_LIBS "${PKG_LIBS} ${MPI_CXX_LIBRARIES}")
 endif()
 
@@ -208,7 +208,7 @@ install(FILES
   "${INCLUDE_PATH}/version.hpp"
   DESTINATION "${INCLUDE_INSTALL_DIR}")
 
-if("${MPI}" STREQUAL "true")
+if("${WITH_MPI}" STREQUAL "true")
   install(FILES "${INCLUDE_PATH}/MPIWorker.hpp" DESTINATION "${INCLUDE_INSTALL_DIR}")
 endif()
 

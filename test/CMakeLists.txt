@@ -5,7 +5,7 @@ set(LIBS FireFly_static gmp ${ZLIB_LIBRARIES})
 if("${WITH_FLINT}" STREQUAL true)
   set(LIBS ${LIBS} flint)
 endif()
-if("${MPI}" STREQUAL true)
+if("${WITH_MPI}" STREQUAL true)
   set(LIBS ${LIBS} ${MPI_CXX_LIBRARIES})
 endif()
 
