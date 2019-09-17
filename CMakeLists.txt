@@ -26,8 +26,11 @@ endif()
 
 find_package(GMP REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(MPI REQUIRED)
-include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+
+if("${WITH_MPI}" STREQUAL true)
+  find_package(MPI REQUIRED)
+  include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+endif()
 
 # if you want to use FLINT instead of our default implementation, call cmake with
 # cmake -DWITH_FLINT=true ..

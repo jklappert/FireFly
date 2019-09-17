@@ -391,7 +391,7 @@ namespace firefly {
 #ifndef WITH_MPI
         uint32_t start = thr_n * bunch_size;
 #else
-        uint32_t start = static_cast<uint32_t>(world_size) * thr_n * bunch_size; // TODO: start even more?
+        uint32_t start = 2 * static_cast<uint32_t>(world_size) * thr_n * bunch_size; // TODO: start even more?
 #endif
 
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
@@ -410,7 +410,7 @@ namespace firefly {
           proceed = false;
         }
 
-        for (uint32_t i = 0; i != thr_n; ++i) {
+        for (uint32_t i = 0; i != 2 * thr_n; ++i) {
           get_a_job();
         }
 #endif
@@ -528,7 +528,7 @@ namespace firefly {
 #ifndef WITH_MPI
         uint32_t start = thr_n * bunch_size;
 #else
-        uint32_t start = static_cast<uint32_t>(world_size) * thr_n * bunch_size; // TODO: start even more?
+        uint32_t start = 2 * static_cast<uint32_t>(world_size) * thr_n * bunch_size; // TODO: start even more?
 #endif
 
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
@@ -547,7 +547,7 @@ namespace firefly {
           proceed = false;
         }
 
-        for (uint32_t i = 0; i != thr_n; ++i) {
+        for (uint32_t i = 0; i != 2 * thr_n; ++i) {
           get_a_job();
         }
 #endif
@@ -760,12 +760,12 @@ namespace firefly {
       proceed = false;
     }
 
-    uint32_t start = thr_n * bunch_size;
+    uint32_t start = 2 * thr_n * bunch_size;
 
     start_probe_jobs(zi_order, start);
     started_probes[zi_order] += start;
 
-    for (uint32_t i = 0; i != thr_n; ++i) {
+    for (uint32_t i = 0; i != 2 * thr_n; ++i) {
       get_a_job();
     }
 #endif
@@ -1095,8 +1095,8 @@ namespace firefly {
         if (probes_for_next_prime > thr_n * bunch_size) {
           uint32_t start = thr_n * bunch_size;
 #else
-        if (probes_for_next_prime > static_cast<uint32_t>(world_size) * thr_n * bunch_size) {
-          uint32_t start = static_cast<uint32_t>(world_size) * thr_n * bunch_size;
+        if (probes_for_next_prime > 2 * static_cast<uint32_t>(world_size) * thr_n * bunch_size) {
+          uint32_t start = 2 * static_cast<uint32_t>(world_size) * thr_n * bunch_size;
 #endif
 
           if (verbosity == CHATTY) {
@@ -1129,7 +1129,7 @@ namespace firefly {
           proceed = false;
         }
 
-        for (uint32_t i = 0; i != thr_n; ++i) {
+        for (uint32_t i = 0; i != 2 * thr_n; ++i) {
           get_a_job();
         }
 #endif
@@ -1893,7 +1893,7 @@ namespace firefly {
 
 #ifdef WITH_MPI
   void Reconstructor::get_a_job() {
-    if (tp.queue_size() == 0) {
+    if (tp.queue_size() <= thr_n) {
       std::unique_lock<std::mutex> lock_val(mut_val);
 
       if (!value_queue.empty()) {
@@ -1929,6 +1929,8 @@ namespace firefly {
           std::vector<FFInt> probe = bb(values);
 
           auto time1 = std::chrono::high_resolution_clock::now();
+
+          get_a_job();
 
           std::unique_lock<std::mutex> lock(future_control);
 
