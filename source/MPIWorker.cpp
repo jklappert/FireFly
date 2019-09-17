@@ -111,8 +111,10 @@ namespace firefly {
         results.clear();
         tasks = 0;
 
-        FFInt::set_new_prime(primes()[static_cast<uint32_t>(prime)]);
-        bb.prime_changed();
+        if (prime != 0) {
+          FFInt::set_new_prime(primes()[static_cast<uint32_t>(prime)]);
+          bb.prime_changed();
+        }
 
         //std::cout << "worker " << FFInt::p << "\n";
 
