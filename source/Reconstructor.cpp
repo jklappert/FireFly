@@ -567,7 +567,11 @@ namespace firefly {
         index_map.clear();
         ind = 0;
 
-        cond_val.wait(lock_val);
+        while (!proceed) {
+          cond_val.wait(lock_val);
+        }
+
+        proceed = false;
       }
 #endif
 
@@ -917,7 +921,11 @@ namespace firefly {
           index_map.clear();
           ind = 0;
 
-          cond_val.wait(lock_val);
+          while (!proceed) {
+            cond_val.wait(lock_val);
+          }
+
+          proceed = false;
         }
 #endif
 
@@ -2094,9 +2102,11 @@ namespace firefly {
 
         //std::cout << "com rec\n";
 
-        cond_val.notify_one();
-
         std::unique_lock<std::mutex> lock_val(mut_val);
+
+        proceed = true;
+
+        cond_val.notify_one();
 
         while (!new_jobs) {
           cond_val.wait(lock_val);
