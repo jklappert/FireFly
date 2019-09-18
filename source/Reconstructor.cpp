@@ -413,6 +413,7 @@ namespace firefly {
         for (uint32_t i = 0; i != 2 * thr_n; ++i) {
           get_a_job();
         }
+
 #endif
       } else {
         start_first_runs();
@@ -550,6 +551,7 @@ namespace firefly {
         for (uint32_t i = 0; i != 2 * thr_n; ++i) {
           get_a_job();
         }
+
 #endif
       }
 
@@ -750,6 +752,8 @@ namespace firefly {
     size_t tag_size = tags.size();
 
 #ifdef WITH_MPI
+    ++tmp_total_iterations;
+    tmp_average_black_box_time = average_black_box_time;
     {
       std::unique_lock<std::mutex> lock_val(mut_val);
 
@@ -772,6 +776,7 @@ namespace firefly {
     for (uint32_t i = 0; i != 2 * thr_n; ++i) {
       get_a_job();
     }
+
 #endif
 
     if (tag_size != 0 && tag_size != items) {
@@ -1100,9 +1105,11 @@ namespace firefly {
         // start only thr_n jobs first, because the reconstruction can be done after the first feed
         // TODO: MPI
 #ifndef WITH_MPI
+
         if (probes_for_next_prime > thr_n * bunch_size) {
           uint32_t start = thr_n * bunch_size;
 #else
+
         if (probes_for_next_prime > 2 * static_cast<uint32_t>(world_size) * thr_n * bunch_size) {
           uint32_t start = 2 * static_cast<uint32_t>(world_size) * thr_n * bunch_size;
 #endif
@@ -1140,6 +1147,7 @@ namespace firefly {
         for (uint32_t i = 0; i != 2 * thr_n; ++i) {
           get_a_job();
         }
+
 #endif
 
         probes_for_next_prime = 0;
@@ -1152,7 +1160,9 @@ namespace firefly {
 
       ++iteration;
 
+#ifndef WITH_MPI
       average_black_box_time = (average_black_box_time * (total_iterations + iteration - 1) + time) / (total_iterations + iteration);
+#endif
 
       if ((prime_it == 0 || safe_mode == true) && zi_order == std::vector<uint32_t>(n - 1, 1)) {
         std::unique_lock<std::mutex> lock_status(job_control);
@@ -1941,13 +1951,16 @@ namespace firefly {
           get_a_job();
 
           std::unique_lock<std::mutex> lock(future_control);
+          auto time = std::chrono::duration<double>(time1 - time0).count();
+          ++tmp_total_iterations;
+          tmp_average_black_box_time = (tmp_average_black_box_time * (tmp_total_iterations - 1) + time) / tmp_total_iterations;
 
           ++jobs_finished;
           finished_probes_it.emplace(it);
 
           condition_future.notify_one();
 
-          return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
+          return std::make_pair(std::move(probe), time);
         });
 
         std::get<2>(*it) = std::move(future);
@@ -2099,6 +2112,33 @@ namespace firefly {
         }
 
         MPI_Barrier(MPI_COMM_WORLD);
+
+        std::vector<double> timings;
+        std::vector<double> weights;
+        timings.reserve(world_size);
+        weights.reserve(world_size);
+        double total_weight = 0.;
+
+        for (int i = 1; i != world_size; ++i) {
+          MPI_Status status;
+          double timing[2];
+          MPI_Recv(&timing, 2, MPI_DOUBLE, i, TIMING, MPI_COMM_WORLD, &status);
+          timings.emplace_back(timing[0]);
+          weights.emplace_back(timing[1]);
+          total_weight += timing[1];
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        timings.emplace_back(tmp_average_black_box_time);
+        weights.emplace_back(static_cast<double>(tmp_total_iterations));
+        total_weight += static_cast<double>(tmp_total_iterations);
+
+        average_black_box_time = 0.;
+
+        for (int i = 0; i != world_size; ++i) {
+          average_black_box_time += weights[i] / total_weight * timings[i];
+        }
 
         //std::cout << "com rec\n";
 

@@ -119,6 +119,12 @@ namespace firefly {
         //std::cout << "worker " << FFInt::p << "\n";
 
         MPI_Barrier(MPI_COMM_WORLD);
+
+        double timing[2] = {average_black_box_time, static_cast<double>(total_iterations)};
+
+        MPI_Send(timing, 2, MPI_DOUBLE, master, TIMING, MPI_COMM_WORLD);
+
+        MPI_Barrier(MPI_COMM_WORLD);
       } else if (status.MPI_TAG == END) {
         tp.kill_all();
         results.clear();
@@ -133,7 +139,11 @@ namespace firefly {
   }
 
   void MPIWorker::compute(const uint64_t index, const std::vector<FFInt>& values) {
+    auto time0 = std::chrono::high_resolution_clock::now();
+
     std::vector<FFInt> result = bb(values);
+
+    auto time1 = std::chrono::high_resolution_clock::now();
 
     std::vector<uint64_t> result_uint;
     result_uint.reserve(1 + result.size());
@@ -145,11 +155,10 @@ namespace firefly {
     }
 
     std::unique_lock<std::mutex> lock(mut);
+    ++total_iterations;
 
-    if (bb_size == 0) {
-      bb_size = result.size();
-    }
-
+    auto time = std::chrono::duration<double>(time1 - time0).count();
+    average_black_box_time = (average_black_box_time * (total_iterations - 1) + time) / total_iterations;
     results.insert(results.end(), result_uint.begin(), result_uint.end());
     --tasks;
 

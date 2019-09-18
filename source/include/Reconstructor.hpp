@@ -267,6 +267,8 @@ namespace firefly {
     void mpi_setup();
     void send_first_jobs();
     void mpi_communicate();
+    uint32_t tmp_total_iterations = 0;
+    double tmp_average_black_box_time = 0.;
 #endif
   };
 }

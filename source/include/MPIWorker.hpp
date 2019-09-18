@@ -24,7 +24,7 @@
 
 namespace firefly {
   const int master = 0;
-  enum MPI_tags {VALUES, RESULT, NEW_PRIME, END};
+  enum MPI_tags {VALUES, RESULT, NEW_PRIME, TIMING, END};
 
   class MPIWorker {
   public:
@@ -33,7 +33,8 @@ namespace firefly {
   private:
     const uint32_t n;
     const uint32_t thr_n;
-    uint32_t bb_size = 0;
+    uint32_t total_iterations = 0;
+    double average_black_box_time = 0.;
     BlackBoxBase& bb;
     ThreadPool tp;
     std::vector<uint64_t> results;
