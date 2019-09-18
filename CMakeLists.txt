@@ -27,29 +27,6 @@ endif()
 find_package(GMP REQUIRED)
 find_package(ZLIB REQUIRED)
 
-if("${WITH_MPI}" STREQUAL true)
-  find_package(MPI REQUIRED)
-  include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-endif()
-
-# if you want to use FLINT instead of our default implementation, call cmake with
-# cmake -DWITH_FLINT=true ..
-# set(WITH_FLINT false)
-if("${CUSTOM}" STREQUAL true)
-  add_definitions(-DCUSTOM)
-elseif("${WITH_FLINT}" STREQUAL true)
-  find_package(FLINT REQUIRED)
-  add_definitions(-DFLINT)
-else()
-  message("-- ${Red}Using default implementation of modular arithmetic. This can be much slower than FLINT!${ColourReset}")
-  add_definitions(-DDEFAULT)
-endif()
-
-if("${WITH_MPI}" STREQUAL true)
-  find_package(MPI REQUIRED)
-  add_definitions(-DWITH_MPI)
-endif()
-
 # set the build type to release. If one needs debugging symbols, compile
 # with "-DCMAKE_BUILD_TYPE=Debug"
 if(NOT CMAKE_BUILD_TYPE)
@@ -78,11 +55,32 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 include_directories(${INCLUDE_PATH})
 include_directories(${GMP_INCLUDE_DIR})
 include_directories(${ZLIB_INCLUDE_DIRS})
-if("${WITH_FLINT}" STREQUAL true)
+
+# Check for FLINT
+# if you want to use FLINT instead of our default implementation, call cmake with
+# cmake -DWITH_FLINT=true ..
+# set(WITH_FLINT false)
+if("${CUSTOM}" STREQUAL true)
+  add_definitions(-DCUSTOM)
+elseif("${WITH_FLINT}" STREQUAL true)
+  find_package(FLINT REQUIRED)
   include_directories(${FLINT_INCLUDE_DIR}/flint)
+  add_definitions(-DFLINT)
+else()
+  message("-- ${Red}Using default implementation of modular arithmetic. This can be much slower than FLINT!${ColourReset}")
+  add_definitions(-DDEFAULT)
 endif()
+
+# Check for MPI
 if("${WITH_MPI}" STREQUAL true)
-  include_directories(${MPI_INCLUDE_PATH})
+  if("${MPI_INCLUDE_PATH}" STREQUAL "")
+    find_package(MPI REQUIRED)
+  else()
+    message("-- Using user defined MPI implementation library: ${MPI_CXX_LIBRARIES}")
+    message("-- Using user defined MPI implementation library: ${MPI_INCLUDE_PATH}")
+  endif()
+  add_definitions(-DWITH_MPI)
+  include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 endif()
 
 # Firefly library files
