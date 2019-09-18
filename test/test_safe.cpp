@@ -19,7 +19,9 @@
 #include "DenseSolver.hpp"
 #include "Reconstructor.hpp"
 #include "ShuntingYardParser.hpp"
-#include "tinydir.h"
+#ifdef WITH_MPI
+#include "MPIWorker.hpp"
+#endif
 
 namespace firefly {
   class BlackBoxUser : public BlackBoxBase {
@@ -56,6 +58,18 @@ namespace firefly {
 
 using namespace firefly;
 int main() {
+#ifdef WITH_MPI
+  int provided;
+  MPI_Init_thread(NULL, NULL, MPI_THREAD_SERIALIZED, &provided);
+
+  int process;
+  MPI_Comm_rank(MPI_COMM_WORLD, &process);
+
+  char processor_name[MPI_MAX_PROCESSOR_NAME];
+  int name_len;
+  MPI_Get_processor_name(processor_name, &name_len);
+#endif
+#ifndef WITH_MPI
   INFO_MSG("Test safe mode");
   ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_1(p_1);
@@ -77,6 +91,45 @@ int main() {
   r_1_3.set_safe_interpolation();
   r_1_3.reconstruct();
   INFO_MSG("Safe mode passed");
+#else
 
+  if (process == master) {
+    INFO_MSG("Test safe mode");
+    ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_1(p_1);
+    Reconstructor r_1(4, std::thread::hardware_concurrency(), b_1);
+    r_1.set_safe_interpolation();
+    r_1.reconstruct();
+    RatReconst::reset();
+
+    ShuntingYardParser p_1_2("../../parser_test/s_y_1_v.m", {"x"});
+    BlackBoxUser b_1_2(p_1_2);
+    Reconstructor r_1_2(1, std::thread::hardware_concurrency(), b_1_2);
+    r_1_2.set_safe_interpolation();
+    r_1_2.reconstruct();
+    RatReconst::reset();
+
+    ShuntingYardParser p_1_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_1_3(p_1_3);
+    Reconstructor r_1_3(4, std::thread::hardware_concurrency(), b_1_3);
+    r_1_3.set_safe_interpolation();
+    r_1_3.reconstruct();
+    INFO_MSG("Safe mode passed");
+  } else {
+    ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_1(p_1);
+    MPIWorker(4, std::thread::hardware_concurrency(), b_1);
+
+    ShuntingYardParser p_1_2("../../parser_test/s_y_1_v.m", {"x"});
+    BlackBoxUser b_1_2(p_1_2);
+    MPIWorker(1, std::thread::hardware_concurrency(), b_1_2);
+
+    ShuntingYardParser p_1_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_1_3(p_1_3);
+    MPIWorker(4, std::thread::hardware_concurrency(), b_1_3);
+  }
+
+  MPI_Finalize();
+#endif
   return 0;
 }

@@ -1011,7 +1011,7 @@ namespace firefly {
         // if only a small constant is reconstructed it will not ask for new run
         if (probes_for_next_prime == 0) {
 #ifdef WITH_MPI
-          probes_for_next_prime = static_cast<uint32_t>(world_size) * bunch_size; // start even more?
+          probes_for_next_prime = 2 * static_cast<uint32_t>(world_size) * thr_n * bunch_size; // start even more?
 #else
           probes_for_next_prime = thr_n * bunch_size;
 #endif
