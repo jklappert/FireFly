@@ -451,10 +451,9 @@ namespace firefly {
       if (one_done || one_new_prime) {
         INFO_MSG("Probe: " + std::to_string(iteration) +
                  " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
-                 " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+                 " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done) + "\n");
       }
 
-      std::cout << "\n";
       INFO_MSG("Completed reconstruction in " +
                std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count()) + " s | " + std::to_string(total_iterations) + " probes in total");
       INFO_MSG("Needed prime fields: " + std::to_string(prime_it) + " + 1");
@@ -671,8 +670,7 @@ namespace firefly {
 
       INFO_MSG("Completed scan in " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
                " s | " + std::to_string(total_iterations) + " probes in total");
-      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
-      std::cout << "\n";
+      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
       INFO_MSG("Proceeding with interpolation over prime field F(" + std::to_string(primes()[prime_it]) + ")");
     }
 
@@ -963,6 +961,8 @@ namespace firefly {
         ++prime_it;
 
         if (verbosity > SILENT) {
+          std::unique_lock<std::mutex> lock_print(print_control);
+
           if (one_done || one_new_prime) {
             INFO_MSG("Probe: " + std::to_string(iteration) +
                      " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
@@ -972,8 +972,7 @@ namespace firefly {
           INFO_MSG("Completed current prime field in " +
                    std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
                    " s | " + std::to_string(total_iterations) + " probes in total");
-          INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
-          std::cout << "\n";
+          INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
           INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
         }
 
@@ -1255,9 +1254,32 @@ namespace firefly {
             continue;
           } else {
 #ifndef MPI
-            throw std::runtime_error("Nothing left to feed: " + std::to_string(iteration) + " | " + std::to_string(items) + " " + std::to_string(items_new_prime) + " " + std::to_string(items_done) + " | " + std::to_string(jobs_finished) + " " + std::to_string(probes.empty()) + " " + std::to_string(bunch.empty()) + " " + std::to_string(probes_bunch.empty()) + " | " + std::to_string(feed_jobs) + " " + std::to_string(interpolate_jobs) + "\n");
+            throw std::runtime_error("Nothing left to feed: " + std::to_string(iteration)
+            + " | " + std::to_string(items)
+            + " " + std::to_string(items_new_prime)
+            + " " + std::to_string(items_done)
+            + " | " + std::to_string(jobs_finished)
+            + " " + std::to_string(probes.empty())
+            + " " + std::to_string(bunch.empty())
+            + " " + std::to_string(probes_bunch.empty())
+            + " | " + std::to_string(feed_jobs)
+            + " " + std::to_string(interpolate_jobs)
+            + "\n");
 #else
-            throw std::runtime_error("Nothing left to feed: " + std::to_string(items) + " " + std::to_string(items_new_prime) + " " + std::to_string(items_done) + " | " + std::to_string(jobs_finished) + " " + std::to_string(probes.empty()) + " " + std::to_string(bunch.empty()) + " " + std::to_string(probes_bunch.empty()) + " | " + std::to_string(feed_jobs) + " " + std::to_string(interpolate_jobs) + " | " + std::to_string(iteration) + " | " + std::to_string(probes_queued) + " " + std::to_string(results_queue.size()) + " " + std::to_string(value_queue.size()) + "\n");
+            throw std::runtime_error("Nothing left to feed: "
+            + std::to_string(items)
+            + " " + std::to_string(items_new_prime)
+            + " " + std::to_string(items_done) + " | "
+            + std::to_string(jobs_finished) + " "
+            + std::to_string(probes.empty()) + " "
+            + std::to_string(bunch.empty()) + " "
+            + std::to_string(probes_bunch.empty()) + " | "
+            + std::to_string(feed_jobs) + " "
+            + std::to_string(interpolate_jobs) + " | "
+            + std::to_string(iteration) + " | "
+            + std::to_string(probes_queued) + " "
+            + std::to_string(results_queue.size()) + " "
+            + std::to_string(value_queue.size()) + "\n");
 #endif
           }
         }
