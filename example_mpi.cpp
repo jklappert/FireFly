@@ -21,6 +21,8 @@
 #include "ShuntingYardParser.hpp"
 #include "Tests.hpp"
 
+#include "MPIWorker.hpp"
+
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
   class BlackBoxUser : public BlackBoxBase {
@@ -100,47 +102,37 @@ namespace firefly {
 
 using namespace firefly;
 int main() {
+
+  int provided;
+  MPI_Init_thread(NULL, NULL, MPI_THREAD_SERIALIZED, &provided);
+
+  int process;
+  MPI_Comm_rank(MPI_COMM_WORLD, &process);
+
+  char processor_name[MPI_MAX_PROCESSOR_NAME];
+  int name_len;
+  MPI_Get_processor_name(processor_name, &name_len);
+
   // Parse the functions from "../s_y_4_v.m" with the variables x1, y, zZ, W
   ShuntingYardParser par("../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
 
   // Create the user defined black box
   BlackBoxUser bb(par);
 
-  // Initialize the Reconstructor
-  Reconstructor reconst(4 /*n_vars*/, 4 /*n_threads*/, 1 /*bunch size*/,
-                        bb /*black box*//*,
-                        Reconstructor::CHATTY*/ /* verbosity mode*/);
+  if (process == master) {
+    Reconstructor reconst(4 /*n_vars*/,
+                          std::thread::hardware_concurrency() /*n_threads*/,
+                          1 /*bunch size*/,
+                          bb /*black box*//*, Reconstructor::CHATTY*/);
 
-  // Enables a scan for a sparse shift
-  reconst.enable_scan();
+    reconst.enable_scan();
 
-  // Enables the safe mode
-  //reconst.set_safe_interpolation();
-
-  // Write the state of all reconstruction objects after each interpolation over a prime field
-  // The intermediate results are stored in ./ff_save
-  //reconst.set_tags();
-
-  // Read in all saved states from the directory ./ff_save
-  //reconst.resume_from_saved_state();
-
-  // Reconstruct the black box
-  reconst.reconstruct();
-
-  // Get results
-  /*std::vector<RationalFunction> results = reconst.get_result();
-
-  // Print all reconstruced functions
-  for (uint32_t i = 0; i < results.size(); ++i) {
-    std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
+    reconst.reconstruct();
+  } else {
+    MPIWorker(4, std::thread::hardware_concurrency(), bb);
   }
 
-  // Rewrite result in Horner form
-  std::string f15_horner = results[14].generate_horner({"x", "y", "z", "w"});
-  std::cout << "Function 15 in Horner form:\n" << f15_horner << "\n";*/
-
-  // Resets all statics in RatReconst to start a new reconstruction
-  //RatReconst::reset();
+  MPI_Finalize();
 
   return 0;
 }
