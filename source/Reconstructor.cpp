@@ -744,7 +744,7 @@ namespace firefly {
     get_probe(t, zi_order, probe, average_black_box_time);
 #endif
 
-                             ++iteration;
+    ++iteration;
 
     if (verbosity > SILENT) {
       INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s");
