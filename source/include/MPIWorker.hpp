@@ -35,8 +35,8 @@ namespace firefly {
     const uint32_t thr_n;
     uint32_t total_iterations = 0;
     double average_black_box_time = 0.;
-    BlackBoxBase& bb;
     ThreadPool tp;
+    BlackBoxBase& bb;
     std::vector<uint64_t> results;
     std::mutex mut;
     std::condition_variable cond;

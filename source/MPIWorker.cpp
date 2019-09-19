@@ -75,7 +75,8 @@ namespace firefly {
           std::exit(EXIT_FAILURE);
         }
 
-        uint64_t values_list[amount];
+        uint64_t *values_list = new uint64_t[amount];
+
         MPI_Recv(values_list, amount, MPI_UINT64_T, master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
         uint64_t new_tasks = static_cast<uint64_t>(amount) / static_cast<uint64_t>(n + 1);
@@ -96,6 +97,8 @@ namespace firefly {
           for (uint32_t j = 1; j != n + 1; ++j) {
             values.emplace_back(values_list[i * (n + 1) + j]);
           }
+
+          delete[] values_list;
 
           tp.run_task([this, index, values]() {
             compute(index, values);
