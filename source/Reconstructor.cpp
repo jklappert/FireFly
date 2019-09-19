@@ -736,12 +736,15 @@ namespace firefly {
       values[i] = rand_zi[i - 1] * t + shift[i];
     }
 
+    auto time0 = std::chrono::high_resolution_clock::now();
     *probe = bb(values);
+    auto time1 = std::chrono::high_resolution_clock::now();
+    average_black_box_time = std::chrono::duration<double>(time1 - time0).count();
 #else
     get_probe(t, zi_order, probe, average_black_box_time);
 #endif
 
-    ++iteration;
+                             ++iteration;
 
     if (verbosity > SILENT) {
       INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s");
@@ -2027,7 +2030,7 @@ namespace firefly {
         ++ind;
       }
 
-      MPI_Send(&values, static_cast<int>(static_cast<uint32_t>(start) * (n + 1)), MPI_UINT64_T, i, VALUES, MPI_COMM_WORLD);
+      MPI_Send(values, static_cast<int>(static_cast<uint32_t>(start) * (n + 1)), MPI_UINT64_T, i, VALUES, MPI_COMM_WORLD);
 
       delete[] values;
     }
@@ -2182,6 +2185,7 @@ namespace firefly {
           if (size != 0) {
             uint64_t* values = new uint64_t[size * (n + 1)];
 
+
             for (uint64_t i = 0; i != size; ++i) {
               values[i * (n + 1)] = value_queue.front()[0];
 
@@ -2192,7 +2196,7 @@ namespace firefly {
               value_queue.pop();
             }
 
-            MPI_Send(&values, static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+            MPI_Send(values, static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
 
             delete[] values;
           } else if (free_slots == nodes[status.MPI_SOURCE]) {
@@ -2223,7 +2227,7 @@ namespace firefly {
 
           //std::cout << "restart: sending " << size << " jobs\n";
 
-          MPI_Send(&values, static_cast<int>(size * (n + 1)), MPI_UINT64_T, node.first, VALUES, MPI_COMM_WORLD);
+          MPI_Send(values, static_cast<int>(size * (n + 1)), MPI_UINT64_T, node.first, VALUES, MPI_COMM_WORLD);
 
           delete[] values;
         }
@@ -2296,7 +2300,7 @@ namespace firefly {
 
           //std::cout << "sending " << size << " jobs\n";
 
-          MPI_Send(&values, static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+          MPI_Send(values, static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
 
           delete[] results_list;
           delete[] values;
