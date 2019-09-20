@@ -103,6 +103,8 @@ namespace firefly {
 using namespace firefly;
 int main() {
 
+  // Initialization of MPI processes
+  // ---------------------------------------------------------------------------
   int provided;
   MPI_Init_thread(NULL, NULL, MPI_THREAD_SERIALIZED, &provided);
 
@@ -112,6 +114,9 @@ int main() {
   char processor_name[MPI_MAX_PROCESSOR_NAME];
   int name_len;
   MPI_Get_processor_name(processor_name, &name_len);
+  // ---------------------------------------------------------------------------
+
+  // Use user defined black box. Interpolate only on master and calculate probes on slaves.
 
   // Parse the functions from "../s_y_4_v.m" with the variables x1, y, zZ, W
   ShuntingYardParser par("../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
