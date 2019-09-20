@@ -1166,7 +1166,7 @@ namespace firefly {
 
       ++iteration;
 
-      if (verbosity > SILENT && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - last_print_time).count() > 10.) {
+      if (verbosity > SILENT && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - last_print_time).count() > 2.) {
         {
           std::unique_lock<std::mutex> lock_print(print_control);
           last_print_time = std::chrono::high_resolution_clock::now();
