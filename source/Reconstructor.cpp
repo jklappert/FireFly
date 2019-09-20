@@ -2018,7 +2018,7 @@ namespace firefly {
 
     for (int i = 1; i != world_size; ++i) {
       uint64_t start;
-      MPI_Recv(&start, 1, MPI_UINT64_T, i, SLOTS, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      MPI_Recv(&start, 1, MPI_UINT64_T, i, RESULT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
       //std::cout << "starting " << start << " jobs on worker " << i << "\n";
 
@@ -2140,6 +2140,8 @@ namespace firefly {
 
         delete[] requests;
 
+        MPI_Barrier(MPI_COMM_WORLD);
+
         int flag = 1;
         MPI_Status status;
 
@@ -2158,8 +2160,6 @@ namespace firefly {
             delete[] tmp;
           }
         }
-
-        MPI_Barrier(MPI_COMM_WORLD);
 
         std::vector<double> timings;
         std::vector<double> weights;
@@ -2210,7 +2210,7 @@ namespace firefly {
 
         for (int i = 1; i != world_size; ++i) {
           uint64_t free_slots;
-          MPI_Recv(&free_slots, 1, MPI_UINT64_T, i, SLOTS, MPI_COMM_WORLD, &status);
+          MPI_Recv(&free_slots, 1, MPI_UINT64_T, i, RESULT, MPI_COMM_WORLD, &status);
 
           uint64_t size = std::min(free_slots, static_cast<uint64_t>(value_queue.size()));
 
