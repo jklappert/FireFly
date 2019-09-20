@@ -351,7 +351,7 @@ namespace firefly {
     done = false;
 
 #ifdef WITH_MPI
-    mpi_setup();
+    //mpi_setup(); // TODO set prime when it is know which prime it is!
     ThreadPool tp_comm(1);
     tp_comm.run_priority_task([this]() {
       {
@@ -716,9 +716,9 @@ namespace firefly {
           auto itt = it->second.find(t.n);
 
           if (itt != it->second.end()) {
-            std::unique_lock<std::mutex> lock_print(print_control);
+            //std::unique_lock<std::mutex> lock_print(print_control);
 
-            WARNING_MSG("Found a duplicate of t, choosing a new one");
+            //WARNING_MSG("Found a duplicate of t, choosing a new one");
           } else {
             it->second.emplace(t.n);
             break;
@@ -781,7 +781,6 @@ namespace firefly {
     for (uint32_t i = 0; i != buffer * thr_n; ++i) {
       get_a_job();
     }
-
 #endif
 
     if (tag_size != 0 && tag_size != items) {
@@ -878,6 +877,8 @@ namespace firefly {
 
     new_prime = false;
 
+    bool mpi_first_send = false;
+
     if (resume_from_state) {
       if (prime_it == 0 && /*items_new_prime != items*/items != items_new_prime + items_done) {
         INFO_MSG("Resuming in prime field: F(" + std::to_string(primes()[prime_it]) + ")");
@@ -906,6 +907,7 @@ namespace firefly {
           interpolate_jobs -= (items - counter);
         }
 
+#ifndef WITH_MPI
         // TODO don't start as much ones
         start_probe_jobs(std::vector<uint32_t>(n - 1, 1), thr_n * bunch_size);
         started_probes.emplace(std::vector<uint32_t>(n - 1, 1), thr_n * bunch_size);
@@ -914,13 +916,60 @@ namespace firefly {
         uint32_t start = thr_n * bunch_size;
         start_probe_jobs(std::vector<uint32_t>(n - 1, 1), start);
         started_probes.emplace(std::vector<uint32_t>(n - 1, 1), start);*/
+#else
+        // TODO optimize
+        send_first_jobs();
+
+        {
+          std::unique_lock<std::mutex> lock_val(mut_val);
+
+          new_jobs = true;
+
+          cond_val.notify_one();
+
+          while (!proceed) {
+            cond_val.wait(lock_val);
+          }
+
+          proceed = false;
+        }
+
+        uint32_t start = buffer * thr_n * bunch_size;
+
+        start_probe_jobs(zi_order, start);
+        started_probes[zi_order] += start;
+
+        for (uint32_t i = 0; i != buffer * thr_n; ++i) {
+          get_a_job();
+        }
+#endif
       } else {
         new_prime = true;
+#ifdef WITH_MPI
+        proceed = true;
+        mpi_first_send = true;
+        //send_first_jobs(); // TODO sends useless jobs to prepare all variables
+
+        //{
+        //  std::unique_lock<std::mutex> lock_val(mut_val);
+
+        //  new_jobs = true;
+
+        //  cond_val.notify_one();
+
+        //  while (!proceed) {
+        //    cond_val.wait(lock_val);
+        //  }
+
+        //  proceed = false;
+        //} // TODO end useless
+#endif
       }
     }
 
     while (!done) {
       if (new_prime) {
+        //if (prime_it == 1) exit(-1);
 #ifdef WITH_MPI
         {
           std::unique_lock<std::mutex> lock_val(mut_val);
@@ -1111,10 +1160,31 @@ namespace firefly {
         // start only thr_n jobs first, because the reconstruction can be done after the first feed
         // TODO: MPI
 #ifndef WITH_MPI
-
         if (probes_for_next_prime > thr_n * bunch_size) {
           uint32_t start = thr_n * bunch_size;
 #else
+        if (mpi_first_send) {
+          mpi_first_send = false;
+          send_first_jobs(); // TODO send only start
+
+          start_probe_jobs(std::vector<uint32_t>(n - 1, 1), thr_n * bunch_size);
+          started_probes[std::vector<uint32_t>(n - 1, 1)] += thr_n * bunch_size;
+
+          for (uint32_t i = 0; i != thr_n; ++i) {
+            get_a_job();
+          }
+
+          new_jobs = true;
+          cond_val.notify_one();
+
+          std::unique_lock<std::mutex> lock_val(mut_val);
+
+          while (!proceed) {
+            cond_val.wait(lock_val);
+          }
+
+          proceed = false;
+        } else {
 
         if (probes_for_next_prime > buffer * static_cast<uint32_t>(world_size) * thr_n * bunch_size) {
           uint32_t start = buffer * static_cast<uint32_t>(world_size) * thr_n * bunch_size;
@@ -1154,10 +1224,13 @@ namespace firefly {
           get_a_job();
         }
 
+        }
 #endif
 
         probes_for_next_prime = 0;
       }
+
+      //if (iteration == 1000) exit(-1);
 
       std::vector<FFInt>* probe = new std::vector<FFInt>;
       double time;
@@ -1356,7 +1429,7 @@ namespace firefly {
             if (itt != it->second.end()) {
               --j;
 
-              std::unique_lock<std::mutex> lock_print(print_control);
+              //std::unique_lock<std::mutex> lock_print(print_control);
 
               //WARNING_MSG("Found a duplicate of t, choosing a new one");
 
@@ -1473,9 +1546,9 @@ namespace firefly {
               if (itt != it->second.end()) {
                 --i;
 
-                std::unique_lock<std::mutex> lock_print(print_control);
+                //std::unique_lock<std::mutex> lock_print(print_control);
 
-                WARNING_MSG("Found a duplicate of t, choosing a new one");
+                //WARNING_MSG("Found a duplicate of t, choosing a new one");
 
                 continue;
               } else {
@@ -1946,7 +2019,7 @@ namespace firefly {
 
 #ifdef WITH_MPI
   void Reconstructor::get_a_job() {
-    if (tp.queue_size() <= thr_n) {
+    if (tp.queue_size() <= (buffer - 1) * thr_n) {
       std::unique_lock<std::mutex> lock_val(mut_val);
 
       if (!value_queue.empty()) {
@@ -2009,6 +2082,8 @@ namespace firefly {
   }
 
   void Reconstructor::send_first_jobs() {
+    mpi_setup();
+
     std::vector<uint32_t> zi_order = std::vector<uint32_t>(n - 1, 1);
     started_probes.emplace(std::make_pair(zi_order, 0));
 
@@ -2024,7 +2099,7 @@ namespace firefly {
 
       probes_queued += start;
       started_probes[zi_order] += start;
-      uint64_t* values = new uint64_t[static_cast<uint32_t>(start) * (n + 1)];
+      uint64_t* values = new uint64_t[static_cast<uint32_t>(start) * (n + 1)];  // TODO vector?
 
       for (uint32_t ii = 0; ii != static_cast<uint32_t>(start); ++ii) {
         values[ii * (n + 1)] = ind;
@@ -2040,9 +2115,9 @@ namespace firefly {
           if (itt != it->second.end()) {
             --ii;
 
-            std::unique_lock<std::mutex> lock_print(print_control);
+            //std::unique_lock<std::mutex> lock_print(print_control);
 
-            WARNING_MSG("Found a duplicate of t, choosing a new one");
+            //WARNING_MSG("Found a duplicate of t, choosing a new one");
 
             continue;
           } else {
