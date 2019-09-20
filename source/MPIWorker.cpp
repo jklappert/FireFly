@@ -44,7 +44,7 @@ namespace firefly {
         lock.unlock();
 
         uint64_t free = 2 * static_cast<uint64_t>(thr_n);
-        MPI_Isend(&free, 1, MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD, &request);
+        MPI_Isend(&free, 1, MPI_UINT64_T, master, SLOTS, MPI_COMM_WORLD, &request);
       } else {
         while (results.empty()) {
           cond.wait(lock);
