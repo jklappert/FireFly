@@ -151,6 +151,7 @@ namespace firefly {
   private:
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     std::chrono::high_resolution_clock::time_point prime_start = std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::time_point last_print_time = std::chrono::high_resolution_clock::now();
     uint32_t n;
     uint32_t thr_n;
     uint32_t bunch_size = 1;

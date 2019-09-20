@@ -31,7 +31,8 @@
 #include <sys/stat.h>
 
 namespace firefly {
-  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
+  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_,
+                               uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     FFInt::set_new_prime(primes()[prime_it]);
     uint64_t seed = static_cast<uint64_t>(std::time(0));
     BaseReconst().set_seed(seed);
@@ -43,13 +44,15 @@ namespace firefly {
 #endif
 
     if (verbosity > SILENT) {
-      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
+      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "."
+                << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
       INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size 1");
       INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
     }
   }
 
-  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
+  Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_,
+                               BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     FFInt::set_new_prime(primes()[prime_it]);
     uint64_t seed = static_cast<uint64_t>(std::time(0));
     BaseReconst().set_seed(seed);
@@ -61,7 +64,8 @@ namespace firefly {
 #endif
 
     if (verbosity > SILENT) {
-      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "." << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
+      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "."
+                << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
       INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size " + std::to_string(bunch_size_));
       INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
     }
@@ -1162,6 +1166,14 @@ namespace firefly {
 
       ++iteration;
 
+      if (verbosity > SILENT && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - last_print_time).count() > 10.) {
+        {
+          std::unique_lock<std::mutex> lock_print(print_control);
+          last_print_time = std::chrono::high_resolution_clock::now();
+          std::cerr << "\033[1;34mFireFly info:\033[0m Probe: " << iteration << "\r";
+        }
+      }
+
 #ifndef WITH_MPI
       average_black_box_time = (average_black_box_time * (total_iterations + iteration - 1) + time) / (total_iterations + iteration);
 #endif
@@ -1255,31 +1267,31 @@ namespace firefly {
           } else {
 #ifndef MPI
             throw std::runtime_error("Nothing left to feed: " + std::to_string(iteration)
-            + " | " + std::to_string(items)
-            + " " + std::to_string(items_new_prime)
-            + " " + std::to_string(items_done)
-            + " | " + std::to_string(jobs_finished)
-            + " " + std::to_string(probes.empty())
-            + " " + std::to_string(bunch.empty())
-            + " " + std::to_string(probes_bunch.empty())
-            + " | " + std::to_string(feed_jobs)
-            + " " + std::to_string(interpolate_jobs)
-            + "\n");
+                                     + " | " + std::to_string(items)
+                                     + " " + std::to_string(items_new_prime)
+                                     + " " + std::to_string(items_done)
+                                     + " | " + std::to_string(jobs_finished)
+                                     + " " + std::to_string(probes.empty())
+                                     + " " + std::to_string(bunch.empty())
+                                     + " " + std::to_string(probes_bunch.empty())
+                                     + " | " + std::to_string(feed_jobs)
+                                     + " " + std::to_string(interpolate_jobs)
+                                     + "\n");
 #else
             throw std::runtime_error("Nothing left to feed: "
-            + std::to_string(items)
-            + " " + std::to_string(items_new_prime)
-            + " " + std::to_string(items_done) + " | "
-            + std::to_string(jobs_finished) + " "
-            + std::to_string(probes.empty()) + " "
-            + std::to_string(bunch.empty()) + " "
-            + std::to_string(probes_bunch.empty()) + " | "
-            + std::to_string(feed_jobs) + " "
-            + std::to_string(interpolate_jobs) + " | "
-            + std::to_string(iteration) + " | "
-            + std::to_string(probes_queued) + " "
-            + std::to_string(results_queue.size()) + " "
-            + std::to_string(value_queue.size()) + "\n");
+                                     + std::to_string(items)
+                                     + " " + std::to_string(items_new_prime)
+                                     + " " + std::to_string(items_done) + " | "
+                                     + std::to_string(jobs_finished) + " "
+                                     + std::to_string(probes.empty()) + " "
+                                     + std::to_string(bunch.empty()) + " "
+                                     + std::to_string(probes_bunch.empty()) + " | "
+                                     + std::to_string(feed_jobs) + " "
+                                     + std::to_string(interpolate_jobs) + " | "
+                                     + std::to_string(iteration) + " | "
+                                     + std::to_string(probes_queued) + " "
+                                     + std::to_string(results_queue.size()) + " "
+                                     + std::to_string(value_queue.size()) + "\n");
 #endif
           }
         }
