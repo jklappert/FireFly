@@ -43,14 +43,14 @@ namespace firefly {
       if (tasks == 0 && results.empty()) {
         lock.unlock();
 
-        uint64_t free = 2 * static_cast<uint64_t>(thr_n);
+        uint64_t free = buffer * static_cast<uint64_t>(thr_n);
         MPI_Isend(&free, 1, MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD, &request);
       } else {
         while (results.empty()) {
           cond.wait(lock);
         }
 
-        results.emplace_back(2 * thr_n - tasks);
+        results.emplace_back(buffer * thr_n - tasks);
         std::vector<uint64_t> tmp_results = std::move(results);
         results.clear();
 

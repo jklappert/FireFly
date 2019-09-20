@@ -24,6 +24,7 @@
 
 namespace firefly {
   const int master = 0;
+  const uint64_t buffer = 2;
   enum MPI_tags {VALUES, RESULT, NEW_PRIME, TIMING, END};
 
   class MPIWorker {
