@@ -29,8 +29,7 @@
 
 namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
-  bool RatReconst::need_prime_shift = false;
-  bool RatReconst::set_singular_system = false;
+  std::unordered_set<uint32_t> RatReconst::singular_system_set {};
   ff_pair_map RatReconst::rand_zi {};
   std::mutex RatReconst::mutex_statics;
   std::vector<uint32_t> RatReconst::curr_shift {};
@@ -1512,7 +1511,9 @@ namespace firefly {
           set_singular_system_vars();
           {
             std::unique_lock<std::mutex> lock_statics(mutex_statics);
-            need_prime_shift = true;
+
+            if (singular_system_set.find(prime_number + 1) == singular_system_set.end())
+              singular_system_set.emplace(prime_number + 1);
           }
 
           std::unique_lock<std::mutex> lock(mutex_status);
@@ -1540,10 +1541,6 @@ namespace firefly {
     if (prime_number + 1 < interpolations) {
       max_deg_num = -1;
       first_run = true;
-      {
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
-        need_prime_shift = true;
-      }
 
       // Check if the state should be written out after this prime
       if (tag.size() != 0)
@@ -2023,18 +2020,17 @@ namespace firefly {
     return shift;
   }
 
-  bool RatReconst::need_shift() {
+  bool RatReconst::need_shift(uint32_t prime_counter) {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
     for (uint32_t i = 0; i < n; ++i) {
       shift[i] = FFInt(shift[i].n);
     }
 
-    bool tmp = need_prime_shift;
-
-    set_singular_system = need_prime_shift;
-    need_prime_shift = false;
-    return tmp;
+    if (singular_system_set.find(prime_counter) == singular_system_set.end())
+      return false;
+    else
+      return true;
   }
 
   polff_map RatReconst::calculate_shift_polynomials(const PolynomialFF& poly, uint32_t deg) {
@@ -2474,8 +2470,8 @@ namespace firefly {
                 tmp_need_shift = std::stoi(line);
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-                if (!is_done() && !need_prime_shift)
-                  need_prime_shift = std::stoi(line);
+                if (!is_done() && tmp_need_shift && singular_system_set.find(prime_number) == singular_system_set.end())
+                  singular_system_set.emplace(prime_number);
 
                 break;
               }
@@ -2865,8 +2861,7 @@ namespace firefly {
     FFInt::set_new_prime(primes()[0]);
     std::unique_lock<std::mutex> lock(mutex_statics);
     shift = std::vector<FFInt> ();
-    need_prime_shift = false;
-    set_singular_system = false;
+    singular_system_set = std::unordered_set<uint32_t>();
     rand_zi = ff_pair_map();
     curr_shift = std::vector<uint32_t>();
     PolyReconst::reset();
@@ -2881,7 +2876,8 @@ namespace firefly {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
       // TODO clean up
-      if (!is_singular_system && (set_singular_system || need_prime_shift || shift != std::vector<FFInt> (n)) && prime_number >= interpolations) {
+      if (!is_singular_system && (singular_system_set.find(prime_number) != singular_system_set.end()
+                                  || shift != std::vector<FFInt> (n)) && prime_number >= interpolations) {
         lock_statics.unlock();
         set_singular_system_vars();
       }
