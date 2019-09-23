@@ -26,7 +26,11 @@ namespace firefly {
 
     FFInt::set_new_prime(primes()[prime]);
 
-    std::cout << "worker " << FFInt::p << "\n";
+    if (prime != 0) {
+      bb.prime_changed();
+    }
+
+    //std::cout << "worker " << FFInt::p << "\n";
 
     //MPI_Bcast(&bb_size, 1, MPI_INT, master, MPI_COMM_WORLD);
 
@@ -119,7 +123,7 @@ namespace firefly {
           bb.prime_changed();
         }
 
-        std::cout << "worker " << FFInt::p << "\n";
+        //std::cout << "worker " << FFInt::p << "\n";
 
         MPI_Barrier(MPI_COMM_WORLD);
 
