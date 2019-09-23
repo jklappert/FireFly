@@ -132,9 +132,6 @@ int main() {
 
     reconst.enable_scan();
 
-    reconst.set_tags();
-    reconst.resume_from_saved_state();
-
     reconst.reconstruct();
   } else {
     MPIWorker(4, std::thread::hardware_concurrency(), bb);
