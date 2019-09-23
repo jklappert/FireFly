@@ -110,7 +110,6 @@ int main() {
 #else
 
   if (process == master) {
-    std::cout << "master on " << processor_name << ": " << std::thread::hardware_concurrency() << "\n";
     INFO_MSG("Test 1 variable");
     ShuntingYardParser p_2("../../parser_test/s_y_1_v.m", {"x"});
     BlackBoxUser b_2(p_2, 2);
@@ -137,10 +136,12 @@ int main() {
     ShuntingYardParser p_2("../../parser_test/s_y_1_v.m", {"x"});
     BlackBoxUser b_2(p_2, 2);
     MPIWorker(1, std::thread::hardware_concurrency(), b_2);
+    RatReconst::reset();
 
     ShuntingYardParser p_0("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_0(p_0, 0);
     MPIWorker(4, std::thread::hardware_concurrency(), b_0);
+    RatReconst::reset();
 
     ShuntingYardParser p_0_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_0_1(p_0, 2);

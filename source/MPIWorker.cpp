@@ -133,10 +133,13 @@ namespace firefly {
 
         MPI_Barrier(MPI_COMM_WORLD);
       } else if (status.MPI_TAG == END) {
+        uint64_t tmp;
+        MPI_Recv(&tmp, 1, MPI_UINT64_T, master, END, MPI_COMM_WORLD, &status);
         tp.kill_all();
         results.clear();
         tasks = 0;
 
+        MPI_Barrier(MPI_COMM_WORLD);
         break;
       } else {
         ERROR_MSG("Unknown MPI_TAG!");

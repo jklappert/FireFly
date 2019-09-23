@@ -119,10 +119,12 @@ int main() {
     ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1(p_1);
     MPIWorker(4, std::thread::hardware_concurrency(), b_1);
+    RatReconst::reset();
 
     ShuntingYardParser p_1_2("../../parser_test/s_y_1_v.m", {"x"});
     BlackBoxUser b_1_2(p_1_2);
     MPIWorker(1, std::thread::hardware_concurrency(), b_1_2);
+    RatReconst::reset();
 
     ShuntingYardParser p_1_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1_3(p_1_3);

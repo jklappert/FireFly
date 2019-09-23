@@ -2192,6 +2192,7 @@ namespace firefly {
           }
         }
 
+        MPI_Barrier(MPI_COMM_WORLD);
         break;
       } else if (new_prime || (done && scan)) {
         MPI_Request* requests = new MPI_Request[world_size - 1];
