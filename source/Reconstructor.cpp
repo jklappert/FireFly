@@ -448,6 +448,25 @@ namespace firefly {
 
       run_until_done();
     }
+#ifdef WITH_MPI
+    else {
+      mpi_setup();
+
+      {
+        std::unique_lock<std::mutex> lock_val(mut_val);
+
+        new_jobs = true;
+
+        cond_val.notify_one();
+
+        while (!proceed) {
+          cond_val.wait(lock_val);
+        }
+
+        proceed = false;
+      }
+    }
+#endif
 
     tp.kill_all();
 
