@@ -30,10 +30,12 @@ namespace firefly {
   class MPIWorker {
   public:
     MPIWorker(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_);
+    MPIWorker(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_);
 
   private:
     const uint32_t n;
     const uint32_t thr_n;
+    const uint32_t bunch_size = 1;
     uint32_t total_iterations = 0;
     double average_black_box_time = 0.;
     ThreadPool tp;
@@ -43,7 +45,9 @@ namespace firefly {
     std::condition_variable cond;
     uint64_t tasks = 0;
 
+    void run();
     void communicate();
     void compute(const uint64_t index, const std::vector<FFInt>& values);
+    void compute(const std::vector<uint64_t>& index_vec, const std::vector<std::vector<FFInt>>& values_vec);
   };
 }

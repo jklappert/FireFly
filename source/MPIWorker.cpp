@@ -21,6 +21,14 @@
 
 namespace firefly {
   MPIWorker::MPIWorker(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_) : n(n_), thr_n(thr_n_), tp(thr_n_), bb(bb_) {
+    run();
+  }
+
+  MPIWorker::MPIWorker(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_) : n(n_), thr_n(thr_n_), bunch_size(bunch_size_), tp(thr_n_), bb(bb_) {
+    run();
+  }
+
+  void MPIWorker::run() {
     uint32_t prime;
     MPI_Bcast(&prime, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
 
@@ -31,8 +39,6 @@ namespace firefly {
     }
 
     //std::cout << "worker " << FFInt::p << "\n";
-
-    //MPI_Bcast(&bb_size, 1, MPI_INT, master, MPI_COMM_WORLD);
 
     communicate();
   }
@@ -54,7 +60,7 @@ namespace firefly {
           cond.wait(lock);
         }
 
-        results.emplace_back(buffer * thr_n - tasks);
+        results.emplace_back(buffer * static_cast<uint64_t>(thr_n) - tasks);
         std::vector<uint64_t> tmp_results = std::move(results);
         results.clear();
 
@@ -74,7 +80,7 @@ namespace firefly {
         int amount;
         MPI_Get_count(&status, MPI_UINT64_T, &amount);
 
-        if (static_cast<uint64_t>(amount) % static_cast<uint64_t>(n + 1) != 0) {
+        if (static_cast<uint64_t>(amount) % static_cast<uint64_t>(bunch_size * (n + 1)) != 0) {
           ERROR_MSG("Corrupted values recieved!");
           std::exit(EXIT_FAILURE);
         }
@@ -83,7 +89,7 @@ namespace firefly {
 
         MPI_Recv(values_list, amount, MPI_UINT64_T, master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-        uint64_t new_tasks = static_cast<uint64_t>(amount) / static_cast<uint64_t>(n + 1);
+        uint32_t new_tasks = static_cast<uint32_t>(amount) / (bunch_size * (n + 1));
 
         //std::cout << "worker starting " << new_tasks << " jobs\n";
 
@@ -93,18 +99,46 @@ namespace firefly {
 
         lock.unlock();
 
-        for (uint64_t i = 0; i != new_tasks; ++i) {
-          uint64_t index = values_list[i * (n + 1)];
+        if (bunch_size == 1) {
+          for (uint32_t i = 0; i != new_tasks; ++i) {
+            uint64_t index = values_list[i * (n + 1)];
 
-          std::vector<FFInt> values;
+            std::vector<FFInt> values;
+            values.reserve(new_tasks * n);
 
-          for (uint32_t j = 1; j != n + 1; ++j) {
-            values.emplace_back(values_list[i * (n + 1) + j]);
+            for (uint32_t j = 1; j != n + 1; ++j) {
+              values.emplace_back(values_list[i * (n + 1) + j]);
+            }
+
+            tp.run_task([this, index, values]() {
+              compute(index, values);
+            });
           }
+        } else {
+          for (uint32_t i = 0; i != new_tasks; ++i) {
+            std::vector<uint64_t> index_vec;
+            index_vec.reserve(bunch_size);
 
-          tp.run_task([this, index, values]() {
-            compute(index, values);
-          });
+            std::vector<std::vector<FFInt>> values_vec;
+            values_vec.reserve(bunch_size);
+
+            for (uint32_t k = 0; k != bunch_size; ++k) {
+              index_vec.emplace_back(values_list[i * bunch_size * (n + 1) + bunch_size * k]);
+
+              std::vector<FFInt> values;
+              values.reserve(new_tasks * n);
+
+              for (uint32_t j = 1; j != n + 1; ++j) {
+                values.emplace_back(values_list[i * bunch_size * (n + 1) + bunch_size * k + j]);
+              }
+
+              values_vec.emplace_back(std::move(values));
+            }
+
+            tp.run_task([this, index_vec, values_vec]() {
+              compute(index_vec, values_vec);
+            });
+          }
         }
 
         delete[] values_list;
@@ -162,6 +196,35 @@ namespace firefly {
 
     for (size_t i = 0; i != result.size(); ++i) {
       result_uint.emplace_back(result[i].n);
+    }
+
+    std::unique_lock<std::mutex> lock(mut);
+    ++total_iterations;
+
+    auto time = std::chrono::duration<double>(time1 - time0).count();
+    average_black_box_time = (average_black_box_time * (total_iterations - 1) + time) / total_iterations;
+    results.insert(results.end(), result_uint.begin(), result_uint.end());
+    --tasks;
+
+    cond.notify_one();
+  }
+
+  void MPIWorker::compute(const std::vector<uint64_t>& index_vec, const std::vector<std::vector<FFInt>>& values_vec) {
+    auto time0 = std::chrono::high_resolution_clock::now();
+
+    std::vector<std::vector<FFInt>> result = bb(values_vec);
+
+    auto time1 = std::chrono::high_resolution_clock::now();
+
+    std::vector<uint64_t> result_uint;
+    result_uint.reserve(static_cast<size_t>(bunch_size) + result.size());
+
+    for (uint32_t j = 0; j != bunch_size; ++j) {
+      result_uint.emplace_back(index_vec[j]);
+
+      for (size_t i = 0; i != result.size(); ++i) {
+        result_uint.emplace_back(result[j][i].n);
+      }
     }
 
     std::unique_lock<std::mutex> lock(mut);
