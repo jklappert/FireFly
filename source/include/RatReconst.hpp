@@ -92,9 +92,10 @@ namespace firefly {
      */
     std::vector<FFInt> get_zi_shift_vec() const;
     /**
+     *  @param prime_counter indicates the prime number for which one checks if a shift is needed
      *  @return true if the reconstruction object still needs a shift
      */
-    bool need_shift();
+    bool need_shift(uint32_t prime_counter);
     /**
      *  Sets a tag to save the state of the object after each prime
      *  @param tag_ the tag of the object
@@ -326,8 +327,7 @@ namespace firefly {
     bool is_singular_system = false; /**< Indicates whether one needs the shift to avoid singular systems */
     static std::vector<FFInt> shift; /**< The static shift used to obtain a unique normalization */
     static ff_pair_map rand_zi; /**< A static map storing potencies of the anchor points */
-    static bool need_prime_shift; /**< A static indicating whether one needs a shift in the next prime field */
-    static bool set_singular_system; /**< A static indicating whether one should switch to the singular system mode */
+    static std::unordered_set<uint32_t> singular_system_set; /**< A static set which indicates if a shift is needed for a given prime field */
     /**
      *  Sets all required variables of this class in the "singular system" mode
      */

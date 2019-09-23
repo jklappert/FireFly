@@ -1079,7 +1079,7 @@ namespace firefly {
 
         bool shift_disabled = false;
 
-        if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift()) {
+        if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift(prime_it)) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             if (verbosity > SILENT)
               INFO_MSG("Disable shift");
