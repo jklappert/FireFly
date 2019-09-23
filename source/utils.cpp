@@ -438,7 +438,7 @@ namespace firefly {
       // If a new prime is needed, set it, generate new random variables
       // and reset counters
       if (primes_used != rec.get_prime()) {
-        if (!rec.need_shift()) {
+        if (!rec.need_shift(primes_used + 1)) {
           rec.disable_shift();
           shift = rec.get_zi_shift_vec();
         }
