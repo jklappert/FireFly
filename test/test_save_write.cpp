@@ -22,6 +22,10 @@
 #include "Tests.hpp"
 #include "tinydir.h"
 
+#ifdef WITH_MPI
+#include "MPIWorker.hpp"
+#endif
+
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
   class BlackBoxUser : public BlackBoxBase {
@@ -58,9 +62,19 @@ namespace firefly {
     virtual void prime_changed() {
       par.precompute_tokens();
       c++;
+#ifndef WITH_MPI
 
-      if ((mode == 4 && c == 1) || (mode == 5 && c == 2))
+      if ((mode == 4 && c == 1) || (mode == 5 && c == 2)) {
         throw std::runtime_error("Abort for save test.");
+      }
+
+#else
+
+      if (mode == 4 && c == 1) {
+        std::exit(0);
+      }
+
+#endif
     }
 
   private:
@@ -128,6 +142,8 @@ void remove_probes() {
 
 using namespace firefly;
 int main() {
+#ifndef WITH_MPI
+
   try {
     INFO_MSG("Test saving states and starting from them in prime 1");
     ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
@@ -183,6 +199,32 @@ int main() {
   // Remove files
   remove_sates();
   remove_probes();
+#else
+  int provided;
+  MPI_Init_thread(NULL, NULL, MPI_THREAD_SERIALIZED, &provided);
 
+  int process;
+  MPI_Comm_rank(MPI_COMM_WORLD, &process);
+
+  char processor_name[MPI_MAX_PROCESSOR_NAME];
+  int name_len;
+  MPI_Get_processor_name(processor_name, &name_len);
+
+  if (process == master) {
+    INFO_MSG("Test saving states and starting from them in prime 1");
+    ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_4(p_4, 4);
+    Reconstructor r_4(4, 4, b_4);
+    r_4.enable_scan();
+    r_4.set_tags();
+    r_4.reconstruct();
+  } else {
+    ShuntingYardParser p_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_1(p_1, 4);
+    MPIWorker(4, std::thread::hardware_concurrency(), b_1);
+  }
+
+  MPI_Finalize();
+#endif
   return 0;
 }

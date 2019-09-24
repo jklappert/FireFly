@@ -1075,6 +1075,7 @@ namespace firefly {
         one_new_prime = false;
 
         FFInt::set_new_prime(primes()[prime_it]);
+
         bb.prime_changed();
 
 #ifdef WITH_MPI
