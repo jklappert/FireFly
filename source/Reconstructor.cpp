@@ -864,9 +864,9 @@ namespace firefly {
       }
 
       rec->feed(t, (*probe)[i], zi_order, prime_it);
-      std::tuple<bool, bool, uint32_t> interpolated_done_prime = rec->interpolate();
+      std::pair<bool, uint32_t> interpolated_done_prime = rec->interpolate();
 
-      if (std::get<2>(interpolated_done_prime) > prime_it) {
+      if (/*std::get<2>(interpolated_done_prime)*/interpolated_done_prime.second > prime_it) {
         ++items_new_prime;
       }
 
@@ -1799,84 +1799,56 @@ namespace firefly {
     if (std::get<2>(rec) == RECONSTRUCTING) {
       lock_exists.unlock();
 
-      std::tuple<bool, bool, uint32_t> interpolated_done_prime = std::get<3>(rec)->interpolate();
+      std::pair<bool, uint32_t> interpolated_done_prime = std::get<3>(rec)->interpolate();
 
-      if (std::get<0>(interpolated_done_prime)) { // interpolated
-        //lock_exists.lock();
-        // start new jobs if required
-        if (!std::get<1>(interpolated_done_prime)) { // not done
-          if (std::get<2>(interpolated_done_prime) > prime_it) { // compare prime counters
-            {
-              std::unique_lock<std::mutex> lock_status(status_control);
+      // start new jobs if required
+      if (!interpolated_done_prime.first) { // not done
+        if (interpolated_done_prime.second > prime_it) { // compare prime counters
+          {
+            std::unique_lock<std::mutex> lock_status(status_control);
 
-              one_new_prime = true;
-              ++items_new_prime;
-            }
+            one_new_prime = true;
+            ++items_new_prime;
+          }
 
-            std::unique_lock<std::mutex> lock(job_control);
+          std::unique_lock<std::mutex> lock(job_control);
 
-            if (std::get<3>(rec)->get_num_eqn() > probes_for_next_prime) {
-              probes_for_next_prime = std::get<3>(rec)->get_num_eqn();
-            }
+          if (std::get<3>(rec)->get_num_eqn() > probes_for_next_prime) {
+            probes_for_next_prime = std::get<3>(rec)->get_num_eqn();
+          }
 
-            //lock_exists.unlock();
-          } else if (!safe_mode && prime_it != 0) {
-            std::vector<std::pair<uint32_t, uint32_t>> all_required_probes = std::get<3>(rec)->get_needed_feed_vec();
+          //lock_exists.unlock();
+        } else if (!safe_mode && prime_it != 0) {
+          std::vector<std::pair<uint32_t, uint32_t>> all_required_probes = std::get<3>(rec)->get_needed_feed_vec();
 
-            if (!all_required_probes.empty()) {
-              uint32_t counter = 1;
+          if (!all_required_probes.empty()) {
+            uint32_t counter = 1;
 
-              for (const auto & some_probes : all_required_probes) {
-                if (some_probes.first == 0) {
-                  ++counter;
-                  continue;
-                }
+            for (const auto & some_probes : all_required_probes) {
+              if (some_probes.first == 0) {
+                ++counter;
+                continue;
+              }
 
-                uint32_t required_probes = some_probes.second;
+              uint32_t required_probes = some_probes.second;
 
-                for (uint32_t i = 0; i != some_probes.first; ++i) {
-                  std::vector<uint32_t> zi_order(n - 1, counter);
-                  ++counter;
+              for (uint32_t i = 0; i != some_probes.first; ++i) {
+                std::vector<uint32_t> zi_order(n - 1, counter);
+                ++counter;
 
-                  std::unique_lock<std::mutex> lock(job_control);
+                std::unique_lock<std::mutex> lock(job_control);
 
-                  auto it = started_probes.find(zi_order);
+                auto it = started_probes.find(zi_order);
 
-                  if (it != started_probes.end()) {
-                    if (required_probes > started_probes[zi_order]) {
-                      uint32_t start = required_probes - started_probes[zi_order];
+                if (it != started_probes.end()) {
+                  if (required_probes > started_probes[zi_order]) {
+                    uint32_t start = required_probes - started_probes[zi_order];
 
-                      if (bunch_size != 1) {
-                        start = (start + bunch_size - 1) / bunch_size * bunch_size;
-                      }
-
-                      started_probes[zi_order] = required_probes;
-
-                      lock.unlock();
-
-                      if (verbosity == CHATTY) {
-                        std::string msg = "Starting zi_order (";
-
-                        for (const auto & ele : zi_order) {
-                          msg += std::to_string(ele) + ", ";
-                        }
-
-                        msg = msg.substr(0, msg.length() - 2);
-                        msg += ") " + std::to_string(start) + " time(s)";
-
-                        std::unique_lock<std::mutex> lock_print(print_control);
-
-                        INFO_MSG(msg);
-                      }
-
-                      start_probe_jobs(zi_order, start);
-                    }
-                  } else {
                     if (bunch_size != 1) {
-                      required_probes = (required_probes + bunch_size - 1) / bunch_size * bunch_size;
+                      start = (start + bunch_size - 1) / bunch_size * bunch_size;
                     }
 
-                    started_probes.emplace(zi_order, required_probes);
+                    started_probes[zi_order] = required_probes;
 
                     lock.unlock();
 
@@ -1888,61 +1860,21 @@ namespace firefly {
                       }
 
                       msg = msg.substr(0, msg.length() - 2);
-                      msg += ") " + std::to_string(required_probes) + " time(s)";
+                      msg += ") " + std::to_string(start) + " time(s)";
 
                       std::unique_lock<std::mutex> lock_print(print_control);
 
                       INFO_MSG(msg);
                     }
 
-                    start_probe_jobs(zi_order, required_probes);
+                    start_probe_jobs(zi_order, start);
                   }
-                }
-              }
-            }
-          } else {
-            std::vector<uint32_t> zi_order = std::get<3>(rec)->get_zi_order();
-
-            if ((prime_it == 0 || safe_mode == true) && zi_order == std::vector<uint32_t>(n - 1, 1)) {
-              //lock_exists.unlock();
-              std::unique_lock<std::mutex> lock(job_control);
-
-              if (started_probes[zi_order] - thr_n * bunch_size <= fed_ones - 1) {
-                uint32_t start = fed_ones - started_probes[zi_order] + thr_n * bunch_size;
-
-                if (bunch_size != 1) {
-                  start = (start + bunch_size - 1) / bunch_size * bunch_size;
-                }
-
-                started_probes[zi_order] += start;
-
-                lock.unlock();
-
-                if (verbosity == CHATTY) {
-                  std::unique_lock<std::mutex> lock_print(print_control);
-
-                  INFO_MSG("Starting ones: " + std::to_string(start));
-                }
-
-                start_probe_jobs(zi_order, start);
-              }
-            } else {
-              uint32_t required_probes = std::get<3>(rec)->get_num_eqn();
-
-              //lock_exists.unlock();
-              std::unique_lock<std::mutex> lock(job_control);
-
-              auto it = started_probes.find(zi_order);
-
-              if (it != started_probes.end()) {
-                if (required_probes > started_probes[zi_order]) {
-                  uint32_t start = required_probes - started_probes[zi_order];
-
+                } else {
                   if (bunch_size != 1) {
-                    start = (start + bunch_size - 1) / bunch_size * bunch_size;
+                    required_probes = (required_probes + bunch_size - 1) / bunch_size * bunch_size;
                   }
 
-                  started_probes[zi_order] = required_probes;
+                  started_probes.emplace(zi_order, required_probes);
 
                   lock.unlock();
 
@@ -1954,21 +1886,59 @@ namespace firefly {
                     }
 
                     msg = msg.substr(0, msg.length() - 2);
-                    msg += ") " + std::to_string(start) + " time(s)";
+                    msg += ") " + std::to_string(required_probes) + " time(s)";
 
                     std::unique_lock<std::mutex> lock_print(print_control);
 
                     INFO_MSG(msg);
                   }
 
-                  start_probe_jobs(zi_order, start);
+                  start_probe_jobs(zi_order, required_probes);
                 }
-              } else {
+              }
+            }
+          }
+        } else {
+          std::vector<uint32_t> zi_order = std::get<3>(rec)->get_zi_order();
+
+          if ((prime_it == 0 || safe_mode == true) && zi_order == std::vector<uint32_t>(n - 1, 1)) {
+            std::unique_lock<std::mutex> lock(job_control);
+
+            if (started_probes[zi_order] - thr_n * bunch_size <= fed_ones - 1) {
+              uint32_t start = fed_ones - started_probes[zi_order] + thr_n * bunch_size;
+
+              if (bunch_size != 1) {
+                start = (start + bunch_size - 1) / bunch_size * bunch_size;
+              }
+
+              started_probes[zi_order] += start;
+
+              lock.unlock();
+
+              if (verbosity == CHATTY) {
+                std::unique_lock<std::mutex> lock_print(print_control);
+
+                INFO_MSG("Starting ones: " + std::to_string(start));
+              }
+
+              start_probe_jobs(zi_order, start);
+            }
+          } else {
+            uint32_t required_probes = std::get<3>(rec)->get_num_eqn();
+
+            std::unique_lock<std::mutex> lock(job_control);
+
+            auto it = started_probes.find(zi_order);
+
+            if (it != started_probes.end()) {
+              if (required_probes > started_probes[zi_order]) {
+                uint32_t start = required_probes - started_probes[zi_order];
+
                 if (bunch_size != 1) {
-                  required_probes = (required_probes + bunch_size - 1) / bunch_size * bunch_size;
+                  start = (start + bunch_size - 1) / bunch_size * bunch_size;
                 }
 
-                started_probes.emplace(zi_order, required_probes);
+                started_probes[zi_order] = required_probes;
 
                 lock.unlock();
 
@@ -1980,33 +1950,58 @@ namespace firefly {
                   }
 
                   msg = msg.substr(0, msg.length() - 2);
-                  msg += ") " + std::to_string(required_probes) + " time(s)";
+                  msg += ") " + std::to_string(start) + " time(s)";
 
                   std::unique_lock<std::mutex> lock_print(print_control);
 
                   INFO_MSG(msg);
                 }
 
-                start_probe_jobs(zi_order, required_probes);
+                start_probe_jobs(zi_order, start);
               }
+            } else {
+              if (bunch_size != 1) {
+                required_probes = (required_probes + bunch_size - 1) / bunch_size * bunch_size;
+              }
+
+              started_probes.emplace(zi_order, required_probes);
+
+              lock.unlock();
+
+              if (verbosity == CHATTY) {
+                std::string msg = "Starting zi_order (";
+
+                for (const auto & ele : zi_order) {
+                  msg += std::to_string(ele) + ", ";
+                }
+
+                msg = msg.substr(0, msg.length() - 2);
+                msg += ") " + std::to_string(required_probes) + " time(s)";
+
+                std::unique_lock<std::mutex> lock_print(print_control);
+
+                INFO_MSG(msg);
+              }
+
+              start_probe_jobs(zi_order, required_probes);
             }
           }
+        }
+      } else {
+        lock_exists.lock();
+
+        // to be sure that no other thread does the same
+        // TODO: Why is this necessary?
+        if (std::get<2>(rec) == RECONSTRUCTING) {
+          std::get<2>(rec) = DONE;
+
+          lock_exists.unlock();
+          std::unique_lock<std::mutex> lock_status(status_control);
+
+          ++items_done;
+          one_done = true;
         } else {
-          lock_exists.lock();
-
-          // to be sure that no other thread does the same
-          // TODO: Why is this necessary?
-          if (std::get<2>(rec) == RECONSTRUCTING) {
-            std::get<2>(rec) = DONE;
-
-            lock_exists.unlock();
-            std::unique_lock<std::mutex> lock_status(status_control);
-
-            ++items_done;
-            one_done = true;
-          } else {
-            lock_exists.unlock();
-          }
+          lock_exists.unlock();
         }
       }
     } else {

@@ -178,13 +178,13 @@ namespace firefly {
   }
 
   // TODO Change return type since the first bool should not be needed anymore
-  std::tuple<bool, bool, uint32_t> RatReconst::interpolate() {
+  std::pair<bool, uint32_t> RatReconst::interpolate() {
     std::unique_lock<std::mutex> lock(mutex_status);
 
     if (fed_zero) {
       fed_zero = false;
     } else if (is_interpolating || queue.empty()) {
-      return std::make_tuple(false, done, prime_number);
+      return std::make_pair(done, prime_number);
     } else {
       is_interpolating = true;
 
@@ -209,7 +209,7 @@ namespace firefly {
       start_interpolation = true;
     }
 
-    return std::make_tuple(true, done, prime_number);
+    return std::make_pair(done, prime_number);
   }
 
   void RatReconst::interpolate(const FFInt& new_ti,
