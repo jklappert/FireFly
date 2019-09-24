@@ -56,11 +56,12 @@ namespace firefly {
     RationalFunction get_result();
     /**
      *  Starts an interpolation job
-     *  @return a pair consisting of:
+     *  @return a tuple consisting of:
+     *  bool true if it has done anything and false otherwise
      *  bool done
      *  uint32_t the prime counter
      */
-    std::pair<bool, uint32_t> interpolate();
+    std::tuple<bool, bool, uint32_t> interpolate();
     /**
      *  Disables the shift, thus setting it to a zero vector
      */
