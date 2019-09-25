@@ -33,8 +33,7 @@ namespace firefly {
   public:
     /**
      *    A constructor
-     *    @param n_ an integer which is a member of the finite fild
-     *    @param p_ a prime number
+     *    @param n_ an integer which is a member of the finite field
      */
     template<typename T>
     FFInt(const T n_);

@@ -193,7 +193,7 @@ namespace firefly {
     save_states = true;
     resume_from_state = true;
     file_paths = file_paths_;
-    items = file_paths.size();
+    items = static_cast<uint32_t>(file_paths.size());
     prime_it = 200; // increase so that the minimum is the mininmum of the files
 
     for (uint32_t i = 0; i != items; ++i) {
@@ -393,13 +393,13 @@ namespace firefly {
         scan_for_shift();
 
 #ifndef WITH_MPI
-        uint32_t start = thr_n * bunch_size;
+        uint32_t to_start = thr_n * bunch_size;
 #else
-        uint32_t start = buffer * static_cast<uint32_t>(world_size) * thr_n * bunch_size; // TODO: start even more?
+        uint32_t to_start = buffer * static_cast<uint32_t>(world_size) * thr_n * bunch_size; // TODO: start even more?
 #endif
 
-        start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
-        started_probes.emplace(std::vector<uint32_t> (n - 1, 1), start);
+        start_probe_jobs(std::vector<uint32_t> (n - 1, 1), to_start);
+        started_probes.emplace(std::vector<uint32_t> (n - 1, 1), to_start);
 
 #ifdef WITH_MPI
         cond_val.notify_one();
@@ -533,7 +533,7 @@ namespace firefly {
     bool first = true;
     bool found_shift = false;
     uint32_t counter = 0;
-    uint32_t bound = shift_vec.size();
+    uint32_t bound = static_cast<uint32_t>(shift_vec.size());
 
     tmp_rec.scan_for_sparsest_shift();
 
@@ -549,13 +549,13 @@ namespace firefly {
         shift = tmp_rec.get_zi_shift_vec();
 
 #ifndef WITH_MPI
-        uint32_t start = thr_n * bunch_size;
+        uint32_t to_start = thr_n * bunch_size;
 #else
-        uint32_t start = buffer * total_thread_count * bunch_size; // TODO: start even more?
+        uint32_t to_start = buffer * total_thread_count * bunch_size; // TODO: start even more?
 #endif
 
-        start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
-        started_probes.emplace(std::vector<uint32_t> (n - 1, 1), start);
+        start_probe_jobs(std::vector<uint32_t> (n - 1, 1), to_start);
+        started_probes.emplace(std::vector<uint32_t> (n - 1, 1), to_start);
 
 #ifdef WITH_MPI
         cond_val.notify_one();
@@ -708,10 +708,10 @@ namespace firefly {
 #ifdef WITH_MPI
     send_first_jobs();
 #else
-    uint32_t start = thr_n * bunch_size;
+    uint32_t to_start = thr_n * bunch_size;
 
-    start_probe_jobs(zi_order, start);
-    started_probes.emplace(zi_order, start);
+    start_probe_jobs(zi_order, to_start);
+    started_probes.emplace(zi_order, to_start);
 #endif
 
     FFInt t = 1;
@@ -772,7 +772,7 @@ namespace firefly {
     }
 
     ++fed_ones;
-    items = probe->size();
+    items = static_cast<uint32_t>(probe->size());
     size_t tag_size = tags.size();
 
 #ifdef WITH_MPI
@@ -792,10 +792,10 @@ namespace firefly {
       proceed = false;
     }
 
-    uint32_t start = buffer * thr_n * bunch_size;
+    uint32_t to_start = buffer * thr_n * bunch_size;
 
-    start_probe_jobs(zi_order, start);
-    started_probes[zi_order] += start;
+    start_probe_jobs(zi_order, to_start);
+    started_probes[zi_order] += to_start;
 
     for (uint32_t i = 0; i != buffer * thr_n; ++i) {
       get_a_job();
@@ -932,9 +932,9 @@ namespace firefly {
         started_probes.emplace(std::vector<uint32_t>(n - 1, 1), thr_n * bunch_size);
         /*shift = tmp_rec.get_zi_shift_vec();
 
-        uint32_t start = thr_n * bunch_size;
-        start_probe_jobs(std::vector<uint32_t>(n - 1, 1), start);
-        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), start);*/
+        uint32_t to_start = thr_n * bunch_size;
+        start_probe_jobs(std::vector<uint32_t>(n - 1, 1), to_start);
+        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);*/
 #else
         // TODO optimize
         send_first_jobs();
@@ -953,10 +953,10 @@ namespace firefly {
           proceed = false;
         }
 
-        uint32_t start = buffer * thr_n * bunch_size;
+        uint32_t to_start = buffer * thr_n * bunch_size;
 
-        start_probe_jobs(zi_order, start);
-        started_probes[zi_order] += start;
+        start_probe_jobs(zi_order, to_start);
+        started_probes[zi_order] += to_start;
 
         for (uint32_t i = 0; i != buffer * thr_n; ++i) {
           get_a_job();
@@ -1181,7 +1181,7 @@ namespace firefly {
         // TODO: MPI
 #ifndef WITH_MPI
         if (probes_for_next_prime > thr_n * bunch_size) {
-          uint32_t start = thr_n * bunch_size;
+          uint32_t to_start = thr_n * bunch_size;
 #else
         if (mpi_first_send) {
           mpi_first_send = false;
@@ -1206,24 +1206,24 @@ namespace firefly {
           proceed = false;
         } else {
         if (probes_for_next_prime > buffer * total_thread_count * bunch_size) {
-          uint32_t start = buffer * total_thread_count * bunch_size;
+          uint32_t to_start = buffer * total_thread_count * bunch_size;
 #endif
 
           if (verbosity == CHATTY) {
-            INFO_MSG("Starting " + std::to_string(start) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - start) + " jobs will be started later");
+            INFO_MSG("Starting " + std::to_string(to_start) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - to_start) + " jobs will be started later");
           }
 
-          start_probe_jobs(std::vector<uint32_t>(n - 1, 1), start);
-          started_probes.emplace(std::vector<uint32_t>(n - 1, 1), start);
+          start_probe_jobs(std::vector<uint32_t>(n - 1, 1), to_start);
+          started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);
         } else {
-          uint32_t start = (probes_for_next_prime + bunch_size - 1) / bunch_size * bunch_size;
+          uint32_t to_start = (probes_for_next_prime + bunch_size - 1) / bunch_size * bunch_size;
 
           if (verbosity == CHATTY) {
-            INFO_MSG("Starting " + std::to_string(start) + " jobs");
+            INFO_MSG("Starting " + std::to_string(to_start) + " jobs");
           }
 
-          start_probe_jobs(std::vector<uint32_t>(n - 1, 1), start);
-          started_probes.emplace(std::vector<uint32_t>(n - 1, 1), start);
+          start_probe_jobs(std::vector<uint32_t>(n - 1, 1), to_start);
+          started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);
         }
 
 #ifdef WITH_MPI
@@ -1894,10 +1894,10 @@ namespace firefly {
 
                   if (it != started_probes.end()) {
                     if (required_probes > started_probes[zi_order]) {
-                      uint32_t start = required_probes - started_probes[zi_order];
+                      uint32_t to_start = required_probes - started_probes[zi_order];
 
                       if (bunch_size != 1) {
-                        start = (start + bunch_size - 1) / bunch_size * bunch_size;
+                        to_start = (to_start + bunch_size - 1) / bunch_size * bunch_size;
                       }
 
                       started_probes[zi_order] = required_probes;
@@ -1912,14 +1912,14 @@ namespace firefly {
                         }
 
                         msg = msg.substr(0, msg.length() - 2);
-                        msg += ") " + std::to_string(start) + " time(s)";
+                        msg += ") " + std::to_string(to_start) + " time(s)";
 
                         std::unique_lock<std::mutex> lock_print(print_control);
 
                         INFO_MSG(msg);
                       }
 
-                      start_probe_jobs(zi_order, start);
+                      start_probe_jobs(zi_order, to_start);
                     }
                   } else {
                     if (bunch_size != 1) {
@@ -1959,27 +1959,27 @@ namespace firefly {
 
 #ifndef WITH_MPI
               if (started_probes[zi_order] - thr_n * bunch_size <= fed_ones - 1) {
-                uint32_t start = fed_ones - started_probes[zi_order] + thr_n * bunch_size;
+                uint32_t to_start = fed_ones - started_probes[zi_order] + thr_n * bunch_size;
 #else
               if (started_probes[zi_order] - static_cast<uint32_t>(buffer) * total_thread_count * bunch_size <= fed_ones - 1) {
-                uint32_t start = fed_ones - started_probes[zi_order] + static_cast<uint32_t>(buffer) * total_thread_count * bunch_size;
+                uint32_t to_start = fed_ones - started_probes[zi_order] + static_cast<uint32_t>(buffer) * total_thread_count * bunch_size;
 #endif
 
                 if (bunch_size != 1) {
-                  start = (start + bunch_size - 1) / bunch_size * bunch_size;
+                  to_start = (to_start + bunch_size - 1) / bunch_size * bunch_size;
                 }
 
-                started_probes[zi_order] += start;
+                started_probes[zi_order] += to_start;
 
                 lock.unlock();
 
                 if (verbosity == CHATTY) {
                   std::unique_lock<std::mutex> lock_print(print_control);
 
-                  INFO_MSG("Starting ones: " + std::to_string(start));
+                  INFO_MSG("Starting ones: " + std::to_string(to_start));
                 }
 
-                start_probe_jobs(zi_order, start);
+                start_probe_jobs(zi_order, to_start);
               }
             } else {
               uint32_t required_probes = std::get<3>(rec)->get_num_eqn();
@@ -1991,10 +1991,10 @@ namespace firefly {
 
               if (it != started_probes.end()) {
                 if (required_probes > started_probes[zi_order]) {
-                  uint32_t start = required_probes - started_probes[zi_order];
+                  uint32_t to_start = required_probes - started_probes[zi_order];
 
                   if (bunch_size != 1) {
-                    start = (start + bunch_size - 1) / bunch_size * bunch_size;
+                    to_start = (to_start + bunch_size - 1) / bunch_size * bunch_size;
                   }
 
                   started_probes[zi_order] = required_probes;
@@ -2009,14 +2009,14 @@ namespace firefly {
                     }
 
                     msg = msg.substr(0, msg.length() - 2);
-                    msg += ") " + std::to_string(start) + " time(s)";
+                    msg += ") " + std::to_string(to_start) + " time(s)";
 
                     std::unique_lock<std::mutex> lock_print(print_control);
 
                     INFO_MSG(msg);
                   }
 
-                  start_probe_jobs(zi_order, start);
+                  start_probe_jobs(zi_order, to_start);
                 }
               } else {
                 if (bunch_size != 1) {
@@ -2230,19 +2230,19 @@ namespace firefly {
     std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
 
     for (int i = 1; i != world_size; ++i) {
-      uint64_t start;
-      MPI_Recv(&start, 1, MPI_UINT64_T, i, RESULT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      uint64_t to_start;
+      MPI_Recv(&to_start, 1, MPI_UINT64_T, i, RESULT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-      //std::cout << "starting " << start << " jobs on worker " << i << "\n";
+      //std::cout << "starting " << to_start << " jobs on worker " << i << "\n";
 
-      nodes.emplace(std::make_pair(i, start));
-      total_thread_count += static_cast<uint32_t>(start / buffer) / bunch_size;
+      nodes.emplace(std::make_pair(i, to_start));
+      total_thread_count += static_cast<uint32_t>(to_start / buffer) / bunch_size;
 
-      probes_queued += start;
-      started_probes[zi_order] += start;
-      uint64_t* values = new uint64_t[static_cast<uint32_t>(start) * (n + 1)];  // TODO vector?
+      probes_queued += to_start;
+      started_probes[zi_order] += to_start;
+      uint64_t* values = new uint64_t[static_cast<uint32_t>(to_start) * (n + 1)];  // TODO vector?
 
-      for (uint32_t ii = 0; ii != static_cast<uint32_t>(start); ++ii) {
+      for (uint32_t ii = 0; ii != static_cast<uint32_t>(to_start); ++ii) {
         values[ii * (n + 1)] = ind;
 
         FFInt t = tmp_rec.get_rand();
@@ -2278,7 +2278,7 @@ namespace firefly {
         ++ind;
       }
 
-      MPI_Send(values, static_cast<int>(static_cast<uint32_t>(start) * (n + 1)), MPI_UINT64_T, i, VALUES, MPI_COMM_WORLD);
+      MPI_Send(values, static_cast<int>(static_cast<uint32_t>(to_start) * (n + 1)), MPI_UINT64_T, i, VALUES, MPI_COMM_WORLD);
 
       delete[] values;
     }
@@ -2317,17 +2317,17 @@ namespace firefly {
         delete[] requests;
 
         int flag = 1;
-        MPI_Status status;
+        MPI_Status status_rec;
 
         while (flag) {
-          MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag, &status);
+          MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag, &status_rec);
 
           if (flag) {
             int amount;
-            MPI_Get_count(&status, MPI_UINT64_T, &amount);
+            MPI_Get_count(&status_rec, MPI_UINT64_T, &amount);
 
             uint64_t* tmp = new uint64_t[amount];
-            MPI_Recv(tmp, amount, MPI_UINT64_T, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
+            MPI_Recv(tmp, amount, MPI_UINT64_T, status_rec.MPI_SOURCE, status_rec.MPI_TAG, MPI_COMM_WORLD, &status_rec);
 
             delete[] tmp;
           }
@@ -2357,19 +2357,19 @@ namespace firefly {
         MPI_Barrier(MPI_COMM_WORLD);
 
         int flag = 1;
-        MPI_Status status;
+        MPI_Status status_rec;
 
         while (flag) {
-          MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag, &status);
+          MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag, &status_rec);
 
           if (flag) {
             int amount;
-            MPI_Get_count(&status, MPI_UINT64_T, &amount);
+            MPI_Get_count(&status_rec, MPI_UINT64_T, &amount);
 
             //std::cout << "garbage recieved: " << (static_cast<uint32_t>(amount) - 1) / (items + 1) << "\n";
 
             uint64_t* tmp = new uint64_t[amount];
-            MPI_Recv(tmp, amount, MPI_UINT64_T, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
+            MPI_Recv(tmp, amount, MPI_UINT64_T, status_rec.MPI_SOURCE, status_rec.MPI_TAG, MPI_COMM_WORLD, &status_rec);
 
             delete[] tmp;
           }
@@ -2382,9 +2382,9 @@ namespace firefly {
         double total_weight = 0.;
 
         for (int i = 1; i != world_size; ++i) {
-          MPI_Status status;
+          MPI_Status status_time;
           double timing[2];
-          MPI_Recv(&timing, 2, MPI_DOUBLE, i, TIMING, MPI_COMM_WORLD, &status);
+          MPI_Recv(&timing, 2, MPI_DOUBLE, i, TIMING, MPI_COMM_WORLD, &status_time);
           timings.emplace_back(timing[0]);
           weights.emplace_back(timing[1]);
           total_weight += timing[1];
@@ -2422,9 +2422,9 @@ namespace firefly {
 
         //std::cout << "com through\n";
 
-        for (int i = 1; i != world_size; ++i) {
+        for (int k = 1; k != world_size; ++k) {
           uint64_t free_slots;
-          MPI_Recv(&free_slots, 1, MPI_UINT64_T, i, RESULT, MPI_COMM_WORLD, &status);
+          MPI_Recv(&free_slots, 1, MPI_UINT64_T, k, RESULT, MPI_COMM_WORLD, &status);
 
           uint64_t size = std::min(free_slots, static_cast<uint64_t>(value_queue.size()));
 

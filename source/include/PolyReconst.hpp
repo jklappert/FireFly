@@ -49,7 +49,7 @@ namespace firefly {
     /**
      *    Feeds a new numerical value to the reconstruction algorithm
      *    @param num the numerical value of the black box
-     *    @param feed_zi_order the corresponding zi_order to the probe of the black box
+     *    @param feed_zi_ord the corresponding zi_order to the probe of the black box
      *    @param fed_prime the counter of the prime number corresponding to the feed
      */
     void feed(const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime);
@@ -190,7 +190,7 @@ namespace firefly {
     std::vector<FFInt> nums {}; /**< A vector holding evaluations of the polynomial */
     mpz_map combined_ci; /**< The combination of the finite field results with the chinese remained theorem */
     rn_map gi {}; /**< The guesses of the rational coefficients */
-    std::unordered_map<std::vector<uint32_t>, std::vector<FFInt>, UintHasher> ais {}; /*<< Coefficients used for Newton interpolation */
+    std::unordered_map<std::vector<uint32_t>, std::vector<FFInt>, UintHasher> ais {}; /**<< Coefficients used for Newton interpolation */
     std::unordered_map<uint32_t, int> max_deg {};
     static std::mutex mutex_statics; /**< A mutex for all static member variables */
     static ff_pair_map rand_zi; /**< A static map holding all used potencies of the anchor points */

@@ -109,7 +109,7 @@ namespace firefly {
      *  Multiplies two polynomials with no overlap of degrees
      *  @param a first polynimial
      *  @param b second polynomial
-     *  @curr_deg degree number of b which is absent in a
+     *  @param curr_deg degree number of b which is absent in a
      */
     PolynomialFF mul_shift(const ff_map& a, const ff_map& b, uint32_t curr_deg) const;
     /**

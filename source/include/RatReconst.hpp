@@ -31,7 +31,7 @@ namespace firefly {
    */
   class RatReconst : public BaseReconst {
   public:
-    RatReconst() {};
+    RatReconst() {}
     /**
      *    A constructor
      *    @param n_ the number of parameters
@@ -77,7 +77,7 @@ namespace firefly {
      */
     FFInt get_rand_zi(uint32_t zi, uint32_t order) const;
     /**
-     *  @param orders a vector of all zi orders
+     *  @param order a vector of all zi orders
      *  @param generate generates the random values if they are not already generated
      *  @return a vector of all random numbers of the given orders
      */

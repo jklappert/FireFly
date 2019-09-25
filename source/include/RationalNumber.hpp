@@ -31,7 +31,7 @@ namespace firefly {
   public:
     /**
      *  Constructor of a RationalNumber object
-     *  @param numberator_ the numerator as a mpz_class
+     *  @param numerator_ the numerator as a mpz_class
      *  @param denominator_ the denominator as a mpz_class
      */
     RationalNumber(const mpz_class& numerator_, const mpz_class& denominator_);

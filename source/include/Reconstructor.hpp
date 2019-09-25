@@ -34,11 +34,11 @@ namespace firefly {
     /**
      *  A constructor for the BlackBoxBase class
      */
-    BlackBoxBase() {};
+    BlackBoxBase() {}
     /**
      *  A destructor for the BlackBoxBase class
      */
-    virtual ~BlackBoxBase() {};
+    virtual ~BlackBoxBase() {}
     /**
      *  The evaluation of the black box. This function is called from Reconstructor.
      *  @param values The values to be inserted for the variables
@@ -64,7 +64,7 @@ namespace firefly {
      *  Update internal variables of the black box when the prime field changes.
      *  This function is called from Reconstructor.
      */
-    virtual void prime_changed() {};
+    virtual void prime_changed() {}
   };
 
   typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
