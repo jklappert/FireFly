@@ -136,9 +136,13 @@ int main() {
 
     reconst.reconstruct();
   } else {
-    MPIWorker(4, std::thread::hardware_concurrency(), bunch_size, bb);
+    MPIWorker(4 /*n_vars*/,
+              std::thread::hardware_concurrency() /*n_threads*/,
+              bunch_size,
+              bb /*black box*/);
   }
 
+  // Finish MPI environment
   MPI_Finalize();
 
   return 0;
