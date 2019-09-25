@@ -124,17 +124,19 @@ int main() {
   // Create the user defined black box
   BlackBoxUser bb(par);
 
+  uint32_t bunch_size = 1;
+
   if (process == master) {
     Reconstructor reconst(4 /*n_vars*/,
                           std::thread::hardware_concurrency() /*n_threads*/,
-                          1 /*bunch size*/,
+                          bunch_size /*bunch size*/,
                           bb /*black box*//*, Reconstructor::CHATTY*/);
 
     reconst.enable_scan();
 
     reconst.reconstruct();
   } else {
-    MPIWorker(4, std::thread::hardware_concurrency(), bb);
+    MPIWorker(4, std::thread::hardware_concurrency(), bunch_size, bb);
   }
 
   MPI_Finalize();

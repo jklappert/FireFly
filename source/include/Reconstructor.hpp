@@ -250,6 +250,7 @@ namespace firefly {
     uint64_t probes_queued = 0;
 #ifdef WITH_MPI
     int world_size;
+    uint32_t total_thread_count = 0;
     uint64_t ind = 0;
     std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
     std::unordered_map<int, uint64_t> nodes;

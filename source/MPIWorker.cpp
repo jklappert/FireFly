@@ -53,20 +53,20 @@ namespace firefly {
       if (tasks == 0 && results.empty()) {
         lock.unlock();
 
-        uint64_t free = buffer * static_cast<uint64_t>(thr_n);
+        uint64_t free = buffer * static_cast<uint64_t>(bunch_size * thr_n);
         MPI_Isend(&free, 1, MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD, &request);
       } else {
         while (results.empty()) {
           cond.wait(lock);
         }
 
-        results.emplace_back(buffer * static_cast<uint64_t>(thr_n) - tasks);
+        results.emplace_back(buffer * static_cast<uint64_t>(bunch_size * thr_n) - tasks * static_cast<uint64_t>(bunch_size));
         std::vector<uint64_t> tmp_results = std::move(results);
         results.clear();
 
         lock.unlock();
 
-        //std::cout << "worker sending " << (tmp_results.size() - 1) / (1 + bb_size) << " results\n";
+        //std::cout << "worker sending " << tmp_results.size() - 1 << " items\n";
 
         MPI_Isend(tmp_results.data(), static_cast<int>(tmp_results.size()), MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD, &request);
       }
@@ -123,13 +123,13 @@ namespace firefly {
             values_vec.reserve(bunch_size);
 
             for (uint32_t k = 0; k != bunch_size; ++k) {
-              index_vec.emplace_back(values_list[i * bunch_size * (n + 1) + bunch_size * k]);
+              index_vec.emplace_back(values_list[(i * bunch_size + k) * (n + 1)]);
 
               std::vector<FFInt> values;
               values.reserve(new_tasks * n);
 
               for (uint32_t j = 1; j != n + 1; ++j) {
-                values.emplace_back(values_list[i * bunch_size * (n + 1) + bunch_size * k + j]);
+                values.emplace_back(values_list[(i * bunch_size + k) * (n + 1) + j]);
               }
 
               values_vec.emplace_back(std::move(values));
@@ -217,12 +217,14 @@ namespace firefly {
     auto time1 = std::chrono::high_resolution_clock::now();
 
     std::vector<uint64_t> result_uint;
-    result_uint.reserve(static_cast<size_t>(bunch_size) + result.size());
+    result_uint.reserve(static_cast<size_t>(bunch_size) * (1 + result.front().size()));
+
+    //std::cout << "emplacing " << static_cast<size_t>(bunch_size) * (1 + result.front().size()) << " " << bunch_size << " " << result.front().size() << "\n";
 
     for (uint32_t j = 0; j != bunch_size; ++j) {
       result_uint.emplace_back(index_vec[j]);
 
-      for (size_t i = 0; i != result.size(); ++i) {
+      for (size_t i = 0; i != result.front().size(); ++i) {
         result_uint.emplace_back(result[j][i].n);
       }
     }
@@ -233,6 +235,7 @@ namespace firefly {
     auto time = std::chrono::duration<double>(time1 - time0).count();
     average_black_box_time = (average_black_box_time * (total_iterations - 1) + time) / total_iterations;
     results.insert(results.end(), result_uint.begin(), result_uint.end());
+    //std::cout << "results size " << results.size() << "\n";
     --tasks;
 
     cond.notify_one();

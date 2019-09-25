@@ -39,14 +39,14 @@ namespace firefly {
     tmp_rec = RatReconst(n);
 
 #ifdef WITH_MPI
-    --thr_n_;
     --thr_n;
+    total_thread_count = thr_n;
 #endif
 
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "."
                 << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
-      INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size 1");
+      INFO_MSG("Launching " << thr_n << " thread(s) with bunch size 1");
       INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
     }
   }
@@ -59,14 +59,14 @@ namespace firefly {
     tmp_rec = RatReconst(n);
 
 #ifdef WITH_MPI
-    --thr_n_;
     --thr_n;
+    total_thread_count = thr_n;
 #endif
 
     if (verbosity > SILENT) {
       std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "."
                 << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
-      INFO_MSG("Launching " << thr_n_ << " thread(s) with bunch size " + std::to_string(bunch_size_));
+      INFO_MSG("Launching " << thr_n << " thread(s) with bunch size " + std::to_string(bunch_size_));
       INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
     }
   }
@@ -551,7 +551,7 @@ namespace firefly {
 #ifndef WITH_MPI
         uint32_t start = thr_n * bunch_size;
 #else
-        uint32_t start = buffer * static_cast<uint32_t>(world_size) * thr_n * bunch_size; // TODO: start even more?
+        uint32_t start = buffer * total_thread_count * bunch_size; // TODO: start even more?
 #endif
 
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), start);
@@ -1090,10 +1090,10 @@ namespace firefly {
 
         // if only a small constant is reconstructed it will not ask for new run
         if (probes_for_next_prime == 0) {
-#ifdef WITH_MPI
-          probes_for_next_prime = buffer * static_cast<uint32_t>(world_size) * thr_n * bunch_size; // start even more?
-#else
+#ifndef WITH_MPI
           probes_for_next_prime = thr_n * bunch_size;
+#else
+          probes_for_next_prime = buffer * total_thread_count * bunch_size; // start even more?
 #endif
         }
 
@@ -1205,9 +1205,8 @@ namespace firefly {
 
           proceed = false;
         } else {
-
-        if (probes_for_next_prime > buffer * static_cast<uint32_t>(world_size) * thr_n * bunch_size) {
-          uint32_t start = buffer * static_cast<uint32_t>(world_size) * thr_n * bunch_size;
+        if (probes_for_next_prime > buffer * total_thread_count * bunch_size) {
+          uint32_t start = buffer * total_thread_count * bunch_size;
 #endif
 
           if (verbosity == CHATTY) {
@@ -1356,7 +1355,7 @@ namespace firefly {
             new_prime = true;
             continue;
           } else {
-#ifndef MPI
+#ifndef WITH_MPI
             throw std::runtime_error("Nothing left to feed: " + std::to_string(iteration)
                                      + " | " + std::to_string(items)
                                      + " " + std::to_string(items_new_prime)
@@ -1379,7 +1378,8 @@ namespace firefly {
                                      + std::to_string(probes_bunch.empty()) + " | "
                                      + std::to_string(feed_jobs) + " "
                                      + std::to_string(interpolate_jobs) + " | "
-                                     + std::to_string(iteration) + " | "
+                                     + std::to_string(iteration) + " "
+                                     + std::to_string(fed_ones) + " | "
                                      + std::to_string(probes_queued) + " "
                                      + std::to_string(results_queue.size()) + " "
                                      + std::to_string(value_queue.size()) + "\n");
@@ -1409,6 +1409,7 @@ namespace firefly {
     total_iterations += iteration;
   }
 
+  // TODO basically no difference between different bunch_size for MPI -> merge code?
   void Reconstructor::start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t to_start) {
     bool ones = false;
 
@@ -1462,22 +1463,7 @@ namespace firefly {
           }
         }
 
-#ifdef WITH_MPI
-        values[1] = (t + shift[0]).n;
-
-        for (uint32_t i = 1; i != n; ++i) {
-          values[i + 1] = (rand_zi[i - 1] * t + shift[i]).n;
-        }
-
-        std::unique_lock<std::mutex> lock_val(mut_val);
-
-        values[0] = ind;
-
-        index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
-        ++ind;
-
-        value_queue.emplace(std::move(values));
-#else
+#ifndef WITH_MPI
         values[0] = t + shift[0];
 
         for (uint32_t i = 1; i != n; ++i) {
@@ -1532,25 +1518,41 @@ namespace firefly {
 
           std::get<2>(*it) = std::move(future);
         }
+#else
+        values[1] = (t + shift[0]).n;
 
+        for (uint32_t i = 1; i != n; ++i) {
+          values[i + 1] = (rand_zi[i - 1] * t + shift[i]).n;
+        }
+
+        std::unique_lock<std::mutex> lock_val(mut_val);
+
+        values[0] = ind;
+
+        index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
+        ++ind;
+
+        value_queue.emplace(std::move(values));
 #endif
       }
-
-#ifdef WITH_MPI
-      std::unique_lock<std::mutex> lock_val(mut_val);
-
-      probes_queued += static_cast<uint64_t>(to_start);
-      new_jobs = true;
-#endif
     } else {
       for (uint32_t j = 0; j != to_start / bunch_size; ++j) {
+#ifndef WITH_MPI
         std::vector<FFInt> t_vec;
         t_vec.reserve(bunch_size);
         std::vector<std::vector<FFInt>> values_vec;
         values_vec.reserve(bunch_size);
+#else
+        // TODO this queues the jobs in a correct order so that zi_order is fixed for bunch_size entries
+        std::unique_lock<std::mutex> lock_val(mut_val);
+#endif
 
         for (uint32_t i = 0; i != bunch_size; ++i) {
+#ifndef WITH_MPI
           std::vector<FFInt> values(n);
+#else
+          std::vector<uint64_t> values(n + 1);
+#endif
 
           FFInt t = tmp_rec.get_rand();
 
@@ -1579,6 +1581,7 @@ namespace firefly {
             }
           }
 
+#ifndef WITH_MPI
           values[0] = t + shift[0];
 
           for (uint32_t i = 1; i != n; ++i) {
@@ -1587,8 +1590,23 @@ namespace firefly {
 
           t_vec.emplace_back(t);
           values_vec.emplace_back(std::move(values));
+#else
+          values[1] = (t + shift[0]).n;
+
+          for (uint32_t i = 1; i != n; ++i) {
+            values[i + 1] = (rand_zi[i - 1] * t + shift[i]).n;
+          }
+
+          values[0] = ind;
+
+          index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
+          ++ind;
+
+          value_queue.emplace(std::move(values));
+#endif
         }
 
+#ifndef WITH_MPI
         // TODO: Why is this required already here?
         std::unique_lock<std::mutex> lock(future_control);
 
@@ -1637,8 +1655,16 @@ namespace firefly {
 
           std::get<2>(*it) = std::move(future);
         }
+#endif
       }
     }
+
+#ifdef WITH_MPI
+    std::unique_lock<std::mutex> lock_val(mut_val);
+
+    probes_queued += static_cast<uint64_t>(to_start);
+    new_jobs = true;
+#endif
   }
 
   void Reconstructor::get_probe(FFInt& t, std::vector<uint32_t>& zi_order, std::vector<FFInt>* probe, double& time) {
@@ -1650,7 +1676,6 @@ namespace firefly {
 
     if (bunch_size == 1) {
 #ifdef WITH_MPI
-
       if (!finished_probes_it.empty()) {
 #endif
         auto it = finished_probes_it.front();
@@ -1668,8 +1693,8 @@ namespace firefly {
         *probe = std::move(tmp.first);
         time = tmp.second;
         probes.erase(it);
-#ifdef WITH_MPI
 
+#ifdef WITH_MPI
         std::unique_lock<std::mutex> lck(mut_val);
 
         --probes_queued;
@@ -1688,7 +1713,11 @@ namespace firefly {
 
 #endif
     } else {
+#ifndef WITH_MPI
       if (bunch.empty()) {
+#else
+      if (bunch.empty() && !finished_probes_bunch_it.empty()) {
+#endif
         auto it = finished_probes_bunch_it.front();
         finished_probes_bunch_it.pop();
 
@@ -1706,13 +1735,34 @@ namespace firefly {
         probes_bunch.erase(it);
       }
 
-      t = bunch_t.back();
-      zi_order = bunch_zi_order;
-      *probe = std::move(bunch.back());
-      time = bunch_time / bunch_size;
+#ifdef WITH_MPI
+      if (!bunch.empty()) {
+#endif
+        t = bunch_t.back();
+        zi_order = bunch_zi_order;
+        *probe = std::move(bunch.back());
+        time = bunch_time / bunch_size;
 
-      bunch_t.pop_back();
-      bunch.pop_back();
+        bunch_t.pop_back();
+        bunch.pop_back();
+#ifdef WITH_MPI
+
+        std::unique_lock<std::mutex> lck(mut_val);
+
+        --probes_queued;
+      } else {
+        auto tmp = std::move(results_queue.front());
+        results_queue.pop();
+        *probe = std::move(tmp.second);
+
+        std::unique_lock<std::mutex> lck(mut_val);
+
+        auto tmp2 = std::move(index_map[tmp.first]);
+        t = tmp2.first;
+        zi_order = std::move(tmp2.second);
+        --probes_queued;
+      }
+#endif
     }
 
     --jobs_finished;
@@ -1907,8 +1957,13 @@ namespace firefly {
               //lock_exists.unlock();
               std::unique_lock<std::mutex> lock(job_control);
 
+#ifndef WITH_MPI
               if (started_probes[zi_order] - thr_n * bunch_size <= fed_ones - 1) {
                 uint32_t start = fed_ones - started_probes[zi_order] + thr_n * bunch_size;
+#else
+              if (started_probes[zi_order] - static_cast<uint32_t>(buffer) * total_thread_count * bunch_size <= fed_ones - 1) {
+                uint32_t start = fed_ones - started_probes[zi_order] + static_cast<uint32_t>(buffer) * total_thread_count * bunch_size;
+#endif
 
                 if (bunch_size != 1) {
                   start = (start + bunch_size - 1) / bunch_size * bunch_size;
@@ -2043,55 +2098,120 @@ namespace firefly {
       std::unique_lock<std::mutex> lock_val(mut_val);
 
       if (!value_queue.empty()) {
-        std::vector<uint64_t> val = std::move(value_queue.front());
-        value_queue.pop();
+        if (bunch_size == 1) {
+          std::vector<uint64_t> val = std::move(value_queue.front());
+          value_queue.pop();
 
-        if (value_queue.empty()) {
-          new_jobs = false;
-        }
+          if (value_queue.empty()) {
+            new_jobs = false;
+          }
 
-        auto tmp = index_map[val.front()];
+          auto tmp = index_map[val.front()];
 
-        lock_val.unlock();
+          lock_val.unlock();
 
-        FFInt t = tmp.first;
-        std::vector<uint32_t> zi_order = std::move(tmp.second);
+          FFInt t = tmp.first;
+          std::vector<uint32_t> zi_order = std::move(tmp.second);
 
-        std::vector<FFInt> values;
-        values.reserve(val.size() - 1);
+          std::vector<FFInt> values;
+          values.reserve(val.size() - 1);
 
-        for (size_t i = 1; i != val.size(); ++i) {
-          values.emplace_back(val[i]);
-        }
-
-        std::unique_lock<std::mutex> lock(future_control);
-
-        probes.emplace_back(std::make_tuple(t, zi_order, probe_future()));
-        auto it = --(probes.end());
-
-        probe_future future = tp.run_packaged_task([this, values, it]() {
-          auto time0 = std::chrono::high_resolution_clock::now();
-
-          std::vector<FFInt> probe = bb(values);
-
-          auto time1 = std::chrono::high_resolution_clock::now();
-
-          get_a_job();
+          for (size_t i = 1; i != val.size(); ++i) {
+            values.emplace_back(val[i]);
+          }
 
           std::unique_lock<std::mutex> lock(future_control);
-          auto time = std::chrono::duration<double>(time1 - time0).count();
-          ++tmp_total_iterations;
-          tmp_average_black_box_time = (tmp_average_black_box_time * (tmp_total_iterations - 1) + time) / tmp_total_iterations;
 
-          ++jobs_finished;
-          finished_probes_it.emplace(it);
+          probes.emplace_back(std::make_tuple(t, zi_order, probe_future()));
+          auto it = --(probes.end());
 
-          condition_future.notify_one();
+          probe_future future = tp.run_packaged_task([this, values, it]() {
+            auto time0 = std::chrono::high_resolution_clock::now();
 
-          return std::make_pair(std::move(probe), time);
-        });
+            std::vector<FFInt> probe = bb(values);
 
-        std::get<2>(*it) = std::move(future);
+            auto time1 = std::chrono::high_resolution_clock::now();
+
+            get_a_job();
+
+            std::unique_lock<std::mutex> lock(future_control);
+
+            auto time = std::chrono::duration<double>(time1 - time0).count();
+            ++tmp_total_iterations;
+            tmp_average_black_box_time = (tmp_average_black_box_time * (tmp_total_iterations - 1) + time) / tmp_total_iterations;
+
+            ++jobs_finished;
+            finished_probes_it.emplace(it);
+
+            condition_future.notify_one();
+
+            return std::make_pair(std::move(probe), time);
+          });
+
+          std::get<2>(*it) = std::move(future);
+        } else {
+          std::vector<std::vector<FFInt>> values_vec;
+          std::vector<FFInt> t_vec;
+          values_vec.reserve(bunch_size);
+          t_vec.reserve(bunch_size);
+
+          std::vector<uint32_t> zi_order;
+
+          for (uint32_t i = 0; i != bunch_size; ++i) {
+            std::vector<uint64_t> val = std::move(value_queue.front());
+            value_queue.pop();
+
+            auto tmp = index_map[val.front()];
+
+            t_vec.emplace_back(tmp.first);
+            zi_order = std::move(tmp.second);
+
+            std::vector<FFInt> values;
+            values.reserve(val.size() - 1);
+
+            for (size_t i = 1; i != val.size(); ++i) {
+              values.emplace_back(val[i]);
+            }
+
+            values_vec.emplace_back(std::move(values));
+          }
+
+          if (value_queue.empty()) {
+            new_jobs = false;
+          }
+
+          lock_val.unlock();
+
+          std::unique_lock<std::mutex> lock(future_control);
+
+          probes_bunch.emplace_back(std::make_tuple(t_vec, zi_order, probe_future_bunch()));
+          auto it = --(probes_bunch.end());
+
+          probe_future_bunch future = tp.run_packaged_task([this, values_vec, it]() {
+            auto time0 = std::chrono::high_resolution_clock::now();
+
+            std::vector<std::vector<FFInt>> probe = bb(values_vec);
+
+            auto time1 = std::chrono::high_resolution_clock::now();
+
+            get_a_job();
+
+            std::unique_lock<std::mutex> lock(future_control);
+
+            auto time = std::chrono::duration<double>(time1 - time0).count();
+            ++tmp_total_iterations;
+            tmp_average_black_box_time = (tmp_average_black_box_time * (tmp_total_iterations - 1) + time) / tmp_total_iterations;
+
+            jobs_finished += bunch_size;
+            finished_probes_bunch_it.emplace(it);
+
+            condition_future.notify_one();
+
+            return std::make_pair(std::move(probe), time);
+          });
+
+          std::get<2>(*it) = std::move(future);
+        }
       }
     }
   }
@@ -2107,7 +2227,7 @@ namespace firefly {
     std::vector<uint32_t> zi_order = std::vector<uint32_t>(n - 1, 1);
     started_probes.emplace(std::make_pair(zi_order, 0));
 
-    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(std::vector<uint32_t>(n - 1, 1), true);
+    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
 
     for (int i = 1; i != world_size; ++i) {
       uint64_t start;
@@ -2116,6 +2236,7 @@ namespace firefly {
       //std::cout << "starting " << start << " jobs on worker " << i << "\n";
 
       nodes.emplace(std::make_pair(i, start));
+      total_thread_count += static_cast<uint32_t>(start / buffer) / bunch_size;
 
       probes_queued += start;
       started_probes[zi_order] += start;
@@ -2153,7 +2274,7 @@ namespace firefly {
           values[ii * (n + 1) + j + 1] = (t * rand_zi[j - 1] + shift[j]).n;
         }
 
-        index_map.emplace(std::make_pair(ind, std::make_pair(t, std::vector<uint32_t>(n - 1, 1))));
+        index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
         ++ind;
       }
 
@@ -2216,7 +2337,6 @@ namespace firefly {
         break;
       } else if (new_prime || (done && scan)) {
         MPI_Request* requests = new MPI_Request[world_size - 1];
-
 
         //std::cout << "com np\n";
 
