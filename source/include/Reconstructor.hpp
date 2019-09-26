@@ -173,6 +173,7 @@ namespace firefly {
     std::mutex feed_control;
     std::mutex print_control;
     std::mutex status_control;
+    std::mutex mutex_probe_queue;
     std::mutex clean;
     std::mutex chosen_mutex;
     std::condition_variable condition_future;
@@ -186,7 +187,8 @@ namespace firefly {
     std::vector<FFInt> bunch_t;
     std::vector<std::vector<FFInt>> bunch;
     double bunch_time;
-    uint32_t jobs_finished = 0;
+    uint32_t probes_queued = 0;
+    uint32_t probes_finished = 0;
     std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes;
     uint32_t fed_ones = 0;
     uint32_t probes_for_next_prime = 0;
@@ -247,7 +249,6 @@ namespace firefly {
      *  Removes all RatReconst from reconst which are flagged as DELETE
      */
     void clean_reconst();
-    uint64_t probes_queued = 0;
 #ifdef WITH_MPI
     int world_size;
     uint32_t total_thread_count = 0;
@@ -255,13 +256,11 @@ namespace firefly {
     std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
     std::unordered_map<int, uint64_t> nodes;
     std::queue<std::pair<int, uint64_t>> empty_nodes;
-    std::mutex mut_val;
     std::condition_variable cond_val;
     std::atomic<bool> new_jobs = {false};
     std::queue<std::vector<uint64_t>> value_queue;
     std::queue<std::pair<uint64_t, std::vector<FFInt>>> results_queue;
     bool proceed = false;
-    //uint64_t probes_queued = 0;
     /**
      *  TODO
      */

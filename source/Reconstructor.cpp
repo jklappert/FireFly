@@ -355,7 +355,7 @@ namespace firefly {
     ThreadPool tp_comm(1);
     tp_comm.run_priority_task([this]() {
       {
-        std::unique_lock<std::mutex> lock(mut_val);
+        std::unique_lock<std::mutex> lock(mutex_probe_queue);
 
         while (!new_jobs) {
           cond_val.wait(lock);
@@ -405,7 +405,7 @@ namespace firefly {
         cond_val.notify_one();
 
         {
-          std::unique_lock<std::mutex> lock_val(mut_val);
+          std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
           while (!proceed) {
             cond_val.wait(lock_val);
@@ -453,7 +453,7 @@ namespace firefly {
       mpi_setup();
 
       {
-        std::unique_lock<std::mutex> lock_val(mut_val);
+        std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
         new_jobs = true;
 
@@ -561,7 +561,7 @@ namespace firefly {
         cond_val.notify_one();
 
         {
-          std::unique_lock<std::mutex> lock_val(mut_val);
+          std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
           while (!proceed) {
             cond_val.wait(lock_val);
@@ -583,7 +583,7 @@ namespace firefly {
       // otherwise it can happen that a RatReconst is fed with old data
 #ifdef WITH_MPI
       {
-        std::unique_lock<std::mutex> lock_val(mut_val);
+        std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
         value_queue = std::queue<std::vector<uint64_t>>();
         new_jobs = false;
@@ -635,7 +635,8 @@ namespace firefly {
       finished_probes_bunch_it = std::queue<future_list_bunch::iterator>();
       bunch_t.clear();
       bunch.clear();
-      jobs_finished = 0;
+      probes_finished = 0;
+      probes_queued = 0;
       started_probes.clear();
       fed_ones = 0;
       feed_jobs = 0;
@@ -645,8 +646,6 @@ namespace firefly {
       done = false;
 
 #ifdef WITH_MPI
-      probes_queued = 0;
-
       {
         std::unique_lock<std::mutex> lock(future_control);
 
@@ -779,7 +778,7 @@ namespace firefly {
     ++tmp_total_iterations;
     tmp_average_black_box_time = average_black_box_time;
     {
-      std::unique_lock<std::mutex> lock_val(mut_val);
+      std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
       new_jobs = true;
 
@@ -940,7 +939,7 @@ namespace firefly {
         send_first_jobs();
 
         {
-          std::unique_lock<std::mutex> lock_val(mut_val);
+          std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
           new_jobs = true;
 
@@ -970,7 +969,7 @@ namespace firefly {
         //send_first_jobs(); // TODO sends useless jobs to prepare all variables
 
         //{
-        //  std::unique_lock<std::mutex> lock_val(mut_val);
+        //  std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
         //  new_jobs = true;
 
@@ -991,7 +990,7 @@ namespace firefly {
         //if (prime_it == 1) exit(-1);
 #ifdef WITH_MPI
         {
-          std::unique_lock<std::mutex> lock_val(mut_val);
+          std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
           value_queue = std::queue<std::vector<uint64_t>>();
           new_jobs = false;
@@ -1059,7 +1058,8 @@ namespace firefly {
         bunch_t.clear();
         bunch.clear();
         fed_ones = 0;
-        jobs_finished = 0;
+        probes_finished = 0;
+        probes_queued = 0;
         started_probes.clear();
 
         // Only reset chosen_t when not resuming from a saved state
@@ -1079,8 +1079,6 @@ namespace firefly {
         bb.prime_changed();
 
 #ifdef WITH_MPI
-        probes_queued = 0;
-
         {
           std::unique_lock<std::mutex> lock(future_control);
 
@@ -1197,7 +1195,7 @@ namespace firefly {
           new_jobs = true;
           cond_val.notify_one();
 
-          std::unique_lock<std::mutex> lock_val(mut_val);
+          std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
           while (!proceed) {
             cond_val.wait(lock_val);
@@ -1230,7 +1228,7 @@ namespace firefly {
         cond_val.notify_one();
 
         {
-          std::unique_lock<std::mutex> lock_val(mut_val);
+          std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
           while (!proceed) {
             cond_val.wait(lock_val);
@@ -1300,10 +1298,10 @@ namespace firefly {
       }
 
       {
-        std::unique_lock<std::mutex> lock_future(future_control);
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-        if (jobs_finished == 0 && ((bunch_size == 1 && probes.empty()) || (bunch_size != 1 && bunch.empty() && probes_bunch.empty()))) {
-          lock_future.unlock();
+        if (probes_queued == 0) {
+          lock_probe_queue.unlock();
 
           {
             std::unique_lock<std::mutex> lock_feed(feed_control);
@@ -1312,39 +1310,25 @@ namespace firefly {
               condition_feed.wait(lock_feed);
 
               lock_feed.unlock();
-              lock_future.lock();
-
-#ifndef WITH_MPI
-
-              if (jobs_finished > 0 || !probes.empty() || !bunch.empty() || !probes_bunch.empty()) {
-#else
-              std::unique_lock<std::mutex> lck(mut_val);
+              lock_probe_queue.lock();
 
               if (probes_queued != 0) {
-#endif
-                lock_future.unlock();
+                lock_probe_queue.unlock();
 
                 break;
               }
 
-              lock_future.unlock();
+              lock_probe_queue.unlock();
               lock_feed.lock();
             }
 
-            lock_future.lock();
-
-#ifndef WITH_MPI
-
-            if (jobs_finished > 0 || !probes.empty() || !bunch.empty() || !probes_bunch.empty()) {
-#else
-            std::unique_lock<std::mutex> lck(mut_val);
+            lock_probe_queue.lock();
 
             if (probes_queued != 0) {
-#endif
               continue;
             }
 
-            lock_future.unlock();
+            lock_probe_queue.unlock();
           }
 
           // no jobs are running anymore, check if done or new_prime else throw error
@@ -1355,24 +1339,11 @@ namespace firefly {
             new_prime = true;
             continue;
           } else {
-#ifndef WITH_MPI
-            throw std::runtime_error("Nothing left to feed: " + std::to_string(iteration)
-                                     + " | " + std::to_string(items)
-                                     + " " + std::to_string(items_new_prime)
-                                     + " " + std::to_string(items_done)
-                                     + " | " + std::to_string(jobs_finished)
-                                     + " " + std::to_string(probes.empty())
-                                     + " " + std::to_string(bunch.empty())
-                                     + " " + std::to_string(probes_bunch.empty())
-                                     + " | " + std::to_string(feed_jobs)
-                                     + " " + std::to_string(interpolate_jobs)
-                                     + "\n");
-#else
             throw std::runtime_error("Nothing left to feed: "
                                      + std::to_string(items)
                                      + " " + std::to_string(items_new_prime)
                                      + " " + std::to_string(items_done) + " | "
-                                     + std::to_string(jobs_finished) + " "
+                                     + std::to_string(probes_finished) + " "
                                      + std::to_string(probes.empty()) + " "
                                      + std::to_string(bunch.empty()) + " "
                                      + std::to_string(probes_bunch.empty()) + " | "
@@ -1380,6 +1351,9 @@ namespace firefly {
                                      + std::to_string(interpolate_jobs) + " | "
                                      + std::to_string(iteration) + " "
                                      + std::to_string(fed_ones) + " | "
+#ifndef WITH_MPI
+                                     + std::to_string(probes_queued) + "\n");
+#else
                                      + std::to_string(probes_queued) + " "
                                      + std::to_string(results_queue.size()) + " "
                                      + std::to_string(value_queue.size()) + "\n");
@@ -1486,7 +1460,7 @@ namespace firefly {
 
             std::unique_lock<std::mutex> lock(future_control);
 
-            ++jobs_finished;
+            ++probes_finished;
             finished_probes_it.emplace(it);
 
             condition_future.notify_one();
@@ -1508,7 +1482,7 @@ namespace firefly {
 
             std::unique_lock<std::mutex> lock(future_control);
 
-            ++jobs_finished;
+            ++probes_finished;
             finished_probes_it.emplace(it);
 
             condition_future.notify_one();
@@ -1525,7 +1499,7 @@ namespace firefly {
           values[i + 1] = (rand_zi[i - 1] * t + shift[i]).n;
         }
 
-        std::unique_lock<std::mutex> lock_val(mut_val);
+        std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
         values[0] = ind;
 
@@ -1544,7 +1518,7 @@ namespace firefly {
         values_vec.reserve(bunch_size);
 #else
         // TODO this queues the jobs in a correct order so that zi_order is fixed for bunch_size entries
-        std::unique_lock<std::mutex> lock_val(mut_val);
+        std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 #endif
 
         for (uint32_t i = 0; i != bunch_size; ++i) {
@@ -1623,7 +1597,7 @@ namespace firefly {
 
             std::unique_lock<std::mutex> lock(future_control);
 
-            jobs_finished += bunch_size;
+            probes_finished += bunch_size;
             finished_probes_bunch_it.emplace(it);
 
             condition_future.notify_one();
@@ -1645,7 +1619,7 @@ namespace firefly {
 
             std::unique_lock<std::mutex> lock(future_control);
 
-            jobs_finished += bunch_size;
+            probes_finished += bunch_size;
             finished_probes_bunch_it.emplace(it);
 
             condition_future.notify_one();
@@ -1659,10 +1633,11 @@ namespace firefly {
       }
     }
 
-#ifdef WITH_MPI
-    std::unique_lock<std::mutex> lock_val(mut_val);
+    std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
     probes_queued += static_cast<uint64_t>(to_start);
+
+#ifdef WITH_MPI
     new_jobs = true;
 #endif
   }
@@ -1670,7 +1645,7 @@ namespace firefly {
   void Reconstructor::get_probe(FFInt& t, std::vector<uint32_t>& zi_order, std::vector<FFInt>* probe, double& time) {
     std::unique_lock<std::mutex> lock_future(future_control);
 
-    while (jobs_finished == 0) {
+    while (probes_finished == 0) {
       condition_future.wait(lock_future);
     }
 
@@ -1694,16 +1669,16 @@ namespace firefly {
         time = tmp.second;
         probes.erase(it);
 
-#ifdef WITH_MPI
-        std::unique_lock<std::mutex> lck(mut_val);
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
         --probes_queued;
+#ifdef WITH_MPI
       } else {
         auto tmp = std::move(results_queue.front());
         results_queue.pop();
         *probe = std::move(tmp.second);
 
-        std::unique_lock<std::mutex> lck(mut_val);
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
         auto tmp2 = std::move(index_map[tmp.first]);
         t = tmp2.first;
@@ -1745,17 +1720,17 @@ namespace firefly {
 
         bunch_t.pop_back();
         bunch.pop_back();
-#ifdef WITH_MPI
 
-        std::unique_lock<std::mutex> lck(mut_val);
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
         --probes_queued;
+#ifdef WITH_MPI
       } else {
         auto tmp = std::move(results_queue.front());
         results_queue.pop();
         *probe = std::move(tmp.second);
 
-        std::unique_lock<std::mutex> lck(mut_val);
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
         auto tmp2 = std::move(index_map[tmp.first]);
         t = tmp2.first;
@@ -1765,7 +1740,7 @@ namespace firefly {
 #endif
     }
 
-    --jobs_finished;
+    --probes_finished;
   }
 
   void Reconstructor::feed_job(const std::vector<uint32_t> zi_order, const firefly::FFInt t, std::vector<FFInt>* probe) {
@@ -2095,7 +2070,7 @@ namespace firefly {
 #ifdef WITH_MPI
   void Reconstructor::get_a_job() {
     if (tp.queue_size() <= (buffer - 1) * thr_n) {
-      std::unique_lock<std::mutex> lock_val(mut_val);
+      std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
       if (!value_queue.empty()) {
         if (bunch_size == 1) {
@@ -2140,7 +2115,7 @@ namespace firefly {
             ++tmp_total_iterations;
             tmp_average_black_box_time = (tmp_average_black_box_time * (tmp_total_iterations - 1) + time) / tmp_total_iterations;
 
-            ++jobs_finished;
+            ++probes_finished;
             finished_probes_it.emplace(it);
 
             condition_future.notify_one();
@@ -2202,7 +2177,7 @@ namespace firefly {
             ++tmp_total_iterations;
             tmp_average_black_box_time = (tmp_average_black_box_time * (tmp_total_iterations - 1) + time) / tmp_total_iterations;
 
-            jobs_finished += bunch_size;
+            probes_finished += bunch_size;
             finished_probes_bunch_it.emplace(it);
 
             condition_future.notify_one();
@@ -2404,7 +2379,7 @@ namespace firefly {
 
         //std::cout << "com rec\n";
 
-        std::unique_lock<std::mutex> lock_val(mut_val);
+        std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
         proceed = true;
 
@@ -2453,7 +2428,7 @@ namespace firefly {
           }
         }
       } else if (restart_empty_nodes) {
-        std::unique_lock<std::mutex> lock_val(mut_val);
+        std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
         while (!empty_nodes.empty() && !value_queue.empty()) {
           auto node = empty_nodes.front();
@@ -2516,14 +2491,14 @@ namespace firefly {
         {
           std::unique_lock<std::mutex> lock_res(future_control);
 
-          jobs_finished += new_results;
+          probes_finished += new_results;
 
           condition_future.notify_one();
         }
 
         uint64_t free_slots = results_list[amount - 1];
 
-        std::unique_lock<std::mutex> lock_val(mut_val);
+        std::unique_lock<std::mutex> lock_val(mutex_probe_queue);
 
         uint64_t size = std::min(free_slots, static_cast<uint64_t>(value_queue.size()));
 
