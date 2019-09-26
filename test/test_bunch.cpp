@@ -21,12 +21,16 @@
 #include "ShuntingYardParser.hpp"
 #include "tinydir.h"
 
+#ifdef WITH_MPI
+#include "MPIWorker.hpp"
+#endif
+
 namespace firefly {
   class BlackBoxUser : public BlackBoxBase {
   public:
-    BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
+    BlackBoxUser(const ShuntingYardParser &par_) : par(par_) {};
 
-    virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+    virtual std::vector<FFInt> operator()(const std::vector<FFInt> &values) {
       //std::vector<FFInt> result;
 
       // Get results from parsed expressions
@@ -45,7 +49,7 @@ namespace firefly {
       return result;
     }
 
-    virtual std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>>& values) {
+    virtual std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>> &values) {
       // Get results from parsed expressions
       std::vector<std::vector<FFInt>> result = par.evaluate_pre(values);
 
@@ -75,6 +79,7 @@ namespace firefly {
 
 using namespace firefly;
 int main() {
+#ifndef WITH_MPI
   INFO_MSG("Test bunched evaluation");
   ShuntingYardParser p_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_3(p_3);
@@ -88,8 +93,44 @@ int main() {
   Reconstructor r_3_2(4, 4, 4, b_3_2);
   r_3_2.set_safe_interpolation();
   r_3_2.reconstruct();
-  RatReconst::reset();
   INFO_MSG("Bunched evaluation passed");
+#else
+  int provided;
+  MPI_Init_thread(NULL, NULL, MPI_THREAD_SERIALIZED, &provided);
+
+  int process;
+  MPI_Comm_rank(MPI_COMM_WORLD, &process);
+
+  char processor_name[MPI_MAX_PROCESSOR_NAME];
+  int name_len;
+  MPI_Get_processor_name(processor_name, &name_len);
+
+  if(process == master) {
+    INFO_MSG("Test bunched evaluation");
+    ShuntingYardParser p_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_3(p_3);
+    Reconstructor r_3(4, 4, 4, b_3);
+    r_3.enable_scan();
+    r_3.reconstruct();
+    RatReconst::reset();
+
+    ShuntingYardParser p_3_2("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_3_2(p_3_2);
+    Reconstructor r_3_2(4, 4, 4, b_3_2);
+    r_3_2.set_safe_interpolation();
+    r_3_2.reconstruct();
+    INFO_MSG("Bunched evaluation passed");
+  } else {
+    ShuntingYardParser p_2("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_2(p_2);
+    MPIWorker(4, std::thread::hardware_concurrency(), 4, b_2);
+    RatReconst::reset();
+
+    ShuntingYardParser p_0("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
+    BlackBoxUser b_0(p_0);
+    MPIWorker(4, std::thread::hardware_concurrency(), 4, b_0);
+  }
+#endif
 
   return 0;
 }
