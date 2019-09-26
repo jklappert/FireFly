@@ -395,7 +395,7 @@ namespace firefly {
 #ifndef WITH_MPI
         uint32_t to_start = thr_n * bunch_size;
 #else
-        uint32_t to_start = buffer * static_cast<uint32_t>(world_size) * thr_n * bunch_size; // TODO: start even more?
+        uint32_t to_start = buffer * total_thread_count * bunch_size; // TODO: start even more?
 #endif
 
         start_probe_jobs(std::vector<uint32_t> (n - 1, 1), to_start);
