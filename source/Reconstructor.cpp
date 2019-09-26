@@ -32,7 +32,7 @@
 
 namespace firefly {
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_,
-                               uint32_t verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
+                               int verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     FFInt::set_new_prime(primes()[prime_it]);
     uint64_t seed = static_cast<uint64_t>(std::time(0));
     BaseReconst().set_seed(seed);
@@ -52,7 +52,7 @@ namespace firefly {
   }
 
   Reconstructor::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_,
-                               BlackBoxBase& bb_, uint32_t verbosity_): n(n_), thr_n(thr_n_), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
+                               BlackBoxBase& bb_, int verbosity_): n(n_), thr_n(thr_n_), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
     FFInt::set_new_prime(primes()[prime_it]);
     uint64_t seed = static_cast<uint64_t>(std::time(0));
     BaseReconst().set_seed(seed);
@@ -291,7 +291,7 @@ namespace firefly {
 
       if (anchor_point_file.is_open()) {
         std::getline(anchor_point_file, line);
-        tmp_rec.set_anchor_points(parse_vector_FFInt(line, n));
+        tmp_rec.set_anchor_points(parse_vector_FFInt(line, static_cast<int>(n)));
       } else {
         ERROR_MSG("Anchor point file not found!");
         std::exit(EXIT_FAILURE);
@@ -304,7 +304,7 @@ namespace firefly {
 
       if (shift_file.is_open()) {
         std::getline(shift_file, line);
-        tmp_rec.set_shift(parse_vector_FFInt(line, n));
+        tmp_rec.set_shift(parse_vector_FFInt(line, static_cast<int>(n)));
         shift = tmp_rec.get_zi_shift_vec();
       } else {
         ERROR_MSG("Shift file not found!");
@@ -1116,7 +1116,7 @@ namespace firefly {
 
           if (anchor_point_file.is_open()) {
             std::getline(anchor_point_file, line);
-            tmp_rec.set_anchor_points(parse_vector_FFInt(line, n));
+            tmp_rec.set_anchor_points(parse_vector_FFInt(line, static_cast<int>(n)));
           } else {
             ERROR_MSG("Anchor point file not found!");
             std::exit(EXIT_FAILURE);
@@ -1130,7 +1130,7 @@ namespace firefly {
 
             if (shift_file.is_open()) {
               std::getline(shift_file, line);
-              tmp_rec.set_shift(parse_vector_FFInt(line, n));
+              tmp_rec.set_shift(parse_vector_FFInt(line, static_cast<int>(n)));
             } else {
               ERROR_MSG("Shift file not found!");
               std::exit(EXIT_FAILURE);

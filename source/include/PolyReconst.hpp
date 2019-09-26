@@ -179,9 +179,9 @@ namespace firefly {
      *  @param coeffs the coefficients of the interpolated polynomial
      */
     void check_for_tmp_solved_degs_for_bt(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& coeffs, const std::vector<size_t>& exponents);
+    ff_map construct_tmp_canonical(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) const;
+    void check_for_tmp_solved_degs_for_newton(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai);
     std::list<std::tuple<FFInt, std::vector<uint32_t>>> queue; /**< A queue which holds all unfeeded feeds */
-    int deg = -1; /**< The maximal degree of the to be interpolated polynomial */
-    bool with_rat_reconst = false; /**< A variable indicating whether this object is called from a RatReconst object */
     Polynomial result; /**< The result of the interpolation with rational number coefficients */
     PolynomialFF result_ff; /**< The result of the interpolation with coefficients in the current field */
     std::vector<std::vector<uint32_t>> rec_degs {};
@@ -195,9 +195,6 @@ namespace firefly {
     static std::mutex mutex_statics; /**< A mutex for all static member variables */
     static ff_pair_map rand_zi; /**< A static map holding all used potencies of the anchor points */
     std::vector<uint32_t> zero_element {};
-    bool combine_res = false; /**< A bool indicating whether the result should be combined using the Chinese Remainder Theorem */
-    ff_map construct_tmp_canonical(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) const;
-    void check_for_tmp_solved_degs_for_newton(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai);
     static size_t bt_threshold; // the amount of times the generator polynomial has to remain unchanged when the berlekamp_massey_step function gets called to terminate the Berlekamp/Massey algorithm, default is 1
     std::unordered_map<std::vector<uint32_t>, size_t, UintHasher> bt_terminator; // the amount of times the generator polynomial has not changed though the berlekamp_massey_step function got called
     std::unordered_map<std::vector<uint32_t>, std::vector<FFInt>, UintHasher>  b; // the generator polynomial before it changed its degree the last time
@@ -206,6 +203,9 @@ namespace firefly {
     std::unordered_map<std::vector<uint32_t>, size_t, UintHasher>  bm_iteration; // the amount of times the berlekamp_massey_step method has been called for a specific key
     std::unordered_map<std::vector<uint32_t>, std::vector<FFInt>, UintHasher> nums_for_bt; // stores the numerical values for the univariate interpolations used in Ben-Or and Tiwari
     std::unordered_map<std::vector<uint32_t>, std::vector<FFInt>, UintHasher> lambda; // The current generator polynomials in the Berlekamp-Massey algorithm
+    int deg = -1; /**< The maximal degree of the to be interpolated polynomial */
+    bool with_rat_reconst = false; /**< A variable indicating whether this object is called from a RatReconst object */
+    bool combine_res = false; /**< A bool indicating whether the result should be combined using the Chinese Remainder Theorem */
     static bool use_bt; // determines, if Ben-Or and Tiwari is used for univariate interpolation, default is true
     static bool use_newton; // determines, if Newton is used for univariate interpolation, default is true, if rational reconstruction is used this has always to be true
   };

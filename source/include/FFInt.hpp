@@ -97,12 +97,12 @@ namespace firefly {
   FFInt::FFInt(const T n_) {
     if (n_ >= 0) {
       if (static_cast<uint64_t>(n_) < p) {
-        n = n_;
+        n = static_cast<uint64_t>(n_);
       } else {
-        n = n_ % p;
+        n = static_cast<uint64_t>(n_)  % p;
       }
     } else if (n_ < 0) {
-      n = p - (-n_) % p;
+      n = p - static_cast<uint64_t>(-n_) % p;
     }
   }
 

@@ -91,19 +91,19 @@ namespace firefly {
      */
     void set_seed(uint64_t seed);
   protected:
-    bool use_chinese_remainder = false; /**< A bool which indicates if the Chinese Remainder Theorem is used */
-    bool check = false; /**< A bool which indicates if one could check the current interpolation */
-    bool done = false; /**< A bool which indicates if the current reconstruction is done */
-    bool new_prime = false; /**< A bool which indicates if the reconstruction needs a new prime */
-    bool is_interpolating = false; /**< A bool which indicates if the object is currently interpolating the black box */
     std::vector<uint32_t> curr_zi_order {}; /**< A vector which holds the current zi_order. It's length is n - 1 since the first variable is always set to 1. */
+    mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */
+    mutable std::mutex mutex_status; /**< A mutex to make all status variables thread safe */
     uint32_t prime_number = 0; /**< An integer which indicates the currently used prime counter */
     uint32_t num_eqn = 0; /**< An integer which indicates the currently needed number of equations to get to the next zi_order  */
     uint32_t n = 0; /**< The number of parameters */
     uint32_t type; /**< A flag which indicates if the object is used for polynomial or rational function reconstruction */
     uint32_t zi = 1; /**< An integer which indicates the current zi which is being interpolated */
-    mpz_class combined_prime; /**< The combination of the used prime numbers with the chinese remained theorem */
-    mutable std::mutex mutex_status; /**< A mutex to make all status variables thread safe */
+    bool use_chinese_remainder = false; /**< A bool which indicates if the Chinese Remainder Theorem is used */
+    bool check = false; /**< A bool which indicates if one could check the current interpolation */
+    bool done = false; /**< A bool which indicates if the current reconstruction is done */
+    bool new_prime = false; /**< A bool which indicates if the reconstruction needs a new prime */
+    bool is_interpolating = false; /**< A bool which indicates if the object is currently interpolating the black box */
     /**
      *    Converts the coefficients of a rational function from FFInts to mpz_class
      *    objects

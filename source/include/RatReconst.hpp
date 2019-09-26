@@ -248,29 +248,6 @@ namespace firefly {
      *  @param yis the currently used tuple of yis
      */
     void build_homogenized_multi_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis);
-    bool first_run = true; /**< Indicates whether the current feed is the first interpolation run in the current prime field */
-    std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> queue; /**< A queue for all feeds */
-    std::vector<std::vector<FFInt>> coef_mat {}; /**< A matrix that holds the system of equations for the homogenized system */
-    std::unordered_map<uint32_t, std::vector<FFInt>> coef_mat_num {}; /**< A matrix that holds systems of equations for the Vandermonde systems of the numerator */
-    std::unordered_map<uint32_t, std::vector<FFInt>> coef_mat_den {}; /**< A matrix that holds systems of equations for the Vandermonde systems of the denominator */
-    PolynomialFF solved_num; /**< Stores already solved monomials of the numerator */
-    PolynomialFF solved_den; /**< Stores already solved monomials of the denominator */
-    ff_queue_map saved_ti {}; /**< Stores values of the homogenization variable t */
-    std::list<std::pair<uint32_t, PolyReconst>> coef_n {}; /**< Stores PolyReconst objects for the numerator */
-    std::list<std::pair<uint32_t, PolyReconst>> coef_d {}; /**< Stores PolyReconst objects for the denominator */
-    // a vector entry should be just a pointer to save memor
-    std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_num {}; /**< Stores unsolved degrees of the numerator */
-    std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_den {}; /**< Stores unsolved degrees of the denominator */
-    std::unordered_map<uint32_t, FFInt> num_sub_num {}; /**< Stores the numerical subtraction of the shift for each degree of the numerator */
-    std::unordered_map<uint32_t, FFInt> num_sub_den {}; /**< Stores the numerical subtraction of the shift for each degree of the denominator */
-    polff_map sub_num {}; /**< Stores the algebraic subtraction of the shift for each degree of the numerator */
-    polff_map sub_den {}; /**< Stores the algebraic subtraction of the shift for each degree of the denominator */
-    ff_map_map saved_num_num {}; /**< Stores interpolation points for each degree of the numerator */
-    ff_map_map saved_num_den {}; /**< Stores interpolation points for each degree of the denominator */
-    int max_deg_num = -1; /**< The maximal degree of the numerator */
-    int max_deg_den = -1; /**< The maximal degree of the denominator */
-    uint32_t tmp_solved_coefs_num = 0; /**< A temporary variable that saves how many coefficients of the numerator have already been interpolated */
-    uint32_t tmp_solved_coefs_den = 0; /**< A temporary variable that saves how many coefficients of the denominator have already been interpolated */
     /**
      *  Adds a coefficient for the numerator which appears to be correctly reconstructed
      *  @param deg_vec the degree of the coefficient
@@ -283,14 +260,6 @@ namespace firefly {
      *  @param rn the coefficient
      */
     void remove_di(const std::vector<uint32_t>& deg_vec, const RationalNumber& rn);
-    RationalFunction result; /**< Stores the result of the interpolation with rational numbers as coefficients */
-    rn_map g_ni {}; /**< rational coefficient guesses for the numerator*/
-    rn_map g_di {}; /**< rational coefficient guesses for the denominator*/
-    mpz_map combined_ni {};  /**< The combination of the coefficients of the numerator over finite field with the chinese remained theorem */
-    mpz_map combined_di {};  /**< The combination of the coefficients of the denominator over finite field with the chinese remained theorem */
-    mpz_map combined_primes_ni {}; // used for safe mode
-    mpz_map combined_primes_di {}; // used for safe mode
-    static std::mutex mutex_statics;
     /**
      *  Adds non-solved monomials of the numerator to a data object
      *  @param deg the monomial degree
@@ -319,21 +288,10 @@ namespace firefly {
      *  Saves the state of the current object when it encountered a zero in the first prime field
      */
     void save_zero_state();
-    polff_map solved_degs_num {}; /**< Stores solved polynomials of the numerator of the current field */
-    polff_map solved_degs_den {}; /**< Stores solved polynomials of the denominator of the current field */
-    std::vector<uint32_t> normalizer_deg {}; /**< Stores the degree which is used for normalization */
-    std::string tag = ""; /**< The tag of this interpolation class for state saving */
-    std::string tag_name = ""; /**< The tag name of this interpolation class for state saving */
-    bool is_singular_system = false; /**< Indicates whether one needs the shift to avoid singular systems */
-    static std::vector<FFInt> shift; /**< The static shift used to obtain a unique normalization */
-    static ff_pair_map rand_zi; /**< A static map storing potencies of the anchor points */
-    static std::unordered_set<uint32_t> singular_system_set; /**< A static set which indicates if a shift is needed for a given prime field */
     /**
      *  Sets all required variables of this class in the "singular system" mode
      */
     void set_singular_system_vars();
-    std::vector<bool> parsed_variables {std::vector<bool>(22, false)};  /**< A vector in which each entry indicates one variable which has to be parsed */
-    int curr_parsed_variable = -1;  /**< The current variable for the parser */
     /**
      *  Checks if the reconstruction is done
      *  @param num a numerical value of the black box
@@ -341,26 +299,6 @@ namespace firefly {
      *  @return true if the reconstruction is done
      */
     bool check_if_done(const FFInt& num, const FFInt& ti);
-    bool scan = false; /**< Indicates whether this object scans for a sparse shift */
-    std::vector<uint32_t> all_shift_max_degs {}; /**< Stores the maximal degree of numerator and denominator when shifting all variables */
-    static std::vector<uint32_t> curr_shift; /**< Stores the current tested shift during a scan */
-    bool shift_works = false; /**< Indicates whether the current shift works for normalization */
-    bool normalize_to_den = true; /**< Indicates whether we normalize to the numerator or denominator */
-    uint32_t shifted_max_num_eqn = 0; /**< Stores the maximal number of equations when using a shift */
-    bool div_by_zero = false; /**< If the coefficient of the normalizer degree is zero, this variable forces the object to omit the prime field */
-    bool first_feed = true; /**< Indicates whether this is the first feed in the current field */
-    size_t zero_counter = 0; /**< A counter for feeded zeros */
-    bool check_interpolation = false; /**< Indicates whether one has to check the interpolation point */
-    bool fed_zero = false; /**< Indicates that the current feed was a zero */
-    std::pair<uint32_t, uint32_t> max_num_coef_num = std::make_pair(0, 0); // deg and number of terms
-    std::pair<uint32_t, uint32_t> max_num_coef_den = std::make_pair(0, 0); // deg and number of terms
-    std::unordered_set<uint32_t> dense_solve_degs_num {}; /**< Stores all degrees of the numerator which should be solved densely */
-    std::unordered_set<uint32_t> dense_solve_degs_den {}; /**< Stores all degrees of the denominator which should be solved densely */
-    std::unordered_set<uint32_t> zero_degs_num {}; /**< Stores all degrees of the numerator which have a zero coefficient */
-    std::unordered_set<uint32_t> zero_degs_den {}; /**< Stores all degrees of the denominator which have a zero coefficient */
-    std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec {}; /**< Stores all needed feeds for the next prime field */
-    bool restart_sparse_interpolation = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
-    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now(); /**< Timestamp that tracks the time until probes should be written to disk */
     /**
      *  Calculates the polynomials emerging from a parameter shift effecting lower degrees
      *  @param poly the seed polynomial
@@ -368,14 +306,76 @@ namespace firefly {
      *  @return A map with a degree as the key and the polynomial emerging from the shift as its value
      */
     polff_map calculate_shift_polynomials(const PolynomialFF& poly, uint32_t deg);
-    bool normalizer_den_num = false; /**< If true the real normalization degree is the denominator else the numerator */
+    std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> queue; /**< A queue for all feeds */
+    std::vector<std::vector<FFInt>> coef_mat {}; /**< A matrix that holds the system of equations for the homogenized system */
+    std::unordered_map<uint32_t, std::vector<FFInt>> coef_mat_num {}; /**< A matrix that holds systems of equations for the Vandermonde systems of the numerator */
+    std::unordered_map<uint32_t, std::vector<FFInt>> coef_mat_den {}; /**< A matrix that holds systems of equations for the Vandermonde systems of the denominator */
+    PolynomialFF solved_num; /**< Stores already solved monomials of the numerator */
+    PolynomialFF solved_den; /**< Stores already solved monomials of the denominator */
+    ff_queue_map saved_ti {}; /**< Stores values of the homogenization variable t */
+    std::list<std::pair<uint32_t, PolyReconst>> coef_n {}; /**< Stores PolyReconst objects for the numerator */
+    std::list<std::pair<uint32_t, PolyReconst>> coef_d {}; /**< Stores PolyReconst objects for the denominator */
+    // a vector entry should be just a pointer to save memory
+    std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_num {}; /**< Stores unsolved degrees of the numerator */
+    std::unordered_map<uint32_t, std::vector<std::vector<uint32_t>>> non_solved_degs_den {}; /**< Stores unsolved degrees of the denominator */
+    std::unordered_map<uint32_t, FFInt> num_sub_num {}; /**< Stores the numerical subtraction of the shift for each degree of the numerator */
+    std::unordered_map<uint32_t, FFInt> num_sub_den {}; /**< Stores the numerical subtraction of the shift for each degree of the denominator */
+    polff_map sub_num {}; /**< Stores the algebraic subtraction of the shift for each degree of the numerator */
+    polff_map sub_den {}; /**< Stores the algebraic subtraction of the shift for each degree of the denominator */
+    ff_map_map saved_num_num {}; /**< Stores interpolation points for each degree of the numerator */
+    ff_map_map saved_num_den {}; /**< Stores interpolation points for each degree of the denominator */
+    RationalFunction result; /**< Stores the result of the interpolation with rational numbers as coefficients */
+    rn_map g_ni {}; /**< rational coefficient guesses for the numerator*/
+    rn_map g_di {}; /**< rational coefficient guesses for the denominator*/
+    mpz_map combined_ni {};  /**< The combination of the coefficients of the numerator over finite field with the chinese remained theorem */
+    mpz_map combined_di {};  /**< The combination of the coefficients of the denominator over finite field with the chinese remained theorem */
+    mpz_map combined_primes_ni {}; // used for safe mode
+    mpz_map combined_primes_di {}; // used for safe mode
+    polff_map solved_degs_num {}; /**< Stores solved polynomials of the numerator of the current field */
+    polff_map solved_degs_den {}; /**< Stores solved polynomials of the denominator of the current field */
+    std::vector<uint32_t> normalizer_deg {}; /**< Stores the degree which is used for normalization */
+    std::string tag = ""; /**< The tag of this interpolation class for state saving */
+    std::string tag_name = ""; /**< The tag name of this interpolation class for state saving */
+    static std::vector<FFInt> shift; /**< The static shift used to obtain a unique normalization */
+    static ff_pair_map rand_zi; /**< A static map storing potencies of the anchor points */
+    static std::unordered_set<uint32_t> singular_system_set; /**< A static set which indicates if a shift is needed for a given prime field */
+    static std::mutex mutex_statics;
+    std::vector<bool> parsed_variables {std::vector<bool>(22, false)};  /**< A vector in which each entry indicates one variable which has to be parsed */
+    std::vector<uint32_t> all_shift_max_degs {}; /**< Stores the maximal degree of numerator and denominator when shifting all variables */
+    static std::vector<uint32_t> curr_shift; /**< Stores the current tested shift during a scan */
+    std::pair<uint32_t, uint32_t> max_num_coef_num = std::make_pair(0, 0); // deg and number of terms
+    std::pair<uint32_t, uint32_t> max_num_coef_den = std::make_pair(0, 0); // deg and number of terms
+    std::unordered_set<uint32_t> dense_solve_degs_num {}; /**< Stores all degrees of the numerator which should be solved densely */
+    std::unordered_set<uint32_t> dense_solve_degs_den {}; /**< Stores all degrees of the denominator which should be solved densely */
+    std::unordered_set<uint32_t> zero_degs_num {}; /**< Stores all degrees of the numerator which have a zero coefficient */
+    std::unordered_set<uint32_t> zero_degs_den {}; /**< Stores all degrees of the denominator which have a zero coefficient */
+    std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec {}; /**< Stores all needed feeds for the next prime field */
+    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now(); /**< Timestamp that tracks the time until probes should be written to disk */
     ThieleInterpolator t_interpolator; /**< An object for Thiele interpolations */
-    uint32_t interpolations = 1;  /**< Indication how many interpolations should be made until one uses Vandermonde systems */
     std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> saved_food; /** Data structre used to write already used probes to a file from which one can resume if crashes occur. First FFInt is t second is num */
     std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
+    int max_deg_num = -1; /**< The maximal degree of the numerator */
+    int max_deg_den = -1; /**< The maximal degree of the denominator */
+    int curr_parsed_variable = -1;  /**< The current variable for the parser */
+    uint32_t tmp_solved_coefs_num = 0; /**< A temporary variable that saves how many coefficients of the numerator have already been interpolated */
+    uint32_t tmp_solved_coefs_den = 0; /**< A temporary variable that saves how many coefficients of the denominator have already been interpolated */
+    uint32_t shifted_max_num_eqn = 0; /**< Stores the maximal number of equations when using a shift */
+    uint32_t interpolations = 1;  /**< Indication how many interpolations should be made until one uses Vandermonde systems */
+    size_t zero_counter = 0; /**< A counter for feeded zeros */
+    bool is_singular_system = false; /**< Indicates whether one needs the shift to avoid singular systems */
     bool from_save_state = false; /**< Indicates wether one resumes from a saved state */
     bool is_writing_probes = false; /**< Indicates wether this object is currently writing to a file */
     bool start_interpolation = true; /**< Indicats wether one can start the interpolation */
+    bool first_run = true; /**< Indicates whether the current feed is the first interpolation run in the current prime field */
+    bool scan = false; /**< Indicates whether this object scans for a sparse shift */
+    bool shift_works = false; /**< Indicates whether the current shift works for normalization */
+    bool normalize_to_den = true; /**< Indicates whether we normalize to the numerator or denominator */
+    bool div_by_zero = false; /**< If the coefficient of the normalizer degree is zero, this variable forces the object to omit the prime field */
+    bool first_feed = true; /**< Indicates whether this is the first feed in the current field */
+    bool check_interpolation = false; /**< Indicates whether one has to check the interpolation point */
+    bool fed_zero = false; /**< Indicates that the current feed was a zero */
+    bool restart_sparse_interpolation = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
+    bool normalizer_den_num = false; /**< If true the real normalization degree is the denominator else the numerator */
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,

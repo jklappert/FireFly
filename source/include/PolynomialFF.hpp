@@ -48,7 +48,6 @@ namespace firefly {
     PolynomialFF& operator+=(const PolynomialFF&);
     PolynomialFF& operator*=(const FFInt&);
     PolynomialFF& operator/=(const FFInt&);
-    uint32_t n = 0; /**< An integer indicating the number of variables */
     /**
      *  Evaluates the polynomial at a given parameter point
      *  @param x the parameter point at which the polynomial should be evaluated
@@ -62,7 +61,6 @@ namespace firefly {
      *  @return f(x)
      */
     FFInt calc_n_m_1(const std::vector<FFInt>& x);
-    ff_map coefs {};
     /**
      *  @return true if the PolynomialFF object has no coefficients or only one which is zero
      */
@@ -96,9 +94,9 @@ namespace firefly {
      *  Removes any zero coefficient
      */
     void remove_zero_coefs();
+    uint32_t n = 0; /**< An integer indicating the number of variables */
+    ff_map coefs {};
   private:
-    std::vector<uint32_t> min_degree {}; /**< The minimal degree of the polynomial. Only available after min_deg() is called */
-    std::vector<uint32_t> max_degree {}; /**< The maximal degree of the polynomial. Only available after max_deg() is called */
     /**
      *  Calculates a binomial coefficient n over k
      *  @param n the n
@@ -116,7 +114,6 @@ namespace firefly {
      *  Executes prerequired steps to generate a Horner form
      */
     void generate_hornerff();
-    ShuntingYardParser s_y_fun; /**< A ShuntingYardParser object which is used to evaluate the polynomial in Horner form */
     /**
      *  Generates Horner scheme coefficients of a polynomial recursively
      *  @param var An integer representing the current variable
@@ -125,10 +122,14 @@ namespace firefly {
      *  @return A Horner form of a polynomial
      */
     std::string generate_horner_coefs(int var, const ff_map& monomials, const std::vector<std::string>& vars);
+    ShuntingYardParser s_y_fun; /**< A ShuntingYardParser object which is used to evaluate the polynomial in Horner form */
+    std::vector<uint32_t> min_degree {}; /**< The minimal degree of the polynomial. Only available after min_deg() is called */
+    std::vector<uint32_t> max_degree {}; /**< The maximal degree of the polynomial. Only available after max_deg() is called */
+    std::vector<std::string> vars {}; /**< A vector holding the variables of this polynomial as strings */
     bool generate_new_horner = true; /**< Indicates whether one needs to generate a new Horner form */
     bool eval_horner = false; /**< Indicates whether one should evaluate this polynomial in Horner form */
-    std::vector<std::string> vars {}; /**< A vector holding the variables of this polynomial as strings */
   };
+
   PolynomialFF operator*(const PolynomialFF& a, const PolynomialFF& b);
   PolynomialFF operator+(const PolynomialFF& a, const PolynomialFF& b);
   PolynomialFF operator-(const PolynomialFF& a, const PolynomialFF& b);

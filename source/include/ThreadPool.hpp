@@ -40,11 +40,14 @@ namespace firefly {
    * can be added to an internal deque. The tasks will be executed as
    * soon as there is an idle thread. The destructor of the Thread_pool
    * will wait until all tasks are finished and the deque is empty.
-   *
-   * @param pool_size number of threads in the pool
    */
   class ThreadPool {
   public:
+    /**
+     * Constructor of the Thread_pool
+     *
+     * @param pool_size number of threads in the pool
+     */
     explicit ThreadPool(std::size_t pool_size = std::thread::hardware_concurrency()) {
 
       for (std::size_t i = 0; i < pool_size; ++i) {
