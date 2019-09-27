@@ -135,8 +135,9 @@ namespace firefly {
       MINUS,
       MULT,
       DIV,
-      POW
-    }; /**< The allowed operators as an enum for fast identification */
+      POW,
+      POW_NEG
+    }; /**< The allowed operators as an enum for fast identification. Note that ! means x ! 2 = -x^2 (! == POW_NEG) */
   }
 
   namespace operands {

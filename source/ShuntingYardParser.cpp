@@ -82,7 +82,7 @@ namespace firefly {
     std::string fun = fun_;
 
     // Check for global signs
-    if (fun.size() > 2 && ((fun[0] == '+' || fun[0] == '-') && fun[1] == '(')) {
+    if (fun.size() > 2 && (fun[0] == '+' || fun[0] == '-') && fun[1] == '(') {
       fun.insert(fun.begin(), '0');
     }
 
@@ -193,10 +193,18 @@ namespace firefly {
             neg_pow = true;
           }
 
+          bool skip = false;
+
           if (neg_pow && *l_ptr == '^')
             op_stack.push('/');
+          else if(!neg_pow && *l_ptr == '^' && pf.back().size() > 1 && pf.back()[0] == '-') {
+            op_stack.push('!');
+            pf.back().erase(pf.back().begin());
+            skip = true;
+          }
 
-          op_stack.push(*l_ptr);
+          if(!skip)
+            op_stack.push(*l_ptr);
         }
       }
       // Push all open parenthesis to the stack
@@ -253,11 +261,11 @@ namespace firefly {
       op_stack.pop();
     }
 
-//     for (const auto & el : pf) {
-//       std::cout << el << " ";
-//     }
+//      for (const auto & el : pf) {
+//        std::cout << el << " ";
+//      }
 //
-//     std::cout << "\n";
+//      std::cout << "\n";
     pf.shrink_to_fit();
     functions.emplace_back(pf);
   }
@@ -280,7 +288,7 @@ namespace firefly {
       std::stack<FFInt> nums;
 
       for (const auto & token : tokens) {
-        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^") {
+        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!") {
           // Pop two numbers
           FFInt a = nums.top();
           nums.pop();
@@ -311,6 +319,11 @@ namespace firefly {
 
             case '^': {
               nums.push(b.pow(a));
+              break;
+            }
+
+            case '!': {
+              nums.push(-b.pow(a));
               break;
             }
           }
@@ -408,6 +421,11 @@ namespace firefly {
                 nums.push(b.pow(a));
                 break;
               }
+
+              case operators::POW_NEG: {
+                nums.push(-b.pow(a));
+                break;
+              }
             }
 
             break;
@@ -487,6 +505,12 @@ namespace firefly {
 
                   break;
                 }
+
+                case operators::POW_NEG: {
+                  nums[i].push(-b.pow(a));
+
+                  break;
+                }
               }
             }
 
@@ -533,6 +557,7 @@ namespace firefly {
   int ShuntingYardParser::get_weight(const char c) const {
     switch (c) {
       case '^':
+      case '!':
         return 3;
 
       case '/':
@@ -592,7 +617,7 @@ namespace firefly {
       for (uint64_t j = 0; j != t_size; ++j) {
         std::string token = tokens[j + offset];
 
-        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^") {
+        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!") {
           switch (token[0]) {
             case '+': {
               precomp_tokens[i][j] = {operands::OPERATOR, operators::PLUS};
@@ -627,6 +652,11 @@ namespace firefly {
 
             case '^': {
               precomp_tokens[i][j] = {operands::OPERATOR, operators::POW};
+              break;
+            }
+
+            case '!': {
+              precomp_tokens[i][j] = {operands::OPERATOR, operators::POW_NEG};
               break;
             }
           }
