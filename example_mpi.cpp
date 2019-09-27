@@ -30,7 +30,7 @@ namespace firefly {
     // Constructor of the derived class
     // A default constructor is sufficient if no internal variables are required.
     // In this example a ShuntingYardParser
-    BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
+    BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {}
 
     // The evaluation of the black box
     // Return a vector of FFInt objects, which are the results of the black-box evaluation

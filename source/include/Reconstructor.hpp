@@ -86,7 +86,7 @@ namespace firefly {
      *  @param thr_n_ the number of threads being used during the reconstruction
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
-    Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, uint32_t verbosity_ = IMPORTANT);
+    Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, int verbosity_ = IMPORTANT);
     /**
      *  A constructor for the Reconstructor class
      *  @param n_ the number of parameters
@@ -94,7 +94,7 @@ namespace firefly {
      *  @param bunch_size_ the bunch size
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
-    Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_, uint32_t verbosity_ = IMPORTANT);
+    Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_, int verbosity_ = IMPORTANT);
     /**
      *  A destructor for the Reconstructor class
      */
@@ -155,24 +155,42 @@ namespace firefly {
     uint32_t n;
     uint32_t thr_n;
     uint32_t bunch_size = 1;
-    BlackBoxBase& bb;
-    int verbosity;
-    RatReconst_list reconst;
-    std::atomic<bool> scan = {false};
-    bool save_states = false;
-    bool resume_from_state = false;
-    std::vector<std::string> tags;
-    std::vector<std::string> file_paths;
-    bool safe_mode = false;
     uint32_t prime_it = 0;
+    uint32_t total_iterations = 0;
+    uint32_t iteration = 0;
+    uint32_t probes_queued = 0;
+    uint32_t probes_finished = 0;
+    uint32_t fed_ones = 0;
+    uint32_t probes_for_next_prime = 0;
+    uint32_t items = 0;
+    uint32_t items_done = 0;
+    uint32_t items_new_prime = 0;
+    uint32_t feed_jobs = 0;
+    uint32_t interpolate_jobs = 0;
+    uint32_t min_prime_keep_shift = 0; // TODO remove?
+    int verbosity;
+    double average_black_box_time = 0;
+    double bunch_time;
+    std::atomic<bool> scan = {false};
     std::atomic<bool> new_prime = {false};
     std::atomic<bool> done = {false};
+    bool save_states = false;
+    bool resume_from_state = false;
+    bool safe_mode = false;
+    bool set_anchor_points = false;
+    bool one_done = false;
+    bool one_new_prime = false;
+    BlackBoxBase& bb;
+    RatReconst_list reconst;
+    std::vector<std::string> tags;
+    std::vector<std::string> file_paths;
     ThreadPool tp;
     std::mutex future_control;
     std::mutex job_control;
     std::mutex feed_control;
     std::mutex print_control;
     std::mutex status_control;
+    std::mutex mutex_probe_queue;
     std::mutex clean;
     std::mutex chosen_mutex;
     std::condition_variable condition_future;
@@ -185,26 +203,10 @@ namespace firefly {
     std::vector<uint32_t> bunch_zi_order;
     std::vector<FFInt> bunch_t;
     std::vector<std::vector<FFInt>> bunch;
-    double bunch_time;
-    uint32_t jobs_finished = 0;
     std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes;
-    uint32_t fed_ones = 0;
-    uint32_t probes_for_next_prime = 0;
     std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> chosen_t;
-    uint32_t items = 0;
-    uint32_t items_done = 0;
-    uint32_t items_new_prime = 0;
-    uint32_t feed_jobs = 0;
-    uint32_t interpolate_jobs = 0;
-    uint32_t total_iterations = 0;
-    uint32_t iteration = 0;
-    bool one_done = false;
-    bool one_new_prime = false;
-    double average_black_box_time = 0;
     RatReconst tmp_rec;
     std::vector<FFInt> shift;
-    uint32_t min_prime_keep_shift = 0;
-    bool set_anchor_points = false;
     /**
     *  Scan the black-box functions for a sparse shift
     */
@@ -247,21 +249,20 @@ namespace firefly {
      *  Removes all RatReconst from reconst which are flagged as DELETE
      */
     void clean_reconst();
-    uint64_t probes_queued = 0;
 #ifdef WITH_MPI
     int world_size;
+    double tmp_average_black_box_time = 0.;
     uint32_t total_thread_count = 0;
+    uint32_t tmp_total_iterations = 0;
     uint64_t ind = 0;
+    bool proceed = false;
     std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
     std::unordered_map<int, uint64_t> nodes;
     std::queue<std::pair<int, uint64_t>> empty_nodes;
-    std::mutex mut_val;
     std::condition_variable cond_val;
     std::atomic<bool> new_jobs = {false};
     std::queue<std::vector<uint64_t>> value_queue;
     std::queue<std::pair<uint64_t, std::vector<FFInt>>> results_queue;
-    bool proceed = false;
-    //uint64_t probes_queued = 0;
     /**
      *  TODO
      */
@@ -269,8 +270,6 @@ namespace firefly {
     void mpi_setup();
     void send_first_jobs();
     void mpi_communicate();
-    uint32_t tmp_total_iterations = 0;
-    double tmp_average_black_box_time = 0.;
 #endif
   };
 }
