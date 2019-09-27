@@ -154,7 +154,7 @@ namespace firefly {
       INFO_MSG("Loading saved states");
     }
 
-    set_anchor_points = true;
+    set_anchor_points = false;
 
     std::ifstream v_file;
     igzstream validation_file;
@@ -261,10 +261,6 @@ namespace firefly {
       if (safe_mode)
         rec->set_safe_interpolation();
 
-      if (shift_prime.first && shift_prime.second > min_prime_keep_shift) {
-        min_prime_keep_shift = shift_prime.second;
-      }
-
       rec->set_tag(std::to_string(i));
 
       if (rec->is_done()) {
@@ -276,6 +272,10 @@ namespace firefly {
         if (rec->is_new_prime()) {
           probes_for_next_prime = std::max(probes_for_next_prime, rec->get_num_eqn());
           ++items_new_prime;
+
+          if (rec->get_prime() != prime_it + 1) {
+            set_anchor_points = true;
+          }
         }
 
         std::mutex* mut = new std::mutex;
@@ -898,7 +898,7 @@ namespace firefly {
     bool mpi_first_send = false;
 
     if (resume_from_state) {
-      if (prime_it == 0 && /*items_new_prime != items*/items != items_new_prime + items_done) {
+      if (prime_it == 0 && items != items_new_prime + items_done) {
         INFO_MSG("Resuming in prime field: F(" + std::to_string(primes()[prime_it]) + ")");
 
         {
@@ -1095,15 +1095,12 @@ namespace firefly {
 #endif
         }
 
-        bool shift_disabled = false;
-
-        if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && prime_it >= min_prime_keep_shift && !tmp_rec.need_shift(prime_it)) {
+        if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && !tmp_rec.need_shift(prime_it)) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             if (verbosity > SILENT)
               INFO_MSG("Disable shift");
 
             tmp_rec.disable_shift();
-            shift_disabled = true;
           }
         }
 
@@ -1124,17 +1121,15 @@ namespace firefly {
 
           anchor_point_file.close();
 
-          if (!shift_disabled) {
-            std::ifstream shift_file;
-            shift_file.open("ff_save/shift");
+          std::ifstream shift_file;
+          shift_file.open("ff_save/shift");
 
-            if (shift_file.is_open()) {
-              std::getline(shift_file, line);
-              tmp_rec.set_shift(parse_vector_FFInt(line, static_cast<int>(n)));
-            } else {
-              ERROR_MSG("Shift file not found!");
-              std::exit(EXIT_FAILURE);
-            }
+          if (shift_file.is_open()) {
+            std::getline(shift_file, line);
+            tmp_rec.set_shift(parse_vector_FFInt(line, static_cast<int>(n)));
+          } else {
+            ERROR_MSG("Shift file not found!");
+            std::exit(EXIT_FAILURE);
           }
 
           for (auto & rec : reconst) {

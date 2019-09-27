@@ -180,6 +180,7 @@ namespace firefly {
     bool set_anchor_points = false;
     bool one_done = false;
     bool one_new_prime = false;
+    bool set_anchor_points = false;
     BlackBoxBase& bb;
     RatReconst_list reconst;
     std::vector<std::string> tags;
