@@ -177,7 +177,6 @@ namespace firefly {
     bool save_states = false;
     bool resume_from_state = false;
     bool safe_mode = false;
-    bool set_anchor_points = false;
     bool one_done = false;
     bool one_new_prime = false;
     bool set_anchor_points = false;
