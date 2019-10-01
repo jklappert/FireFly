@@ -1,3 +1,17 @@
+FireFly 1.3.2
+=============
+
+Bug fixes
+---------
+
+ * When loading from saved states between two primes where the shift could
+ be disabled, the shift was disabled too late. The shift will now be disabled
+ in the correct prime field.
+ 
+ * The parser interpreted some cases of `(+-x^(2*n))` wrongly. This has been
+ fixed.
+
+
 FireFly 1.3.1
 =============
 
