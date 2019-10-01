@@ -77,6 +77,7 @@ set(LIBSOURCES
   ${SOURCE_PATH}/BaseReconst.cpp
   ${SOURCE_PATH}/DenseSolver.cpp
   ${SOURCE_PATH}/FFInt.cpp
+  ${SOURCE_PATH}/FFIntVec.cpp
   ${SOURCE_PATH}/FFThieleInterpolator.cpp
   ${SOURCE_PATH}/gzstream.cpp
   ${SOURCE_PATH}/HornerGenerator.cpp
@@ -143,6 +144,7 @@ install(FILES
   "${INCLUDE_PATH}/BaseReconst.hpp"
   "${INCLUDE_PATH}/DenseSolver.hpp"
   "${INCLUDE_PATH}/FFInt.hpp"
+  "${INCLUDE_PATH}/FFIntVec.hpp"
   "${INCLUDE_PATH}/FFThieleInterpolator.hpp"
   "${INCLUDE_PATH}/gzstream.hpp"
   "${INCLUDE_PATH}/HornerGenerator.hpp"

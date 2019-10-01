@@ -36,7 +36,7 @@ namespace firefly {
     /**
      *  Default constructor
      */
-    FFIntVec();
+    FFIntVec(){};
 
     // defining new operators for finite field arithmetic
     FFIntVec& operator=(const FFIntVec&) = default;
@@ -44,10 +44,7 @@ namespace firefly {
     FFIntVec& operator-=(const FFIntVec&);
     FFIntVec& operator*=(const FFIntVec&);
     FFIntVec& operator/=(const FFIntVec&);
-    FFIntVec operator-() const;
-    FFIntVec operator+() const;
-    FFIntVec pow(const FFIntVec& ffint) const;
-  private:
+    FFIntVec pow(const FFIntVec& power) const;
     std::vector<FFInt> vec; /**< The stored vector for arithmetic */
   };
 
@@ -57,6 +54,6 @@ namespace firefly {
   FFIntVec operator+(const FFIntVec& a, const FFIntVec& b);
   FFIntVec operator-(const FFIntVec& a, const FFIntVec& b);
   FFIntVec operator*(const FFIntVec& a, const FFIntVec& b);
-  FFIntVec pow(const FFIntVec& ffint, const FFIntVec& power);
+  FFIntVec pow(const FFIntVec& a, const FFIntVec& power);
   std::ostream& operator<<(std::ostream& out, const FFIntVec& ffint_vec);
 }
