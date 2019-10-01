@@ -52,7 +52,6 @@ namespace firefly {
     FFIntVec pow(const FFIntVec& power) const;
     bool operator!() const;
     std::vector<FFInt> vec; /**< The stored vector for arithmetic */
-  private:
     static uint32_t size; /**< Sets the size of the vectors */
   };
 

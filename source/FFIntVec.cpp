@@ -41,7 +41,7 @@ namespace firefly {
   }
 
   FFIntVec& FFIntVec::operator+=(const FFIntVec& a) {
-    for (size_t i = 0; i != a.vec.size(); ++i) {
+    for (size_t i = 0; i != size; ++i) {
       vec[i] += a.vec[i];
     }
 
@@ -49,7 +49,7 @@ namespace firefly {
   }
 
   FFIntVec& FFIntVec::operator-=(const FFIntVec& a) {
-    for (size_t i = 0; i != a.vec.size(); ++i) {
+    for (size_t i = 0; i != size; ++i) {
       vec[i] -= a.vec[i];
     }
 
@@ -57,7 +57,7 @@ namespace firefly {
   }
 
   FFIntVec& FFIntVec::operator*=(const FFIntVec& a) {
-    for (size_t i = 0; i != a.vec.size(); ++i) {
+    for (size_t i = 0; i != size; ++i) {
       vec[i] *= a.vec[i];
     }
 
@@ -65,7 +65,7 @@ namespace firefly {
   }
 
   FFIntVec& FFIntVec::operator/=(const FFIntVec& a) {
-    for (size_t i = 0; i != a.vec.size(); ++i) {
+    for (size_t i = 0; i != size; ++i) {
       vec[i] /= a.vec[i];
     }
 
@@ -74,7 +74,7 @@ namespace firefly {
 
   FFIntVec FFIntVec::pow(const FFIntVec& power) const {
     FFIntVec result(vec);
-    for (size_t i = 0; i != power.vec.size(); ++i) {
+    for (size_t i = 0; i != size; ++i) {
       result.vec[i] = result.vec[i].pow(power.vec[i]);
     }
 
@@ -84,7 +84,7 @@ namespace firefly {
   FFIntVec operator+(const FFIntVec& a, const FFIntVec& b) {
     FFIntVec result(a);
 
-    for (size_t i = 0; i != a.vec.size(); ++i) {
+    for (size_t i = 0; i != FFIntVec::size; ++i) {
       result.vec[i] += b.vec[i];
     }
 
@@ -94,7 +94,7 @@ namespace firefly {
   FFIntVec operator-(const FFIntVec& a, const FFIntVec& b) {
     FFIntVec result(a);
 
-    for (size_t i = 0; i != a.vec.size(); ++i) {
+    for (size_t i = 0; i != FFIntVec::size; ++i) {
       result.vec[i] -= b.vec[i];
     }
 
@@ -104,7 +104,7 @@ namespace firefly {
   FFIntVec operator*(const FFIntVec& a, const FFIntVec& b) {
     FFIntVec result(a);
 
-    for (size_t i = 0; i != a.vec.size(); ++i) {
+    for (size_t i = 0; i != FFIntVec::size; ++i) {
       result.vec[i] *= b.vec[i];
     }
 
@@ -114,7 +114,7 @@ namespace firefly {
   FFIntVec operator/(const FFIntVec& a, const FFIntVec& b) {
     FFIntVec result(a);
 
-    for (size_t i = 0; i != a.vec.size(); ++i) {
+    for (size_t i = 0; i != FFIntVec::size; ++i) {
       result.vec[i] /= b.vec[i];
     }
 
@@ -124,7 +124,7 @@ namespace firefly {
   FFIntVec pow(const FFIntVec& a, const FFIntVec& power) {
     FFIntVec result(a);
 
-    for (size_t i = 0; i != power.vec.size(); ++i) {
+    for (size_t i = 0; i != FFIntVec::size; ++i) {
       result.vec[i] = result.vec[i].pow(power.vec[i]);
     }
 
