@@ -94,7 +94,7 @@ namespace firefly {
   std::ostream& operator<<(std::ostream& out, const FFInt& ffint);
 
   template<typename T>
-  FFInt::FFInt(const T n_) {
+  inline FFInt::FFInt(const T n_) {
     if (n_ >= 0) {
       if (static_cast<uint64_t>(n_) < p) {
         n = static_cast<uint64_t>(n_);

@@ -34,6 +34,11 @@ namespace firefly {
      */
     FFIntVec(const std::vector<FFInt>& in);
     /**
+     *  Constructor
+     *  @param in an initializing FFInt casted to an array with this entry
+     */
+    FFIntVec(const FFInt& in);
+    /**
      *  Default constructor
      */
     FFIntVec(){};
@@ -45,8 +50,20 @@ namespace firefly {
     FFIntVec& operator*=(const FFIntVec&);
     FFIntVec& operator/=(const FFIntVec&);
     FFIntVec pow(const FFIntVec& power) const;
+    bool operator!() const;
     std::vector<FFInt> vec; /**< The stored vector for arithmetic */
+  private:
+    static uint32_t size; /**< Sets the size of the vectors */
   };
+
+  inline bool FFIntVec::operator!() const {
+    for(const auto& el : vec) {
+      if (!el)
+        return true;
+    }
+
+    return false;
+  }
 
   bool operator==(const FFIntVec& a, const FFIntVec& b);
   bool operator!=(const FFIntVec& a, const FFIntVec& b);

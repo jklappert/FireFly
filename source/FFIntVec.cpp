@@ -20,8 +20,16 @@
 
 namespace firefly {
 
+  uint32_t FFIntVec::size = 1;
+
   FFIntVec::FFIntVec(const std::vector<FFInt>& in) {
     vec = in;
+    if(size == 1)
+      size = vec.size();
+  }
+
+  FFIntVec::FFIntVec(const FFInt& in) {
+    vec = std::vector<FFInt> (size, in);
   }
 
   bool operator==(const FFIntVec& a, const FFIntVec& b) {
