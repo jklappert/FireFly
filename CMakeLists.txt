@@ -94,27 +94,6 @@ set(LIBSOURCES
   ${SOURCE_PATH}/ShuntingYardParser.cpp
   ${SOURCE_PATH}/utils.cpp)
 
-set(LIBSOURCES_SHRD
-  ${SOURCE_PATH}/BaseReconst.cpp
-  ${SOURCE_PATH}/DenseSolver.cpp
-  ${SOURCE_PATH}/FFInt.cpp
-  ${SOURCE_PATH}/FFThieleInterpolator.cpp
-  ${SOURCE_PATH}/gzstream.cpp
-  ${SOURCE_PATH}/HornerGenerator.cpp
-  ${SOURCE_PATH}/Monomial.cpp
-  ${SOURCE_PATH}/ParserUtils.cpp
-  ${SOURCE_PATH}/Poly.cpp
-  ${SOURCE_PATH}/Polynomial.cpp
-  ${SOURCE_PATH}/PolynomialFF.cpp
-  ${SOURCE_PATH}/PolyReconst.cpp
-  ${SOURCE_PATH}/RationalFunction.cpp
-  ${SOURCE_PATH}/RationalNumber.cpp
-  ${SOURCE_PATH}/RatReconst.cpp
-  ${SOURCE_PATH}/ReconstHelper.cpp
-  ${SOURCE_PATH}/Reconstructor.cpp
-  ${SOURCE_PATH}/ShuntingYardParser.cpp
-  ${SOURCE_PATH}/utils.cpp)
-
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
@@ -124,7 +103,7 @@ configure_file (
 
 add_library(FireFly_static STATIC ${LIBSOURCES})
 set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
-add_library(FireFly_shared SHARED ${LIBSOURCES_SHRD})
+add_library(FireFly_shared SHARED ${LIBSOURCES})
 set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 
 set(LIBS FireFly_static gmp ${ZLIB_LIBRARIES})
