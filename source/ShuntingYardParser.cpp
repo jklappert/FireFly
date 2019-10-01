@@ -462,6 +462,10 @@ namespace firefly {
     size_t bunch_size = values.size();
     std::vector<std::vector<FFInt>> res(bunch_size);
 
+    for(size_t i = 0; i != bunch_size; ++i){
+      res[i].reserve(functions.size());
+    }
+
     for (const auto & tokens : precomp_tokens) {
       std::vector<std::stack<FFInt>> nums(bunch_size);
 
