@@ -130,6 +130,8 @@ int main() {
     BlackBoxUser b_0(p_0);
     MPIWorker(4, std::thread::hardware_concurrency(), 4, b_0);
   }
+
+  MPI_Finalize();
 #endif
 
   return 0;
