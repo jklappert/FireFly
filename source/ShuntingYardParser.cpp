@@ -383,6 +383,12 @@ namespace firefly {
   std::vector<FFInt> ShuntingYardParser::evaluate_pre(const std::vector<FFInt>& values) const {
     std::vector<FFInt> res;
     res.reserve(functions.size());
+    std::vector<FFInt> neg_values;
+    neg_values.reserve(values.size());
+
+    for (const auto& el : values) {
+      neg_values.emplace_back(-el);
+    }
 
     for (const auto& tokens : precomp_tokens) {
       std::stack<FFInt> nums;
@@ -437,7 +443,8 @@ namespace firefly {
           }
 
           case operands::NEG_VARIABLE : {
-            nums.push(-values[token.second.n]);
+            //nums.push(-values[token.second.n]);
+            nums.push(neg_values[token.second.n]);
             break;
           }
 
@@ -463,9 +470,16 @@ namespace firefly {
     std::vector<std::vector<FFInt>> res(bunch_size);
 
     size_t f_size = functions.size();
+    std::vector<std::vector<FFInt>> neg_values(bunch_size);
 
     for (size_t i = 0; i != bunch_size; ++i) {
       res[i].reserve(f_size);
+
+      neg_values[i].reserve(values[i].size());
+
+      for (const auto& el : values[i]) {
+        neg_values[i].emplace_back(-el);
+      }
     }
 
     for (const auto& tokens : precomp_tokens) {
@@ -567,7 +581,8 @@ namespace firefly {
 
           case operands::NEG_VARIABLE : {
             for (size_t i = 0; i != bunch_size; ++i) {
-              nums[i].push(-values[i][token.second.n]);
+              //nums[i].push(-values[i][token.second.n]);
+              nums[i].push(neg_values[i][token.second.n]);
             }
 
             break;
