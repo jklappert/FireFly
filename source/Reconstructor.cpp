@@ -237,7 +237,7 @@ namespace firefly {
 
     for (uint32_t i = 0; i != items; ++i) {
       RatReconst* rec = new RatReconst(n);
-      std::pair<bool, uint32_t> shift_prime = rec->start_from_saved_file(file_paths[i]);
+      /*std::pair<bool, uint32_t> shift_prime = */rec->start_from_saved_file(file_paths[i]);
 
       // Fill in already used ts from prior run
       auto tmp = rec->read_in_probes(probe_files[i]);
@@ -895,7 +895,9 @@ namespace firefly {
 
     new_prime = false;
 
+#ifdef WITH_MPI
     bool mpi_first_send = false;
+#endif
 
     if (resume_from_state) {
       if (prime_it == 0 && items != items_new_prime + items_done) {

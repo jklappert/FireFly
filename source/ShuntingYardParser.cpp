@@ -197,13 +197,13 @@ namespace firefly {
 
           if (neg_pow && *l_ptr == '^')
             op_stack.push('/');
-          else if(!neg_pow && *l_ptr == '^' && pf.back().size() > 1 && pf.back()[0] == '-') {
+          else if (!neg_pow && *l_ptr == '^' && pf.back().size() > 1 && pf.back()[0] == '-') {
             op_stack.push('!');
             pf.back().erase(pf.back().begin());
             skip = true;
           }
 
-          if(!skip)
+          if (!skip)
             op_stack.push(*l_ptr);
         }
       }
@@ -284,10 +284,10 @@ namespace firefly {
     std::vector<FFInt> res;
     res.reserve(functions.size());
 
-    for (const auto & tokens : functions) {
+    for (const auto& tokens : functions) {
       std::stack<FFInt> nums;
 
-      for (const auto & token : tokens) {
+      for (const auto& token : tokens) {
         if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!") {
           // Pop two numbers
           FFInt a = nums.top();
@@ -384,10 +384,10 @@ namespace firefly {
     std::vector<FFInt> res;
     res.reserve(functions.size());
 
-    for (const auto & tokens : precomp_tokens) {
+    for (const auto& tokens : precomp_tokens) {
       std::stack<FFInt> nums;
 
-      for (const auto & token : tokens) {
+      for (const auto& token : tokens) {
         switch (token.first) {
           case operands::OPERATOR : {
             // Pop two numbers
@@ -418,12 +418,12 @@ namespace firefly {
               }
 
               case operators::POW: {
-                nums.push(b.pow(a));
+                nums.push(pow(b, a));
                 break;
               }
 
               case operators::POW_NEG: {
-                nums.push(-b.pow(a));
+                nums.push(-pow(b, a));
                 break;
               }
             }
@@ -464,59 +464,93 @@ namespace firefly {
 
     size_t f_size = functions.size();
 
-    for(size_t i = 0; i != bunch_size; ++i){
+    for (size_t i = 0; i != bunch_size; ++i) {
       res[i].reserve(f_size);
     }
 
-    for (const auto & tokens : precomp_tokens) {
+    for (const auto& tokens : precomp_tokens) {
       std::vector<std::stack<FFInt>> nums(bunch_size);
 
-      for (const auto & token : tokens) {
+      for (const auto& token : tokens) {
         switch (token.first) {
           case operands::OPERATOR : {
-            // Pop two numbers
-            for (size_t i = 0; i != bunch_size; ++i) {
-              FFInt a = nums[i].top();
-              nums[i].pop();
-              FFInt b = nums[i].top();
-              nums[i].pop();
-
-              switch (token.second.n) {
-                case operators::PLUS: {
+            switch (token.second.n) {
+              case operators::PLUS: {
+                // Pop two numbers
+                for (size_t i = 0; i != bunch_size; ++i) {
+                  FFInt a = nums[i].top();
+                  nums[i].pop();
+                  FFInt b = nums[i].top();
+                  nums[i].pop();
                   nums[i].push(a + b);
-
-                  break;
                 }
 
-                case operators::MINUS: {
+                break;
+              }
+
+              case operators::MINUS: {
+                // Pop two numbers
+                for (size_t i = 0; i != bunch_size; ++i) {
+                  FFInt a = nums[i].top();
+                  nums[i].pop();
+                  FFInt b = nums[i].top();
+                  nums[i].pop();
                   nums[i].push(b - a);
-
-                  break;
                 }
 
-                case operators::MULT: {
+                break;
+              }
+
+              case operators::MULT: {
+                // Pop two numbers
+                for (size_t i = 0; i != bunch_size; ++i) {
+                  FFInt a = nums[i].top();
+                  nums[i].pop();
+                  FFInt b = nums[i].top();
+                  nums[i].pop();
                   nums[i].push(b * a);
-
-                  break;
                 }
 
-                case operators::DIV: {
+                break;
+              }
+
+              case operators::DIV: {
+                // Pop two numbers
+                for (size_t i = 0; i != bunch_size; ++i) {
+                  FFInt a = nums[i].top();
+                  nums[i].pop();
+                  FFInt b = nums[i].top();
+                  nums[i].pop();
                   nums[i].push(b / a);
-
-                  break;
                 }
 
-                case operators::POW: {
-                  nums[i].push(b.pow(a));
+                break;
+              }
 
-                  break;
+              case operators::POW: {
+                // Pop two numbers
+                for (size_t i = 0; i != bunch_size; ++i) {
+                  FFInt a = nums[i].top();
+                  nums[i].pop();
+                  FFInt b = nums[i].top();
+                  nums[i].pop();
+                  nums[i].push(pow(b, a));
                 }
 
-                case operators::POW_NEG: {
-                  nums[i].push(-b.pow(a));
+                break;
+              }
 
-                  break;
+              case operators::POW_NEG: {
+                // Pop two numbers
+                for (size_t i = 0; i != bunch_size; ++i) {
+                  FFInt a = nums[i].top();
+                  nums[i].pop();
+                  FFInt b = nums[i].top();
+                  nums[i].pop();
+                  nums[i].push(-pow(b, a));
                 }
+
+                break;
               }
             }
 

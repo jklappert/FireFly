@@ -168,6 +168,7 @@ namespace firefly {
     uint32_t feed_jobs = 0;
     uint32_t interpolate_jobs = 0;
     uint32_t min_prime_keep_shift = 0; // TODO remove?
+    BlackBoxBase& bb;
     int verbosity;
     double average_black_box_time = 0;
     double bunch_time;
@@ -180,7 +181,6 @@ namespace firefly {
     bool one_done = false;
     bool one_new_prime = false;
     bool set_anchor_points = false;
-    BlackBoxBase& bb;
     RatReconst_list reconst;
     std::vector<std::string> tags;
     std::vector<std::string> file_paths;
