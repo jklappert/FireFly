@@ -1,5 +1,5 @@
 *~
-build/
+build*/
 .*
 *.kdev4
 source/include/version.hpp
