@@ -74,9 +74,8 @@ namespace firefly {
       MPI_Status status;
       MPI_Probe(master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-      MPI_Wait(&request, MPI_STATUS_IGNORE);
-
       if (status.MPI_TAG == VALUES) {
+        MPI_Wait(&request, MPI_STATUS_IGNORE);
         int amount;
         MPI_Get_count(&status, MPI_UINT64_T, &amount);
 
@@ -160,6 +159,7 @@ namespace firefly {
         //std::cout << "worker " << FFInt::p << "\n";
 
         MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Wait(&request, MPI_STATUS_IGNORE);
 
         double timing[2] = {average_black_box_time, static_cast<double>(total_iterations)};
 
@@ -168,6 +168,7 @@ namespace firefly {
         MPI_Barrier(MPI_COMM_WORLD);
       } else if (status.MPI_TAG == END) {
         uint64_t tmp;
+        MPI_Wait(&request, MPI_STATUS_IGNORE);
         MPI_Recv(&tmp, 1, MPI_UINT64_T, master, END, MPI_COMM_WORLD, &status);
         tp.kill_all();
         results.clear();
