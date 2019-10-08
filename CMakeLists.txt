@@ -27,19 +27,6 @@ endif()
 find_package(GMP REQUIRED)
 find_package(ZLIB REQUIRED)
 
-# if you want to use FLINT instead of our default implementation, call cmake with
-# cmake -DWITH_FLINT=true ..
-# set(WITH_FLINT false)
-if("${CUSTOM}" STREQUAL true)
-  add_definitions(-DCUSTOM)
-elseif("${WITH_FLINT}" STREQUAL true)
-  find_package(FLINT REQUIRED)
-  add_definitions(-DFLINT)
-else()
-  message("-- ${Red}Using default implementation of modular arithmetic. This can be much slower than FLINT!${ColourReset}")
-  add_definitions(-DDEFAULT)
-endif()
-
 # set the build type to release. If one needs debugging symbols, compile
 # with "-DCMAKE_BUILD_TYPE=Debug"
 if(NOT CMAKE_BUILD_TYPE)
@@ -68,8 +55,25 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 include_directories(${INCLUDE_PATH})
 include_directories(${GMP_INCLUDE_DIR})
 include_directories(${ZLIB_INCLUDE_DIRS})
-if("${WITH_FLINT}" STREQUAL true)
+set(PKG_INCLUDE "-I${GMP_INCLUDE_DIR} -I${ZLIB_INCLUDE_DIRS}")
+
+# Check for FLINT
+# if you want to use FLINT instead of our default implementation, call cmake with
+# cmake -DWITH_FLINT=true ..
+# set(WITH_FLINT false)
+if("${CUSTOM}" STREQUAL true)
+  add_definitions(-DCUSTOM)
+  set(PREPROCESSOR_FLAGS "-DCUSTOM")
+elseif("${WITH_FLINT}" STREQUAL true)
+  find_package(FLINT REQUIRED)
   include_directories(${FLINT_INCLUDE_DIR}/flint)
+  set(PKG_INCLUDE "${PKG_INCLUDE} -I${FLINT_INCLUDE_DIR}/flint")
+  add_definitions(-DFLINT)
+  set(PREPROCESSOR_FLAGS "-DFLINT")
+else()
+  message("-- ${Red}Using default implementation of modular arithmetic. This can be much slower than FLINT!${ColourReset}")
+  add_definitions(-DDEFAULT)
+  set(PREPROCESSOR_FLAGS "-DDEFAULT")
 endif()
 
 # Firefly library files
@@ -106,9 +110,9 @@ set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
 add_library(FireFly_shared SHARED ${LIBSOURCES})
 set_target_properties(FireFly_shared PROPERTIES OUTPUT_NAME firefly)
 
-set(LIBS FireFly_static gmp ${ZLIB_LIBRARIES})
+set(LIBS FireFly_static ${GMP_LIBRARIES} ${ZLIB_LIBRARIES})
 if("${WITH_FLINT}" STREQUAL true)
-  set(LIBS ${LIBS} flint)
+  set(LIBS ${LIBS} ${FLINT_LIBRARY})
 endif()
 
 if("${CUSTOM}" STREQUAL "true")
@@ -125,10 +129,9 @@ install(
   LIBRARY DESTINATION lib
 )
 
-set(PKG_LIBS "-lfirefly -lgmp -lz")
-if("${WITH_FLINT}" STREQUAL "true")
-  set(PKG_LIBS "${PKG_LIBS} -lflint")
-endif()
+set(PKG_LIBS ${LIBS})
+list(REMOVE_AT PKG_LIBS 0)
+string(REPLACE ";" " " PKG_LIBS "${PKG_LIBS}")
 
 configure_file("cmake/pc.in" "firefly.pc" @ONLY)
 

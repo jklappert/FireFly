@@ -1,5 +1,4 @@
 prefix=@CMAKE_INSTALL_PREFIX@
-exec_prefix=@EXEC_INSTALL_PREFIX@
 libdir=@LIB_INSTALL_DIR@
 includedir=@INCLUDE_INSTALL_DIR@
 
@@ -7,5 +6,5 @@ Name: FireFly
 Description: Library for the reconstruction of rational functions over finite fields.
 Version: @PROJECT_VERSION@
 
-Libs: -L${libdir} @PKG_LIBS@
-Cflags: -I${includedir}
+Libs: -L${libdir} -lfirefly @PKG_LIBS@
+Cflags: @PREPROCESSOR_FLAGS@ -I${includedir} @PKG_INCLUDE@
