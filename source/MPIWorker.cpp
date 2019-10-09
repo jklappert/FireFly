@@ -168,12 +168,14 @@ namespace firefly {
         MPI_Barrier(MPI_COMM_WORLD);
       } else if (status.MPI_TAG == END) {
         uint64_t tmp;
-        MPI_Wait(&request, MPI_STATUS_IGNORE);
         MPI_Recv(&tmp, 1, MPI_UINT64_T, master, END, MPI_COMM_WORLD, &status);
+
         tp.kill_all();
         results.clear();
         tasks = 0;
 
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Wait(&request, MPI_STATUS_IGNORE);
         MPI_Barrier(MPI_COMM_WORLD);
         break;
       } else {

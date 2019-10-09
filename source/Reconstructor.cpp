@@ -2288,6 +2288,8 @@ namespace firefly {
 
         delete[] requests;
 
+        MPI_Barrier(MPI_COMM_WORLD);
+
         int flag = 1;
         MPI_Status status_rec;
 

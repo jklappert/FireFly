@@ -167,7 +167,6 @@ namespace firefly {
     uint32_t items_new_prime = 0;
     uint32_t feed_jobs = 0;
     uint32_t interpolate_jobs = 0;
-    uint32_t min_prime_keep_shift = 0; // TODO remove?
     BlackBoxBase& bb;
     int verbosity;
     double average_black_box_time = 0;
