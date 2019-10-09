@@ -55,7 +55,7 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 include_directories(${INCLUDE_PATH})
 include_directories(${GMP_INCLUDE_DIR})
 include_directories(${ZLIB_INCLUDE_DIRS})
-set(PKG_INCLUDE "-I${GMP_INCLUDE_DIR} -I${ZLIB_INCLUDE_DIRS}")
+set(PKG_INCLUDE -I${GMP_INCLUDE_DIR} -I${ZLIB_INCLUDE_DIRS})
 
 # Check for FLINT
 # if you want to use FLINT instead of our default implementation, call cmake with
@@ -67,7 +67,7 @@ if("${CUSTOM}" STREQUAL true)
 elseif("${WITH_FLINT}" STREQUAL true)
   find_package(FLINT REQUIRED)
   include_directories(${FLINT_INCLUDE_DIR}/flint)
-  set(PKG_INCLUDE "${PKG_INCLUDE} -I${FLINT_INCLUDE_DIR}/flint")
+  set(PKG_INCLUDE ${PKG_INCLUDE} -I${FLINT_INCLUDE_DIR}/flint)
   add_definitions(-DFLINT)
   set(PREPROCESSOR_FLAGS "-DFLINT")
 else()
@@ -131,7 +131,11 @@ install(
 
 set(PKG_LIBS ${LIBS})
 list(REMOVE_AT PKG_LIBS 0)
+list(REMOVE_DUPLICATES PKG_LIBS)
 string(REPLACE ";" " " PKG_LIBS "${PKG_LIBS}")
+
+list(REMOVE_DUPLICATES PKG_INCLUDE)
+string(REPLACE ";" " " PKG_INCLUDE "${PKG_INCLUDE}")
 
 configure_file("cmake/pc.in" "firefly.pc" @ONLY)
 
