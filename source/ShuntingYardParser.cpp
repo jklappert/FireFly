@@ -17,7 +17,9 @@
 //==================================================================================
 
 #include "ShuntingYardParser.hpp"
+#include "BaseReconst.hpp"
 #include "Logger.hpp"
+#include "ReconstHelper.hpp"
 
 #include <chrono>
 #include <fstream>
@@ -32,50 +34,159 @@ namespace firefly {
 
   ShuntingYardParser::ShuntingYardParser() {}
 
-  ShuntingYardParser::ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars) {
+  ShuntingYardParser::ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars, bool check_is_equal_) {
     INFO_MSG("Parsing functions in '" + file + "'");
-
-    auto time0 = std::chrono::high_resolution_clock::now();
-    // Check if file exists
-    std::ifstream infile(file);
-
-    if (!infile.good()) {
-      ERROR_MSG("File '" + file + "' does not exist!");
-      std::exit(EXIT_FAILURE);
-    }
-
-    std::ifstream istream;
-    istream.open(file);
-
-    std::string line;
+    check_is_equal = check_is_equal_;
 
     for (uint32_t i = 0; i != vars.size(); ++i) {
       vars_map.emplace(std::make_pair(vars[i], i));
     }
 
-    uint32_t line_c = 1;
+    std::vector<std::string> tmp = {file};
+    parse_collection(tmp, true);
+  }
 
-    while (std::getline(istream, line, ';')) {
-      line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
-      line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+  ShuntingYardParser::ShuntingYardParser(const std::vector<std::string>& funs, const std::vector<std::string>& vars, bool check_is_equal_) {
+    INFO_MSG("Parsing collection of " + std::to_string(funs.size()) + " functions");
+    check_is_equal = check_is_equal_;
 
-      if (line.length() > 0) {
-        line = validate(line, line_c);
-        parse(line);
-      }
-
-      line_c++;
+    for (uint32_t i = 0; i != vars.size(); ++i) {
+      vars_map.emplace(std::make_pair(vars[i], i));
     }
 
-    functions.shrink_to_fit();
-    precompute_tokens();
+    parse_collection(funs, false);
+  }
 
-    istream.close();
+  void ShuntingYardParser::parse_collection(const std::vector<std::string>& funs, bool is_file) {
+    size_t prime_counter = 0;
+    std::vector<FFInt> check_vars_1;
+    std::vector<FFInt> check_vars_2;
+    std::unordered_map<std::pair<uint64_t, uint64_t>, uint64_t, UintPairHasher> check_map;
+
+    if (check_is_equal) {
+      size_t c = 0;
+      size_t s = vars_map.size();
+      check_vars_1.reserve(s);
+      check_vars_2.reserve(s);
+      BaseReconst base;
+      uint64_t seed = static_cast<uint64_t>(std::time(0));
+      base.set_seed(seed);
+
+      FFInt::set_new_prime(primes()[prime_counter != 99 ? prime_counter + 1 : prime_counter - 1]);
+
+      for (size_t i = 0; i != s; ++i) {
+        check_vars_2.emplace_back(base.get_rand_64());
+      }
+
+      FFInt::set_new_prime(primes()[prime_counter]);
+
+      for (size_t i = 0; i != s; ++i) {
+        check_vars_2.emplace_back(base.get_rand_64());
+      }
+
+      for (const auto& p : primes()) {
+        if (FFInt::p == p)
+          prime_counter = c;
+
+        ++c;
+      }
+    }
+
+    auto time0 = std::chrono::high_resolution_clock::now();
+    uint64_t equal_fun_c = 0;
+    uint64_t parsed_fun_c = 0;
+
+    if (is_file) {
+      std::string file = funs[0];
+      // Check if file exists
+      std::ifstream infile(file);
+
+      if (!infile.good()) {
+        ERROR_MSG("File '" + file + "' does not exist!");
+        std::exit(EXIT_FAILURE);
+      }
+
+      std::ifstream istream;
+      istream.open(file);
+
+      std::string line;
+
+      uint64_t line_c = 1;
+
+      while (std::getline(istream, line, ';')) {
+        line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+        line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+
+        if (line.length() > 0) {
+          line = validate(line, line_c);
+          parse(line);
+          ++parsed_fun_c;
+
+          if (check_is_equal) {
+            FFInt::set_new_prime(primes()[prime_counter != 99 ? prime_counter + 1 : prime_counter - 1]);
+            FFInt v1 = evaluate(functions.back(), check_vars_2);
+            FFInt::set_new_prime(primes()[prime_counter]);
+            FFInt v2 = evaluate(functions.back(), check_vars_1);
+
+            if (check_map.find(std::make_pair(v1.n, v2.n)) != check_map.end()) {
+              functions.pop_back();
+              ++equal_fun_c;
+              evaluation_positions.emplace_back(check_map[std::make_pair(v1.n, v2.n)]);
+            } else {
+              uint64_t s = functions.size() - 1;
+              check_map.emplace(std::make_pair(std::make_pair(v1.n, v2.n), s));
+              evaluation_positions.emplace_back(s);
+            }
+          }
+        }
+
+        line_c++;
+      }
+
+      functions.shrink_to_fit();
+      precompute_tokens();
+
+      istream.close();
+    } else {
+      for (size_t i = 0; i != funs.size(); ++i) {
+        std::string fun = funs[i];
+        fun = validate(fun, i);
+        parse(fun);
+        ++parsed_fun_c;
+
+        if (check_is_equal) {
+          FFInt::set_new_prime(primes()[prime_counter != 99 ? prime_counter + 1 : prime_counter - 1]);
+          FFInt v1 = evaluate(functions.back(), check_vars_2);
+          FFInt::set_new_prime(primes()[prime_counter]);
+          FFInt v2 = evaluate(functions.back(), check_vars_1);
+
+          if (check_map.find(std::make_pair(v1.n, v2.n)) != check_map.end()) {
+            functions.pop_back();
+            ++equal_fun_c;
+            evaluation_positions.emplace_back(check_map[std::make_pair(v1.n, v2.n)]);
+          } else {
+            uint64_t s = functions.size() - 1;
+            check_map.emplace(std::make_pair(std::make_pair(v1.n, v2.n), s));
+            evaluation_positions.emplace_back(s);
+          }
+        }
+      }
+    }
+
     auto time1 = std::chrono::high_resolution_clock::now();
 
-    INFO_MSG("Parsed " + std::to_string(functions.size()) + " functions in "
-             + std::to_string(std::chrono::duration<double>(time1 - time0).count())
-             + " s");
+    if (!check_is_equal) {
+      INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " functions in "
+               + std::to_string(std::chrono::duration<double>(time1 - time0).count())
+               + " s");
+    } else {
+      evaluation_positions.shrink_to_fit();
+      BaseReconst::reset();
+      INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " functions of which "
+               + std::to_string(parsed_fun_c - equal_fun_c) + " are different in "
+               + std::to_string(std::chrono::duration<double>(time1 - time0).count())
+               + " s");
+    }
   }
 
   void ShuntingYardParser::parse(const std::string& fun_) {
@@ -270,10 +381,17 @@ namespace firefly {
     functions.emplace_back(pf);
   }
 
-  void ShuntingYardParser::parse_function(const std::string& fun, const std::vector<std::string>& vars) {
-    for (uint32_t i = 0; i != vars.size(); ++i) {
-      vars_map.emplace(std::make_pair(vars[i], i));
+  void ShuntingYardParser::parse_function(const std::string& fun, const std::vector<std::string>& vars, bool validate_fun) {
+    std::string fun_ = fun;
+
+    if (vars_map.empty()) {
+      for (uint32_t i = 0; i != vars.size(); ++i) {
+        vars_map.emplace(std::make_pair(vars[i], i));
+      }
     }
+
+    if (validate_fun)
+      fun_ = validate(fun_, 0);
 
     parse(fun);
 
@@ -377,6 +495,119 @@ namespace firefly {
       }
     }
 
+    if (!check_is_equal)
+      return res;
+    else {
+      uint64_t s = evaluation_positions.size();
+
+      if (functions.size() != s) {
+        std::vector<FFInt> full_res;
+        full_res.reserve(s);
+
+        for (const auto& el : evaluation_positions) {
+          full_res.emplace_back(res[el]);
+        }
+
+        return full_res;
+      } else
+        return res;
+    }
+  }
+
+  FFInt ShuntingYardParser::evaluate(const std::vector<std::string>& fun, const std::vector<FFInt>& values) const {
+    FFInt res;
+
+    std::stack<FFInt> nums;
+
+    for (const auto& token : fun) {
+      if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!") {
+        // Pop two numbers
+        FFInt a = nums.top();
+        nums.pop();
+        FFInt b = nums.top();
+        nums.pop();
+
+        // Evaluate and push the result back to the stack
+        switch (token[0]) {
+          case '+': {
+            nums.push(a + b);
+            break;
+          }
+
+          case '-': {
+            nums.push(b - a);
+            break;
+          }
+
+          case '*': {
+            nums.push(b * a);
+            break;
+          }
+
+          case '/': {
+            nums.push(b / a);
+            break;
+          }
+
+          case '^': {
+            nums.push(b.pow(a));
+            break;
+          }
+
+          case '!': {
+            nums.push(-b.pow(a));
+            break;
+          }
+        }
+      } else {
+        // check then if number has more than 18 digits
+        if (token.length() > 18) {
+          std::string tmp = token;
+
+          if (token[0] == '+')
+            tmp.erase(0, 1);
+
+          nums.push(FFInt(mpz_class(tmp)));
+        } else {
+          if (token[0] == '-') {
+            std::string tmp = token;
+            tmp.erase(0, 1);
+
+            if (vars_map.find(tmp) != vars_map.end())
+              nums.push(-values[vars_map.at(tmp)]);
+            else if (isdigit(tmp[0]))
+              nums.push(-FFInt(std::stoull(tmp)));
+            else
+              throw_not_declared_var_err(tmp);
+          } else if (token[0] == '+') {
+            std::string tmp = token;
+            tmp.erase(0, 1);
+
+            if (vars_map.find(tmp) != vars_map.end())
+              nums.push(values[vars_map.at(tmp)]);
+            else  if (isdigit(tmp[0]))
+              nums.push(FFInt(std::stoull(tmp)));
+            else
+              throw_not_declared_var_err(tmp);
+          } else {
+            if (vars_map.find(token) != vars_map.end())
+              nums.push(values[vars_map.at(token)]);
+            else if (isdigit(token[0]))
+              nums.push(FFInt(std::stoull(token)));
+            else
+              throw_not_declared_var_err(token);
+          }
+        }
+      }
+    }
+
+    if (nums.size())
+      res = nums.top();
+    else {
+      ERROR_MSG("Error in functional evaluation! Please check your input.");
+      std::exit(EXIT_FAILURE);
+    }
+
     return res;
   }
 
@@ -462,7 +693,23 @@ namespace firefly {
       }
     }
 
-    return res;
+    if (!check_is_equal)
+      return res;
+    else {
+      uint64_t s = evaluation_positions.size();
+
+      if (functions.size() != s) {
+        std::vector<FFInt> full_res;
+        full_res.reserve(s);
+
+        for (const auto& el : evaluation_positions) {
+          full_res.emplace_back(res[el]);
+        }
+
+        return full_res;
+      } else
+        return res;
+    }
   }
 
   std::vector<std::vector<FFInt>> ShuntingYardParser::evaluate_pre(const std::vector<std::vector<FFInt>>& values) const {
@@ -604,6 +851,29 @@ namespace firefly {
           std::exit(EXIT_FAILURE);
         }
       }
+    }
+
+    if (!check_is_equal)
+      return res;
+    else {
+      uint64_t s = evaluation_positions.size();
+
+      if (functions.size() != s) {
+        std::vector<std::vector<FFInt>> full_res(bunch_size);
+
+        for (size_t i = 0; i != bunch_size; ++i) {
+          full_res[i].reserve(s);
+        }
+
+        for (const auto& el : evaluation_positions) {
+          for (size_t i = 0; i != bunch_size; ++i) {
+            full_res[i].emplace_back(res[i][el]);
+          }
+        }
+
+        return full_res;
+      } else
+        return res;
     }
 
     return res;
@@ -759,7 +1029,7 @@ namespace firefly {
     }
   }
 
-  std::string ShuntingYardParser::validate(const std::string& line, uint32_t exp_n) {
+  std::string ShuntingYardParser::validate(const std::string& line, uint64_t exp_n) {
     size_t size = line.size() + 1;
     std::string r = line;
     std::stack<int> st;

@@ -84,6 +84,7 @@ namespace firefly {
      *  A constructor for the Reconstructor class
      *  @param n_ the number of parameters
      *  @param thr_n_ the number of threads being used during the reconstruction
+     *  @param bb_ An instance of a BlackBoxBase class
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
     Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, int verbosity_ = IMPORTANT);
@@ -92,6 +93,7 @@ namespace firefly {
      *  @param n_ the number of parameters
      *  @param thr_n_ the number of threads being used during the reconstruction
      *  @param bunch_size_ the bunch size
+     *  @param bb_ An instance of a BlackBoxBase class
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
     Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_, int verbosity_ = IMPORTANT);

@@ -34,24 +34,40 @@ namespace firefly {
      *  Constructor which parses a list of rational functions and prepares them for evaluation.
      *  @param file The path to the file in which the rational functions are stored
      *  @param vars A vector which specifies the variables of the functions. Each variable is allowed to be built of lower and upper case letters and numbers up to 16 characters.
+     *  @param check_is_equal Sets the option to check whether parsed functions are equal to only evaluate them once
      */
-    ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars);
+    ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars, bool check_is_equal = false);
+    /**
+     *  Constructor which parses a list of rational functions and prepares them for evaluation.
+     *  @param funs A collection of functions
+     *  @param vars A vector which specifies the variables of the functions. Each variable is allowed to be built of lower and upper case letters and numbers up to 16 characters.
+     *  @param check_is_equal Sets the option to check whether parsed functions are equal to only evaluate them once
+     */
+    ShuntingYardParser(const std::vector<std::string>& funs, const std::vector<std::string>& vars, bool check_is_equal = false);
     /**
      *  Default constructor
      */
     ShuntingYardParser();
     /**
-     *  Parses a rational function given as a string
+     *  Parses a rational function given as a string and validates the function on request
      *  @param fun The rational function to be parsed as a string
-     *  @param vars A vector which specifies the variables of the function.
+     *  @param vars A vector which specifies the variables of the function
+     *  @param validate_fun validates the function if set to true
      */
-    void parse_function(const std::string& fun, const std::vector<std::string>& vars);
+    void parse_function(const std::string& fun, const std::vector<std::string>& vars, bool validate_fun = false);
     /**
      *  Evaluates all functions for a given parameter point and returs their result.
      *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
      *  @return The values of the parsed functions as a vector.
      */
     std::vector<FFInt> evaluate(const std::vector<FFInt>& values) const;
+    /**
+     *  Evaluates a single function for a given parameter point and returs their result.
+     *  @param fun A function in reverse polish notation
+     *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
+     *  @return The values of the parsed functions as a vector.
+     */
+    FFInt evaluate(const std::vector<std::string>& fun, const std::vector<FFInt>& values) const;
     /**
      *  Evaluates all functions for a given parameter point and returs their result using precomputed values. This is in general much faster than ShuntingYardParser::evaluate.
      *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
@@ -82,6 +98,15 @@ namespace firefly {
     std::vector<std::vector<std::string>> functions {}; /**< This vector holds the input function in reverse polish notation where each operand/operator is separated */
     std::unordered_map<std::string, int> vars_map {}; /**< This map holds the conversion of the used variables to an integer value to map variables to parameter points */
     std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {}; /**< This vector holds a collection of precomputed tokens where each operand/operator as a string is already converted to an FFInt */
+    bool check_is_equal = false; /**< Indicates that functions are checked whether they are equal. Modifies the evaluation procedure */
+    std::vector<uint64_t> evaluation_positions; /**< Stores the position of an evaluated function */
+    /**
+     *  Parses either a collection of strings or a file
+     *  @param funs the collection of functions
+     *  @param bool is_file indicates wether the collection is stored in a file
+     *
+     */
+    void parse_collection(const std::vector<std::string>& funs, bool is_file);
     /**
      *  Initializes the conversion map
      *  @return The conversion map
@@ -121,7 +146,7 @@ namespace firefly {
      *  @param line the expression as a string
      *  @param exp_n the expression number
      */
-    std::string validate(const std::string& line, uint32_t exp_n);
+    std::string validate(const std::string& line, uint64_t exp_n);
     /**
      *  Exits the program since a variable was not declared
      *  @param var the undeclared variable

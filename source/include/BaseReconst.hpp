@@ -50,13 +50,23 @@ namespace firefly {
     BaseReconst& operator=(const BaseReconst& other);
     BaseReconst& operator=(BaseReconst && other);
     /**
+     *  Resets the states of the PRNG
+     */
+    static void reset();
+    /**
      *  @return a 32-bit (64-bit) random number as an FFInt
      */
-    FFInt get_rand();
+    FFInt get_rand_32();
     /**
      *  @return a 64-bit random number as an FFInt
      */
     FFInt get_rand_64();
+    /**
+     *  Calls the get_rand_64() function
+     *  @deprecated since 1.3.2
+     *  @return a 64-bit random number as an FFInt
+     */
+    FFInt get_rand();
     /**
      *  @return the number of equations needed for the current zi_order
      */

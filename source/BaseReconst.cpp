@@ -119,28 +119,32 @@ namespace firefly {
     return prime_number;
   }
 
-  FFInt BaseReconst::get_rand() {
-    FFInt rand(xoshiro256ss()/*pcg32()*/);
+  FFInt BaseReconst::get_rand_32() {
+    FFInt rand(pcg32());
 
     if (rand != 0)
       return rand;
     else {
       while (rand == 0) {
-        rand = FFInt(xoshiro256ss()/*pcg32()*/);
+        rand = FFInt(pcg32());
       }
 
       return rand;
     }
   }
 
+  FFInt BaseReconst::get_rand() {
+    return get_rand_64();
+  }
+
   FFInt BaseReconst::get_rand_64() {
-    FFInt rand(xoshiro256ss()/*pcg32()*/);
+    FFInt rand(xoshiro256ss());
 
     if (rand != 0)
       return rand;
     else {
       while (rand == 0) {
-        rand = FFInt(xoshiro256ss()/*pcg32()*/);
+        rand = FFInt(xoshiro256ss());
       }
 
       return rand;
@@ -266,5 +270,10 @@ namespace firefly {
       s[2] = splitmix64();
       s[3] = splitmix64();
     }
+  }
+
+  void BaseReconst::reset() {
+    state = 0x4d595df4d0f33173;
+    splitmix64_state = 0x4d595df4d0f33173;
   }
 }

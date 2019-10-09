@@ -729,7 +729,7 @@ namespace firefly {
 
       if (it != chosen_t.end()) {
         while (true) {
-          t = tmp_rec.get_rand();
+          t = tmp_rec.get_rand_64();
 
           auto itt = it->second.find(t.n);
 
@@ -743,7 +743,7 @@ namespace firefly {
           }
         }
       } else {
-        t = tmp_rec.get_rand();
+        t = tmp_rec.get_rand_64();
         chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
       }
     }
@@ -1407,7 +1407,7 @@ namespace firefly {
 #ifdef WITH_MPI
         std::vector<uint64_t> values(n + 1);
 #endif
-        t = tmp_rec.get_rand();
+        t = tmp_rec.get_rand_64();
 
         // check if t was already used for this zi_order
         {
@@ -1525,7 +1525,7 @@ namespace firefly {
           std::vector<uint64_t> values(n + 1);
 #endif
 
-          FFInt t = tmp_rec.get_rand();
+          FFInt t = tmp_rec.get_rand_64();
 
           // check if t was already used for this zi_order
           {
@@ -2217,7 +2217,7 @@ namespace firefly {
       for (uint32_t ii = 0; ii != static_cast<uint32_t>(to_start); ++ii) {
         values[ii * (n + 1)] = ind;
 
-        FFInt t = tmp_rec.get_rand();
+        FFInt t = tmp_rec.get_rand_64();
 
         // check if t was already used for this zi_order
         auto it = chosen_t.find(zi_order);
