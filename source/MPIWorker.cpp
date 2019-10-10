@@ -67,25 +67,7 @@ namespace firefly {
 
         lock.unlock();
 
-        std::cout << "worker sending " << tmp_results.size() - 1 << " items\n";
-
-        for (auto i = 0; i != (tmp_results.size() - 1) / 1483; ++i) {
-          //if (tmp_results[i * 1483] > 100000) {
-            std::cout << "W large index " << tmp_results[i * 1483] << "\n";
-          //}
-        }
-
-        if (tmp_results.size() - 1 > 1483) {
-          std::cout << "send\n";
-
-          for (int i = 0; i != tmp_results.size(); ++i) {
-            if (i % 1483 == 0) {
-              std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-            }
-
-            std::cout << tmp_results[i] << "\n";
-          }
-        }
+        //std::cout << "worker sending " << tmp_results.size() - 1 << " items\n";
 
         MPI_Isend(&tmp_results[0], static_cast<int>(tmp_results.size()), MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD, &request);
       }
@@ -103,7 +85,6 @@ namespace firefly {
           std::exit(EXIT_FAILURE);
         }
 
-        //uint64_t* values_list = new uint64_t[amount];
         std::vector<uint64_t> values_list;
         values_list.reserve(amount);
 
