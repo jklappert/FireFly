@@ -47,6 +47,7 @@ namespace firefly {
     while (true) {
       //std::cout << "w loop\n";
       std::unique_lock<std::mutex> lock(mut);
+      std::vector<uint64_t> tmp_results;
 
       MPI_Request request;
 
@@ -61,7 +62,7 @@ namespace firefly {
         }
 
         results.emplace_back(buffer * static_cast<uint64_t>(bunch_size * thr_n) - tasks * static_cast<uint64_t>(bunch_size));
-        std::vector<uint64_t> tmp_results = std::move(results);
+        tmp_results = std::move(results);
         results.clear();
 
         lock.unlock();
@@ -163,8 +164,6 @@ namespace firefly {
             });
           }
         }
-
-        //delete[] values_list;
       } else if (status.MPI_TAG == NEW_PRIME) {
         //std::cout << "worker new prime\n";
 

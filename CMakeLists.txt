@@ -136,6 +136,7 @@ if("${WITH_FLINT}" STREQUAL true)
 endif()
 
 if("${WITH_MPI}" STREQUAL true)
+  string(STRIP ${MPI_CXX_LINK_FLAGS} MPI_CXX_LINK_FLAGS)
   set(LIBS ${LIBS} ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
   set(EXAMPLE_EXE ${PROJECT_SOURCE_DIR}/example_mpi.cpp)
 else()
