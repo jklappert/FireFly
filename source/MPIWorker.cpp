@@ -84,9 +84,11 @@ namespace firefly {
           std::exit(EXIT_FAILURE);
         }
 
-        uint64_t* values_list = new uint64_t[amount];
+        //uint64_t* values_list = new uint64_t[amount];
+        std::vector<uint64_t> values_list;
+        values_list.reserve(amount);
 
-        MPI_Recv(values_list, amount, MPI_UINT64_T, master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        MPI_Recv(&values_list[0], amount, MPI_UINT64_T, master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
         uint32_t new_tasks = static_cast<uint32_t>(amount) / (bunch_size * (n + 1));
 
@@ -140,7 +142,7 @@ namespace firefly {
           }
         }
 
-        delete[] values_list;
+        //delete[] values_list;
       } else if (status.MPI_TAG == NEW_PRIME) {
         //std::cout << "worker new prime\n";
 
