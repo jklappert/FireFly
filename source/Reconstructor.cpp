@@ -2252,8 +2252,10 @@ namespace firefly {
 
       probes_queued += to_start;
       started_probes[zi_order] += to_start;
+
       std::vector<uint64_t> values;
       values.reserve(static_cast<uint32_t>(to_start) * (n + 1));
+      //uint64_t* values = new uint64_t[static_cast<uint32_t>(to_start) * (n + 1)];  // TODO vector?
 
       for (uint32_t ii = 0; ii != static_cast<uint32_t>(to_start); ++ii) {
         values[ii * (n + 1)] = ind;
@@ -2292,6 +2294,8 @@ namespace firefly {
       }
 
       MPI_Send(&values[0], static_cast<int>(static_cast<uint32_t>(to_start) * (n + 1)), MPI_UINT64_T, i, VALUES, MPI_COMM_WORLD);
+
+      //delete[] values;
     }
   }
 
@@ -2316,6 +2320,8 @@ namespace firefly {
       }
 
       if (done && !scan) {
+        //std::vector<MPI_Request> requests;
+        //requests.reserve(world_size - 1);
         MPI_Request* requests = new MPI_Request[world_size - 1];
 
         for (int i = 1; i != world_size; ++i) {
@@ -2339,10 +2345,13 @@ namespace firefly {
             int amount;
             MPI_Get_count(&status_rec, MPI_UINT64_T, &amount);
 
-            uint64_t* tmp = new uint64_t[amount];
-            MPI_Recv(tmp, amount, MPI_UINT64_T, status_rec.MPI_SOURCE, status_rec.MPI_TAG, MPI_COMM_WORLD, &status_rec);
+            std::vector<uint64_t> tmp;
+            tmp.reserve(amount);
 
-            delete[] tmp;
+            //uint64_t* tmp = new uint64_t[amount];
+            MPI_Recv(&tmp[0], amount, MPI_UINT64_T, status_rec.MPI_SOURCE, status_rec.MPI_TAG, MPI_COMM_WORLD, &status_rec);
+
+//            delete[] tmp;
           }
         }
 
@@ -2350,6 +2359,8 @@ namespace firefly {
         break;
       } else if (new_prime || (done && scan)) {
         MPI_Request* requests = new MPI_Request[world_size - 1];
+        //std::vector<MPI_Request> requests;
+        //requests.reserve(world_size - 1);
 
         //std::cout << "com np\n";
 
@@ -2381,10 +2392,12 @@ namespace firefly {
 
             //std::cout << "garbage recieved: " << (static_cast<uint32_t>(amount) - 1) / (items + 1) << "\n";
 
-            uint64_t* tmp = new uint64_t[amount];
-            MPI_Recv(tmp, amount, MPI_UINT64_T, status_rec.MPI_SOURCE, status_rec.MPI_TAG, MPI_COMM_WORLD, &status_rec);
+            std::vector<uint64_t> tmp;
+            tmp.reserve(amount);
+            //uint64_t* tmp = new uint64_t[amount];
+            MPI_Recv(&tmp[0], amount, MPI_UINT64_T, status_rec.MPI_SOURCE, status_rec.MPI_TAG, MPI_COMM_WORLD, &status_rec);
 
-            delete[] tmp;
+            //delete[] tmp;
           }
         }
 
@@ -2446,6 +2459,7 @@ namespace firefly {
           if (size != 0) {
             std::vector<uint64_t> values;
             values.reserve(size * (n + 1));
+            //uint64_t* values = new uint64_t[size * (n + 1)];
 
             for (uint64_t i = 0; i != size; ++i) {
               values[i * (n + 1)] = value_queue.front()[0];
@@ -2458,6 +2472,8 @@ namespace firefly {
             }
 
             MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+
+            //delete[] values;
           } else if (free_slots == nodes[status.MPI_SOURCE]) {
             //std::cout << "com np empty nodes " << status.MPI_SOURCE << " " << free_slots << "\n";
             empty_nodes.emplace(std::make_pair(status.MPI_SOURCE, free_slots));
@@ -2472,6 +2488,7 @@ namespace firefly {
 
           uint64_t available_jobs = static_cast<uint64_t>(value_queue.size());
           uint64_t size = std::min(node.second, available_jobs);
+          //uint64_t* values = new uint64_t[size * (n + 1)];
           std::vector<uint64_t> values;
           values.reserve(size * (n + 1));
 
@@ -2488,6 +2505,8 @@ namespace firefly {
           //std::cout << "restart: sending " << size << " jobs\n";
 
           MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, node.first, VALUES, MPI_COMM_WORLD);
+
+          //delete[] values;
         }
 
         if (value_queue.empty()) {
@@ -2506,6 +2525,7 @@ namespace firefly {
 
         //std::cout << "comm recieving " << new_results << " results \n";
 
+        //uint64_t* results_list = new uint64_t[amount];
         std::vector<uint64_t> results_list;
         results_list.reserve(amount);
         MPI_Recv(&results_list[0], amount, MPI_UINT64_T, status.MPI_SOURCE, RESULT, MPI_COMM_WORLD, &status);
@@ -2558,6 +2578,7 @@ namespace firefly {
         uint64_t size = std::min(free_slots, static_cast<uint64_t>(value_queue.size()));
 
         if (size != 0) {
+          //uint64_t* values = new uint64_t[size * (n + 1)];
           std::vector<uint64_t> values;
           values.reserve(size * (n + 1));
 
@@ -2580,12 +2601,16 @@ namespace firefly {
           //std::cout << "sending " << size << " jobs\n";
 
           MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+
+          //delete[] values;
         } else if (free_slots == nodes[status.MPI_SOURCE]) {
           //std::cout << "empty node " << status.MPI_SOURCE << " " << free_slots << "\n";
           empty_nodes.emplace(std::make_pair(status.MPI_SOURCE, free_slots));
         } else {
           MPI_Send(NULL, 0, MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
         }
+
+        //delete[] results_list;
       }
     }
   }

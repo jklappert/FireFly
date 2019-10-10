@@ -143,9 +143,6 @@ namespace firefly {
         line_c++;
       }
 
-      functions.shrink_to_fit();
-      precompute_tokens();
-
       istream.close();
     } else {
       for (size_t i = 0; i != funs.size(); ++i) {
@@ -172,6 +169,9 @@ namespace firefly {
         }
       }
     }
+
+    functions.shrink_to_fit();
+    precompute_tokens();
 
     auto time1 = std::chrono::high_resolution_clock::now();
 

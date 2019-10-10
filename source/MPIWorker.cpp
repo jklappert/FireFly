@@ -102,6 +102,7 @@ namespace firefly {
           std::exit(EXIT_FAILURE);
         }
 
+        //uint64_t* values_list = new uint64_t[amount];
         std::vector<uint64_t> values_list;
         values_list.reserve(amount);
 
@@ -162,6 +163,8 @@ namespace firefly {
             });
           }
         }
+
+        //delete[] values_list;
       } else if (status.MPI_TAG == NEW_PRIME) {
         //std::cout << "worker new prime\n";
 
