@@ -987,8 +987,6 @@ namespace firefly {
       }
     }
 
-    std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> fed_probes;
-
     while (!done) {
       if (new_prime) {
         //if (prime_it == 1) exit(-1);
@@ -1065,7 +1063,6 @@ namespace firefly {
         probes_finished = 0;
         probes_queued = 0;
         started_probes.clear();
-        fed_probes.clear();
 
         // Only reset chosen_t when not resuming from a saved state
         if (!set_anchor_points) {
@@ -1278,14 +1275,6 @@ namespace firefly {
         ++feed_jobs;
       }
 
-      auto it = fed_probes.find(zi_order);
-
-      if (it != fed_probes.end()) {
-        ++((*it).second);
-      } else {
-        fed_probes.emplace(zi_order, 1);
-      }
-
       tp.run_priority_task([this, zi_order, t, probe]() {
         feed_job(zi_order, t, probe);
 #ifdef WITH_MPI
@@ -1347,24 +1336,6 @@ namespace firefly {
             new_prime = true;
             continue;
           } else {
-            for (auto & rec : reconst) {
-              if (!std::get<3>(rec)->is_done() && !std::get<3>(rec)->is_new_prime()) {
-                for (auto el : std::get<3>(rec)->get_zi_order()) {
-                  std::cout << el << " ";
-                }
-                std::cout << ": " << std::get<3>(rec)->get_num_eqn() << " " << started_probes[std::get<3>(rec)->get_zi_order()] << "\n";
-              }
-            }
-
-            std::cout << "started:\n";
-
-            for (auto & el : fed_probes) {
-              for (auto & zi : el.first) {
-                std::cout << zi << " ";
-              }
-              std::cout << ": " << el.second << "\n";
-            }
-
             throw std::runtime_error("Nothing left to feed: "
                                      + std::to_string(items)
                                      + " " + std::to_string(items_new_prime)
@@ -2255,7 +2226,6 @@ namespace firefly {
 
       std::vector<uint64_t> values;
       values.reserve(static_cast<uint32_t>(to_start) * (n + 1));
-      //uint64_t* values = new uint64_t[static_cast<uint32_t>(to_start) * (n + 1)];  // TODO vector?
 
       for (uint32_t ii = 0; ii != static_cast<uint32_t>(to_start); ++ii) {
         values[ii * (n + 1)] = ind;
@@ -2294,8 +2264,6 @@ namespace firefly {
       }
 
       MPI_Send(&values[0], static_cast<int>(static_cast<uint32_t>(to_start) * (n + 1)), MPI_UINT64_T, i, VALUES, MPI_COMM_WORLD);
-
-      //delete[] values;
     }
   }
 
@@ -2323,9 +2291,9 @@ namespace firefly {
         //std::vector<MPI_Request> requests;
         //requests.reserve(world_size - 1);
         MPI_Request* requests = new MPI_Request[world_size - 1];
+        uint64_t tmp;
 
         for (int i = 1; i != world_size; ++i) {
-          uint64_t tmp;
           MPI_Isend(&tmp, 1, MPI_UINT64_T, i, END, MPI_COMM_WORLD, &requests[i - 1]);
         }
 
@@ -2454,7 +2422,6 @@ namespace firefly {
           if (size != 0) {
             std::vector<uint64_t> values;
             values.reserve(size * (n + 1));
-            //uint64_t* values = new uint64_t[size * (n + 1)];
 
             for (uint64_t i = 0; i != size; ++i) {
               values[i * (n + 1)] = value_queue.front()[0];
@@ -2481,7 +2448,6 @@ namespace firefly {
 
           uint64_t available_jobs = static_cast<uint64_t>(value_queue.size());
           uint64_t size = std::min(node.second, available_jobs);
-          //uint64_t* values = new uint64_t[size * (n + 1)];
           std::vector<uint64_t> values;
           values.reserve(size * (n + 1));
 
@@ -2571,8 +2537,6 @@ namespace firefly {
           //std::cout << "sending " << size << " jobs\n";
 
           MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
-
-          //delete[] values;
         } else if (free_slots == nodes[status.MPI_SOURCE]) {
           //std::cout << "empty node " << status.MPI_SOURCE << " " << free_slots << "\n";
           empty_nodes.emplace(std::make_pair(status.MPI_SOURCE, free_slots));
