@@ -2156,12 +2156,12 @@ namespace firefly {
     file << tmp_shift;
 
     file << "sub_num\n";
-    std::string tmp_str = "";
 
     for (const auto & el : sub_num) {
       if (!el.second.zero()) {
         for (const auto & monomial : el.second.coefs) {
           if (monomial.second != 0) {
+            std::string tmp_str = "";
             tmp_str += std::to_string(el.first) + " ";
 
             for (const auto & tmp_deg : monomial.first) {
@@ -2170,21 +2170,19 @@ namespace firefly {
 
             tmp_str.substr(0, tmp_str.size() - 1);
             tmp_str += std::string("\n");
+            file << tmp_str;
           }
         }
       }
     }
 
-    if (tmp_str.size() > 0)
-      file << tmp_str;
-
     file << "sub_den\n";
-    tmp_str = "";
 
     for (const auto & el : sub_den) {
       if (!el.second.zero()) {
         for (const auto & monomial : el.second.coefs) {
           if (monomial.second != 0) {
+            std::string tmp_str = "";
             tmp_str += std::to_string(el.first) + " ";
 
             for (const auto & tmp_deg : monomial.first) {
@@ -2193,16 +2191,14 @@ namespace firefly {
 
             tmp_str.substr(0, tmp_str.size() - 1);
             tmp_str += std::string("\n");
+            file << tmp_str;
           }
         }
       }
     }
 
-    if (tmp_str.size() > 0)
-      file << tmp_str;
-
     file << "zero_degs_num\n";
-    tmp_str = "";
+    std::string tmp_str = "";
 
     for (const auto & el : zero_degs_num) {
       tmp_str += std::to_string(el) + " ";
