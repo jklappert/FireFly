@@ -2116,44 +2116,33 @@ namespace firefly {
     file << "max_deg_num\n" << max_deg_num << "\n";
     file << "max_deg_den\n" << max_deg_den << "\n";
 
-    if (interpolations > 1)
+    if (interpolations != 1)
       file << "need_prime_shift\n" << "1" << "\n";
     else
       file << "need_prime_shift\n" << is_singular_system << "\n";
 
     file << "normalizer_deg\n";
-    std::string tmp_vec = "";
 
-    for (const auto & deg : normalizer_deg) {
-      tmp_vec += std::to_string(deg) + " ";
+    for (uint32_t i = 0; i != n; ++i) {
+      file << normalizer_deg[i] << " ";
     }
 
-    tmp_vec.substr(0, tmp_vec.size() - 1);
-    tmp_vec += std::string("\n");
-    file << tmp_vec;
+    file << "\n";
 
     file << "normalize_to_den\n" << normalize_to_den << "\n";
     file << "normalizer_den_num\n" << normalizer_den_num << "\n";
     file << "shifted_max_num_eqn\n" << shifted_max_num_eqn << "\n";
     file << "shift\n";
 
-    std::string tmp_shift = "";
-
     {
       std::unique_lock<std::mutex> lock(mutex_statics);
 
-      for (const auto & sft : shift) {
-        if (sft > 0)
-          tmp_shift += "1 ";
-        else
-          tmp_shift += "0 ";
+      for (uint32_t i = 0; i != n; ++i) {
+        file << (shift[i] != 0 ? "1 " : "0 ");
       }
 
+      file << "\n";
     }
-    tmp_shift.substr(0, tmp_shift.size() - 1);
-    tmp_shift += std::string("\n");
-
-    file << tmp_shift;
 
     file << "sub_num\n";
 
@@ -2161,16 +2150,15 @@ namespace firefly {
       if (!el.second.zero()) {
         for (const auto & monomial : el.second.coefs) {
           if (monomial.second != 0) {
-            std::string tmp_str = "";
-            tmp_str += std::to_string(el.first) + " ";
+            //std::string tmp_str = "";
+            file << el.first << " ";
+            //tmp_str += std::to_string(el.first) + " ";
 
-            for (const auto & tmp_deg : monomial.first) {
-              tmp_str += std::to_string(tmp_deg) + " ";
+            for (uint32_t i = 0; i != n; ++i) {
+              file << monomial.first[i] << " ";
             }
 
-            tmp_str.substr(0, tmp_str.size() - 1);
-            tmp_str += std::string("\n");
-            file << tmp_str;
+            file << " \n";
           }
         }
       }
@@ -2182,111 +2170,96 @@ namespace firefly {
       if (!el.second.zero()) {
         for (const auto & monomial : el.second.coefs) {
           if (monomial.second != 0) {
-            std::string tmp_str = "";
-            tmp_str += std::to_string(el.first) + " ";
+            file << el.first << " ";
 
-            for (const auto & tmp_deg : monomial.first) {
-              tmp_str += std::to_string(tmp_deg) + " ";
+            for (uint32_t i = 0; i != n; ++i) {
+              file << monomial.first[i] << " ";
             }
 
-            tmp_str.substr(0, tmp_str.size() - 1);
-            tmp_str += std::string("\n");
-            file << tmp_str;
+            file << " \n";
           }
         }
       }
     }
 
     file << "zero_degs_num\n";
-    std::string tmp_str = "";
 
-    for (const auto & el : zero_degs_num) {
-      tmp_str += std::to_string(el) + " ";
-    }
+    if (!zero_degs_num.empty()) {
+      for (const auto & el : zero_degs_num) {
+        file << el << " ";
+      }
 
-    if (zero_degs_num.size() > 0) {
-      tmp_str.substr(0, tmp_str.size() - 1);
-      tmp_str += std::string("\n");
-      file << tmp_str;
+      file << "\n";
     }
 
     file << "zero_degs_den\n";
-    tmp_str = "";
 
-    for (const auto & el : zero_degs_den) {
-      tmp_str += std::to_string(el) + " ";
-    }
+    if (!zero_degs_den.empty()) {
+      for (const auto & el : zero_degs_den) {
+        file << el << " ";
+      }
 
-    if (zero_degs_den.size() > 0) {
-      tmp_str.substr(0, tmp_str.size() - 1);
-      tmp_str += std::string("\n");
-      file << tmp_str;
+      file << "\n";
     }
 
     file << "g_ni\n";
 
     for (const auto & el : g_ni) {
-      std::string tmp_entry = "";
+      for (uint32_t i = 0; i != n; ++i) {
+        file << el.first[i] << " " ;
+      }
 
-      for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + " ";
-
-      tmp_entry += std::string(el.second.numerator.get_str()) + " " + std::string(el.second.denominator.get_str()) + std::string("\n");
-      file << tmp_entry;
+      file << el.second.numerator.get_str() << " " << el.second.denominator.get_str() << "\n";
     }
 
     file << "g_di\n";
 
     for (const auto & el : g_di) {
-      std::string tmp_entry = "";
+      for (uint32_t i = 0; i != n; ++i) {
+        file << el.first[i] << " ";
+      }
 
-      for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
-
-      tmp_entry += std::string(el.second.numerator.get_str()) + " " + std::string(el.second.denominator.get_str()) + std::string("\n");
-      file << tmp_entry;
+      file << el.second.numerator.get_str() << " " << el.second.denominator.get_str() << "\n";
     }
 
     file << "combined_ni\n";
 
     for (const auto & el : combined_ni) {
-      std::string tmp_entry = "";
+      for (uint32_t i = 0; i != n; ++i) {
+        file << el.first[i] << " ";
+      }
 
-      for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
-
-      tmp_entry += std::string(el.second.get_str()) + std::string("\n");
-      file << tmp_entry;
+      file << el.second.get_str() << "\n";
     }
 
     file << "combined_di\n";
 
     for (const auto & el : combined_di) {
-      std::string tmp_entry = "";
+      for (uint32_t i = 0; i != n; ++i) {
+        file << el.first[i] << " ";
+      }
 
-      for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
-
-      tmp_entry += std::string(el.second.get_str()) + std::string("\n");
-      file << tmp_entry;
+      file << el.second.get_str() << "\n";
     }
 
     file << "combined_primes_ni\n";
 
     for (const auto & el : combined_primes_ni) {
-      std::string tmp_entry = "";
+      for (uint32_t i = 0; i != n; ++i) {
+        file << el.first[i] << " ";
+      }
 
-      for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
-
-      tmp_entry += std::string(el.second.get_str()) + std::string("\n");
-      file << tmp_entry;
+      file << el.second.get_str() << "\n";
     }
 
     file << "combined_primes_di\n";
 
     for (const auto & el : combined_primes_di) {
-      std::string tmp_entry = "";
+      for (uint32_t i = 0; i != n; ++i) {
+        file << el.first[i] << " ";
+      }
 
-      for (const auto & deg : el.first) tmp_entry += std::to_string(deg) + std::string(" ");
-
-      tmp_entry += std::string(el.second.get_str()) + std::string("\n");
-      file << tmp_entry;
+      file << el.second.get_str() << "\n";
     }
 
     file << "interpolations\n" << interpolations << "\n";
