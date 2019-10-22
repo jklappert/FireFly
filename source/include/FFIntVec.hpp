@@ -19,43 +19,78 @@
 #pragma once
 
 #include "FFInt.hpp"
+#include <array>
 
 namespace firefly {
 
   /**
    * @class FFIntVec
-   * @brief A class for finite field integers stored as a vector for vector arithmetic
+   * @brief A class for finite field integers stored as an array for vector arithmetic
    */
+  template<int N>
   class FFIntVec {
+  template<int NN> friend FFIntVec<NN> operator-(const FFIntVec<NN> &);
+  template<int NN> friend FFIntVec<NN> operator+(const FFIntVec<NN> &, const FFIntVec<NN> &);
+  template<int NN> friend FFIntVec<NN> operator-(const FFIntVec<NN> &, const FFIntVec<NN> &);
+  template<int NN> friend FFIntVec<NN> operator*(const FFIntVec<NN> &, const FFIntVec<NN> &);
+  template<int NN> friend FFIntVec<NN> operator/(const FFIntVec<NN> &, const FFIntVec<NN> &);
+  template<int NN> friend FFIntVec<NN> pow(const FFIntVec<NN> &, const FFIntVec<NN> &);
+  template<int NN> friend bool operator==(const FFIntVec<NN> &, const FFIntVec<NN> &);
+  template<int NN> friend bool operator!=(const FFIntVec<NN> &, const FFIntVec<NN> &);
+  template<int NN> friend std::ostream & operator<<(std::ostream &, const FFIntVec<NN> &);
   public:
     /**
      *  Constructor
-     *  @param in the initializing vector
+     *  @param in the initializing array
      */
-    FFIntVec(const std::vector<FFInt>& in);
+    FFIntVec(const std::array<FFInt, N>& in) : vec(in) {};
     /**
      *  Constructor
-     *  @param in an initializing FFInt casted to an array with this entry
+     *  @param in the initializing array
      */
-    FFIntVec(const FFInt& in);
+    FFIntVec(const FFIntVec& in) : vec(in.vec) {};
+    /**
+     *  Constructor
+     *  @param in fills the array with this FFInt
+     */
+    FFIntVec(const FFInt& in) {
+      vec.fill(in);
+    };
     /**
      *  Default constructor
      */
-    FFIntVec(){};
+    FFIntVec() {
+      vec.fill(0);
+    };
 
+    std::array<FFInt, N> vec; /**< The stored vector for arithmetic */
     // defining new operators for finite field arithmetic
     FFIntVec& operator=(const FFIntVec&) = default;
+    FFIntVec& operator=(FFIntVec&&) = default;
     FFIntVec& operator+=(const FFIntVec&);
     FFIntVec& operator-=(const FFIntVec&);
     FFIntVec& operator*=(const FFIntVec&);
     FFIntVec& operator/=(const FFIntVec&);
     FFIntVec pow(const FFIntVec& power) const;
+    FFInt& operator[](int i) {return vec[i];};
+    FFInt operator[](int i) const {return vec[i];};
     bool operator!() const;
-    std::vector<FFInt> vec; /**< The stored vector for arithmetic */
-    static uint32_t size; /**< Sets the size of the vectors */
+    typename std::array<FFInt, N>::iterator begin() noexcept;
+    typename std::array<FFInt, N>::const_iterator begin() const noexcept;
+    typename std::array<FFInt, N>::iterator end() noexcept;
+    typename std::array<FFInt, N>::const_iterator end() const noexcept;
+    int size() const noexcept;
+    inline const FFInt& at(int i) {
+      if (i < N - 1)
+        return vec[i];
+      else
+        throw std::out_of_range("Out of range.");
+    }
+    //static uint32_t size; /**< Sets the size of the vectors */
   };
 
-  inline bool FFIntVec::operator!() const {
+  template<int N>
+  inline bool FFIntVec<N>::operator!() const {
     for(const auto& el : vec) {
       if (!el)
         return true;
@@ -64,12 +99,24 @@ namespace firefly {
     return false;
   }
 
-  bool operator==(const FFIntVec& a, const FFIntVec& b);
-  bool operator!=(const FFIntVec& a, const FFIntVec& b);
-  FFIntVec operator/(const FFIntVec& a, const FFIntVec& b);
-  FFIntVec operator+(const FFIntVec& a, const FFIntVec& b);
-  FFIntVec operator-(const FFIntVec& a, const FFIntVec& b);
-  FFIntVec operator*(const FFIntVec& a, const FFIntVec& b);
-  FFIntVec pow(const FFIntVec& a, const FFIntVec& power);
-  std::ostream& operator<<(std::ostream& out, const FFIntVec& ffint_vec);
+  template<int N>
+  bool operator==(const FFIntVec<N>& a, const FFIntVec<N>& b);
+  template<int N>
+  bool operator!=(const FFIntVec<N>& a, const FFIntVec<N>& b);
+  template<int N>
+  FFIntVec<N> operator/(const FFIntVec<N>& a, const FFIntVec<N>& b);
+  template<int N>
+  FFIntVec<N> operator+(const FFIntVec<N>& a);
+  template<int N>
+  FFIntVec<N> operator+(const FFIntVec<N>& a, const FFIntVec<N>& b);
+  template<int N>
+  FFIntVec<N> operator-(const FFIntVec<N>& a);
+  template<int N>
+  FFIntVec<N> operator-(const FFIntVec<N>& a, const FFIntVec<N>& b);
+  template<int N>
+  FFIntVec<N> operator*(const FFIntVec<N>& a, const FFIntVec<N>& b);
+  template<int N>
+  FFIntVec<N> pow(const FFIntVec<N>& a, const FFIntVec<N>& power);
+  template<int N>
+  std::ostream& operator<<(std::ostream& out, const FFIntVec<N>& ffint_vec);
 }

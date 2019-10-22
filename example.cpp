@@ -20,6 +20,7 @@
 #include "Reconstructor.hpp"
 #include "ShuntingYardParser.hpp"
 #include "Tests.hpp"
+#include "FFIntVec.hpp"
 
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
@@ -126,6 +127,14 @@ int main() {
 
   // Reconstruct the black box
   reconst.reconstruct();
+
+  /*std::vector<FFInt> vec (4);
+  FFIntVec<4> arr1(2);
+  // move array to vector
+  std::move(arr1.begin(), arr1.end(), vec.begin());
+  FFIntVec<4> arr2;
+  // move vector to array
+  std::move(vec.begin(), vec.end(), arr2.begin());*/
 
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();

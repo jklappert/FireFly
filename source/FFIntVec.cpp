@@ -20,118 +20,166 @@
 
 namespace firefly {
 
-  uint32_t FFIntVec::size = 1;
-
-  FFIntVec::FFIntVec(const std::vector<FFInt>& in) {
-    vec = in;
-    if(size == 1)
-      size = vec.size();
+  template<int N>
+  typename std::array<FFInt, N>::const_iterator FFIntVec<N>::begin() const noexcept {
+    return vec.begin();
   }
 
-  FFIntVec::FFIntVec(const FFInt& in) {
-    vec = std::vector<FFInt> (size, in);
+  template<int N>
+  typename std::array<FFInt, N>::iterator FFIntVec<N>::begin() noexcept {
+    return vec.begin();
   }
 
-  bool operator==(const FFIntVec& a, const FFIntVec& b) {
+  template<int N>
+  typename std::array<FFInt, N>::const_iterator FFIntVec<N>::end() const noexcept {
+    return vec.end();
+  }
+
+  template<int N>
+  typename std::array<FFInt, N>::iterator FFIntVec<N>::end() noexcept {
+    return vec.end();
+  }
+
+  template<int N>
+  int FFIntVec<N>::size() const noexcept {
+    return N;
+  }
+
+  template<int N>
+  bool operator==(const FFIntVec<N>& a, const FFIntVec<N>& b) {
     return a.vec == b.vec;
   }
 
-  bool operator!=(const FFIntVec& a, const FFIntVec& b) {
+  template<int N>
+  bool operator!=(const FFIntVec<N>& a, const FFIntVec<N>& b) {
     return a.vec != b.vec;
   }
 
-  FFIntVec& FFIntVec::operator+=(const FFIntVec& a) {
-    for (size_t i = 0; i != size; ++i) {
+  template<int N>
+  FFIntVec<N>& FFIntVec<N>::operator+=(const FFIntVec<N>& a) {
+    for (int i = 0; i != N; ++i) {
       vec[i] += a.vec[i];
     }
 
     return *this;
   }
 
-  FFIntVec& FFIntVec::operator-=(const FFIntVec& a) {
-    for (size_t i = 0; i != size; ++i) {
+  template<int N>
+  FFIntVec<N>& FFIntVec<N>::operator-=(const FFIntVec<N>& a) {
+    for (int i = 0; i != N; ++i) {
       vec[i] -= a.vec[i];
     }
 
     return *this;
   }
 
-  FFIntVec& FFIntVec::operator*=(const FFIntVec& a) {
-    for (size_t i = 0; i != size; ++i) {
+  template<int N>
+  FFIntVec<N>& FFIntVec<N>::operator*=(const FFIntVec<N>& a) {
+    for (int i = 0; i != N; ++i) {
       vec[i] *= a.vec[i];
     }
 
     return *this;
   }
 
-  FFIntVec& FFIntVec::operator/=(const FFIntVec& a) {
-    for (size_t i = 0; i != size; ++i) {
+  template<int N>
+  FFIntVec<N>& FFIntVec<N>::operator/=(const FFIntVec<N>& a) {
+    for (int i = 0; i != N; ++i) {
       vec[i] /= a.vec[i];
     }
 
     return *this;
   }
 
-  FFIntVec FFIntVec::pow(const FFIntVec& power) const {
-    FFIntVec result(vec);
-    for (size_t i = 0; i != size; ++i) {
+  template<int N>
+  FFIntVec<N> FFIntVec<N>::pow(const FFIntVec<N>& power) const {
+    FFIntVec<N> result(vec);
+    for (int i = 0; i != N; ++i) {
       result.vec[i] = result.vec[i].pow(power.vec[i]);
     }
 
-    return *this;
+    return result;
   }
 
-  FFIntVec operator+(const FFIntVec& a, const FFIntVec& b) {
-    FFIntVec result(a);
+  template<int N>
+  FFIntVec<N> operator+(const FFIntVec<N>& a, const FFIntVec<N>& b) {
+    FFIntVec<N> result(a);
 
-    for (size_t i = 0; i != FFIntVec::size; ++i) {
+    for (int i = 0; i != N; ++i) {
       result.vec[i] += b.vec[i];
     }
 
     return result;
   }
 
-  FFIntVec operator-(const FFIntVec& a, const FFIntVec& b) {
-    FFIntVec result(a);
+  template<int N>
+  FFIntVec<N> operator+(const FFIntVec<N>& a) {
+    FFIntVec<N> result;
 
-    for (size_t i = 0; i != FFIntVec::size; ++i) {
+    for (int i = 0; i != N; ++i) {
+      result.vec[i] = +a.vec[i];
+    }
+
+    return result;
+  }
+
+  template<int N>
+  FFIntVec<N> operator-(const FFIntVec<N>& a, const FFIntVec<N>& b) {
+    FFIntVec<N> result(a);
+
+    for (int i = 0; i != N; ++i) {
       result.vec[i] -= b.vec[i];
     }
 
     return result;
   }
 
-  FFIntVec operator*(const FFIntVec& a, const FFIntVec& b) {
-    FFIntVec result(a);
+  template<int N>
+  FFIntVec<N> operator-(const FFIntVec<N>& a) {
+    FFIntVec<N> result;
 
-    for (size_t i = 0; i != FFIntVec::size; ++i) {
+    for (int i = 0; i != N; ++i) {
+      result.vec[i] = -a.vec[i];
+    }
+
+    return result;
+  }
+
+  template<int N>
+  FFIntVec<N> operator*(const FFIntVec<N>& a, const FFIntVec<N>& b) {
+    FFIntVec<N> result(a);
+
+    for (int i = 0; i != N; ++i) {
       result.vec[i] *= b.vec[i];
     }
 
     return result;
   }
 
-  FFIntVec operator/(const FFIntVec& a, const FFIntVec& b) {
-    FFIntVec result(a);
+  template<int N>
+  FFIntVec<N> operator/(const FFIntVec<N>& a, const FFIntVec<N>& b) {
+    FFIntVec<N> result(a);
 
-    for (size_t i = 0; i != FFIntVec::size; ++i) {
+    for (int i = 0; i != N; ++i) {
       result.vec[i] /= b.vec[i];
     }
 
     return result;
   }
 
-  FFIntVec pow(const FFIntVec& a, const FFIntVec& power) {
-    FFIntVec result(a);
+  template<int N>
+  FFIntVec<N> pow(const FFIntVec<N>& a, const FFIntVec<N>& power) {
+    FFIntVec<N> result(a);
 
-    for (size_t i = 0; i != FFIntVec::size; ++i) {
+    for (int i = 0; i != N; ++i) {
       result.vec[i] = result.vec[i].pow(power.vec[i]);
     }
 
     return result;
   }
 
-  std::ostream& operator<<(std::ostream& out, const FFIntVec& ffint_vec) {
+  template<int N>
+  std::ostream& operator<<(std::ostream& out, const FFIntVec<N>& ffint_vec) {
     out << "(" << ffint_vec.vec.front();
 
     for (auto it = ffint_vec.vec.begin() + 1; it != ffint_vec.vec.end(); ++ it) {
@@ -141,4 +189,113 @@ namespace firefly {
     out << ")";
     return out;
   }
+
+  // 1
+  template class FFIntVec<1>;
+  template FFIntVec<1> operator-(const FFIntVec<1>&);
+  template FFIntVec<1> operator+(const FFIntVec<1>&);
+  template FFIntVec<1> operator-(const FFIntVec<1>&, const FFIntVec<1>&);
+  template FFIntVec<1> operator+(const FFIntVec<1>&, const FFIntVec<1>&);
+  template FFIntVec<1> operator*(const FFIntVec<1>&, const FFIntVec<1>&);
+  template FFIntVec<1> operator/(const FFIntVec<1>&, const FFIntVec<1>&);
+  template bool operator==(const FFIntVec<1>&, const FFIntVec<1>&);
+  template bool operator!=(const FFIntVec<1>&, const FFIntVec<1>&);
+  template FFIntVec<1> pow(const FFIntVec<1>&, const FFIntVec<1>&);
+  template std::ostream& operator<<(std::ostream&, const FFIntVec<1>&);
+  // 2
+  template class FFIntVec<2>;
+  template FFIntVec<2> operator-(const FFIntVec<2>&);
+  template FFIntVec<2> operator+(const FFIntVec<2>&);
+  template FFIntVec<2> operator-(const FFIntVec<2>&, const FFIntVec<2>&);
+  template FFIntVec<2> operator+(const FFIntVec<2>&, const FFIntVec<2>&);
+  template FFIntVec<2> operator*(const FFIntVec<2>&, const FFIntVec<2>&);
+  template FFIntVec<2> operator/(const FFIntVec<2>&, const FFIntVec<2>&);
+  template bool operator==(const FFIntVec<2>&, const FFIntVec<2>&);
+  template bool operator!=(const FFIntVec<2>&, const FFIntVec<2>&);
+  template FFIntVec<2> pow(const FFIntVec<2>&, const FFIntVec<2>&);
+  template std::ostream& operator<<(std::ostream&, const FFIntVec<2>&);
+  // 4
+  template class FFIntVec<4>;
+  template FFIntVec<4> operator-(const FFIntVec<4>&);
+  template FFIntVec<4> operator+(const FFIntVec<4>&);
+  template FFIntVec<4> operator-(const FFIntVec<4>&, const FFIntVec<4>&);
+  template FFIntVec<4> operator+(const FFIntVec<4>&, const FFIntVec<4>&);
+  template FFIntVec<4> operator*(const FFIntVec<4>&, const FFIntVec<4>&);
+  template FFIntVec<4> operator/(const FFIntVec<4>&, const FFIntVec<4>&);
+  template bool operator==(const FFIntVec<4>&, const FFIntVec<4>&);
+  template bool operator!=(const FFIntVec<4>&, const FFIntVec<4>&);
+  template FFIntVec<4> pow(const FFIntVec<4>&, const FFIntVec<4>&);
+  template std::ostream& operator<<(std::ostream&, const FFIntVec<4>&);
+  // 8
+  template class FFIntVec<8>;
+  template FFIntVec<8> operator-(const FFIntVec<8>&);
+  template FFIntVec<8> operator+(const FFIntVec<8>&);
+  template FFIntVec<8> operator-(const FFIntVec<8>&, const FFIntVec<8>&);
+  template FFIntVec<8> operator+(const FFIntVec<8>&, const FFIntVec<8>&);
+  template FFIntVec<8> operator*(const FFIntVec<8>&, const FFIntVec<8>&);
+  template FFIntVec<8> operator/(const FFIntVec<8>&, const FFIntVec<8>&);
+  template bool operator==(const FFIntVec<8>&, const FFIntVec<8>&);
+  template bool operator!=(const FFIntVec<8>&, const FFIntVec<8>&);
+  template FFIntVec<8> pow(const FFIntVec<8>&, const FFIntVec<8>&);
+  template std::ostream& operator<<(std::ostream&, const FFIntVec<8>&);
+  // 16
+  template class FFIntVec<16>;
+  template FFIntVec<16> operator-(const FFIntVec<16>&);
+  template FFIntVec<16> operator+(const FFIntVec<16>&);
+  template FFIntVec<16> operator-(const FFIntVec<16>&, const FFIntVec<16>&);
+  template FFIntVec<16> operator+(const FFIntVec<16>&, const FFIntVec<16>&);
+  template FFIntVec<16> operator*(const FFIntVec<16>&, const FFIntVec<16>&);
+  template FFIntVec<16> operator/(const FFIntVec<16>&, const FFIntVec<16>&);
+  template bool operator==(const FFIntVec<16>&, const FFIntVec<16>&);
+  template bool operator!=(const FFIntVec<16>&, const FFIntVec<16>&);
+  template FFIntVec<16> pow(const FFIntVec<16>&, const FFIntVec<16>&);
+  template std::ostream& operator<<(std::ostream&, const FFIntVec<16>&);
+  // 32
+  template class FFIntVec<32>;
+  template FFIntVec<32> operator-(const FFIntVec<32>&);
+  template FFIntVec<32> operator+(const FFIntVec<32>&);
+  template FFIntVec<32> operator-(const FFIntVec<32>&, const FFIntVec<32>&);
+  template FFIntVec<32> operator+(const FFIntVec<32>&, const FFIntVec<32>&);
+  template FFIntVec<32> operator*(const FFIntVec<32>&, const FFIntVec<32>&);
+  template FFIntVec<32> operator/(const FFIntVec<32>&, const FFIntVec<32>&);
+  template bool operator==(const FFIntVec<32>&, const FFIntVec<32>&);
+  template bool operator!=(const FFIntVec<32>&, const FFIntVec<32>&);
+  template FFIntVec<32> pow(const FFIntVec<32>&, const FFIntVec<32>&);
+  template std::ostream& operator<<(std::ostream&, const FFIntVec<32>&);
+  // 64
+  template class FFIntVec<64>;
+  template FFIntVec<64> operator-(const FFIntVec<64>&);
+  template FFIntVec<64> operator+(const FFIntVec<64>&);
+  template FFIntVec<64> operator-(const FFIntVec<64>&, const FFIntVec<64>&);
+  template FFIntVec<64> operator+(const FFIntVec<64>&, const FFIntVec<64>&);
+  template FFIntVec<64> operator*(const FFIntVec<64>&, const FFIntVec<64>&);
+  template FFIntVec<64> operator/(const FFIntVec<64>&, const FFIntVec<64>&);
+  template bool operator==(const FFIntVec<64>&, const FFIntVec<64>&);
+  template bool operator!=(const FFIntVec<64>&, const FFIntVec<64>&);
+  template FFIntVec<64> pow(const FFIntVec<64>&, const FFIntVec<64>&);
+  template std::ostream& operator<<(std::ostream&, const FFIntVec<64>&);
+  // 128
+  template class FFIntVec<128>;
+  template FFIntVec<128> operator-(const FFIntVec<128>&);
+  template FFIntVec<128> operator+(const FFIntVec<128>&);
+  template FFIntVec<128> operator-(const FFIntVec<128>&, const FFIntVec<128>&);
+  template FFIntVec<128> operator+(const FFIntVec<128>&, const FFIntVec<128>&);
+  template FFIntVec<128> operator*(const FFIntVec<128>&, const FFIntVec<128>&);
+  template FFIntVec<128> operator/(const FFIntVec<128>&, const FFIntVec<128>&);
+  template bool operator==(const FFIntVec<128>&, const FFIntVec<128>&);
+  template bool operator!=(const FFIntVec<128>&, const FFIntVec<128>&);
+  template FFIntVec<128> pow(const FFIntVec<128>&, const FFIntVec<128>&);
+  template std::ostream& operator<<(std::ostream&, const FFIntVec<128>&);
+  // 256
+  template class FFIntVec<256>;
+  template FFIntVec<256> operator-(const FFIntVec<256>&);
+  template FFIntVec<256> operator+(const FFIntVec<256>&);
+  template FFIntVec<256> operator-(const FFIntVec<256>&, const FFIntVec<256>&);
+  template FFIntVec<256> operator+(const FFIntVec<256>&, const FFIntVec<256>&);
+  template FFIntVec<256> operator*(const FFIntVec<256>&, const FFIntVec<256>&);
+  template FFIntVec<256> operator/(const FFIntVec<256>&, const FFIntVec<256>&);
+  template bool operator==(const FFIntVec<256>&, const FFIntVec<256>&);
+  template bool operator!=(const FFIntVec<256>&, const FFIntVec<256>&);
+  template FFIntVec<256> pow(const FFIntVec<256>&, const FFIntVec<256>&);
+  template std::ostream& operator<<(std::ostream&, const FFIntVec<256>&);
 }
