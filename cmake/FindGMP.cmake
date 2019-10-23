@@ -45,7 +45,7 @@ set(GMP_FIND_VERSION_PATCH 2)
 set(GMP_FIND_VERSION
     "${GMP_FIND_VERSION_MAJOR}.${GMP_FIND_VERSION_MINOR}.${GMP_FIND_VERSION_PATCH}")
 
-if(GMP_INCLUDE_DIR)
+if(NOT DEFINED ${GMP_INCLUDE_DIR})
   # Since the GMP version macros may be in a file included by gmp.h of the form
   # gmp-.*[_]?.*.h (e.g., gmp-x86_64.h), we search each of them.
   file(GLOB GMP_HEADERS "${GMP_INCLUDE_DIR}/gmp.h" "${GMP_INCLUDE_DIR}/gmp-*.h")
@@ -72,13 +72,13 @@ if(GMP_INCLUDE_DIR)
     set(GMP_VERSION "6.1.2")
   endif()
   # Check whether found version exists and exceeds the minimum requirement
-  if(NOT GMP_VERSION)
-    set(GMP_VERSION_OK FALSE)
+  if(${GMP_VERSION} STREQUAL "")
+    set(GMP_VERSION_OK "FALSE")
     message(STATUS "GMP version was not detected")
   elseif(${GMP_VERSION} VERSION_LESS ${GMP_FIND_VERSION})
-    set(GMP_VERSION_OK FALSE)
+    set(GMP_VERSION_OK "FALSE")
   else()
-    set(GMP_VERSION_OK TRUE)
+    set(GMP_VERSION_OK "TRUE")
   endif()
 endif()
 
@@ -88,14 +88,14 @@ else(STBIN)
   find_library(GMP_LIBRARIES NAMES libgmp.so gmp)
 endif(STBIN)
 
-if(GMP_INCLUDE_DIR AND GMP_LIBRARIES)
-  set(GMP_FOUND TRUE)
-endif(GMP_INCLUDE_DIR AND GMP_LIBRARIES)
+if(NOT DEFINED ${GMP_INCLUDE_DIR} AND NOT DEFINED ${GMP_LIBRARIES})
+  set(GMP_FOUND "TRUE")
+endif()
 
-if(GMP_FOUND AND GMP_VERSION_OK)
+if(GMP_FOUND STREQUAL "TRUE" AND GMP_VERSION_OK STREQUAL "TRUE")
   message(STATUS "Found GMP ${GMP_VERSION} headers: ${GMP_INCLUDE_DIR}")
   message(STATUS "GMP library: ${GMP_LIBRARIES}")
-elseif(NOT GMP_FOUND)
+elseif(GMP_FOUND STREQUAL "FALSE")
   # Force search at every time, in case configuration changes
   unset(GMP_INCLUDE_DIR CACHE)
   unset(GMP_LIBRARIES CACHE)
@@ -103,11 +103,12 @@ elseif(NOT GMP_FOUND)
   message(FATAL_ERROR "GMP not found")
 else()
   # Force search at every time, in case configuration changes
+  set(DUMMY ${GMP_INCLUDE_DIR})
   unset(GMP_INCLUDE_DIR CACHE)
   unset(GMP_LIBRARIES CACHE)
 
-  message(FATAL_ERROR "GMP version ${GMP_VERSION} found in ${GMP_INCLUDE_DIR}, "
-                   "but at least version ${GMP_FIND_VERSION} is required")
+  message(FATAL_ERROR "GMP version ${GMP_VERSION} found in ${DUMMY}, "
+    "but at least version ${GMP_FIND_VERSION} is required")
 endif()
 
 mark_as_advanced(GMP_INCLUDE_DIR GMP_LIBRARIES)
