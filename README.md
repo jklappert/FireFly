@@ -20,8 +20,9 @@ FireFly requires:
 * C++ compiler supporting C++11
 * [CMake](https://cmake.org/) >= 3.1
 * [FLINT](http://www.flintlib.org/) >= 2.5 (optional)
-* [GMP](https://gmplib.org/) >= 6.1.2 (installed with --enable-cxx)
+* [GMP](https://gmplib.org/) >= 6.1.2 (compiled with --enable-cxx)
 * [zlib](https://www.zlib.net/) >= 1.2.11
+* MPI >= 3 (optional, mpich recommended)
 
 #####  Third party code
 FireFly uses the following third party code:
@@ -59,6 +60,12 @@ If the GMP version installed in the sytem directories does not match 6.1.2 or CM
 -DGMP_INCLUDE_DIR=$GMP_INC_PATH -DGMP_LIBRARIES=$GMP_LIB_PATH
 ```
 where `GMP_INC_DIR` is the absolute path to the directory of where the include files can be found (`gmpxx.h` is required) and `GMP_LIB_PATH` is the absolute path to the GMP library.
+
+If the MPI version found with CMake is not satisfactory, one can set custom paths to the include directory and library as:
+```
+-DMPI_CXX_INCLUDE_PATH=$MPI_INC_PATH -DMPI_CXX_LIBRARIES=$MPI_LIB_PATH
+```
+where `MPI_INC_PATH` is the absolute path to the directory where the include files can be found and `MPI_LIB_PATH` is the absolute path to the shared library (`libmpi.so`, `libmpich.so`,...) of your favored MPI implementation.
 
 ## Reconstructing functions
 To reconstruct functions with FireFly, it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
