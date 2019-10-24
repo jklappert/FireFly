@@ -31,13 +31,13 @@
 # GMP_INCLUDE_DIR - The GMP include directory
 # GMP_LIBRARIES - Libraries needed to use GMP
 
-#if (GMP_INCLUDE_DIR AND GMP_LIBRARIES)
-  # Force search at every time, in case configuration changes
-#  unset(GMP_INCLUDE_DIR CACHE)
-#  unset(GMP_LIBRARIES CACHE)
-#endif (GMP_INCLUDE_DIR AND GMP_LIBRARIES)
+include(LibFindMacros)
 
-find_path(GMP_INCLUDE_DIR NAMES gmpxx.h)
+# Force search at every time, in case configuration changes
+unset(GMP_INCLUDE_DIR CACHE)
+unset(GMP_LIBRARY CACHE)
+unset(GMP_LIBRARIES CACHE)
+libfind_include(gmpxx.h gmp)
 
 set(GMP_FIND_VERSION_MAJOR 6)
 set(GMP_FIND_VERSION_MINOR 1)
@@ -82,14 +82,14 @@ if(NOT DEFINED ${GMP_INCLUDE_DIR})
   endif()
 endif()
 
-if(STBIN)
-  find_library(GMP_LIBRARIES NAMES libgmp.a gmp)
-else(STBIN)
-  find_library(GMP_LIBRARIES NAMES libgmp.so gmp)
-endif(STBIN)
+libfind_library(gmp gmp)
 
-if(NOT DEFINED ${GMP_INCLUDE_DIR} AND NOT DEFINED ${GMP_LIBRARIES})
+set(GMP_LIBRARIES ${GMP_LIBRARY})
+
+if(NOT ${GMP_INCLUDE_DIR} STREQUAL "" AND NOT ${GMP_LIBRARIES} STREQUAL "")
   set(GMP_FOUND "TRUE")
+  else()
+  set(GMP_FOUND "FALSE")
 endif()
 
 if(GMP_FOUND STREQUAL "TRUE" AND GMP_VERSION_OK STREQUAL "TRUE")
@@ -98,6 +98,7 @@ if(GMP_FOUND STREQUAL "TRUE" AND GMP_VERSION_OK STREQUAL "TRUE")
 elseif(GMP_FOUND STREQUAL "FALSE")
   # Force search at every time, in case configuration changes
   unset(GMP_INCLUDE_DIR CACHE)
+  unset(GMP_LIBRARY CACHE)
   unset(GMP_LIBRARIES CACHE)
 
   message(FATAL_ERROR "GMP not found")
@@ -105,6 +106,7 @@ else()
   # Force search at every time, in case configuration changes
   set(DUMMY ${GMP_INCLUDE_DIR})
   unset(GMP_INCLUDE_DIR CACHE)
+  unset(GMP_LIBRARY CACHE)
   unset(GMP_LIBRARIES CACHE)
 
   message(FATAL_ERROR "GMP version ${GMP_VERSION} found in ${DUMMY}, "

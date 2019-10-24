@@ -1,5 +1,11 @@
 include(LibFindMacros)
 
+# Force search at every time, in case configuration changes
+unset(FLINT_LIBRARIES CACHE)
+unset(FLINT_INCLUDE_DIRS CACHE)
+unset(FLINT_LIBRARY CACHE)
+unset(FLINT_INCLUDE_DIR CACHE)
+
 libfind_include(flint/flint.h flint)
 libfind_library(flint flint)
 
