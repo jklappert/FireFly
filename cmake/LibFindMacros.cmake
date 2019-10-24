@@ -26,10 +26,15 @@ function (libfind_library libname pkg)
     string(TOUPPER ${pkg} PKG)
     string(TOUPPER ${libname} LIBNAME)
 
-    find_library(${LIBNAME}_LIBRARY
-        NAMES
-            ${libname}
-    )
+    if(DEFINED ENV{LD_LIBRARY_PATH})
+      string(REPLACE ":" ";" TMP_LIBRARY_DIRS $ENV{LD_LIBRARY_PATH})
+      find_library(${LIBNAME}_LIBRARY NAMES ${libname} PATHS ${TMP_LIBRARY_DIRS} NO_DEFAULT_PATH)
+      if(${LIBNAME}_LIBRARY STREQUAL "${LIBNAME}_LIBRARY-NOTFOUND")
+        find_library(${LIBNAME}_LIBRARY NAMES ${libname})
+      endif()
+    else()
+      find_library(${LIBNAME}_LIBRARY NAMES ${libname})
+    endif()
 
     if (NOT TARGET ${libname})
         add_library(${libname} UNKNOWN IMPORTED)
@@ -39,9 +44,23 @@ endfunction()
 
 function (libfind_include HEADER pkg)
     string(TOUPPER ${pkg} PKG)
+    if(DEFINED ENV{CPATH})
+      #Check for all paths in CPATH
+      string(REPLACE ":" ";" TMP_INCLUDE_DIRS $ENV{CPATH})
+      find_path(${PKG}_INCLUDE_DIR NAMES ${HEADER} PATHS ${TMP_INCLUDE_DIRS} NO_DEFAULT_PATH)
 
-    find_path(${PKG}_INCLUDE_DIR
-        NAMES
-            ${HEADER}
-    )
+      #If not found, append "/include" and try again
+      if(${PKG}_INCLUDE_DIR STREQUAL "${PKG}_INCLUDE_DIR-NOTFOUND")
+        string(REPLACE ":" "/include;" TMP_INCLUDE_DIRS $ENV{CPATH})
+        find_path(${PKG}_INCLUDE_DIR NAMES ${HEADER} PATHS ${TMP_INCLUDE_DIRS} NO_DEFAULT_PATH)
+      endif()
+
+      #Still not found, check default directories
+      if(${PKG}_INCLUDE_DIR STREQUAL "${PKG}_INCLUDE_DIR-NOTFOUND")
+        find_path(${PKG}_INCLUDE_DIR NAMES ${HEADER})
+      endif()
+
+    else()
+      find_path(${PKG}_INCLUDE_DIR NAMES ${HEADER})
+    endif()
 endfunction()

@@ -34,9 +34,6 @@
 include(LibFindMacros)
 
 # Force search at every time, in case configuration changes
-unset(GMP_INCLUDE_DIR CACHE)
-unset(GMP_LIBRARY CACHE)
-unset(GMP_LIBRARIES CACHE)
 libfind_include(gmpxx.h gmp)
 
 set(GMP_FIND_VERSION_MAJOR 6)
@@ -97,11 +94,18 @@ if(GMP_FOUND STREQUAL "TRUE" AND GMP_VERSION_OK STREQUAL "TRUE")
   message(STATUS "GMP library: ${GMP_LIBRARIES}")
 elseif(GMP_FOUND STREQUAL "FALSE")
   # Force search at every time, in case configuration changes
+  if(${GMP_INCLUDE_DIR} STREQUAL "")
+    set(DUMMY "GMP_INCLUDE_DIR")
+  endif()
+  if(${GMP_INCLUDE_DIR} STREQUAL "")
+    set(DUMMY "${DUMMY}, ${GMP_LIBRARIES}")
+  endif()
+
   unset(GMP_INCLUDE_DIR CACHE)
   unset(GMP_LIBRARY CACHE)
   unset(GMP_LIBRARIES CACHE)
 
-  message(FATAL_ERROR "GMP not found")
+  message(FATAL_ERROR "GMP not found (missing: ${DUMMY})")
 else()
   # Force search at every time, in case configuration changes
   set(DUMMY ${GMP_INCLUDE_DIR})
