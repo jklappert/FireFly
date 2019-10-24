@@ -66,8 +66,8 @@ if("${CUSTOM}" STREQUAL true)
   set(PREPROCESSOR_FLAGS "-DCUSTOM")
 elseif("${WITH_FLINT}" STREQUAL true)
   find_package(FLINT REQUIRED)
-  include_directories(${FLINT_INCLUDE_DIR}/flint)
-  set(PKG_INCLUDE ${PKG_INCLUDE} -I${FLINT_INCLUDE_DIR}/flint)
+  include_directories(${FLINT_INCLUDE_DIR})
+  set(PKG_INCLUDE ${PKG_INCLUDE} -I${FLINT_INCLUDE_DIR})
   add_definitions(-DFLINT)
   set(PREPROCESSOR_FLAGS "-DFLINT")
 else()
@@ -119,6 +119,7 @@ if("${WITH_MPI}" STREQUAL "true")
 endif()
 
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
+set(INCLUDE_INSTALL_DIR_2 "${CMAKE_INSTALL_PREFIX}/include")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
 configure_file (

@@ -20,7 +20,7 @@ FireFly requires:
 * C++ compiler supporting C++11
 * [CMake](https://cmake.org/) >= 3.1
 * [FLINT](http://www.flintlib.org/) >= 2.5 (optional)
-* [GMP](https://gmplib.org/) >= 6.1.2
+* [GMP](https://gmplib.org/) >= 6.1.2 (installed with --enable-cxx)
 * [zlib](https://www.zlib.net/) >= 1.2.11
 
 #####  Third party code
