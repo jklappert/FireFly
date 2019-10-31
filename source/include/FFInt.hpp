@@ -35,7 +35,7 @@ namespace firefly {
      *    A constructor
      *    @param n_ an integer which is a member of the finite field
      */
-    template<typename T>
+    template<class T, typename=typename std::enable_if<(std::is_enum<T>::value || std::is_integral<T>::value)>::type>
     FFInt(const T n_);
     /**
      *    A constructor
@@ -93,8 +93,8 @@ namespace firefly {
   FFInt pow(const FFInt& ffint, const FFInt& power);
   std::ostream& operator<<(std::ostream& out, const FFInt& ffint);
 
-  template<typename T>
-  inline FFInt::FFInt(const T n_) {
+  template<typename T, typename>
+  FFInt::FFInt(const T n_) {
     if (n_ >= 0) {
       if (static_cast<uint64_t>(n_) < p) {
         n = static_cast<uint64_t>(n_);
