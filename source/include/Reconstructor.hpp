@@ -18,66 +18,34 @@
 
 #pragma once
 
+#include "BlackBoxBase.hpp"
+#include "FFIntVec.hpp"
+#include "gzstream.hpp"
+#include "ParserUtils.hpp"
 #include "RatReconst.hpp"
+#include "ReconstHelper.hpp"
 #include "ThreadPool.hpp"
+#include "tinydir.h"
+#include "utils.hpp"
+#include "version.hpp"
+
+#if WITH_MPI
+#include "MPIWorker.hpp"
+#endif
 
 #include <chrono>
 #include <tuple>
+#include <sys/stat.h>
 
 namespace firefly {
-  /**
-   * @class BlackBoxBase
-   * @brief The base class of the black box
-   */
-  class BlackBoxBase {
-  public:
-    /**
-     *  A constructor for the BlackBoxBase class
-     */
-    BlackBoxBase() {}
-    /**
-     *  A destructor for the BlackBoxBase class
-     */
-    virtual ~BlackBoxBase() {}
-    /**
-     *  The evaluation of the black box. This function is called from Reconstructor.
-     *  @param values The values to be inserted for the variables
-     *  @return The result vector
-     */
-    virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) = 0;
-    /**
-     *  The evaluation of the black box in bunches. This function is called from Reconstructor.
-     *  @param values_vec A vector (bunch) which holds several variable tuples at which the black box should be evaluated.
-     *  @return The bunched result vector.
-     */
-    virtual std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>>& values_vec) {
-      std::vector<std::vector<FFInt>> results_vec;
-      results_vec.reserve(values_vec.size());
-
-      for (const auto & values : values_vec) {
-        results_vec.emplace_back(operator()(values));
-      }
-
-      return results_vec;
-    }
-    /**
-     *  Update internal variables of the black box when the prime field changes.
-     *  This function is called from Reconstructor.
-     */
-    virtual void prime_changed() {}
-  };
-
   typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
   typedef std::list<RatReconst_tuple> RatReconst_list;
-  typedef std::future<std::pair<std::vector<FFInt>, double>> probe_future;
-  typedef std::list<std::tuple<FFInt, std::vector<uint32_t>, probe_future>> future_list;
-  typedef std::future<std::pair<std::vector<std::vector<FFInt>>, double>> probe_future_bunch;
-  typedef std::list<std::tuple<std::vector<FFInt>, std::vector<uint32_t>, probe_future_bunch>> future_list_bunch;
 
   /**
    * @class Reconstructor
    * @brief A class to reconstruct functions from its values
    */
+  template<typename BlackBoxTemp>
   class Reconstructor {
   public:
     /**
@@ -87,7 +55,7 @@ namespace firefly {
      *  @param bb_ An instance of a BlackBoxBase class
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
-    Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase& bb_, int verbosity_ = IMPORTANT);
+    Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase<BlackBoxTemp>& bb_, int verbosity_ = IMPORTANT);
     /**
      *  A constructor for the Reconstructor class
      *  @param n_ the number of parameters
@@ -96,7 +64,7 @@ namespace firefly {
      *  @param bb_ An instance of a BlackBoxBase class
      *  @param verbosity_ the verbosity level which can be chosen as SILENT (no output), IMPORTANT (only important output), and CHATTY (everything)
      */
-    Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase& bb_, int verbosity_ = IMPORTANT);
+    Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase<BlackBoxTemp>& bb_, int verbosity_ = IMPORTANT);
     /**
      *  A destructor for the Reconstructor class
      */
@@ -154,14 +122,14 @@ namespace firefly {
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     std::chrono::high_resolution_clock::time_point prime_start = std::chrono::high_resolution_clock::now();
     std::chrono::high_resolution_clock::time_point last_print_time = std::chrono::high_resolution_clock::now();
-    uint32_t n;
-    uint32_t thr_n;
-    uint32_t bunch_size = 1;
+    const uint32_t n;
+    uint32_t thr_n; // TODO make const also in MPI
+    const uint32_t bunch_size = 1;
     uint32_t prime_it = 0;
     uint32_t total_iterations = 0;
     uint32_t iteration = 0;
     uint32_t probes_queued = 0;
-    uint32_t probes_finished = 0;
+    uint32_t probes_finished = 0; // TODO not required anymore?
     uint32_t fed_ones = 0;
     uint32_t probes_for_next_prime = 0;
     uint32_t items = 0;
@@ -169,8 +137,9 @@ namespace firefly {
     uint32_t items_new_prime = 0;
     uint32_t feed_jobs = 0;
     uint32_t interpolate_jobs = 0;
-    BlackBoxBase& bb;
-    int verbosity;
+    uint64_t ind = 0;
+    BlackBoxBase<BlackBoxTemp>& bb;
+    const int verbosity;
     double average_black_box_time = 0;
     double bunch_time;
     std::atomic<bool> scan = {false};
@@ -196,11 +165,9 @@ namespace firefly {
     std::mutex chosen_mutex;
     std::condition_variable condition_future;
     std::condition_variable condition_feed;
-    // list containing the parameters and the future of the parallel tasks; t, zi_order, future
-    future_list probes;
-    std::queue<future_list::iterator> finished_probes_it;
-    future_list_bunch probes_bunch;
-    std::queue<future_list_bunch::iterator> finished_probes_bunch_it;
+    std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
+    std::deque<std::pair<uint64_t, std::vector<FFInt>>> requested_probes;
+    std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>> computed_probes;
     std::vector<uint32_t> bunch_zi_order;
     std::vector<FFInt> bunch_t;
     std::vector<std::vector<FFInt>> bunch;
@@ -233,14 +200,16 @@ namespace firefly {
      * @param probe is set to point to a probe from probes, probes_bunch, or bunch
      * @param time is set to the time of the returned probe
      */
-    void get_probe(FFInt& t, std::vector<uint32_t>& zi_order, std::vector<FFInt>* probe, double& time);
+    // TODO
+    void get_probe(std::vector<uint64_t>& indices, std::vector<std::vector<FFInt>>& probes);
     /**
      *  Feeds the reconstruction objects
      *  @param zi_order the order at which the black box was probed
      *  @param t the value of the homogenization variable t
      *  @param probe a vector of black box probes in an immutable order
      */
-    void feed_job(const std::vector<uint32_t> zi_order, const FFInt t, std::vector<FFInt>* probe);
+    // TODO
+    void feed_job(const std::vector<uint64_t>& indices, const std::vector<std::vector<FFInt>>& probes);
     /**
      *  Interpolates a RatReconst and queues new jobs if required
      *  @param rec a reference to the RatReconst
@@ -250,27 +219,2572 @@ namespace firefly {
      *  Removes all RatReconst from reconst which are flagged as DELETE
      */
     void clean_reconst();
-#ifdef WITH_MPI
-    int world_size;
-    double tmp_average_black_box_time = 0.;
-    uint32_t total_thread_count = 0;
-    uint32_t tmp_total_iterations = 0;
-    uint64_t ind = 0;
-    bool proceed = false;
-    std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
-    std::unordered_map<int, uint64_t> nodes;
-    std::queue<std::pair<int, uint64_t>> empty_nodes;
-    std::condition_variable cond_val;
-    std::atomic<bool> new_jobs = {false};
-    std::queue<std::vector<uint64_t>> value_queue;
-    std::queue<std::pair<uint64_t, std::vector<FFInt>>> results_queue;
     /**
      *  TODO
      */
     void get_a_job();
+    /**
+     *  TODO
+     */
+    template<uint32_t N>
+    void start_new_job();
+#if WITH_MPI
+    int world_size;
+    double tmp_average_black_box_time = 0.;
+    uint32_t total_thread_count = 0;
+    uint32_t tmp_total_iterations = 0;
+    bool proceed = false;
+    std::unordered_map<int, uint64_t> nodes;
+    std::queue<std::pair<int, uint64_t>> empty_nodes;
+    std::condition_variable cond_val;
+    std::atomic<bool> new_jobs = {false};
+    /**
+     *  TODO
+     */
     void mpi_setup();
     void send_first_jobs();
     void mpi_communicate();
 #endif
   };
+
+  template<typename BlackBoxTemp>
+  Reconstructor<BlackBoxTemp>::Reconstructor(uint32_t n_, uint32_t thr_n_, BlackBoxBase<BlackBoxTemp>& bb_,
+                               int verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
+    FFInt::set_new_prime(primes()[prime_it]);
+    uint64_t seed = static_cast<uint64_t>(std::time(0));
+    BaseReconst().set_seed(seed);
+    tmp_rec = RatReconst(n);
+
+#if WITH_MPI
+    --thr_n;
+    total_thread_count = thr_n;
+#endif
+
+    if (verbosity > SILENT) {
+      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "."
+                << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
+      INFO_MSG("Launching " << thr_n << " thread(s) with bunch size 1");
+      INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  Reconstructor<BlackBoxTemp>::Reconstructor(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_,
+                               BlackBoxBase<BlackBoxTemp>& bb_, int verbosity_): n(n_), thr_n(thr_n_), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
+    FFInt::set_new_prime(primes()[prime_it]);
+    uint64_t seed = static_cast<uint64_t>(std::time(0));
+    BaseReconst().set_seed(seed);
+    tmp_rec = RatReconst(n);
+
+#if WITH_MPI
+    --thr_n;
+    total_thread_count = thr_n;
+#endif
+
+    if (verbosity > SILENT) {
+      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "."
+                << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
+      INFO_MSG("Launching " << thr_n << " thread(s) with bunch size " + std::to_string(bunch_size_));
+      INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  Reconstructor<BlackBoxTemp>::~Reconstructor() {
+    tp.kill_all();
+
+    auto it = reconst.begin();
+
+    while (it != reconst.end()) {
+      if (std::get<2>(*it) == DELETED) {
+        // delete mutex
+        delete std::get<1>(*it);
+
+        // remove from list
+        it = reconst.erase(it);
+      } else {
+        // delete mutex
+        delete std::get<1>(*it);
+
+        // delete RatReconst
+        delete std::get<3>(*it);
+
+        // remove from list
+        it = reconst.erase(it);
+      }
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::enable_scan() {
+    if (n == 1) {
+      WARNING_MSG("Scan disabled for a univariate rational function.");
+    } else {
+      scan = true;
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::set_tags() {
+    save_states = true;
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::set_tags(const std::vector<std::string>& tags_) {
+    save_states = true;
+    tags = tags_;
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::resume_from_saved_state() {
+    tinydir_dir dir;
+    tinydir_open_sorted(&dir, "ff_save/states");
+
+    std::vector<std::string> files;
+    std::vector<std::string> paths;
+
+    for (size_t i = 0; i != dir.n_files; ++i) {
+      tinydir_file file;
+      tinydir_readfile_n(&dir, &file, i);
+
+      if (!file.is_dir) {
+        files.emplace_back(file.name);
+      }
+    }
+
+    tinydir_close(&dir);
+
+    std::sort(files.begin(), files.end(), [](const std::string & l, const std::string & r) {
+      return std::stoi(l.substr(0, l.find("_"))) < std::stoi(r.substr(0, r.find("_")));
+    });
+
+    for (const auto & file : files) {
+      paths.emplace_back("ff_save/states/" + file);
+    }
+
+    if (paths.size() != 0) {
+      resume_from_saved_state(paths);
+    } else {
+      save_states = true;
+      WARNING_MSG("Directory './ff_save' does not exist or has no content");
+      INFO_MSG("Starting new reconstruction and saving states");
+      return;
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::resume_from_saved_state(const std::vector<std::string>& file_paths_) {
+    if (verbosity > SILENT) {
+      INFO_MSG("Loading saved states");
+    }
+
+    set_anchor_points = false;
+
+    std::ifstream v_file;
+    igzstream validation_file;
+    validation_file.open("ff_save/validation.gz");
+    v_file.open("ff_save/validation.gz");
+    std::string line;
+
+    if (v_file.is_open()) {
+      std::getline(validation_file, line);
+      std::vector<FFInt> values = parse_vector_FFInt(line);
+
+      std::vector<FFInt> result = bb.eval(values);
+      size_t counter = 0;
+
+      while (std::getline(validation_file, line)) {
+        if (std::stoul(line) != result[counter]) {
+          ERROR_MSG("Validation failed: Entry " + std::to_string(counter) + " does not match the black-box result!");
+          std::exit(EXIT_FAILURE);
+        }
+
+        ++counter;
+      }
+
+      if (counter != result.size()) {
+        ERROR_MSG("Validation failed: Number of entries does not match the black box!");
+        std::exit(EXIT_FAILURE);
+      }
+    } else {
+      ERROR_MSG("Validation file not found!");
+      std::exit(EXIT_FAILURE);
+    }
+
+    v_file.close();
+    validation_file.close();
+
+    save_states = true;
+    resume_from_state = true;
+    file_paths = file_paths_;
+    items = static_cast<uint32_t>(file_paths.size());
+    prime_it = 200; // increase so that the minimum is the mininmum of the files
+
+    for (uint32_t i = 0; i != items; ++i) {
+      prime_it = std::min(prime_it, parse_prime_number(file_paths[i]));
+    }
+
+    FFInt::set_new_prime(primes()[prime_it]);
+
+    tmp_rec.start_from_saved_file(file_paths[0]);
+
+    // Get probe files
+    tinydir_dir dir;
+    tinydir_open_sorted(&dir, "ff_save/probes");
+
+    std::vector<std::string> files;
+    std::vector<std::string> probe_files;
+
+    for (size_t i = 0; i != dir.n_files; ++i) {
+      tinydir_file file;
+      tinydir_readfile_n(&dir, &file, i);
+
+      if (!file.is_dir) {
+        files.emplace_back(file.name);
+      }
+    }
+
+    tinydir_close(&dir);
+
+    std::sort(files.begin(), files.end(), [](const std::string & l, const std::string & r) {
+      return std::stoi(l.substr(0, l.find("_"))) < std::stoi(r.substr(0, r.find("_")));
+    });
+
+    for (const auto & file : files) {
+      probe_files.emplace_back("ff_save/probes/" + file);
+    }
+
+    if (probe_files.size() != items) {
+      ERROR_MSG("Mismatch in number of probe files");
+      std::exit(EXIT_FAILURE);
+    }
+
+    for (uint32_t i = 0; i != items; ++i) {
+      RatReconst* rec = new RatReconst(n);
+      /*std::pair<bool, uint32_t> shift_prime = */rec->start_from_saved_file(file_paths[i]);
+
+      // Fill in already used ts from prior run
+      auto tmp = rec->read_in_probes(probe_files[i]);
+
+      for (const auto & already_chosen_t : tmp) {
+        if (chosen_t.find(already_chosen_t.first) != chosen_t.end()) {
+          auto set = chosen_t[already_chosen_t.first];
+
+          for (const auto & ts : already_chosen_t.second) {
+            if (set.find(ts) == set.end()) {
+              set.emplace(ts);
+            }
+          }
+
+          chosen_t[already_chosen_t.first] = set;
+        } else {
+          chosen_t.emplace(std::make_pair(already_chosen_t.first, already_chosen_t.second));
+        }
+      }
+
+      if (safe_mode)
+        rec->set_safe_interpolation();
+
+      rec->set_tag(std::to_string(i));
+
+      if (rec->is_done()) {
+        ++items_done;
+        std::mutex* mut = new std::mutex;
+
+        reconst.emplace_back(std::make_tuple(i, mut, DONE, rec));
+      } else {
+        if (rec->is_new_prime()) {
+          probes_for_next_prime = std::max(probes_for_next_prime, rec->get_num_eqn());
+          ++items_new_prime;
+
+          if (rec->get_prime() != prime_it + 1) {
+            set_anchor_points = true;
+          }
+        }
+
+        std::mutex* mut = new std::mutex;
+
+        reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
+      }
+    }
+
+    if (prime_it == 0 && items != items_new_prime + items_done) {
+      set_anchor_points = false;
+      std::ifstream anchor_point_file;
+      anchor_point_file.open("ff_save/anchor_points");
+
+      if (anchor_point_file.is_open()) {
+        std::getline(anchor_point_file, line);
+        tmp_rec.set_anchor_points(parse_vector_FFInt(line, static_cast<int>(n)));
+      } else {
+        ERROR_MSG("Anchor point file not found!");
+        std::exit(EXIT_FAILURE);
+      }
+
+      anchor_point_file.close();
+
+      std::ifstream shift_file;
+      shift_file.open("ff_save/shift");
+
+      if (shift_file.is_open()) {
+        std::getline(shift_file, line);
+        tmp_rec.set_shift(parse_vector_FFInt(line, static_cast<int>(n)));
+        shift = tmp_rec.get_zi_shift_vec();
+      } else {
+        ERROR_MSG("Shift file not found!");
+        std::exit(EXIT_FAILURE);
+      }
+    }
+
+    if (safe_mode) {
+      scan = false;
+    }
+
+    if (scan) {
+      if (prime_it == 0 && items_new_prime != items) {
+        std::ifstream file;
+        file.open("ff_save/scan");
+
+        if (file.is_open()) {
+          scan = false;
+        } else {
+          ERROR_MSG("Cannot resume from saved state because the scan was not completed.");
+          ERROR_MSG("Please remove the directory 'ff_save' and start from the beginning.");
+          std::exit(EXIT_FAILURE);
+        }
+
+        file.close();
+      } else {
+        scan = false;
+      }
+    }
+
+    if (verbosity > SILENT) {
+      INFO_MSG("All files loaded | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
+               " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::set_safe_interpolation() {
+    safe_mode = true;
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::reconstruct() {
+    start = std::chrono::high_resolution_clock::now();
+
+    done = false;
+
+#if WITH_MPI
+    //mpi_setup(); // TODO set prime when it is know which prime it is!
+    ThreadPool tp_comm(1);
+    tp_comm.run_priority_task([this]() {
+      {
+        std::unique_lock<std::mutex> lock(mutex_probe_queue);
+
+        while (!new_jobs) {
+          cond_val.wait(lock);
+        }
+
+        proceed = true;
+
+        cond_val.notify_one();
+
+        if (requested_probes.empty()) {
+          new_jobs = false;
+        }
+      }
+
+      mpi_communicate();
+    });
+#endif
+
+    if (!resume_from_state) {
+      if (verbosity > SILENT) {
+        std::cout << "\n";
+        INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
+      }
+
+      if (safe_mode) {
+        tmp_rec.set_safe_interpolation();
+
+        if (scan) {
+          WARNING_MSG("Disabled shift scan in safe mode!");
+          scan = false;
+        }
+      }
+
+      if (scan) {
+        scan_for_shift();
+
+#if !WITH_MPI
+        uint32_t to_start = thr_n ;//* bunch_size; // TODO
+#else
+        uint32_t to_start = buffer * total_thread_count * bunch_size; // TODO: start even more?
+#endif
+
+        start_probe_jobs(std::vector<uint32_t> (n - 1, 1), to_start);
+        started_probes.emplace(std::vector<uint32_t> (n - 1, 1), to_start);
+
+#if WITH_MPI
+        cond_val.notify_one();
+
+        {
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          while (!proceed) {
+            cond_val.wait(lock_probe_queue);
+          }
+
+          proceed = false;
+        }
+
+#endif
+        for (uint32_t i = 0; i != thr_n; ++i) { // TODO MPI: buffer *
+          get_a_job();
+        }
+      } else {
+        start_first_runs();
+      }
+    } else {
+      scan = false;
+
+      if (items_done == items) {
+        done = true;
+      }
+    }
+
+    if (!done) {
+      if (save_states && !set_anchor_points) {
+        std::string tmp_str = "";
+        std::ofstream file;
+        file.open("ff_save/shift");
+        tmp_str = "";
+
+        for (const auto & el : tmp_rec.get_zi_shift_vec()) {
+          tmp_str += std::to_string(el.n) + " ";
+        }
+
+        tmp_str += std::string("\n");
+        file << tmp_str;
+        file.close();
+      }
+
+      run_until_done();
+    }
+#if WITH_MPI
+    else {
+      mpi_setup();
+
+      {
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        new_jobs = true;
+
+        cond_val.notify_one();
+
+        while (!proceed) {
+          cond_val.wait(lock_probe_queue);
+        }
+
+        proceed = false;
+      }
+    }
+#endif
+
+    tp.kill_all();
+
+    if (verbosity > SILENT) {
+      if (one_done || one_new_prime) {
+        INFO_MSG("Probe: " + std::to_string(iteration) +
+                 " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
+                 " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done) + "\n");
+      }
+
+      INFO_MSG("Completed reconstruction in " +
+               std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count()) + " s | " + std::to_string(total_iterations) + " probes in total");
+      INFO_MSG("Needed prime fields: " + std::to_string(prime_it) + " + 1");
+      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  std::vector<RationalFunction> Reconstructor<BlackBoxTemp>::get_result() {
+    std::vector<RationalFunction> result {};
+
+    for (auto & rec : reconst) {
+      if (std::get<2>(rec) == DONE) {
+        result.emplace_back(std::get<3>(rec)->get_result());
+      }
+    }
+
+    return result;
+  }
+
+  template<typename BlackBoxTemp>
+  std::vector<std::pair<std::string, RationalFunction>> Reconstructor<BlackBoxTemp>::get_early_results() {
+    if (scan) {
+      return std::vector<std::pair<std::string, RationalFunction>> {};
+    }
+
+    std::unique_lock<std::mutex> lock_clean(clean);
+
+    std::vector<std::pair<std::string, RationalFunction>> result;
+
+    for (auto & rec : reconst) {
+      std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
+
+      if (std::get<2>(rec) == DONE) {
+        if (save_states) {
+          result.emplace_back(std::make_pair(std::get<3>(rec)->get_tag_name(), std::get<3>(rec)->get_result()));
+        } else {
+          result.emplace_back(std::make_pair(std::to_string(std::get<0>(rec)), std::get<3>(rec)->get_result()));
+        }
+
+        std::get<2>(rec) = DELETED;
+        delete std::get<3>(rec);
+      }
+    }
+
+    return result;
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::scan_for_shift() {
+    if (verbosity > SILENT)
+      INFO_MSG("Scanning for a sparse shift");
+
+    // Generate all possible combinations of shifting variables
+    const auto shift_vec = generate_possible_shifts(n);
+
+    bool first = true;
+    bool found_shift = false;
+    uint32_t counter = 0;
+    uint32_t bound = static_cast<uint32_t>(shift_vec.size());
+
+    tmp_rec.scan_for_sparsest_shift();
+
+    start_first_runs();
+
+    uint32_t max_deg_num = 0;
+    uint32_t max_deg_den = 0;
+
+    // Run this loop until a proper shift is found
+    while (!found_shift && counter != bound) {
+      if (!first) {
+        tmp_rec.set_zi_shift(shift_vec[counter]);
+        shift = tmp_rec.get_zi_shift_vec();
+
+#if !WITH_MPI
+        uint32_t to_start = thr_n ;//* bunch_size; // TODO
+#else
+        uint32_t to_start = buffer * total_thread_count * bunch_size; // TODO: start even more?
+#endif
+
+        start_probe_jobs(std::vector<uint32_t> (n - 1, 1), to_start);
+        started_probes.emplace(std::vector<uint32_t> (n - 1, 1), to_start);
+
+#if WITH_MPI
+        cond_val.notify_one();
+
+        {
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          while (!proceed) {
+            cond_val.wait(lock_probe_queue);
+          }
+
+          proceed = false;
+        }
+#endif
+
+        for (uint32_t i = 0; i != thr_n; ++i) { // TODO MPI: buffer *
+          get_a_job();
+        }
+      }
+
+      run_until_done();
+
+#if WITH_MPI
+      {
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+        new_jobs = false;
+
+        while (!proceed) {
+          cond_val.wait(lock_probe_queue);
+        }
+
+        proceed = false;
+      }
+#endif
+
+      // Kill all jobs
+      // otherwise it can happen that a RatReconst is fed with old data
+      tp.kill_all();
+
+      found_shift = true;
+
+      for (auto & rec : reconst) {
+        std::get<2>(rec) = RECONSTRUCTING;
+
+        if (!(std::get<3>(rec)->is_shift_working())) {
+          found_shift = false;
+        }
+
+        if (first) {
+          std::pair<uint32_t, uint32_t> degs = std::get<3>(rec)->get_max_deg();
+
+          max_deg_num = std::max(max_deg_num, degs.first);
+          max_deg_den = std::max(max_deg_den, degs.second);
+        }
+      }
+
+      if (first) {
+        found_shift = false;
+        first = false;
+
+        if (verbosity > SILENT) {
+          INFO_MSG("Maximal degree of numerator: " + std::to_string(max_deg_num) + " | Maximal degree of denominator: " + std::to_string(max_deg_den));
+        }
+      } else {
+        ++counter;
+      }
+
+      probes_finished = 0;
+      probes_queued = 0;
+      started_probes.clear();
+      //std::cout << "clear 1\n";
+      index_map.clear();
+      ind = 0;
+      fed_ones = 0;
+      feed_jobs = 0;
+      interpolate_jobs = 0;
+      iteration = 0;
+      items_done = 0;
+      done = false;
+
+      // TODO mutex required here?
+      requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+      computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
+    }
+
+    if (found_shift) {
+      tmp_rec.set_zi_shift(shift_vec[counter - 1]);
+    } else {
+      tmp_rec.set_zi_shift(std::vector<uint32_t> (n, 1));
+    }
+
+    shift = tmp_rec.get_zi_shift_vec();
+
+    for (auto & rec : reconst) {
+      std::get<2>(rec) = RECONSTRUCTING;
+      std::get<3>(rec)->accept_shift();
+    }
+
+    scan = false;
+
+    if (save_states == true) {
+      std::ofstream file;
+      file.open("ff_save/scan");
+      file.close();
+    }
+
+    if (verbosity > SILENT) {
+      if (found_shift) {
+        std::string msg = "";
+
+        for (const auto & el : shift_vec[counter - 1]) {
+          msg += std::to_string(el) + ", ";
+        }
+
+        msg = msg.substr(0, msg.size() - 2);
+        INFO_MSG("Found a sparse shift after " + std::to_string(counter + 1) + " scans");
+        INFO_MSG("Shift the variable tuple (" + msg + ")");
+      } else {
+        INFO_MSG("Found no sparse shift after " + std::to_string(counter + 1) + " scans");
+      }
+
+      INFO_MSG("Completed scan in " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
+               " s | " + std::to_string(total_iterations) + " probes in total");
+      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
+      INFO_MSG("Proceeding with interpolation over prime field F(" + std::to_string(primes()[prime_it]) + ")");
+    }
+
+    prime_start = std::chrono::high_resolution_clock::now();
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::start_first_runs() {
+    prime_start = std::chrono::high_resolution_clock::now();
+    shift = tmp_rec.get_zi_shift_vec();
+    std::vector<uint32_t> zi_order(n - 1, 1);
+
+#if !WITH_MPI
+    uint32_t to_start = thr_n ;//* bunch_size;
+
+    start_probe_jobs(zi_order, to_start);
+    started_probes.emplace(zi_order, to_start);
+
+    for (uint32_t i = 0; i != thr_n; ++i) { // TODO MPI: buffer *
+      get_a_job();
+    }
+#else
+    send_first_jobs();
+#endif
+
+// TODO queue them?
+#if WITH_MPI
+    ++started_probes[zi_order];
+
+    std::vector<FFIntVec<1>> values(n);
+    FFInt t = 1;
+
+    // check if t was already used for this zi_order
+    {
+      std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
+
+      auto it = chosen_t.find(zi_order);
+
+      if (it != chosen_t.end()) {
+        while (true) {
+          t = tmp_rec.get_rand_64();
+
+          auto itt = it->second.find(t.n);
+
+          if (itt != it->second.end()) {
+            //std::unique_lock<std::mutex> lock_print(print_control);
+
+            //WARNING_MSG("Found a duplicate of t, choosing a new one");
+          } else {
+            it->second.emplace(t.n);
+            break;
+          }
+        }
+      } else {
+        t = tmp_rec.get_rand_64();
+        chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
+      }
+    }
+
+    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
+
+    values[0] = t + shift[0];
+
+    for (uint32_t i = 1; i != n; ++i) {
+      values[i] = rand_zi[i - 1] * t + shift[i];
+    }
+
+    auto time0 = std::chrono::high_resolution_clock::now();
+    std::vector<FFIntVec<1>> probe = bb.eval(values);
+    auto time1 = std::chrono::high_resolution_clock::now();
+    average_black_box_time = std::chrono::duration<double>(time1 - time0).count();
+
+    std::vector<std::vector<FFInt>> probes = std::vector<std::vector<FFInt>>(probe.size(), std::vector<FFInt>(1, 0));
+    //probes.reserve(probe.size());
+
+    for (size_t i = 0; i != probe.size(); ++i) {
+      std::move(probe[i].begin(), probe[i].end(), probe[i].begin());
+    }
+
+    std::vector<FFInt> t_vec = std::vector<FFInt>(1, t);
+    std::vector<std::vector<uint32_t>> zi_order_vec = std::vector<std::vector<uint32_t>>(1, std::vector<uint32_t>(n - 1, 1));
+
+    ++fed_ones;
+#else
+    //get_probe(t, zi_order, probe, average_black_box_time);
+
+    std::vector<uint64_t> indices;
+    std::vector<std::vector<FFInt>> probes;
+
+    get_probe(indices, probes);
+
+    std::vector<FFInt> t_vec;
+    t_vec.reserve(indices.size());
+    std::vector<std::vector<uint32_t>> zi_order_vec;
+    zi_order_vec.reserve(indices.size());
+
+    uint32_t count_ones = 0;
+
+    // TODO only ones anyway
+    {// TODO mutex required?
+      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+      for (auto indi : indices) {
+        auto tmp = std::move(index_map.at(indi)); // TODO []
+        index_map.erase(indi);
+        t_vec.emplace_back(tmp.first);
+        zi_order_vec.emplace_back(std::move(tmp.second));
+
+        if ((prime_it == 0 || safe_mode == true) && zi_order_vec.back() == std::vector<uint32_t>(n - 1, 1)) {
+          ++count_ones;
+        }
+      }
+    }
+
+    if (count_ones != 0) {
+      std::unique_lock<std::mutex> lock_status(job_control);
+
+      fed_ones += count_ones;
+    }
+#endif
+
+    ++iteration;
+
+    if (verbosity > SILENT) {
+      INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s");
+    }
+
+    items = static_cast<uint32_t>(probes.size());
+    size_t tag_size = tags.size();
+
+#if WITH_MPI
+    ++tmp_total_iterations;
+    tmp_average_black_box_time = average_black_box_time;
+
+    {
+      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+      new_jobs = true;
+
+      cond_val.notify_one();
+
+      while (!proceed) {
+        cond_val.wait(lock_probe_queue);
+      }
+
+      proceed = false;
+    }
+
+    uint32_t to_start = buffer * thr_n ;//* bunch_size; // TODO
+
+    start_probe_jobs(zi_order, to_start);
+    started_probes[zi_order] += to_start;
+
+    for (uint32_t i = 0; i != buffer * thr_n; ++i) {
+      get_a_job();
+    }
+#endif
+
+    if (tag_size != 0 && tag_size != items) {
+      ERROR_MSG("Number of tags does not match the black box!");
+      std::exit(EXIT_FAILURE);
+    }
+
+    ogzstream file;
+
+    // TODO write to file
+    if (save_states) {
+      mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      mkdir("ff_save/states", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      mkdir("ff_save/probes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      std::ofstream anchor_file;
+      anchor_file.open("ff_save/anchor_points");
+
+      std::string tmp_str = "";
+
+      for (const auto & el : tmp_rec.get_anchor_points()) {
+        tmp_str += std::to_string(el.n) + " ";
+      }
+
+      tmp_str += std::string("\n");
+      anchor_file << tmp_str;
+      anchor_file.close();
+
+      file.open("ff_save/validation.gz");
+
+      std::vector<FFInt> rand_zi;
+      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
+
+      //file << (t + shift[0]).n << " ";
+
+      for (uint32_t i = 1; i != n; ++i) {
+        //file << (rand_zi[i - 1] * t + shift[i]).n << " ";
+      }
+
+      file << "\n";
+    }
+
+    for (uint32_t i = 0; i != items; ++i) {
+      RatReconst* rec = new RatReconst(n);
+
+      if (safe_mode) {
+        rec->set_safe_interpolation();
+      }
+
+      if (scan) {
+        rec->scan_for_sparsest_shift();
+      }
+
+      if (save_states) {
+        rec->set_tag(std::to_string(i));
+
+        if (tag_size > 0) {
+          rec->set_tag_name(tags[i]);
+        } else {
+          rec->set_tag_name(std::to_string(i));
+        }
+
+        //file << ((*probe)[i]).n << "\n";
+      }
+
+      //rec->feed(t, (*probe)[i], zi_order, prime_it);
+      rec->feed(t_vec, probes[i], zi_order_vec, prime_it);
+      std::tuple<bool, bool, uint32_t> interpolated_done_prime = rec->interpolate();
+
+      if (std::get<2>(interpolated_done_prime) > prime_it) {
+        ++items_new_prime;
+      }
+
+      std::mutex* mut = new std::mutex;
+
+      reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
+    }
+
+    if (save_states) {
+      file.close();
+      tags.clear();
+    }
+
+    //delete probe;
+
+    if (verbosity > SILENT) {
+      INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
+    }
+
+    //start_probe_jobs(zi_order, bunch_size);
+    //started_probes[zi_order] += bunch_size;
+    start_probe_jobs(zi_order, 1);
+    started_probes[zi_order] += 1;
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::run_until_done() {
+    FFInt t = 1;
+    std::vector<uint32_t> zi_order(n - 1, 1);
+
+    new_prime = false;
+
+#if WITH_MPI
+    bool mpi_first_send = false;
+#endif
+
+    if (resume_from_state) {
+      if (prime_it == 0 && items != items_new_prime + items_done) {
+        INFO_MSG("Resuming in prime field: F(" + std::to_string(primes()[prime_it]) + ")");
+
+        {
+          std::unique_lock<std::mutex> lock_status(feed_control);
+
+          interpolate_jobs += items;
+        }
+
+        uint32_t counter = 0;
+
+        for (auto & rec : reconst) {
+          if (std::get<3>(rec)->get_prime() == 0) {
+            ++counter;
+
+            tp.run_priority_task([this, &rec]() {
+              interpolate_job(rec);
+            });
+          }
+        }
+
+        {
+          std::unique_lock<std::mutex> lock_status(feed_control);
+
+          interpolate_jobs -= (items - counter);
+        }
+
+#if !WITH_MPI
+        // TODO don't start as much ones
+        start_probe_jobs(std::vector<uint32_t>(n - 1, 1), thr_n );//* bunch_size);
+        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), thr_n );//* bunch_size);
+        /*shift = tmp_rec.get_zi_shift_vec();
+
+        uint32_t to_start = thr_n * bunch_size;
+        start_probe_jobs(std::vector<uint32_t>(n - 1, 1), to_start);
+        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);*/
+#else
+        // TODO optimize
+        send_first_jobs();
+
+        {
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          new_jobs = true;
+
+          cond_val.notify_one();
+
+          while (!proceed) {
+            cond_val.wait(lock_probe_queue);
+          }
+
+          proceed = false;
+        }
+
+        uint32_t to_start = buffer * thr_n ;//* bunch_size; // TODO
+
+        start_probe_jobs(zi_order, to_start);
+        started_probes[zi_order] += to_start;
+
+#endif
+        for (uint32_t i = 0; i != thr_n; ++i) { // TODO MPI buffer *
+          get_a_job();
+        }
+      } else {
+        new_prime = true;
+#if WITH_MPI
+        proceed = true;
+        mpi_first_send = true;
+        //send_first_jobs(); // TODO sends useless jobs to prepare all variables
+
+        //{
+        //  std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        //  new_jobs = true;
+
+        //  cond_val.notify_one();
+
+        //  while (!proceed) {
+        //    cond_val.wait(lock_probe_queue);
+        //  }
+
+        //  proceed = false;
+        //} // TODO end useless
+#endif
+      }
+    }
+
+    while (!done) {
+      if (new_prime) {
+        //if (prime_it == 1) exit(-1);
+#if WITH_MPI
+        {
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+          new_jobs = false;
+
+          while (!proceed) {
+            cond_val.wait(lock_probe_queue);
+          }
+
+          proceed = false;
+        }
+#endif
+
+        tp.kill_all();
+
+        clean_reconst();
+
+        if (save_states) {
+          for (uint32_t item = 0; item != items; ++item) {
+            std::string probes_file_old = "ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz";
+            std::string probes_file_new = "ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it + 1) + ".gz";
+            std::rename(probes_file_old.c_str(), probes_file_new.c_str());
+
+            if (prime_it) {
+              std::string file_name_old = "ff_save/states/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".gz";
+              std::string file_name_new = "ff_save/states/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz";
+              std::rename(file_name_old.c_str(), file_name_new.c_str());
+            }
+          }
+        }
+
+        /*if (save_states && prime_it == 0) {
+          std::remove("ff_save/scan");
+        }*/
+
+        total_iterations += iteration;
+        ++prime_it;
+
+        if (verbosity > SILENT) {
+          std::unique_lock<std::mutex> lock_print(print_control);
+
+          if (one_done || one_new_prime) {
+            INFO_MSG("Probe: " + std::to_string(iteration) +
+                     " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
+                     " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+          }
+
+          INFO_MSG("Completed current prime field in " +
+                   std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
+                   " s | " + std::to_string(total_iterations) + " probes in total");
+          INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
+          INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
+        }
+
+        prime_start = std::chrono::high_resolution_clock::now();
+
+        iteration = 0;
+
+        fed_ones = 0;
+        probes_finished = 0;
+        probes_queued = 0;
+        started_probes.clear();
+        //std::cout << "clear 2\n";
+        index_map.clear();
+        ind = 0;
+
+        // Only reset chosen_t when not resuming from a saved state
+        if (!set_anchor_points) {
+          chosen_t.clear();
+        }
+
+        feed_jobs = 0;
+        interpolate_jobs = 0;
+        new_prime = false;
+        items_new_prime = 0;
+        one_done = false;
+        one_new_prime = false;
+
+        // TODO mutex required here?
+        requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+        computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
+
+        FFInt::set_new_prime(primes()[prime_it]);
+
+        bb.prime_changed_internal();
+
+        // if only a small constant is reconstructed it will not ask for new run
+        if (probes_for_next_prime == 0) {
+#if !WITH_MPI
+          probes_for_next_prime = thr_n ;//* bunch_size;
+#else
+          probes_for_next_prime = buffer * total_thread_count * bunch_size; // TODO start even more?
+#endif
+        }
+
+        if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && !tmp_rec.need_shift(prime_it)) {
+          if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
+            if (verbosity > SILENT)
+              INFO_MSG("Disable shift");
+
+            tmp_rec.disable_shift();
+          }
+        }
+
+        // Set anchor points and the shift to resume from saved probes
+        if (save_states && set_anchor_points) {
+          set_anchor_points = false;
+          std::string line;
+          std::ifstream anchor_point_file;
+          anchor_point_file.open("ff_save/anchor_points");
+
+          if (anchor_point_file.is_open()) {
+            std::getline(anchor_point_file, line);
+            tmp_rec.set_anchor_points(parse_vector_FFInt(line, static_cast<int>(n)));
+          } else {
+            ERROR_MSG("Anchor point file not found!");
+            std::exit(EXIT_FAILURE);
+          }
+
+          anchor_point_file.close();
+
+          std::ifstream shift_file;
+          shift_file.open("ff_save/shift");
+
+          if (shift_file.is_open()) {
+            std::getline(shift_file, line);
+            tmp_rec.set_shift(parse_vector_FFInt(line, static_cast<int>(n)));
+          } else {
+            ERROR_MSG("Shift file not found!");
+            std::exit(EXIT_FAILURE);
+          }
+
+          for (auto & rec : reconst) {
+            if (!std::get<3>(rec)->is_done() && std::get<3>(rec)->get_prime() > prime_it) {
+              ++items_new_prime;
+            }
+          }
+        } else {
+          tmp_rec.generate_anchor_points();
+        }
+
+        shift = tmp_rec.get_zi_shift_vec();
+
+        if (save_states) {
+          std::remove("ff_save/anchor_points");
+          std::ofstream file;
+          file.open("ff_save/anchor_points");
+          std::string tmp_str = "";
+
+          for (const auto & el : tmp_rec.get_anchor_points()) {
+            tmp_str += std::to_string(el.n) + " ";
+          }
+
+          tmp_str += std::string("\n");
+          file << tmp_str;
+          file.close();
+
+          std::remove("ff_save/shift");
+          file.open("ff_save/shift");
+          tmp_str = "";
+
+          for (const auto & el : tmp_rec.get_zi_shift_vec()) {
+            tmp_str += std::to_string(el.n) + " ";
+          }
+
+          tmp_str += std::string("\n");
+          file << tmp_str;
+          file.close();
+        }
+
+        // start only thr_n jobs first, because the reconstruction can be done after the first feed
+        // TODO: MPI
+#if !WITH_MPI
+        if (probes_for_next_prime > thr_n /** bunch_size*/) {
+          uint32_t to_start = thr_n /** bunch_size*/;
+#else
+        if (mpi_first_send) {
+          mpi_first_send = false;
+          send_first_jobs(); // TODO send only start
+
+          start_probe_jobs(std::vector<uint32_t>(n - 1, 1), thr_n * bunch_size);
+          started_probes[std::vector<uint32_t>(n - 1, 1)] += thr_n * bunch_size;
+
+          new_jobs = true;
+          cond_val.notify_one();
+
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          while (!proceed) {
+            cond_val.wait(lock_probe_queue);
+          }
+
+          proceed = false;
+        } else {
+        if (probes_for_next_prime > buffer * total_thread_count * bunch_size) {
+          uint32_t to_start = buffer * total_thread_count * bunch_size;
+#endif
+
+          if (verbosity == CHATTY) {
+            INFO_MSG("Starting " + std::to_string(to_start) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - to_start) + " jobs will be started later");
+          }
+
+          start_probe_jobs(std::vector<uint32_t>(n - 1, 1), to_start);
+          started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);
+        } else {
+          //uint32_t to_start = (probes_for_next_prime + bunch_size - 1) / bunch_size * bunch_size;
+          uint32_t to_start = probes_for_next_prime;
+
+          if (verbosity == CHATTY) {
+            INFO_MSG("Starting " + std::to_string(to_start) + " jobs");
+          }
+
+          start_probe_jobs(std::vector<uint32_t>(n - 1, 1), to_start);
+          started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);
+        }
+
+#if WITH_MPI
+        cond_val.notify_one();
+
+        {
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          while (!proceed) {
+            cond_val.wait(lock_probe_queue);
+          }
+
+          proceed = false;
+        }
+        }
+#endif
+
+        for (uint32_t i = 0; i != thr_n; ++i) { // TODO MPI: buffer *
+          get_a_job();
+        }
+
+        probes_for_next_prime = 0;
+      }
+
+      //if (iteration == 1000) exit(-1);
+
+      std::vector<uint64_t> indices;
+      std::vector<std::vector<FFInt>> probes;
+
+      get_probe(indices, probes);
+
+      ++iteration;
+
+      if (verbosity > SILENT && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - last_print_time).count() > 2.) {
+        std::unique_lock<std::mutex> lock_print(print_control);
+        last_print_time = std::chrono::high_resolution_clock::now();
+        std::cerr << "\033[1;34mFireFly info:\033[0m Probe: " << iteration << "\r";
+      }
+
+#if !WITH_MPI
+      //average_black_box_time = (average_black_box_time * (total_iterations + iteration - 1) + time) / (total_iterations + iteration);
+#endif
+
+      {
+        std::unique_lock<std::mutex> lock_feed(feed_control);
+
+        ++feed_jobs;
+      }
+
+      tp.run_priority_task([this, indices = std::move(indices), probes = std::move(probes)]() {
+        feed_job(indices, probes);
+        get_a_job();
+      });
+
+      {
+        std::unique_lock<std::mutex> lock_status(status_control);
+
+        if (items_done == items) {
+          done = true;
+          continue;
+        } else if (items_done + items_new_prime == items) {
+          new_prime = true;
+          continue;
+        }
+      }
+
+      {
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        if (probes_queued == 0) {
+          lock_probe_queue.unlock();
+
+          {
+            std::unique_lock<std::mutex> lock_feed(feed_control);
+
+            while (feed_jobs > 0 || interpolate_jobs > 0) {
+              condition_feed.wait(lock_feed);
+
+              lock_feed.unlock();
+              lock_probe_queue.lock();
+
+              if (probes_queued != 0) {
+                lock_probe_queue.unlock();
+
+                break;
+              }
+
+              lock_probe_queue.unlock();
+              lock_feed.lock();
+            }
+
+            lock_probe_queue.lock();
+
+            if (probes_queued != 0) {
+              continue;
+            }
+
+            lock_probe_queue.unlock();
+          }
+
+          // no jobs are running anymore, check if done or new_prime else throw error
+          if (items_done == items) {
+            done = true;
+            continue;
+          } else if (items_done + items_new_prime == items) {
+            new_prime = true;
+            continue;
+          } else {
+            throw std::runtime_error("Nothing left to feed: "
+                                     + std::to_string(items)
+                                     + " " + std::to_string(items_new_prime)
+                                     + " " + std::to_string(items_done) + " | "
+                                     + std::to_string(probes_finished) + " | "
+                                     + std::to_string(feed_jobs) + " "
+                                     + std::to_string(interpolate_jobs) + " | "
+                                     + std::to_string(iteration) + " "
+                                     + std::to_string(fed_ones) + " | "
+                                     + std::to_string(probes_queued) + " "
+                                     + std::to_string(computed_probes.size()) + " "
+                                     + std::to_string(requested_probes.size()) + "\n");
+          }
+        }
+      }
+    }
+
+    if (!scan && save_states) {
+      for (uint32_t item = 0; item != items; ++item) {
+        // remove probe files if the interpolation is done
+        std::remove(("ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz").c_str());
+        ogzstream gzfile;
+        std::string file_name = "ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it + 1) + ".gz";
+        gzfile.open(file_name.c_str());
+        gzfile.close();
+
+        if (prime_it) {
+          std::string file_name_old = "ff_save/states/" + std::to_string(item) + "_" + std::to_string(prime_it - 1) + ".gz";
+          std::string file_name_new = "ff_save/states/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz";
+          std::rename(file_name_old.c_str(), file_name_new.c_str());
+        }
+      }
+    }
+
+    total_iterations += iteration;
+  }
+
+  // TODO optimize for bunch_size 1?
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::start_probe_jobs(const std::vector<uint32_t>& zi_order, const uint32_t to_start) {
+    bool ones = false;
+
+    if ((prime_it == 0 || safe_mode == true) && zi_order == std::vector<uint32_t> (n - 1, 1)) {
+      ones = true;
+    }
+
+    std::vector<FFInt> rand_zi;
+    rand_zi.reserve(zi_order.size());
+
+    if (!ones && (prime_it != 0 && safe_mode == false)) {
+      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+    } else {
+      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
+    }
+
+    for (uint32_t j = 0; j != to_start; ++j) {
+      std::vector<FFInt> values(n);
+      FFInt t = tmp_rec.get_rand_64();
+
+      // check if t was already used for this zi_order
+      {
+        std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
+
+        auto it = chosen_t.find(zi_order);
+
+        if (it != chosen_t.end()) {
+          auto itt = it->second.find(t.n);
+
+          if (itt != it->second.end()) {
+            --j;
+
+            //std::unique_lock<std::mutex> lock_print(print_control);
+
+            //WARNING_MSG("Found a duplicate of t, choosing a new one");
+
+            continue;
+          } else {
+            it->second.emplace(t.n);
+          }
+        } else {
+          chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
+        }
+      }
+
+      values[0] = t + shift[0];
+
+      for (uint32_t i = 1; i != n; ++i) {
+        values[i] = rand_zi[i - 1] * t + shift[i];
+      }
+
+      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+      if (ones) {
+        requested_probes.emplace_front(std::make_pair(ind, std::move(values)));
+      } else {
+        requested_probes.emplace_back(std::make_pair(ind, std::move(values)));
+      }
+
+      index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
+      //std::cout << "emplace " << ind << "\n";
+      ++ind;
+
+      ++probes_queued;
+      //std::cout << "start " << probes_queued << "\n";
+    }
+
+/*
+    if (bunch_size == 1) {
+#ifndef WITH_MPI
+      std::vector<FFInt> values(n);
+#endif
+      FFInt t;
+
+      for (uint32_t j = 0; j != to_start; ++j) {
+#ifdef WITH_MPI
+        std::vector<uint64_t> values(n + 1);
+#endif
+        t = tmp_rec.get_rand_64();
+
+        // check if t was already used for this zi_order
+        {
+          std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
+
+          auto it = chosen_t.find(zi_order);
+
+          if (it != chosen_t.end()) {
+            auto itt = it->second.find(t.n);
+
+            if (itt != it->second.end()) {
+              --j;
+
+              //std::unique_lock<std::mutex> lock_print(print_control);
+
+              //WARNING_MSG("Found a duplicate of t, choosing a new one");
+
+              continue;
+            } else {
+              it->second.emplace(t.n);
+            }
+          } else {
+            chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
+          }
+        }
+
+#ifndef WITH_MPI
+        values[0] = t + shift[0];
+
+        for (uint32_t i = 1; i != n; ++i) {
+          values[i] = rand_zi[i - 1] * t + shift[i];
+        }
+
+        // TODO: Why is this required already here?
+        std::unique_lock<std::mutex> lock(future_control);
+
+        if (ones) {
+          probes.emplace_front(std::make_tuple(t, zi_order, probe_future()));
+          auto it = probes.begin();
+
+          probe_future future = tp.run_priority_packaged_task([this, values, it]() {
+            auto time0 = std::chrono::high_resolution_clock::now();
+
+            std::vector<FFInt> probe = bb(values);
+
+            auto time1 = std::chrono::high_resolution_clock::now();
+
+            std::unique_lock<std::mutex> lock(future_control);
+
+            ++probes_finished;
+            finished_probes_it.emplace(it);
+
+            condition_future.notify_one();
+
+            return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
+          });
+
+          std::get<2>(*it) = std::move(future);
+        } else {
+          probes.emplace_back(std::make_tuple(t, zi_order, probe_future()));
+          auto it = --(probes.end());
+
+          probe_future future = tp.run_packaged_task([this, values, it]() {
+            auto time0 = std::chrono::high_resolution_clock::now();
+
+            std::vector<FFInt> probe = bb(values);
+
+            auto time1 = std::chrono::high_resolution_clock::now();
+
+            std::unique_lock<std::mutex> lock(future_control);
+
+            ++probes_finished;
+            finished_probes_it.emplace(it);
+
+            condition_future.notify_one();
+
+            return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
+          });
+
+          std::get<2>(*it) = std::move(future);
+        }
+#else
+        values[1] = (t + shift[0]).n;
+
+        for (uint32_t i = 1; i != n; ++i) {
+          values[i + 1] = (rand_zi[i - 1] * t + shift[i]).n;
+        }
+
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        values[0] = ind;
+
+        index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
+        ++ind;
+
+        value_queue.emplace(std::move(values));
+#endif
+      }
+    } else {
+      for (uint32_t j = 0; j != to_start / bunch_size; ++j) {
+#ifndef WITH_MPI
+        std::vector<FFInt> t_vec;
+        t_vec.reserve(bunch_size);
+        std::vector<std::vector<FFInt>> values_vec;
+        values_vec.reserve(bunch_size);
+#else
+        // TODO this queues the jobs in a correct order so that zi_order is fixed for bunch_size entries
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+#endif
+
+        for (uint32_t i = 0; i != bunch_size; ++i) {
+#ifndef WITH_MPI
+          std::vector<FFInt> values(n);
+#else
+          std::vector<uint64_t> values(n + 1);
+#endif
+
+          FFInt t = tmp_rec.get_rand_64();
+
+          // check if t was already used for this zi_order
+          {
+            std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
+
+            auto it = chosen_t.find(zi_order);
+
+            if (it != chosen_t.end()) {
+              auto itt = it->second.find(t.n);
+
+              if (itt != it->second.end()) {
+                --i;
+
+                //std::unique_lock<std::mutex> lock_print(print_control);
+
+                //WARNING_MSG("Found a duplicate of t, choosing a new one");
+
+                continue;
+              } else {
+                it->second.emplace(t.n);
+              }
+            } else {
+              chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
+            }
+          }
+
+#ifndef WITH_MPI
+          values[0] = t + shift[0];
+
+          for (uint32_t i = 1; i != n; ++i) {
+            values[i] = rand_zi[i - 1] * t + shift[i];
+          }
+
+          t_vec.emplace_back(t);
+          values_vec.emplace_back(std::move(values));
+#else
+          values[1] = (t + shift[0]).n;
+
+          for (uint32_t i = 1; i != n; ++i) {
+            values[i + 1] = (rand_zi[i - 1] * t + shift[i]).n;
+          }
+
+          values[0] = ind;
+
+          index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
+          ++ind;
+
+          value_queue.emplace(std::move(values));
+#endif
+        }
+
+#ifndef WITH_MPI
+        // TODO: Why is this required already here?
+        std::unique_lock<std::mutex> lock(future_control);
+
+        if (ones) {
+          probes_bunch.emplace_front(std::make_tuple(t_vec, zi_order, probe_future_bunch()));
+          auto it = probes_bunch.begin();
+
+          probe_future_bunch future = tp.run_priority_packaged_task([this, values_vec, it]() {
+            auto time0 = std::chrono::high_resolution_clock::now();
+
+            std::vector<std::vector<FFInt>> probe_vec = bb(values_vec);
+
+            auto time1 = std::chrono::high_resolution_clock::now();
+
+            std::unique_lock<std::mutex> lock(future_control);
+
+            probes_finished += bunch_size;
+            finished_probes_bunch_it.emplace(it);
+
+            condition_future.notify_one();
+
+            return std::make_pair(std::move(probe_vec), std::chrono::duration<double>(time1 - time0).count());
+          });
+
+          std::get<2>(*it) = std::move(future);
+        } else {
+          probes_bunch.emplace_back(std::make_tuple(t_vec, zi_order, probe_future_bunch()));
+          auto it = --(probes_bunch.end());
+
+          probe_future_bunch future = tp.run_packaged_task([this, values_vec, it]() {
+            auto time0 = std::chrono::high_resolution_clock::now();
+
+            std::vector<std::vector<FFInt>> probe_vec = bb(values_vec);
+
+            auto time1 = std::chrono::high_resolution_clock::now();
+
+            std::unique_lock<std::mutex> lock(future_control);
+
+            probes_finished += bunch_size;
+            finished_probes_bunch_it.emplace(it);
+
+            condition_future.notify_one();
+
+            return std::make_pair(std::move(probe_vec), std::chrono::duration<double>(time1 - time0).count());
+          });
+
+          std::get<2>(*it) = std::move(future);
+        }
+#endif
+      }
+    }
+
+    std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+    probes_queued += to_start;
+*/
+
+#ifdef WITH_MPI
+    new_jobs = true;
+#endif
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::get_probe(std::vector<uint64_t>& indices, std::vector<std::vector<FFInt>>& probes) {
+    {
+      std::unique_lock<std::mutex> lock_future(future_control);
+
+      while (probes_finished == 0) {
+        condition_future.wait(lock_future);
+      }
+
+      //std::cout << computed_probes.size() << " " << probes_finished << "\n";
+
+      indices = std::move(computed_probes.front().first);
+      probes = std::move(computed_probes.front().second);
+      computed_probes.pop();
+
+      //std::cout << "get " << indices.size() << "\n";
+
+      probes_finished -= static_cast<uint32_t>(indices.size());
+    }
+
+    std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+    probes_queued -= static_cast<uint32_t>(indices.size());
+
+    //std::cout << "got " << indices.size() << " " << probes_queued << "\n";
+    //std::cout << "np " << items_new_prime << "\n";
+
+    //if (static_cast<uint32_t>(zi_order.size()) != n - 1) {
+    //  ERROR_MSG("zi_order of probe has wrong length: " + std::to_string(zi_order.size()));
+    //  std::exit(EXIT_FAILURE);
+    //}
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::feed_job(const std::vector<uint64_t>& indices, const std::vector<std::vector<FFInt>>& probes) {
+    {
+      std::unique_lock<std::mutex> lock(feed_control);
+
+      interpolate_jobs += items;
+    }
+
+    std::vector<FFInt> t_vec;
+    t_vec.reserve(indices.size());
+    std::vector<std::vector<uint32_t>> zi_order_vec;
+    zi_order_vec.reserve(indices.size());
+
+    uint32_t count_ones = 0;
+
+    {
+      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+      for (auto indi : indices) {
+        //std::cout << "access index " << indi << "\n";
+        auto tmp = std::move(index_map.at(indi)); // TODO []
+        index_map.erase(indi);
+        t_vec.emplace_back(tmp.first);
+        zi_order_vec.emplace_back(std::move(tmp.second));
+
+        if ((prime_it == 0 || safe_mode == true) && zi_order_vec.back() == std::vector<uint32_t>(n - 1, 1)) {
+          ++count_ones;
+        }
+      }
+    }
+
+    if (count_ones != 0) {
+      std::unique_lock<std::mutex> lock_status(job_control);
+
+      fed_ones += count_ones;
+    }
+
+    uint32_t counter = 0;
+
+    for (auto & rec : reconst) {
+      std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
+
+      if (std::get<2>(rec) == RECONSTRUCTING) {
+        lock_exists.unlock();
+
+        std::pair<bool, uint32_t> done_prime = std::get<3>(rec)->get_done_and_prime();
+
+        if (!done_prime.first) {
+          if (done_prime.second == prime_it) {
+            auto interpolate_and_write = std::get<3>(rec)->feed(t_vec, probes[std::get<0>(rec)], zi_order_vec, prime_it);
+
+            if (interpolate_and_write.first) {
+              ++counter;
+
+              tp.run_priority_task([this, &rec]() {
+                interpolate_job(rec);
+                get_a_job();
+              });
+            }
+
+            if (interpolate_and_write.second) {
+              tp.run_priority_task([this, &rec]() {
+                std::get<3>(rec)->write_food_to_file();
+                get_a_job();
+              });
+            }
+          }
+        }
+      }
+    }
+
+    {
+      std::unique_lock<std::mutex> lock_status(status_control);
+
+      if (!scan && (one_done || one_new_prime)) {
+        one_done = false;
+        one_new_prime = false;
+
+        std::unique_lock<std::mutex> lock_print(print_control);
+
+        if (verbosity > SILENT) {
+          INFO_MSG("Probe: " + std::to_string(iteration) +
+                   " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
+                   " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+        }
+      }
+    }
+
+    std::unique_lock<std::mutex> lock(feed_control);
+
+    interpolate_jobs -= (items - counter);
+    --feed_jobs;
+    condition_feed.notify_one();
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::interpolate_job(RatReconst_tuple& rec) {
+    std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
+
+    if (std::get<2>(rec) == RECONSTRUCTING) {
+      lock_exists.unlock();
+
+      std::tuple<bool, bool, uint32_t> interpolated_done_prime = std::get<3>(rec)->interpolate();
+
+      if (std::get<0>(interpolated_done_prime)) { // interpolated
+        //lock_exists.lock();
+        // start new jobs if required
+        if (!std::get<1>(interpolated_done_prime)) { // not done
+          if (std::get<2>(interpolated_done_prime) > prime_it) { // compare prime counters
+            {
+              std::unique_lock<std::mutex> lock_status(status_control);
+
+              one_new_prime = true;
+              ++items_new_prime;
+            }
+
+            std::unique_lock<std::mutex> lock(job_control);
+
+            if (std::get<3>(rec)->get_num_eqn() > probes_for_next_prime) {
+              probes_for_next_prime = std::get<3>(rec)->get_num_eqn();
+            }
+
+            //lock_exists.unlock();
+          } else if (!safe_mode && prime_it != 0) {
+            std::vector<std::pair<uint32_t, uint32_t>> all_required_probes = std::get<3>(rec)->get_needed_feed_vec();
+
+            if (!all_required_probes.empty()) {
+              uint32_t counter = 1;
+
+              for (const auto & some_probes : all_required_probes) {
+                if (some_probes.first == 0) {
+                  ++counter;
+                  continue;
+                }
+
+                uint32_t required_probes = some_probes.second;
+
+                for (uint32_t i = 0; i != some_probes.first; ++i) {
+                  std::vector<uint32_t> zi_order(n - 1, counter);
+                  ++counter;
+
+                  std::unique_lock<std::mutex> lock(job_control);
+
+                  auto it = started_probes.find(zi_order);
+
+                  if (it != started_probes.end()) {
+                    if (required_probes > started_probes[zi_order]) {
+                      uint32_t to_start = required_probes - started_probes[zi_order];
+
+                      //if (bunch_size != 1) {
+                      //  to_start = (to_start + bunch_size - 1) / bunch_size * bunch_size;
+                      //}
+
+                      started_probes[zi_order] = required_probes;
+
+                      lock.unlock();
+
+                      if (verbosity == CHATTY) {
+                        std::string msg = "Starting zi_order (";
+
+                        for (const auto & ele : zi_order) {
+                          msg += std::to_string(ele) + ", ";
+                        }
+
+                        msg = msg.substr(0, msg.length() - 2);
+                        msg += ") " + std::to_string(to_start) + " time(s)";
+
+                        std::unique_lock<std::mutex> lock_print(print_control);
+
+                        INFO_MSG(msg);
+                      }
+
+                      start_probe_jobs(zi_order, to_start);
+                    }
+                  } else {
+                    //if (bunch_size != 1) {
+                    //  required_probes = (required_probes + bunch_size - 1) / bunch_size * bunch_size;
+                    //}
+
+                    started_probes.emplace(zi_order, required_probes);
+
+                    lock.unlock();
+
+                    if (verbosity == CHATTY) {
+                      std::string msg = "Starting zi_order (";
+
+                      for (const auto & ele : zi_order) {
+                        msg += std::to_string(ele) + ", ";
+                      }
+
+                      msg = msg.substr(0, msg.length() - 2);
+                      msg += ") " + std::to_string(required_probes) + " time(s)";
+
+                      std::unique_lock<std::mutex> lock_print(print_control);
+
+                      INFO_MSG(msg);
+                    }
+
+                    start_probe_jobs(zi_order, required_probes);
+                  }
+                }
+              }
+            }
+          } else {
+            std::vector<uint32_t> zi_order = std::get<3>(rec)->get_zi_order();
+
+            if ((prime_it == 0 || safe_mode == true) && zi_order == std::vector<uint32_t>(n - 1, 1)) {
+              //lock_exists.unlock();
+              std::unique_lock<std::mutex> lock(job_control);
+
+#if !WITH_MPI
+              if (started_probes[zi_order] - thr_n /** bunch_size*/ <= fed_ones - 1) {
+                uint32_t to_start = fed_ones - started_probes[zi_order] + thr_n /** bunch_size*/;
+#else
+              if (started_probes[zi_order] - total_thread_count <= fed_ones - 1) { // TODO static_cast<uint32_t>(buffer) * * bunch_size
+                uint32_t to_start = fed_ones - started_probes[zi_order] + static_cast<uint32_t>(buffer) * total_thread_count * bunch_size;
+#endif
+
+                //if (bunch_size != 1) {
+                //  to_start = (to_start + bunch_size - 1) / bunch_size * bunch_size;
+                //}
+
+                started_probes[zi_order] += to_start;
+
+                lock.unlock();
+
+                if (verbosity == CHATTY) {
+                  std::unique_lock<std::mutex> lock_print(print_control);
+
+                  INFO_MSG("Starting ones: " + std::to_string(to_start));
+                }
+
+                start_probe_jobs(zi_order, to_start);
+              }
+            } else {
+              uint32_t required_probes = std::get<3>(rec)->get_num_eqn();
+
+              //lock_exists.unlock();
+              std::unique_lock<std::mutex> lock(job_control);
+
+              auto it = started_probes.find(zi_order);
+
+              if (it != started_probes.end()) {
+                if (required_probes > started_probes[zi_order]) {
+                  uint32_t to_start = required_probes - started_probes[zi_order];
+
+                  //if (bunch_size != 1) {
+                  //  to_start = (to_start + bunch_size - 1) / bunch_size * bunch_size;
+                  //}
+
+                  started_probes[zi_order] = required_probes;
+
+                  lock.unlock();
+
+                  if (verbosity == CHATTY) {
+                    std::string msg = "Starting zi_order (";
+
+                    for (const auto & ele : zi_order) {
+                      msg += std::to_string(ele) + ", ";
+                    }
+
+                    msg = msg.substr(0, msg.length() - 2);
+                    msg += ") " + std::to_string(to_start) + " time(s)";
+
+                    std::unique_lock<std::mutex> lock_print(print_control);
+
+                    INFO_MSG(msg);
+                  }
+
+                  start_probe_jobs(zi_order, to_start);
+                }
+              } else {
+                //if (bunch_size != 1) {
+                //  required_probes = (required_probes + bunch_size - 1) / bunch_size * bunch_size;
+                //}
+
+                started_probes.emplace(zi_order, required_probes);
+
+                lock.unlock();
+
+                if (verbosity == CHATTY) {
+                  std::string msg = "Starting zi_order (";
+
+                  for (const auto & ele : zi_order) {
+                    msg += std::to_string(ele) + ", ";
+                  }
+
+                  msg = msg.substr(0, msg.length() - 2);
+                  msg += ") " + std::to_string(required_probes) + " time(s)";
+
+                  std::unique_lock<std::mutex> lock_print(print_control);
+
+                  INFO_MSG(msg);
+                }
+
+                start_probe_jobs(zi_order, required_probes);
+              }
+            }
+          }
+        } else {
+          lock_exists.lock();
+
+          // to be sure that no other thread does the same
+          // TODO: Why is this necessary?
+          if (std::get<2>(rec) == RECONSTRUCTING) {
+            std::get<2>(rec) = DONE;
+
+            lock_exists.unlock();
+            std::unique_lock<std::mutex> lock_status(status_control);
+
+            ++items_done;
+            one_done = true;
+          } else {
+            lock_exists.unlock();
+          }
+        }
+      }
+    } else {
+      lock_exists.unlock();
+    }
+
+    std::unique_lock<std::mutex> lock(feed_control);
+
+    --interpolate_jobs;
+    condition_feed.notify_one();
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::clean_reconst() {
+    std::unique_lock<std::mutex> lock_clean(clean);
+
+    auto it = reconst.begin();
+
+    while (it != reconst.end()) {
+      if (std::get<2>(*it) == DELETED) {
+        // delete mutex
+        delete std::get<1>(*it);
+
+        // remove from list
+        it = reconst.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::get_a_job() {
+    if (tp.queue_size() == 0) { // TODO experiment with buffer
+      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+      if (!requested_probes.empty()) {
+        switch(compute_bunch_size(static_cast<uint32_t>(requested_probes.size()), thr_n, bunch_size)) {
+          case 1:
+            start_new_job<1>();
+            break;
+          case 2:
+            start_new_job<2>();
+            break;
+          case 4:
+            start_new_job<4>();
+            break;
+          case 8:
+            start_new_job<8>();
+            break;
+          case 16:
+            start_new_job<16>();
+            break;
+          case 32:
+            start_new_job<32>();
+            break;
+          case 64:
+            start_new_job<64>();
+            break;
+          case 128:
+            start_new_job<128>();
+            break;
+          case 256:
+            start_new_job<256>();
+            break;
+        }
+
+#if WITH_MPI
+        if (requested_probes.empty()) {
+           new_jobs = false;
+        }
+#endif
+      }
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  template<uint32_t N>
+  void Reconstructor<BlackBoxTemp>::start_new_job() {
+    std::vector<uint64_t> indices;
+    indices.reserve(N);
+
+    //std::cout << "start with " << N << " of " << requested_probes.size() << "\n";
+
+    std::vector<FFIntVec<N>> values_vec(n);
+
+    for (uint32_t i = 0; i != N; ++i) {
+      indices.emplace_back(requested_probes.front().first);
+
+      for (uint32_t j = 0; j != n; ++j) {
+        values_vec[j][i] = requested_probes.front().second[j];
+      }
+
+      requested_probes.pop_front();
+    }
+
+    tp.run_task([this, indices = std::move(indices), values_vec = std::move(values_vec)]() {
+      auto time0 = std::chrono::high_resolution_clock::now();
+
+      std::vector<FFIntVec<N>> probe = bb.eval(values_vec);
+
+      auto time1 = std::chrono::high_resolution_clock::now();
+
+      auto time = std::chrono::duration<double>(time1 - time0).count();
+
+      {
+        std::unique_lock<std::mutex> lock(future_control);
+
+        // TODO time
+        //++tmp_total_iterations;
+        //tmp_average_black_box_time = (tmp_average_black_box_time * (tmp_total_iterations - 1) + time) / tmp_total_iterations;
+
+        std::vector<std::vector<FFInt>> tmp(probe.size(), std::vector<FFInt>(N));
+
+        for (size_t i = 0; i != probe.size(); ++i) {
+          std::move(probe[i].begin(), probe[i].end(), tmp[i].begin());
+        }
+
+        computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
+
+        probes_finished += N;
+
+        condition_future.notify_one();
+      }
+
+      get_a_job();
+    });
+  }
+
+#ifdef WITH_MPI
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::mpi_setup() {
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Bcast(&prime_it, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::send_first_jobs() {
+    mpi_setup();
+
+    std::vector<uint32_t> zi_order = std::vector<uint32_t>(n - 1, 1);
+    started_probes.emplace(std::make_pair(zi_order, 0));
+
+    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+
+    for (int i = 1; i != world_size; ++i) {
+      uint64_t to_start;
+      MPI_Recv(&to_start, 1, MPI_UINT64_T, i, RESULT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+      //std::cout << "starting " << to_start << " jobs on worker " << i << "\n";
+
+      nodes.emplace(std::make_pair(i, to_start));
+      total_thread_count += static_cast<uint32_t>(to_start / buffer);
+
+      probes_queued += to_start;
+      started_probes[zi_order] += to_start;
+
+      //std::cout << "first send " << probes_queued << "\n";
+
+      std::vector<uint64_t> values;
+      values.reserve(static_cast<uint32_t>(to_start) * (n + 1));
+
+      for (uint32_t ii = 0; ii != static_cast<uint32_t>(to_start); ++ii) {
+        //values[ii * (n + 1)] = ind;
+        values.emplace_back(ind);
+
+        FFInt t = tmp_rec.get_rand_64();
+
+        // check if t was already used for this zi_order
+        auto it = chosen_t.find(zi_order);
+
+        if (it != chosen_t.end()) {
+          auto itt = it->second.find(t.n);
+
+          if (itt != it->second.end()) {
+            --ii;
+
+            //std::unique_lock<std::mutex> lock_print(print_control);
+
+            //WARNING_MSG("Found a duplicate of t, choosing a new one");
+
+            continue;
+          } else {
+            it->second.emplace(t.n);
+          }
+        } else {
+          chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
+        }
+
+        //values[ii * (n + 1) + 1] = (t + shift[0]).n;
+        values.emplace_back((t + shift[0]).n);
+
+        for (uint32_t j = 1; j != n; ++j) {
+          //values[ii * (n + 1) + j + 1] = (t * rand_zi[j - 1] + shift[j]).n;
+          values.emplace_back((t * rand_zi[j - 1] + shift[j]).n);
+        }
+
+        index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
+        //std::cout << "mpi emplace " << ind << "\n";
+        ++ind;
+      }
+
+      MPI_Send(&values[0], static_cast<int>(static_cast<uint32_t>(to_start) * (n + 1)), MPI_UINT64_T, i, VALUES, MPI_COMM_WORLD);
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::mpi_communicate() {
+    while (true) {
+      int flag_ext = 0;
+      MPI_Status status;
+
+      bool restart_empty_nodes = false;
+
+      while (!flag_ext) {
+        MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag_ext, &status);
+
+        //std::cout << "empty size: " << empty_nodes.size() << " " << new_jobs.load() << "\n";
+
+        if (new_prime || done) {
+          break;
+        } else if (!empty_nodes.empty() && new_jobs) {
+          restart_empty_nodes = true;
+          break;
+        }
+      }
+
+      if (done && !scan) {
+        //std::vector<MPI_Request> requests;
+        //requests.reserve(world_size - 1);
+        MPI_Request* requests = new MPI_Request[world_size - 1];
+        uint64_t tmp;
+
+        for (int i = 1; i != world_size; ++i) {
+          MPI_Isend(&tmp, 1, MPI_UINT64_T, i, END, MPI_COMM_WORLD, &requests[i - 1]);
+        }
+
+        MPI_Waitall(world_size - 1, requests, MPI_STATUSES_IGNORE);
+
+        delete[] requests;
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        int flag = 1;
+        MPI_Status status_rec;
+
+        while (flag) {
+          MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag, &status_rec);
+
+          if (flag) {
+            int amount;
+            MPI_Get_count(&status_rec, MPI_UINT64_T, &amount);
+
+            std::vector<uint64_t> tmp;
+            tmp.reserve(amount);
+
+            MPI_Recv(&tmp[0], amount, MPI_UINT64_T, status_rec.MPI_SOURCE, status_rec.MPI_TAG, MPI_COMM_WORLD, &status_rec);
+          }
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
+        break;
+      } else if (new_prime || (done && scan)) {
+        MPI_Request* requests = new MPI_Request[world_size - 1];
+        //std::vector<MPI_Request> requests;
+        //requests.reserve(world_size - 1);
+
+        //std::cout << "com np\n";
+
+        uint64_t prime_tmp = static_cast<uint64_t>(prime_it);
+
+        if (!scan) {
+          ++prime_tmp;
+        }
+
+        for (int i = 1; i != world_size; ++i) {
+          MPI_Isend(&prime_tmp, 1, MPI_UINT64_T, i, NEW_PRIME, MPI_COMM_WORLD, &requests[i - 1]);
+        }
+
+        MPI_Waitall(world_size - 1, requests, MPI_STATUSES_IGNORE);
+
+        delete[] requests;
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        int flag = 1;
+        MPI_Status status_rec;
+
+        while (flag) {
+          MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag, &status_rec);
+
+          if (flag) {
+            int amount;
+            MPI_Get_count(&status_rec, MPI_UINT64_T, &amount);
+
+            //std::cout << "garbage recieved: " << (static_cast<uint32_t>(amount) - 1) / (items + 1) << "\n";
+
+            std::vector<uint64_t> tmp;
+            tmp.reserve(amount);
+
+            MPI_Recv(&tmp[0], amount, MPI_UINT64_T, status_rec.MPI_SOURCE, status_rec.MPI_TAG, MPI_COMM_WORLD, &status_rec);
+          }
+        }
+
+        std::vector<double> timings;
+        std::vector<double> weights;
+        timings.reserve(world_size);
+        weights.reserve(world_size);
+        double total_weight = 0.;
+
+        for (int i = 1; i != world_size; ++i) {
+          MPI_Status status_time;
+          double timing[2];
+          MPI_Recv(&timing, 2, MPI_DOUBLE, i, TIMING, MPI_COMM_WORLD, &status_time);
+          timings.emplace_back(timing[0]);
+          weights.emplace_back(timing[1]);
+          total_weight += timing[1];
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        timings.emplace_back(tmp_average_black_box_time);
+        weights.emplace_back(static_cast<double>(tmp_total_iterations));
+        total_weight += static_cast<double>(tmp_total_iterations);
+
+        average_black_box_time = 0.;
+
+        for (int i = 0; i != world_size; ++i) {
+          average_black_box_time += weights[i] / total_weight * timings[i];
+        }
+
+        //std::cout << "com rec\n";
+
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        proceed = true;
+
+        cond_val.notify_one();
+
+        while (!new_jobs) {
+          cond_val.wait(lock_probe_queue);
+        }
+
+        proceed = true;
+
+        cond_val.notify_one();
+
+        empty_nodes = std::queue<std::pair<int, uint64_t>>();
+
+        //std::cout << "com through\n";
+
+        for (int k = 1; k != world_size; ++k) {
+          uint64_t free_slots;
+          MPI_Recv(&free_slots, 1, MPI_UINT64_T, k, RESULT, MPI_COMM_WORLD, &status);
+
+          if (requested_probes.size() != 0) {
+            uint32_t size = compute_job_number(static_cast<uint32_t>(requested_probes.size()), static_cast<uint32_t>(free_slots), thr_n, bunch_size);
+
+            std::vector<uint64_t> values;
+            values.reserve(size * (n + 1));
+
+            for (uint64_t i = 0; i != size; ++i) {
+              //values[i * (n + 1)] = requested_probes.front().first;
+              values.emplace_back(requested_probes.front().first);
+
+              for (uint64_t j = 0; j != n; ++j) {
+                //values[i * (n + 1) + 1 + j] = requested_probes.front().second[j].n;
+                values.emplace_back(requested_probes.front().second[j].n);
+              }
+
+              requested_probes.pop_front();
+            }
+
+            if (requested_probes.empty()) {
+              new_jobs = false;
+            }
+
+            lock_probe_queue.unlock();
+
+            //std::cout << "sending " << size << " jobs\n";
+
+            MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+          } else if (free_slots == nodes[status.MPI_SOURCE]) {
+            //std::cout << "com np empty nodes " << status.MPI_SOURCE << " " << free_slots << "\n";
+            empty_nodes.emplace(std::make_pair(status.MPI_SOURCE, free_slots));
+          }
+        }
+      } else if (restart_empty_nodes) {
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        while (!empty_nodes.empty() && !requested_probes.empty()) {
+          auto node = empty_nodes.front();
+          empty_nodes.pop();
+
+          uint32_t size = compute_job_number(static_cast<uint32_t>(requested_probes.size()), static_cast<uint32_t>(node.second), thr_n, bunch_size);
+
+          std::vector<uint64_t> values;
+          values.reserve(size * (n + 1));
+
+          for (uint64_t i = 0; i != size; ++i) {
+            //values[i * (n + 1)] = requested_probes.front().first;
+            values.emplace_back(requested_probes.front().first);
+
+            for (uint64_t j = 0; j != n; ++j) {
+              //values[i * (n + 1) + 1 + j] = requested_probes.front().second[j].n;
+              values.emplace_back(requested_probes.front().second[j].n);
+            }
+
+            requested_probes.pop_front();
+          }
+
+          //std::cout << "restart: sending " << size << " jobs\n";
+
+          MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+        }
+
+        if (requested_probes.empty()) {
+          new_jobs = false;
+        }
+      } else {
+        int amount;
+        MPI_Get_count(&status, MPI_UINT64_T, &amount);
+
+        if ((static_cast<uint32_t>(amount) - 1) % (items + 1) != 0) {
+          ERROR_MSG("Corrupted results recieved: " + std::to_string(amount - 1));
+          std::exit(EXIT_FAILURE);
+        }
+
+        uint32_t new_results = (static_cast<uint32_t>(amount) - 1) / (items + 1);
+
+        //std::cout << "comm recieving " << new_results << " results \n";
+
+        // TODO optimize the format
+        std::vector<uint64_t> results_list;
+        results_list.reserve(amount);
+        MPI_Recv(&results_list[0], amount, MPI_UINT64_T, status.MPI_SOURCE, RESULT, MPI_COMM_WORLD, &status);
+
+        for (uint32_t i = 0; i != new_results; ++i) {
+          uint64_t index = results_list[i * (items + 1)];
+          std::vector<std::vector<FFInt>> results(items, std::vector<FFInt>(1)); // TODO do not initialize here
+          //results.reserve(items);
+
+          for (uint32_t j = 1; j != items + 1; ++j) {
+            results[j - 1][0] = results_list[i * (items + 1) + j];
+          }
+
+          std::unique_lock<std::mutex> lock_res(future_control);
+
+          computed_probes.emplace(std::make_pair(std::vector<uint64_t>(1, index), std::move(results)));
+
+          ++probes_finished;
+        }
+
+        {
+          std::unique_lock<std::mutex> lock_res(future_control);
+
+          //probes_finished += new_results; // TODO why does this not work
+
+          condition_future.notify_one();
+        }
+
+        uint64_t free_slots = results_list[amount - 1];
+
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        if (requested_probes.size() != 0) {
+          uint32_t size = compute_job_number(static_cast<uint32_t>(requested_probes.size()), static_cast<uint32_t>(free_slots), thr_n, bunch_size);
+
+          std::vector<uint64_t> values;
+          values.reserve(size * (n + 1));
+
+          for (uint64_t i = 0; i != size; ++i) {
+            //values[i * (n + 1)] = requested_probes.front().first;
+            values.emplace_back(requested_probes.front().first);
+
+            for (uint64_t j = 0; j != n; ++j) {
+              //values[i * (n + 1) + 1 + j] = requested_probes.front().second[j].n;
+              values.emplace_back(requested_probes.front().second[j].n);
+            }
+
+            requested_probes.pop_front();
+          }
+
+          if (requested_probes.empty()) {
+            new_jobs = false;
+          }
+
+          lock_probe_queue.unlock();
+
+          //std::cout << "sending " << size << " jobs\n";
+
+          MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+        } else if (free_slots == nodes[status.MPI_SOURCE]) {
+          //std::cout << "empty node " << status.MPI_SOURCE << " " << free_slots << "\n";
+          empty_nodes.emplace(std::make_pair(status.MPI_SOURCE, free_slots));
+        } else {
+          //std::cout << "sending NULL\n";
+          MPI_Send(NULL, 0, MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+        }
+      }
+    }
+  }
+#endif
 }

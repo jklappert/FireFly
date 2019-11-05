@@ -19,9 +19,11 @@
 #pragma once
 
 #include "FFInt.hpp"
+#include "Logger.hpp"
 
 #include <unordered_map>
 #include <unordered_set>
+#include <stack>
 
 namespace firefly {
   /**
@@ -56,30 +58,26 @@ namespace firefly {
      */
     void parse_function(const std::string& fun, const std::vector<std::string>& vars, bool validate_fun = false);
     /**
-     *  Evaluates all functions for a given parameter point and returs their result.
+     *  Evaluates all functions for a given parameter point and returns their result.
      *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
      *  @return The values of the parsed functions as a vector.
      */
-    std::vector<FFInt> evaluate(const std::vector<FFInt>& values) const;
+    // TODO
+    template<typename FFIntTemp>
+    std::vector<FFIntTemp> evaluate(const std::vector<FFIntTemp>& values) const;
     /**
-     *  Evaluates a single function for a given parameter point and returs their result.
-     *  @param fun A function in reverse polish notation
+     *  Evaluates all functions for a given parameter point and returns their result using precomputed values. This is in general much faster than ShuntingYardParser::evaluate.
      *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
      *  @return The values of the parsed functions as a vector.
      */
-    FFInt evaluate(const std::vector<std::string>& fun, const std::vector<FFInt>& values) const;
-    /**
-     *  Evaluates all functions for a given parameter point and returs their result using precomputed values. This is in general much faster than ShuntingYardParser::evaluate.
-     *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
-     *  @return The values of the parsed functions as a vector.
-     */
-    std::vector<FFInt> evaluate_pre(const std::vector<FFInt>& values) const;
     /**
      *  Evaluates all functions for a given parameter point and returs their result using precomputed values in bunches. This is in general much faster than ShuntingYardParser::evaluate.
      *  @param values A vector of vectors of FFInt objects at which the parsed functions should be evaluated.
      *  @return The values of the parsed functions as a vector of vectors.
      */
-    std::vector<std::vector<FFInt>> evaluate_pre(const std::vector<std::vector<FFInt>>& values) const;
+    // TODO
+    template<typename FFIntTemp>
+    std::vector<FFIntTemp> evaluate_pre(const std::vector<FFIntTemp>& values) const;
     /**
      *  Returns the reverse polish notation of the parsed functions
      *  @return A vector of all parsed functions in reverse polish notation with changed variable names according to int_var_map
@@ -100,6 +98,13 @@ namespace firefly {
     std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {}; /**< This vector holds a collection of precomputed tokens where each operand/operator as a string is already converted to an FFInt */
     bool check_is_equal = false; /**< Indicates that functions are checked whether they are equal. Modifies the evaluation procedure */
     std::vector<uint64_t> evaluation_positions; /**< Stores the position of an evaluated function */
+    /**
+     *  Evaluates a single function for a given parameter point and returns their result.
+     *  @param fun A function in reverse polish notation
+     *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
+     *  @return The values of the parsed functions as a vector.
+     */
+    FFInt evaluate(const std::vector<std::string>& fun, const std::vector<FFInt>& values) const;
     /**
      *  Parses either a collection of strings or a file
      *  @param funs the collection of functions
@@ -172,5 +177,224 @@ namespace firefly {
       NEG_VARIABLE,
       NUMBER
     }; /**< The allowed operands as an enum for fast identification */
+  }
+
+  template<typename FFIntTemp>
+  std::vector<FFIntTemp> ShuntingYardParser::evaluate(const std::vector<FFIntTemp>& values) const {
+    std::vector<FFIntTemp> res;
+    res.reserve(functions.size());
+
+    for (const auto& tokens : functions) {
+      std::stack<FFIntTemp> nums;
+
+      for (const auto& token : tokens) {
+        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!") {
+          // Pop two numbers
+          FFIntTemp a = nums.top();
+          nums.pop();
+          FFIntTemp b = nums.top();
+          nums.pop();
+
+          // Evaluate and push the result back to the stack
+          switch (token[0]) {
+            case '+': {
+              nums.push(a + b);
+              break;
+            }
+
+            case '-': {
+              nums.push(b - a);
+              break;
+            }
+
+            case '*': {
+              nums.push(b * a);
+              break;
+            }
+
+            case '/': {
+              nums.push(b / a);
+              break;
+            }
+
+            case '^': {
+              nums.push(b.pow(a));
+              break;
+            }
+
+            case '!': {
+              nums.push(-b.pow(a));
+              break;
+            }
+          }
+        } else {
+          // check then if number has more than 18 digits
+          if (token.length() > 18) {
+            std::string tmp = token;
+
+            if (token[0] == '+')
+              tmp.erase(0, 1);
+
+            nums.push(FFIntTemp(mpz_class(tmp)));
+          } else {
+            if (token[0] == '-') {
+              std::string tmp = token;
+              tmp.erase(0, 1);
+
+              if (vars_map.find(tmp) != vars_map.end())
+                nums.push(-values[vars_map.at(tmp)]);
+              else if (isdigit(tmp[0]))
+                nums.push(-FFIntTemp(std::stoull(tmp)));
+              else
+                throw_not_declared_var_err(tmp);
+            } else if (token[0] == '+') {
+              std::string tmp = token;
+              tmp.erase(0, 1);
+
+              if (vars_map.find(tmp) != vars_map.end())
+                nums.push(values[vars_map.at(tmp)]);
+              else  if (isdigit(tmp[0]))
+                nums.push(FFIntTemp(std::stoull(tmp)));
+              else
+                throw_not_declared_var_err(tmp);
+            } else {
+              if (vars_map.find(token) != vars_map.end())
+                nums.push(values[vars_map.at(token)]);
+              else if (isdigit(token[0]))
+                nums.push(FFIntTemp(std::stoull(token)));
+              else
+                throw_not_declared_var_err(token);
+            }
+          }
+        }
+      }
+
+      if (nums.size())
+        res.emplace_back(nums.top());
+      else {
+        ERROR_MSG("Error in functional evaluation! Please check your input.");
+        std::exit(EXIT_FAILURE);
+      }
+    }
+
+    if (!check_is_equal)
+      return res;
+    else {
+      uint64_t s = evaluation_positions.size();
+
+      if (functions.size() != s) {
+        std::vector<FFIntTemp> full_res;
+        full_res.reserve(s);
+
+        for (const auto& el : evaluation_positions) {
+          full_res.emplace_back(res[el]);
+        }
+
+        return full_res;
+      } else
+        return res;
+    }
+  }
+
+  template<typename FFIntTemp>
+  std::vector<FFIntTemp> ShuntingYardParser::evaluate_pre(const std::vector<FFIntTemp>& values) const {
+    std::vector<FFIntTemp> res;
+    res.reserve(functions.size());
+    std::vector<FFIntTemp> neg_values;
+    neg_values.reserve(values.size());
+
+    for (const auto& el : values) {
+      neg_values.emplace_back(-el);
+    }
+
+    for (const auto& tokens : precomp_tokens) {
+      std::stack<FFIntTemp> nums;
+
+      for (const auto& token : tokens) {
+        switch (token.first) {
+          case operands::OPERATOR : {
+            // Pop two numbers
+            FFIntTemp a = nums.top();
+            nums.pop();
+            FFIntTemp b = nums.top();
+            nums.pop();
+
+            switch (token.second.n) {
+              case operators::PLUS: {
+                nums.push(a + b);
+                break;
+              }
+
+              case operators::MINUS: {
+                nums.push(b - a);
+                break;
+              }
+
+              case operators::MULT: {
+                nums.push(b * a);
+                break;
+              }
+
+              case operators::DIV: {
+                nums.push(b / a);
+                break;
+              }
+
+              case operators::POW: {
+                nums.push(pow(b, a));
+                break;
+              }
+
+              case operators::POW_NEG: {
+                nums.push(-pow(b, a));
+                break;
+              }
+            }
+
+            break;
+          }
+
+          case operands::VARIABLE : {
+            nums.push(values[token.second.n]);
+            break;
+          }
+
+          case operands::NEG_VARIABLE : {
+            //nums.push(-values[token.second.n]);
+            nums.push(neg_values[token.second.n]);
+            break;
+          }
+
+          case operands::NUMBER: {
+            nums.push(token.second);
+          }
+        }
+      }
+
+      if (nums.size())
+        res.emplace_back(nums.top());
+      else {
+        ERROR_MSG("Error in functional evaluation! Please check your input.");
+        std::exit(EXIT_FAILURE);
+      }
+    }
+
+    if (!check_is_equal)
+      return res;
+    else {
+      uint64_t s = evaluation_positions.size();
+
+      if (functions.size() != s) {
+        std::vector<FFIntTemp> full_res;
+        full_res.reserve(s);
+
+        for (const auto& el : evaluation_positions) {
+          full_res.emplace_back(res[el]);
+        }
+
+        return full_res;
+      } else
+        return res;
+    }
   }
 }

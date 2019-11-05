@@ -34,7 +34,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # set the C++ standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11) # 14?
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # enable all warnings in Debug mode
@@ -94,7 +94,6 @@ endif()
 # Firefly library files
 set(LIBSOURCES
   ${SOURCE_PATH}/BaseReconst.cpp
-  ${SOURCE_PATH}/DenseSolver.cpp
   ${SOURCE_PATH}/FFInt.cpp
   ${SOURCE_PATH}/FFIntVec.cpp
   ${SOURCE_PATH}/FFThieleInterpolator.cpp
@@ -110,13 +109,8 @@ set(LIBSOURCES
   ${SOURCE_PATH}/RationalNumber.cpp
   ${SOURCE_PATH}/RatReconst.cpp
   ${SOURCE_PATH}/ReconstHelper.cpp
-  ${SOURCE_PATH}/Reconstructor.cpp
   ${SOURCE_PATH}/ShuntingYardParser.cpp
   ${SOURCE_PATH}/utils.cpp)
-
-if("${WITH_MPI}" STREQUAL "true")
-  set(LIBSOURCES ${LIBSOURCES} ${SOURCE_PATH}/MPIWorker.cpp)
-endif()
 
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
 set(INCLUDE_INSTALL_DIR_2 "${CMAKE_INSTALL_PREFIX}/include")
@@ -148,7 +142,7 @@ endif()
 if("${CUSTOM}" STREQUAL "true")
   message("-- ${Red}Using custom modular arithmetic. The example is thus not compiled.${ColourReset}")
 else()
-  add_executable(example ${EXAMPLE_EXE} ${SOURCE_PATH}/Tests.cpp)
+  add_executable(example ${EXAMPLE_EXE})
   target_link_libraries(example ${LIBS})
 endif()
 
@@ -212,7 +206,7 @@ endif()
 add_subdirectory(doc)
 
 # test
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
-  enable_testing()
-  add_subdirectory(test)
-endif()
+#if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
+#  enable_testing()
+#  add_subdirectory(test)
+#endif()

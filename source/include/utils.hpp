@@ -86,26 +86,10 @@ namespace firefly {
    */
   std::vector<std::vector<uint32_t>> generate_possible_shifts(uint32_t r);
 
-  /**
-   *  A test function for the reconstruction of rational functions
-   */
-  void reconstruct_rational_function();
+  // TODO
+  uint32_t compute_bunch_size(const uint32_t queue_length, const uint32_t thr_n, const uint32_t bunch_size);
+  uint32_t compute_job_number(const uint32_t queue_length, const uint32_t threads, const uint32_t total_threads, const uint32_t bunch_size);
 
-  /**
-   *  A test functionm for the reconstruction of polynomials
-   */
-  void reconstruct_polynomial();
-
-  /**
-   *  An implementaton of the xorshift64* RNG to set anchor points
-   *  @return a random 64-bit number
-   */
-  uint64_t xorshift64star();
-  /**
-   *  Changes the state of the xorshiftstar
-   *  @param seed The seed
-   */
-  void set_xorshift_seed(uint64_t seed);
 #ifdef DEFAULT
   uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m);
   /**

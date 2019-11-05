@@ -18,13 +18,11 @@
 
 #include "DenseSolver.hpp"
 #include "Reconstructor.hpp"
-#include "ShuntingYardParser.hpp"
-#include "Tests.hpp"
-#include "FFIntVec.hpp"
+//#include "Tests.hpp"
 
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
-  class BlackBoxUser : public BlackBoxBase {
+  class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
   public:
     // Constructor of the derived class
     // A default constructor is sufficient if no internal variables are required.
@@ -37,49 +35,46 @@ namespace firefly {
     // be fixed for all evaluations.
     // In this example we compute functions which are parsed from a file with a
     // ShuntingYardParser object and the determinant of a matrix.
-    virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+    // TODO
+    template<typename FFIntTemp>
+    std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
       //std::vector<FFInt> result;
 
       // Get results from parsed expressions
-      std::vector<FFInt> result = par.evaluate_pre(values);
+      std::vector<FFIntTemp> result = par.evaluate_pre(values);
 
       result.emplace_back(result[0] / result[3]);
 
       // Build the matrix mat
-      mat_ff mat = {{result[0], result[1]}, {result[2], result[3]}};
+      mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
       std::vector<int> p {};
       // Compute LU decomposition of mat
       calc_lu_decomposition(mat, p, 2);
       // Compute determinant of mat
       result.emplace_back(calc_determinant_lu(mat, p, 2));
 
+      //std::vector<FFIntTemp> b(1);
+      //solve_lu(mat, p, b, 2);
+
+      //mat = {{result[0], result[1]}, {result[2], result[3]}};
+      //calc_inverse(mat, 2);
+      //mat = {{result[0], result[1]}, {result[2], result[3]}};
+      //solve_gauss_system(mat, 2);
+      //mat = {{result[0], result[1]}, {result[2], result[3]}};
+      //p = {};
+      //mat_ff<FFIntTemp> mat2;
+      //calc_inverse_lu(mat, mat2, p, 2);
+      //mat = {{result[0], result[1]}, {result[2], result[3]}};
+      //p = {};
+      //calc_determinant_lu(mat, p, 2);
+
       // Some functions from Test.cpp
-      /*result.emplace_back(singular_solver(values));
-      result.emplace_back(n_eq_1(values[0]));
-      result.emplace_back(n_eq_4(values));
-      result.emplace_back(gghh(values));
-      result.emplace_back(pol_n_eq_3(values));
-      result.emplace_back(ggh(values));*/
-
-      return result;
-    }
-
-    // Example for bunched evaluations
-    virtual std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>>& values) {
-      // Get results from parsed expressions
-      std::vector<std::vector<FFInt>> result = par.evaluate_pre(values);
-
-      for (size_t i = 0; i != values.size(); ++i) {
-        result[i].emplace_back(result[i][0] / result[i][3]);
-
-        // Build the matrix mat
-        mat_ff mat = {{result[i][0], result[i][1]}, {result[i][2], result[i][3]}};
-        std::vector<int> p {};
-        // Compute LU decomposition of mat
-        calc_lu_decomposition(mat, p, 2);
-        // Compute determinant of mat
-        result[i].emplace_back(calc_determinant_lu(mat, p, 2));
-      }
+      //result.emplace_back(singular_solver(values));
+      //result.emplace_back(n_eq_1(values[0]));
+      //result.emplace_back(n_eq_4(values));
+      //result.emplace_back(gghh(values));
+      //result.emplace_back(pol_n_eq_3(values));
+      //result.emplace_back(ggh(values));
 
       return result;
     }
@@ -88,7 +83,7 @@ namespace firefly {
     // Update the internal variables if required.
     // In this example we precompute a few things for the ShuntingYardParser in
     // the new prime field.
-    virtual void prime_changed() {
+    inline void prime_changed() {
       par.precompute_tokens();
     }
 
@@ -108,7 +103,7 @@ int main() {
   BlackBoxUser bb(par);
 
   // Initialize the Reconstructor
-  Reconstructor reconst(4 /*n_vars*/, 4 /*n_threads*/, 1 /*bunch size*/,
+  Reconstructor<BlackBoxUser> reconst(4 /*n_vars*/, 4 /*n_threads*/, 1 /*bunch size*/,
                         bb /*black box*//*,
                         Reconstructor::CHATTY*/ /* verbosity mode*/);
 

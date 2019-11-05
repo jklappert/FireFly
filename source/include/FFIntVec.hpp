@@ -19,6 +19,7 @@
 #pragma once
 
 #include "FFInt.hpp"
+
 #include <array>
 
 namespace firefly {
@@ -34,6 +35,14 @@ namespace firefly {
   template<int NN> friend FFIntVec<NN> operator-(const FFIntVec<NN> &, const FFIntVec<NN> &);
   template<int NN> friend FFIntVec<NN> operator*(const FFIntVec<NN> &, const FFIntVec<NN> &);
   template<int NN> friend FFIntVec<NN> operator/(const FFIntVec<NN> &, const FFIntVec<NN> &);
+  template<int NN> friend FFIntVec<NN> operator+(const FFIntVec<NN> &, const FFInt &);
+  template<int NN> friend FFIntVec<NN> operator-(const FFIntVec<NN> &, const FFInt &);
+  template<int NN> friend FFIntVec<NN> operator*(const FFIntVec<NN> &, const FFInt &);
+  template<int NN> friend FFIntVec<NN> operator/(const FFIntVec<NN> &, const FFInt &);
+  template<int NN> friend FFIntVec<NN> operator+(const FFInt &, const FFIntVec<NN> &);
+  template<int NN> friend FFIntVec<NN> operator-(const FFInt &, const FFIntVec<NN> &);
+  template<int NN> friend FFIntVec<NN> operator*(const FFInt &, const FFIntVec<NN> &);
+  template<int NN> friend FFIntVec<NN> operator/(const FFInt &, const FFIntVec<NN> &);
   template<int NN> friend FFIntVec<NN> pow(const FFIntVec<NN> &, const FFIntVec<NN> &);
   template<int NN> friend bool operator==(const FFIntVec<NN> &, const FFIntVec<NN> &);
   template<int NN> friend bool operator!=(const FFIntVec<NN> &, const FFIntVec<NN> &);
@@ -72,6 +81,7 @@ namespace firefly {
     FFIntVec& operator*=(const FFIntVec&);
     FFIntVec& operator/=(const FFIntVec&);
     FFIntVec pow(const FFIntVec& power) const;
+    FFIntVec pow(const FFInt& power) const;
     FFInt& operator[](int i) {return vec[i];};
     FFInt operator[](int i) const {return vec[i];};
     bool operator!() const;
@@ -103,6 +113,14 @@ namespace firefly {
   bool operator==(const FFIntVec<N>& a, const FFIntVec<N>& b);
   template<int N>
   bool operator!=(const FFIntVec<N>& a, const FFIntVec<N>& b);
+  template<int N>
+  bool operator>(const FFIntVec<N>& a, const FFIntVec<N>& b);
+  template<int N>
+  bool operator>=(const FFIntVec<N>& a, const FFIntVec<N>& b);
+  template<int N>
+  bool operator<(const FFIntVec<N>& a, const FFIntVec<N>& b);
+  template<int N>
+  bool operator<=(const FFIntVec<N>& a, const FFIntVec<N>& b);
   template<int N>
   FFIntVec<N> operator/(const FFIntVec<N>& a, const FFIntVec<N>& b);
   template<int N>

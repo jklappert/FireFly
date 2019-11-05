@@ -177,6 +177,88 @@ namespace firefly {
     return std::make_pair(interpolate, write_to_file);
   }
 
+  std::pair<bool, bool> RatReconst::feed(const std::vector<FFInt>& new_ti, const std::vector<FFInt>& num,
+                                         const std::vector<std::vector<uint32_t>>& fed_zi_ord,
+                                         const uint32_t fed_prime) {
+    std::unique_lock<std::mutex> lock(mutex_status);
+    bool write_to_file = false;
+    bool interpolate = false;
+
+    if (!done && fed_prime == prime_number) {
+      if (first_feed) {
+        start_interpolation = true;
+      }
+
+      if (first_feed && !scan) {
+        start = std::chrono::high_resolution_clock::now();
+
+        if (num[0] == 0) {
+          new_prime = true;
+          zero_counter ++;
+          fed_zero = true;
+
+          if (zero_counter == prime_number + 1)
+            combined_prime = primes()[prime_number + 1];
+
+          if (tag.size() != 0) {
+            if (prime_number != 0)
+              save_zero_consecutive_prime();
+            else
+              save_zero_state();
+
+            std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+            ogzstream gzfile;
+            std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
+            gzfile.open(probe_file_name.c_str());
+            gzfile.close();
+          }
+
+          ++prime_number;
+
+          if (prime_number == 100) {
+            ERROR_MSG("Your interpolation requests more than 100 primes.");
+            std::exit(EXIT_FAILURE);
+          } else if (zero_counter == 3 && prime_number == 3) {
+            new_prime = false;
+            done = true;
+            g_ni[std::vector<uint32_t>(n)] = RationalNumber(0, 1);
+            g_di[std::vector<uint32_t>(n)] = RationalNumber(1, 1);
+          }
+        } else {
+          if (!check_interpolation)
+            new_prime = false;
+
+          first_feed = false;
+
+          for (size_t i = 0; i != new_ti.size(); ++i) {
+            if (tag.size() != 0)
+              saved_food.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
+
+            queue.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
+          }
+        }
+      } else {
+        for (size_t i = 0; i != new_ti.size(); ++i) {
+          if (!scan && tag.size() != 0)
+            saved_food.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
+
+          queue.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
+        }
+      }
+
+      if (start_interpolation) {
+        start_interpolation = false;
+        interpolate = true;
+      }
+
+      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 1800.) {
+        write_to_file = true;
+      }
+    }
+
+    return std::make_pair(interpolate, write_to_file);
+  }
+
   // TODO Change return type since the first bool should not be needed anymore
   std::tuple<bool, bool, uint32_t> RatReconst::interpolate() {
     std::unique_lock<std::mutex> lock(mutex_status);
