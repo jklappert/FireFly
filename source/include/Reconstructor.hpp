@@ -2372,6 +2372,7 @@ namespace firefly {
 
     //std::cout << "start with " << N << " of " << requested_probes.size() << "\n";
 
+    if(N != 1){
     std::vector<FFIntVec<N>> values_vec(n);
 
     for (uint32_t i = 0; i != N; ++i) {
@@ -2382,9 +2383,9 @@ namespace firefly {
       }
 
       requested_probes.pop_front();
+      
     }
-
-    tp.run_task([this, indices = std::move(indices), values_vec = std::move(values_vec)]() {
+        tp.run_task([this, indices = std::move(indices), values_vec = std::move(values_vec)]() {
       auto time0 = std::chrono::high_resolution_clock::now();
 
       std::vector<FFIntVec<N>> probe = bb.eval(values_vec);
@@ -2416,6 +2417,48 @@ namespace firefly {
 
       get_a_job();
     });
+    } else {
+          std::vector<FFInt> values_vec(n);
+          indices.emplace_back(requested_probes.front().first);
+                for (uint32_t j = 0; j != n; ++j) {
+        values_vec[j] = requested_probes.front().second[j];
+      }
+
+      requested_probes.pop_front();
+      
+          tp.run_task([this, indices = std::move(indices), values_vec = std::move(values_vec)]() {
+      auto time0 = std::chrono::high_resolution_clock::now();
+
+      std::vector<FFInt> probe = bb.eval(values_vec);
+
+      auto time1 = std::chrono::high_resolution_clock::now();
+
+      auto time = std::chrono::duration<double>(time1 - time0).count();
+
+      {
+        std::unique_lock<std::mutex> lock(future_control);
+
+        // TODO time
+        iteration += N;
+        int tmp_iterations = total_iterations + iteration;
+        average_black_box_time = (average_black_box_time * (tmp_iterations - 1) + time) / tmp_iterations;
+
+        std::vector<std::vector<FFInt>> tmp(probe.size());
+
+        for (size_t i = 0; i != probe.size(); ++i) {
+          tmp[i] = std::move(std::vector<FFInt> (1, probe[i]));
+        }
+
+        computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
+
+        probes_finished += N;
+
+        condition_future.notify_one();
+      }
+
+      get_a_job();
+    });
+    }
   }
 
 #ifdef WITH_MPI
