@@ -1158,6 +1158,10 @@ namespace firefly {
     //started_probes[zi_order] += bunch_size;
     start_probe_jobs(zi_order, 1);
     started_probes[zi_order] += 1;
+
+    for (uint32_t i = 0; i != thr_n; ++i) {
+      get_a_job();
+    }
   }
 
   template<typename BlackBoxTemp>
