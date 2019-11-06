@@ -172,6 +172,7 @@ DESTINATION "${LIB_INSTALL_DIR}/pkgconfig")
 # install public headers
 install(FILES
   "${INCLUDE_PATH}/BaseReconst.hpp"
+  "${INCLUDE_PATH}/BlackBoxBase.hpp"
   "${INCLUDE_PATH}/DenseSolver.hpp"
   "${INCLUDE_PATH}/FFInt.hpp"
   "${INCLUDE_PATH}/FFIntVec.hpp"
