@@ -34,7 +34,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # set the C++ standard
-set(CMAKE_CXX_STANDARD 11) # 14?
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # enable all warnings in Debug mode

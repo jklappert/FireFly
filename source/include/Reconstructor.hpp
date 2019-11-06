@@ -1012,9 +1012,9 @@ namespace firefly {
     {// TODO mutex required?
       std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-      for (auto indi : indices) {
-        auto tmp = std::move(index_map.at(indi)); // TODO []
-        index_map.erase(indi);
+      for (const auto& index : indices) {
+        auto tmp = std::move(index_map[index]);
+        index_map.erase(index);
         t_vec.emplace_back(tmp.first);
         zi_order_vec.emplace_back(std::move(tmp.second));
 
@@ -1031,7 +1031,7 @@ namespace firefly {
     }
 #endif
 
-    ++iteration;
+    //++iteration;
 
     if (verbosity > SILENT) {
       INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s");
@@ -1513,7 +1513,7 @@ namespace firefly {
 
       get_probe(indices, probes);
 
-      ++iteration;
+      //++iteration;
 
       if (verbosity > SILENT && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - last_print_time).count() > 2.) {
         std::unique_lock<std::mutex> lock_print(print_control);
@@ -1991,10 +1991,10 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-      for (auto indi : indices) {
+      for (const auto& index : indices) {
         //std::cout << "access index " << indi << "\n";
-        auto tmp = std::move(index_map.at(indi)); // TODO []
-        index_map.erase(indi);
+        auto tmp = std::move(index_map[index]);
+        index_map.erase(index);
         t_vec.emplace_back(tmp.first);
         zi_order_vec.emplace_back(std::move(tmp.second));
 
@@ -2397,8 +2397,9 @@ namespace firefly {
         std::unique_lock<std::mutex> lock(future_control);
 
         // TODO time
-        //++tmp_total_iterations;
-        //tmp_average_black_box_time = (tmp_average_black_box_time * (tmp_total_iterations - 1) + time) / tmp_total_iterations;
+        iteration += N;
+        int tmp_iterations = total_iterations + iteration;
+        average_black_box_time = (average_black_box_time * (tmp_iterations - 1) + time) / tmp_iterations;
 
         std::vector<std::vector<FFInt>> tmp(probe.size(), std::vector<FFInt>(N));
 
