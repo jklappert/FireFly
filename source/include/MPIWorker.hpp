@@ -56,6 +56,7 @@ namespace firefly {
     void communicate();
     template<uint32_t N>
     void queue_new_job(const std::vector<uint64_t>& values_list, const uint32_t start);
+    void compute(const uint64_t index, const std::vector<FFInt>& values_vec);
     template<typename FFIntTemp>
     void compute(const std::vector<uint64_t>& index_vec, const std::vector<FFIntTemp>& values_vec);
   };
@@ -239,35 +240,69 @@ namespace firefly {
   template<typename BlackBoxTemp>
   template<uint32_t N>
   void MPIWorker<BlackBoxTemp>::queue_new_job(const std::vector<uint64_t>& values_list, const uint32_t start) {
-    std::vector<uint64_t> indices;
-    indices.reserve(N);
+    if (N != 1) {
+      std::vector<uint64_t> indices;
+      indices.reserve(N);
+      std::vector<FFIntVec<N>> values_vec(n);
 
-    std::vector<FFIntVec<N>> values_vec(n);
+      for (uint32_t i = 0; i != N; ++i) {
+        indices.emplace_back(values_list[(n + 1) * (start + i)]);
 
-    for (uint32_t i = 0; i != N; ++i) {
-      indices.emplace_back(values_list[(n + 1) * (start + i)]);
+        for (uint32_t j = 0; j != n; ++j) {
+          values_vec[j][i] = values_list[(n + 1) * (start + i) + j + 1];
+        }
+      }
+
+      tp.run_task([this, indices = std::move(indices), values_vec = std::move(values_vec)]() {
+        compute(indices, values_vec);
+      });
+    } else {
+      std::vector<FFInt> values_vec;
+      values_vec.reserve(n);
+
+      uint64_t index = values_list[(n + 1) * start];
 
       for (uint32_t j = 0; j != n; ++j) {
-        values_vec[j][i] = values_list[(n + 1) * (start + i) + j + 1];
+        values_vec.emplace_back(values_list[(n + 1) * start + j + 1]);
       }
+
+      tp.run_task([this, index, values_vec = std::move(values_vec)]() {
+        compute(index, values_vec);
+      });
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  void MPIWorker<BlackBoxTemp>::compute(const uint64_t index, const std::vector<FFInt>& values_vec) {
+    auto time0 = std::chrono::high_resolution_clock::now();
+
+    std::vector<FFInt> result = bb.eval(values_vec);
+
+    auto time1 = std::chrono::high_resolution_clock::now();
+
+    std::vector<uint64_t> result_uint;
+    result_uint.reserve(result.size());
+
+    result_uint.emplace_back(index);
+
+    for (size_t i = 0; i != result.size(); ++i) {
+      result_uint.emplace_back(result[i].n);
     }
 
-    tp.run_task([this, indices = std::move(indices), values_vec = std::move(values_vec)]() {
-      compute(indices, values_vec);
-    });
+    std::unique_lock<std::mutex> lock(mut);
+    ++total_iterations;
+
+    auto time = std::chrono::duration<double>(time1 - time0).count();
+    average_black_box_time = (average_black_box_time * (total_iterations - 1) + time) / total_iterations;
+    results.insert(results.end(), result_uint.begin(), result_uint.end());
+    --tasks;
+
+    cond.notify_one();
   }
 
   template<typename BlackBoxTemp>
   template<typename FFIntTemp>
   void MPIWorker<BlackBoxTemp>::compute(const std::vector<uint64_t>& index_vec, const std::vector<FFIntTemp>& values_vec) {
-    //std::cout << "calc with:\n";
-    //for (size_t j = 0; j != values_vec.front().size(); ++j) {
-    //  for (size_t i = 0; i != values_vec.size(); ++i) {
-    //     std::cout << values_vec[i][j].n << " ";
-    //  }
-    //  std::cout << "\n";
-    //}
-
     auto time0 = std::chrono::high_resolution_clock::now();
 
     std::vector<FFIntTemp> result = bb.eval(values_vec);
@@ -277,26 +312,20 @@ namespace firefly {
     std::vector<uint64_t> result_uint;
     result_uint.reserve(result.front().size() * (1 + result.size()));
 
-    //std::cout << "emplacing " << static_cast<size_t>(bunch_size) * (1 + result.front().size()) << " " << bunch_size << " " << result.front().size() << "\n";
-
     for (size_t j = 0; j != result.front().size(); ++j) {
       result_uint.emplace_back(index_vec[j]);
-      //std::cout << "index " << result_uint.back() << "\n";
 
       for (size_t i = 0; i != result.size(); ++i) {
         result_uint.emplace_back(result[i][j].n);
-        //std::cout << result_uint.back() << "\n";
       }
     }
 
     std::unique_lock<std::mutex> lock(mut);
-    ++total_iterations;
+    total_iterations += result.front().size();
 
     auto time = std::chrono::duration<double>(time1 - time0).count();
     average_black_box_time = (average_black_box_time * (total_iterations - 1) + time) / total_iterations;
     results.insert(results.end(), result_uint.begin(), result_uint.end());
-    //std::cout << "res back " << results.back() << "\n";
-    //std::cout << "results size " << results.size() << "\n";
     --tasks;
 
     cond.notify_one();

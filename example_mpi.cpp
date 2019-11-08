@@ -122,6 +122,8 @@ int main() {
 
   uint32_t bunch_size = 16;
 
+  //std::this_thread::sleep_for(std::chrono::seconds(15));
+
   if (process == master) {
     Reconstructor<BlackBoxUser> reconst(4 /*n_vars*/,
                           std::thread::hardware_concurrency() /*n_threads*/,

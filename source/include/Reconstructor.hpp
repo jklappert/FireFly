@@ -236,7 +236,7 @@ namespace firefly {
     /**
      *  TODO
      */
-    void mpi_setup();
+    inline void mpi_setup();
     void send_first_jobs();
     void mpi_communicate();
 #endif
@@ -2375,7 +2375,7 @@ namespace firefly {
 
 #if WITH_MPI
   template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::mpi_setup() {
+  inline void Reconstructor<BlackBoxTemp>::mpi_setup() {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Bcast(&prime_it, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
   }
@@ -2700,8 +2700,6 @@ namespace firefly {
               new_jobs = false;
             }
 
-            lock_probe_queue.unlock();
-
             //std::cout << "sending " << size << " jobs\n";
 
             MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
@@ -2801,8 +2799,6 @@ namespace firefly {
           if (requested_probes.empty()) {
             new_jobs = false;
           }
-
-          lock_probe_queue.unlock();
 
           //std::cout << "sending " << size << " jobs\n";
 
