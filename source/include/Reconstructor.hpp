@@ -229,6 +229,7 @@ namespace firefly {
     uint32_t total_thread_count = 0;
     uint32_t tmp_total_iterations = 0;
     bool proceed = false;
+    bool start_communication = false;
     std::unordered_map<int, uint64_t> nodes;
     std::queue<std::pair<int, uint64_t>> empty_nodes;
     std::condition_variable cond_val;
@@ -575,23 +576,18 @@ namespace firefly {
     done = false;
 
 #if WITH_MPI
-    //mpi_setup(); // TODO set prime when it is know which prime it is!
     ThreadPool tp_comm(1);
     tp_comm.run_priority_task([this]() {
       {
         std::unique_lock<std::mutex> lock(mutex_probe_queue);
 
-        while (!new_jobs) {
+        while (!start_communication) {
           cond_val.wait(lock);
         }
 
         proceed = true;
 
         cond_val.notify_one();
-
-        if (requested_probes.empty()) {
-          new_jobs = false;
-        }
       }
 
       mpi_communicate();
@@ -676,7 +672,7 @@ namespace firefly {
       {
         std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-        new_jobs = true;
+        start_communication = true;
 
         cond_val.notify_one();
 
@@ -915,76 +911,17 @@ namespace firefly {
     shift = tmp_rec.get_zi_shift_vec();
     std::vector<uint32_t> zi_order(n - 1, 1);
 
-#if !WITH_MPI
     uint32_t to_start = thr_n ;//* bunch_size;
 
     queue_probes(zi_order, to_start);
     started_probes.emplace(zi_order, to_start);
 
     get_jobs();
-#else
+
+#if WITH_MPI
     send_first_jobs();
 #endif
 
-// TODO queue them?
-#if WITH_MPI
-    ++started_probes[zi_order];
-
-    std::vector<FFIntVec<1>> values(n);
-    FFInt t = 1;
-
-    // check if t was already used for this zi_order
-    {
-      std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
-
-      auto it = chosen_t.find(zi_order);
-
-      if (it != chosen_t.end()) {
-        while (true) {
-          t = tmp_rec.get_rand_64();
-
-          auto itt = it->second.find(t.n);
-
-          if (itt != it->second.end()) {
-            //std::unique_lock<std::mutex> lock_print(print_control);
-
-            //WARNING_MSG("Found a duplicate of t, choosing a new one");
-          } else {
-            it->second.emplace(t.n);
-            break;
-          }
-        }
-      } else {
-        t = tmp_rec.get_rand_64();
-        chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>({t.n})));
-      }
-    }
-
-    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
-
-    values[0] = t + shift[0];
-
-    for (uint32_t i = 1; i != n; ++i) {
-      values[i] = rand_zi[i - 1] * t + shift[i];
-    }
-
-    auto time0 = std::chrono::high_resolution_clock::now();
-    std::vector<FFIntVec<1>> probe = bb.eval(values);
-    auto time1 = std::chrono::high_resolution_clock::now();
-    average_black_box_time = std::chrono::duration<double>(time1 - time0).count();
-
-    std::vector<std::vector<FFInt>> probes = std::vector<std::vector<FFInt>>(probe.size(), std::vector<FFInt>(1, 0));
-    //probes.reserve(probe.size());
-
-    for (size_t i = 0; i != probe.size(); ++i) {
-      std::move(probe[i].begin(), probe[i].end(), probe[i].begin());
-    }
-
-    std::vector<FFInt> t_vec = std::vector<FFInt>(1, t);
-    std::vector<std::vector<uint32_t>> zi_order_vec = std::vector<std::vector<uint32_t>>(1, std::vector<uint32_t>(n - 1, 1));
-
-    ++fed_ones;
-#else
     std::vector<uint64_t> indices;
     std::vector<std::vector<FFInt>> probes;
 
@@ -997,7 +934,6 @@ namespace firefly {
 
     uint32_t count_ones = 0;
 
-    // TODO only ones anyway
     {// TODO mutex required?
       std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
@@ -1018,7 +954,6 @@ namespace firefly {
 
       fed_ones += count_ones;
     }
-#endif
 
     if (verbosity > SILENT) {
       std::unique_lock<std::mutex> lock(future_control);
@@ -1030,13 +965,14 @@ namespace firefly {
     size_t tag_size = tags.size();
 
 #if WITH_MPI
-    ++tmp_total_iterations;
-    tmp_average_black_box_time = average_black_box_time;
+    // TODO
+    //++tmp_total_iterations;
+    //tmp_average_black_box_time = average_black_box_time;
 
     {
       std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-      new_jobs = true;
+      start_communication = true;
 
       cond_val.notify_one();
 
@@ -1046,13 +982,6 @@ namespace firefly {
 
       proceed = false;
     }
-
-    uint32_t to_start = buffer * thr_n ;//* bunch_size; // TODO
-
-    queue_probes(zi_order, to_start);
-    started_probes[zi_order] += to_start;
-
-    get_jobs();
 #endif
 
     if (tag_size != 0 && tag_size != items) {
@@ -1137,10 +1066,8 @@ namespace firefly {
       INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
     }
 
-    //queue_probes(zi_order, bunch_size);
-    //started_probes[zi_order] += bunch_size;
-    queue_probes(zi_order, 1);
-    started_probes[zi_order] += 1;
+    queue_probes(zi_order, static_cast<uint32_t>(probes.front().size()));
+    started_probes[zi_order] += static_cast<uint32_t>(probes.front().size());
 
     get_jobs();
   }
@@ -1200,7 +1127,7 @@ namespace firefly {
         {
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-          new_jobs = true;
+          start_communication = true;
 
           cond_val.notify_one();
 
@@ -1426,6 +1353,7 @@ namespace firefly {
           started_probes[std::vector<uint32_t>(n - 1, 1)] += thr_n * bunch_size;
 
           new_jobs = true;
+          start_communication = true;
           cond_val.notify_one();
 
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
@@ -1949,7 +1877,7 @@ namespace firefly {
       std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
       for (const auto& index : indices) {
-        //std::cout << "access index " << indi << "\n";
+        //std::cout << "access index " << index << "\n";
         auto tmp = std::move(index_map[index]);
         index_map.erase(index);
         t_vec.emplace_back(tmp.first);
@@ -2417,9 +2345,16 @@ namespace firefly {
     mpi_setup();
 
     std::vector<uint32_t> zi_order = std::vector<uint32_t>(n - 1, 1);
-    started_probes.emplace(std::make_pair(zi_order, 0));
+
+    std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+    if (started_probes.find(zi_order) != started_probes.end()) {
+      started_probes.emplace(std::make_pair(zi_order, 0));
+    }
 
     std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+
+    std::unique_lock<std::mutex> chosen_lock(chosen_mutex); // TODO is this really required?
 
     for (int i = 1; i != world_size; ++i) {
       uint64_t to_start;
