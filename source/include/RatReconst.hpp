@@ -50,12 +50,12 @@ namespace firefly {
      *  @return true if no interpolation is running, false otherwise, second true if one should write saved probes to file
      */
     std::pair<bool, bool> feed(const FFInt& new_ti, const FFInt& num, const std::vector<uint32_t>& fed_zi_ord, const uint32_t fed_prime);
-    /** TODO
+    /**
      *  Feeds a black-box probe which will be processed by the class.
-     *  @param new_ti the value of t for the current feed
-     *  @param num the black-box probe
-     *  @param fed_zi_ord the corresponding zi_order to this feed
-     *  @param fed_prime the corresponding prime number to this feed
+     *  @param new_ti the values of t for the current feed
+     *  @param num the black-box probes
+     *  @param fed_zi_ord the corresponding zi_orders to these feeds
+     *  @param fed_prime the corresponding prime number to these feeds
      *  @return true if no interpolation is running, false otherwise, second true if one should write saved probes to file
      */
     std::pair<bool, bool> feed(const std::vector<FFInt>& new_ti, const std::vector<FFInt>& num, const std::vector<std::vector<uint32_t>>& fed_zi_ord, const uint32_t fed_prime);

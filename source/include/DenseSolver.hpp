@@ -64,7 +64,6 @@ namespace firefly {
 
   template<typename FFIntTemp>
   using mat_ff = std::vector<std::vector<FFIntTemp>>;
-  //typedef std::vector<std::vector<FFIntTemp>> mat_ff;
 
   /**
    *  Calculates the inverse of a matrix using Gauss-Jordan

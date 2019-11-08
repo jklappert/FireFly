@@ -27,8 +27,8 @@
 #include <mpi.h>
 
 namespace firefly {
-  const int master = 0;
-  const uint64_t buffer = 2;
+  constexpr int master = 0;
+  constexpr uint64_t buffer = 2;
   enum MPI_tags {VALUES, RESULT, NEW_PRIME, TIMING, END};
 
   template<typename BlackBoxTemp>
