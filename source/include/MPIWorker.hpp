@@ -222,6 +222,11 @@ namespace firefly {
 
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Wait(&request, MPI_STATUS_IGNORE);
+
+        double timing[2] = {average_black_box_time, static_cast<double>(total_iterations)};
+
+        MPI_Send(timing, 2, MPI_DOUBLE, master, TIMING, MPI_COMM_WORLD);
+
         MPI_Barrier(MPI_COMM_WORLD);
         break;
       } else {

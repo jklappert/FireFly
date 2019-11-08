@@ -139,7 +139,7 @@ namespace firefly {
     uint64_t ind = 0;
     BlackBoxBase<BlackBoxTemp>& bb;
     const int verbosity;
-    double average_black_box_time = 0;
+    double average_black_box_time = 0.;
     std::atomic<bool> scan = {false};
     std::atomic<bool> new_prime = {false};
     std::atomic<bool> done = {false};
@@ -225,11 +225,10 @@ namespace firefly {
     void start_new_job();
 #if WITH_MPI
     int world_size;
-    double tmp_average_black_box_time = 0.;
     uint32_t total_thread_count = 0;
-    uint32_t tmp_total_iterations = 0;
+    uint32_t iterations_on_this_node = 0;
     bool proceed = false;
-    bool start_communication = false;
+    bool continue_communication = false;
     std::unordered_map<int, uint64_t> nodes;
     std::queue<std::pair<int, uint64_t>> empty_nodes;
     std::condition_variable cond_val;
@@ -581,10 +580,11 @@ namespace firefly {
       {
         std::unique_lock<std::mutex> lock(mutex_probe_queue);
 
-        while (!start_communication) {
+        while (!continue_communication) {
           cond_val.wait(lock);
         }
 
+        continue_communication = false;
         proceed = true;
 
         cond_val.notify_one();
@@ -672,7 +672,7 @@ namespace firefly {
       {
         std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-        start_communication = true;
+        continue_communication = true;
 
         cond_val.notify_one();
 
@@ -684,8 +684,6 @@ namespace firefly {
       }
     }
 #endif
-
-    tp.kill_all();
 
     if (verbosity > SILENT) {
       if (one_done || one_new_prime) {
@@ -796,25 +794,6 @@ namespace firefly {
 
       run_until_done();
 
-#if WITH_MPI
-      {
-        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
-
-        requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
-        new_jobs = false;
-
-        while (!proceed) {
-          cond_val.wait(lock_probe_queue);
-        }
-
-        proceed = false;
-      }
-#endif
-
-      // Kill all jobs
-      // otherwise it can happen that a RatReconst is fed with old data
-      tp.kill_all();
-
       found_shift = true;
 
       for (auto & rec : reconst) {
@@ -852,6 +831,9 @@ namespace firefly {
       feed_jobs = 0;
       interpolate_jobs = 0;
       iteration = 0;
+#if WITH_MPI
+      iterations_on_this_node = 0;
+#endif
       items_done = 0;
       done = false;
 
@@ -965,14 +947,10 @@ namespace firefly {
     size_t tag_size = tags.size();
 
 #if WITH_MPI
-    // TODO
-    //++tmp_total_iterations;
-    //tmp_average_black_box_time = average_black_box_time;
-
     {
       std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-      start_communication = true;
+      continue_communication = true;
 
       cond_val.notify_one();
 
@@ -1127,7 +1105,7 @@ namespace firefly {
         {
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-          start_communication = true;
+          continue_communication = true;
 
           cond_val.notify_one();
 
@@ -1205,6 +1183,21 @@ namespace firefly {
           }
         }
 
+#if WITH_MPI
+        {
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          continue_communication = true;
+          cond_val.notify_one();
+
+          while (!proceed) {
+            cond_val.wait(lock_probe_queue);
+          }
+
+          proceed = false;
+        }
+#endif
+
         total_iterations += iteration;
         ++prime_it;
 
@@ -1227,6 +1220,9 @@ namespace firefly {
         prime_start = std::chrono::high_resolution_clock::now();
 
         iteration = 0;
+#if WITH_MPI
+        iterations_on_this_node = 0;
+#endif
 
         fed_ones = 0;
         probes_queued = 0;
@@ -1353,7 +1349,7 @@ namespace firefly {
           started_probes[std::vector<uint32_t>(n - 1, 1)] += thr_n * bunch_size;
 
           new_jobs = true;
-          start_communication = true;
+          continue_communication = true;
           cond_val.notify_one();
 
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
@@ -1499,6 +1495,23 @@ namespace firefly {
       }
     }
 
+#if WITH_MPI
+    {
+      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+      requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+      new_jobs = false;
+
+      while (!proceed) {
+        cond_val.wait(lock_probe_queue);
+      }
+
+      proceed = false;
+    }
+#endif
+
+    tp.kill_all();
+
     if (!scan && save_states) {
       for (uint32_t item = 0; item != items; ++item) {
         // remove probe files if the interpolation is done
@@ -1515,6 +1528,21 @@ namespace firefly {
         }
       }
     }
+
+#if WITH_MPI
+    {
+      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+      continue_communication = true;
+      cond_val.notify_one();
+
+      while (!proceed) {
+        cond_val.wait(lock_probe_queue);
+      }
+
+      proceed = false;
+    }
+#endif
 
     total_iterations += iteration;
   }
@@ -2270,8 +2298,14 @@ namespace firefly {
           std::unique_lock<std::mutex> lock(future_control);
 
           iteration += N;
+#if !WITH_MPI
           int tmp_iterations = total_iterations + iteration;
           average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
+#else
+          iterations_on_this_node += N;
+          int tmp_iterations = total_iterations + iterations_on_this_node;
+          average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
+#endif
 
           // TODO
           std::vector<std::vector<FFInt>> tmp;//(probe.size(), std::vector<FFInt>(N));
@@ -2313,8 +2347,14 @@ namespace firefly {
           std::unique_lock<std::mutex> lock(future_control);
 
           iteration += N;
+#if !WITH_MPI
           int tmp_iterations = total_iterations + iteration;
           average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
+#else
+          iterations_on_this_node += N;
+          int tmp_iterations = total_iterations + iterations_on_this_node;
+          average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
+#endif
 
           std::vector<std::vector<FFInt>> tmp;
           tmp.reserve(probe.size());
@@ -2454,6 +2494,14 @@ namespace firefly {
 
         MPI_Barrier(MPI_COMM_WORLD);
 
+        {
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          proceed = true;
+
+          cond_val.notify_one();
+        }
+
         int flag = 1;
         MPI_Status status_rec;
 
@@ -2471,7 +2519,51 @@ namespace firefly {
           }
         }
 
+        std::vector<double> timings;
+        std::vector<double> weights;
+        timings.reserve(world_size);
+        weights.reserve(world_size);
+        double total_weight = 0.;
+
+        for (int i = 1; i != world_size; ++i) {
+          MPI_Status status_time;
+          double timing[2];
+          MPI_Recv(&timing, 2, MPI_DOUBLE, i, TIMING, MPI_COMM_WORLD, &status_time);
+          timings.emplace_back(timing[0]);
+          weights.emplace_back(timing[1]);
+          total_weight += timing[1];
+        }
+
         MPI_Barrier(MPI_COMM_WORLD);
+
+        {
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          while (!continue_communication) {
+            cond_val.wait(lock_probe_queue);
+          }
+
+          continue_communication = false;
+        }
+
+        iteration = total_weight + iterations_on_this_node;
+
+        timings.emplace_back(average_black_box_time);
+        weights.emplace_back(static_cast<double>(total_iterations + iterations_on_this_node));
+        total_weight += static_cast<double>(total_iterations + iterations_on_this_node);
+
+        average_black_box_time = 0.;
+
+        for (int i = 0; i != world_size; ++i) {
+          average_black_box_time += weights[i] / total_weight * timings[i];
+        }
+
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        proceed = true;
+
+        cond_val.notify_one();
+
         break;
       } else if (new_prime || (done && scan)) {
         MPI_Request* requests = new MPI_Request[world_size - 1];
@@ -2495,6 +2587,14 @@ namespace firefly {
         delete[] requests;
 
         MPI_Barrier(MPI_COMM_WORLD);
+
+        {
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          proceed = true;
+
+          cond_val.notify_one();
+        }
 
         int flag = 1;
         MPI_Status status_rec;
@@ -2532,9 +2632,21 @@ namespace firefly {
 
         MPI_Barrier(MPI_COMM_WORLD);
 
-        timings.emplace_back(tmp_average_black_box_time);
-        weights.emplace_back(static_cast<double>(tmp_total_iterations));
-        total_weight += static_cast<double>(tmp_total_iterations);
+        {
+          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+          while (!continue_communication) {
+            cond_val.wait(lock_probe_queue);
+          }
+
+          continue_communication = false;
+        }
+
+        iteration = total_weight + iterations_on_this_node;
+
+        timings.emplace_back(average_black_box_time);
+        weights.emplace_back(static_cast<double>(total_iterations + iterations_on_this_node));
+        total_weight += static_cast<double>(total_iterations + iterations_on_this_node);
 
         average_black_box_time = 0.;
 
