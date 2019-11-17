@@ -217,12 +217,12 @@ namespace firefly {
     /**
      *  TODO
      */
-    void get_jobs();
+    void get_job();
     /**
      *  TODO
      */
     template<uint32_t N>
-    void start_new_job();
+    void start_new_job(std::unique_lock<std::mutex>& lock_probe_queue);
 #if WITH_MPI
     int world_size;
     uint32_t total_thread_count = 0;
@@ -635,7 +635,6 @@ namespace firefly {
         }
 
 #endif
-        get_jobs();
       } else {
         start_first_runs();
       }
@@ -788,8 +787,6 @@ namespace firefly {
           proceed = false;
         }
 #endif
-
-        get_jobs();
       }
 
       run_until_done();
@@ -897,8 +894,6 @@ namespace firefly {
 
     queue_probes(zi_order, to_start);
     started_probes.emplace(zi_order, to_start);
-
-    get_jobs();
 
 #if WITH_MPI
     send_first_jobs();
@@ -1046,8 +1041,6 @@ namespace firefly {
 
     queue_probes(zi_order, static_cast<uint32_t>(probes.front().size()));
     started_probes[zi_order] += static_cast<uint32_t>(probes.front().size());
-
-    get_jobs();
   }
 
   template<typename BlackBoxTemp>
@@ -1122,7 +1115,6 @@ namespace firefly {
         started_probes[zi_order] += to_start;
 
 #endif
-        get_jobs();
       } else {
         new_prime = true;
 #if WITH_MPI
@@ -1396,8 +1388,6 @@ namespace firefly {
         }
 #endif
 
-        get_jobs();
-
         probes_for_next_prime = 0;
       }
 
@@ -1422,7 +1412,6 @@ namespace firefly {
 
       tp.run_priority_task([this, indices = std::move(indices), probes = std::move(probes)]() {
         feed_job(indices, probes);
-        get_jobs();
       });
 
       {
@@ -1614,6 +1603,12 @@ namespace firefly {
 
       ++probes_queued;
       //std::cout << "start " << probes_queued << "\n";
+    }
+
+    for (uint32_t j = 0; j != to_start; ++j) {
+      tp.run_task([this]() {
+        get_job();
+      });
     }
 
 /*
@@ -1947,14 +1942,12 @@ namespace firefly {
 
               tp.run_priority_task([this, &rec]() {
                 interpolate_job(rec);
-                get_jobs();
               });
             }
 
             if (interpolate_and_write.second) {
               tp.run_priority_task([this, &rec]() {
                 std::get<3>(rec)->write_food_to_file();
-                get_jobs();
               });
             }
           }
@@ -2217,56 +2210,52 @@ namespace firefly {
   }
 
   template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::get_jobs() {
-    while (tp.queue_size() == 0) { // TODO experiment with buffer
-      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+  void Reconstructor<BlackBoxTemp>::get_job() {
+    std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-      if (!requested_probes.empty()) {
-        switch(compute_bunch_size(static_cast<uint32_t>(requested_probes.size()), thr_n, bunch_size)) {
-          case 1:
-            start_new_job<1>();
-            break;
-          case 2:
-            start_new_job<2>();
-            break;
-          case 4:
-            start_new_job<4>();
-            break;
-          case 8:
-            start_new_job<8>();
-            break;
-          case 16:
-            start_new_job<16>();
-            break;
-          case 32:
-            start_new_job<32>();
-            break;
-          case 64:
-            start_new_job<64>();
-            break;
-          case 128:
-            start_new_job<128>();
-            break;
-          case 256:
-            start_new_job<256>();
-            break;
-        }
+    if (!requested_probes.empty()) {
+      switch(compute_bunch_size(static_cast<uint32_t>(requested_probes.size()), thr_n, bunch_size)) {
+        case 1:
+          start_new_job<1>(lock_probe_queue);
+          break;
+        case 2:
+          start_new_job<2>(lock_probe_queue);
+          break;
+        case 4:
+          start_new_job<4>(lock_probe_queue);
+          break;
+        case 8:
+          start_new_job<8>(lock_probe_queue);
+          break;
+        case 16:
+          start_new_job<16>(lock_probe_queue);
+          break;
+        case 32:
+          start_new_job<32>(lock_probe_queue);
+          break;
+        case 64:
+          start_new_job<64>(lock_probe_queue);
+          break;
+        case 128:
+          start_new_job<128>(lock_probe_queue);
+          break;
+        case 256:
+          start_new_job<256>(lock_probe_queue);
+          break;
+      }
 
 #if WITH_MPI
-        if (requested_probes.empty()) {
-           new_jobs = false;
-           break;
-        }
-#endif
-      } else {
+      if (requested_probes.empty()) {
+        new_jobs = false;
         break;
       }
+#endif
     }
   }
 
   template<typename BlackBoxTemp>
   template<uint32_t N>
-  void Reconstructor<BlackBoxTemp>::start_new_job() {
+  void Reconstructor<BlackBoxTemp>::start_new_job(std::unique_lock<std::mutex>& lock_probe_queue) {
     std::vector<uint64_t> indices;
     indices.reserve(N);
 
@@ -2285,44 +2274,40 @@ namespace firefly {
         requested_probes.pop_front();
       }
 
-      tp.run_task([this, indices = std::move(indices), values_vec = std::move(values_vec)]() {
-        auto time0 = std::chrono::high_resolution_clock::now();
+      lock_probe_queue.unlock();
 
-        std::vector<FFIntVec<N>> probe = bb.eval(values_vec);
+      auto time0 = std::chrono::high_resolution_clock::now();
 
-        auto time1 = std::chrono::high_resolution_clock::now();
+      std::vector<FFIntVec<N>> probe = bb.eval(values_vec);
 
-        auto time = std::chrono::duration<double>(time1 - time0).count();
+      auto time1 = std::chrono::high_resolution_clock::now();
 
-        {
-          std::unique_lock<std::mutex> lock(future_control);
+      auto time = std::chrono::duration<double>(time1 - time0).count();
 
-          iteration += N;
+      std::unique_lock<std::mutex> lock(future_control);
+
+      iteration += N;
 #if !WITH_MPI
-          int tmp_iterations = total_iterations + iteration;
-          average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
+      int tmp_iterations = total_iterations + iteration;
+      average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
 #else
-          iterations_on_this_node += N;
-          int tmp_iterations = total_iterations + iterations_on_this_node;
-          average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
+      iterations_on_this_node += N;
+      int tmp_iterations = total_iterations + iterations_on_this_node;
+      average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
 #endif
 
-          // TODO
-          std::vector<std::vector<FFInt>> tmp;//(probe.size(), std::vector<FFInt>(N));
-          tmp.reserve(probe.size());
+      // TODO
+      std::vector<std::vector<FFInt>> tmp;//(probe.size(), std::vector<FFInt>(N));
+      tmp.reserve(probe.size());
 
-          for (size_t i = 0; i != probe.size(); ++i) {
-            //std::move(probe[i].begin(), probe[i].end(), tmp[i].begin());
-            tmp.emplace_back(std::vector<FFInt>(std::make_move_iterator(probe[i].begin()), std::make_move_iterator(probe[i].end())));
-          }
+      for (size_t i = 0; i != probe.size(); ++i) {
+        //std::move(probe[i].begin(), probe[i].end(), tmp[i].begin());
+        tmp.emplace_back(std::vector<FFInt>(std::make_move_iterator(probe[i].begin()), std::make_move_iterator(probe[i].end())));
+      }
 
-          computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
+      computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
 
-          condition_future.notify_one();
-        }
-
-        get_jobs();
-      });
+      condition_future.notify_one();
     } else {
       indices.emplace_back(requested_probes.front().first);
 
@@ -2334,42 +2319,38 @@ namespace firefly {
 
       requested_probes.pop_front();
 
-      tp.run_task([this, indices = std::move(indices), values_vec = std::move(values_vec)]() {
-        auto time0 = std::chrono::high_resolution_clock::now();
+      lock_probe_queue.unlock();
 
-        std::vector<FFInt> probe = bb.eval(values_vec);
+      auto time0 = std::chrono::high_resolution_clock::now();
 
-        auto time1 = std::chrono::high_resolution_clock::now();
+      std::vector<FFInt> probe = bb.eval(values_vec);
 
-        auto time = std::chrono::duration<double>(time1 - time0).count();
+      auto time1 = std::chrono::high_resolution_clock::now();
 
-        {
-          std::unique_lock<std::mutex> lock(future_control);
+      auto time = std::chrono::duration<double>(time1 - time0).count();
 
-          iteration += N;
+      std::unique_lock<std::mutex> lock(future_control);
+
+      iteration += N;
 #if !WITH_MPI
-          int tmp_iterations = total_iterations + iteration;
-          average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
+      int tmp_iterations = total_iterations + iteration;
+      average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
 #else
-          iterations_on_this_node += N;
-          int tmp_iterations = total_iterations + iterations_on_this_node;
-          average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
+      iterations_on_this_node += N;
+      int tmp_iterations = total_iterations + iterations_on_this_node;
+      average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
 #endif
 
-          std::vector<std::vector<FFInt>> tmp;
-          tmp.reserve(probe.size());
+      std::vector<std::vector<FFInt>> tmp;
+      tmp.reserve(probe.size());
 
-          for (size_t i = 0; i != probe.size(); ++i) {
-            tmp.emplace_back(std::vector<FFInt> (1, probe[i]));
-          }
+      for (size_t i = 0; i != probe.size(); ++i) {
+        tmp.emplace_back(std::vector<FFInt> (1, probe[i]));
+      }
 
-          computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
+      computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
 
-          condition_future.notify_one();
-        }
-
-        get_jobs();
-      });
+      condition_future.notify_one();
     }
   }
 
