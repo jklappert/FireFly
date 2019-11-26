@@ -861,6 +861,8 @@ namespace firefly {
 
         logger << "Maximal degree of numerator: " << std::to_string(max_deg_num)
           << " | Maximal degree of denominator: " << std::to_string(max_deg_den) << "\n";
+	logger.close();
+	logger.open("firefly.log", std::ios_base::app);
 
         if (verbosity > SILENT) {
           INFO_MSG("Maximal degree of numerator: " + std::to_string(max_deg_num) + " | Maximal degree of denominator: " + std::to_string(max_deg_den));
@@ -939,6 +941,8 @@ namespace firefly {
 
     logger << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n\n";
     logger << "Proceeding with interpolation over prime field F(" << std::to_string(primes()[prime_it]) << ")\n";
+    logger.close();
+    logger.open("firefly.log", std::ios_base::app);
 
     if (verbosity > SILENT) {
       INFO_MSG("Completed scan in " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
@@ -1107,6 +1111,8 @@ namespace firefly {
     logger << "Probe: 1 | Done: 0 / " << std::to_string(items)
     << " | Needs new prime field: " << std::to_string(items_new_prime)
     << " / " << std::to_string(items) << "\n";
+    logger.close();
+    logger.open("firefly.log", std::ios_base::app);
 
     if (verbosity > SILENT) {
       INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
@@ -2057,11 +2063,13 @@ namespace firefly {
         one_new_prime = false;
 
         std::unique_lock<std::mutex> lock_print(print_control);
-
+	//TODO does not seem to be thread safe! Different numbers in log file and screen output!
         logger << "Probe: " + std::to_string(iteration)
         << " | Done: " << std::to_string(items_done) << " / " << std::to_string(items)
         << " | " << "Needs new prime field: " << std::to_string(items_new_prime)
         << " / " << std::to_string(items - items_done) << "\n";
+	logger.close();
+	logger.open("firefly.log", std::ios_base::app);
 
         if (verbosity > SILENT) {
           INFO_MSG("Probe: " + std::to_string(iteration) +
