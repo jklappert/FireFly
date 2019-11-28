@@ -154,6 +154,7 @@ namespace firefly {
     std::vector<std::string> file_paths;
     std::ofstream logger;
     ThreadPool tp;
+    // TODO tidy up the mutexes
     std::mutex future_control;
     std::mutex job_control;
     std::mutex feed_control;
@@ -861,8 +862,8 @@ namespace firefly {
 
         logger << "Maximal degree of numerator: " << std::to_string(max_deg_num)
           << " | Maximal degree of denominator: " << std::to_string(max_deg_den) << "\n";
-	logger.close();
-	logger.open("firefly.log", std::ios_base::app);
+	      logger.close();
+	      logger.open("firefly.log", std::ios_base::app);
 
         if (verbosity > SILENT) {
           INFO_MSG("Maximal degree of numerator: " + std::to_string(max_deg_num) + " | Maximal degree of denominator: " + std::to_string(max_deg_den));
@@ -2062,14 +2063,14 @@ namespace firefly {
         one_done = false;
         one_new_prime = false;
 
+        std::unique_lock<std::mutex> lock_future(future_control);
         std::unique_lock<std::mutex> lock_print(print_control);
-	//TODO does not seem to be thread safe! Different numbers in log file and screen output!
         logger << "Probe: " + std::to_string(iteration)
         << " | Done: " << std::to_string(items_done) << " / " << std::to_string(items)
         << " | " << "Needs new prime field: " << std::to_string(items_new_prime)
         << " / " << std::to_string(items - items_done) << "\n";
-	logger.close();
-	logger.open("firefly.log", std::ios_base::app);
+	      logger.close();
+	      logger.open("firefly.log", std::ios_base::app);
 
         if (verbosity > SILENT) {
           INFO_MSG("Probe: " + std::to_string(iteration) +
