@@ -1,3 +1,20 @@
+FireFly 1.3.3
+=============
+
+Changes
+---------
+
+ * Updated PDF.
+
+ * Fixed typos in README.md.
+
+ * Now setting the correct paths to gmp and flint in cmake.
+
+ * Included all necessary flags and paths in firefly.pc.
+
+ * Changed the include path in firefly.pc from ../include/firefly to ../include.
+
+
 FireFly 1.3.2
 =============
 
