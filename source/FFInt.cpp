@@ -21,7 +21,7 @@
 
 #include <sstream>
 #ifdef FLINT
-#include <ulong_extras.h>
+#include <flint/ulong_extras.h>
 #endif
 
 namespace firefly {
