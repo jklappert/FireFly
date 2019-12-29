@@ -1,3 +1,14 @@
+FireFly 1.3.4
+=============
+
+Bug fixes
+---------
+
+ * When a `PolynomialFF` object contained more than 50 monomials and was altered
+ to contain less then 50 monomials, the corresponding Horner form was not
+ re-evaluated, thus leading to false evaluations. This has been fixed.
+
+
 FireFly 1.3.3
 =============
 
