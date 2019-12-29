@@ -140,7 +140,11 @@ namespace firefly {
       }
     }
 
-    generate_new_horner = true;
+    if(coefs.size() > 50)
+      generate_new_horner = true;
+
+    eval_horner = false;
+
     return *this;
   }
 
@@ -158,7 +162,10 @@ namespace firefly {
       }
     }
 
-    generate_new_horner = true;
+    if(coefs.size() > 50)
+      generate_new_horner = true;
+
+    eval_horner = false;
 
     return *this;
   }
@@ -200,7 +207,11 @@ namespace firefly {
       el.second *= inv;
     }
 
-    generate_new_horner = true;
+    if(coefs.size() > 50)
+      generate_new_horner = true;
+
+    eval_horner = false;
+
     return *this;
   }
 
