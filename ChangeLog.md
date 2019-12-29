@@ -1,3 +1,31 @@
+FireFly 1.3.4
+=============
+
+Bug fixes
+---------
+
+ * When a `PolynomialFF` object contained more than 50 monomials and was altered
+ to contain less than 50 monomials, the corresponding Horner form was not
+ re-evaluated, thus leading to false evaluations. This has been fixed.
+
+
+FireFly 1.3.3
+=============
+
+Changes
+---------
+
+ * Updated PDF.
+
+ * Fixed typos in README.md.
+
+ * Now setting the correct paths to gmp and flint in cmake.
+
+ * Included all necessary flags and paths in firefly.pc.
+
+ * Changed the include path in firefly.pc from ../include/firefly to ../include.
+
+
 FireFly 1.3.2
 =============
 
