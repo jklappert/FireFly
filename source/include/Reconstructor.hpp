@@ -189,7 +189,7 @@ namespace firefly {
      *  @param zi_order the order of which a given number of probes should be queued
      *  @param to_start the number of probes which should be queued
      */
-    void queue_probes(const std::vector<uint32_t>& zi_order, const uint32_t to_start);
+    void queue_probes(const std::vector<uint32_t>& zi_order, const uint32_t to_start, const bool first = false);
     /**
      * Gets a probe from probes, probes_bunch, or bunch
      * @param t is set to the t of the returned probe
@@ -648,11 +648,12 @@ namespace firefly {
 
 #if !WITH_MPI
         uint32_t to_start = thr_n ;//* bunch_size; // TODO
+        queue_probes(std::vector<uint32_t> (n - 1, 1), to_start);
 #else
-        uint32_t to_start = buffer * total_thread_count * bunch_size; // TODO: start even more?
+        uint32_t to_start = buffer * total_thread_count; // TODO: start even more? * bunch_size
+        queue_probes(std::vector<uint32_t> (n - 1, 1), to_start, true);
 #endif
 
-        queue_probes(std::vector<uint32_t> (n - 1, 1), to_start);
         started_probes.emplace(std::vector<uint32_t> (n - 1, 1), to_start);
 
 #if WITH_MPI
@@ -666,6 +667,12 @@ namespace firefly {
           }
 
           proceed = false;
+        }
+
+        for (uint32_t j = 0; j != to_start; ++j) {
+          tp.run_task([this]() {
+            get_job();
+          });
         }
 
 #endif
@@ -815,11 +822,12 @@ namespace firefly {
 
 #if !WITH_MPI
         uint32_t to_start = thr_n ;//* bunch_size; // TODO
+        queue_probes(std::vector<uint32_t> (n - 1, 1), to_start);
 #else
-        uint32_t to_start = buffer * total_thread_count * bunch_size; // TODO: start even more?
+        uint32_t to_start = buffer * total_thread_count; // TODO: start even more? * bunch_size
+        queue_probes(std::vector<uint32_t> (n - 1, 1), to_start, true);
 #endif
 
-        queue_probes(std::vector<uint32_t> (n - 1, 1), to_start);
         started_probes.emplace(std::vector<uint32_t> (n - 1, 1), to_start);
 
 #if WITH_MPI
@@ -833,6 +841,12 @@ namespace firefly {
           }
 
           proceed = false;
+        }
+
+        for (uint32_t j = 0; j != to_start; ++j) {
+          tp.run_task([this]() {
+            get_job();
+          });
         }
 #endif
       }
@@ -963,11 +977,21 @@ namespace firefly {
 
     uint32_t to_start = thr_n ;//* bunch_size;
 
+#if !WITH_MPI
     queue_probes(zi_order, to_start);
+#else
+    queue_probes(zi_order, to_start, true);
+#endif
     started_probes.emplace(zi_order, to_start);
 
 #if WITH_MPI
     send_first_jobs();
+
+    for (uint32_t j = 0; j != to_start; ++j) {
+      tp.run_task([this]() {
+        get_job();
+      });
+    }
 #endif
 
     std::vector<uint64_t> indices;
@@ -1176,6 +1200,12 @@ namespace firefly {
         // TODO optimize
         send_first_jobs();
 
+        for (uint32_t j = 0; j != thr_n; ++j) {
+          tp.run_task([this]() {
+            get_job();
+          });
+        }
+
         {
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
@@ -1344,7 +1374,7 @@ namespace firefly {
 #if !WITH_MPI
           probes_for_next_prime = thr_n ;//* bunch_size;
 #else
-          probes_for_next_prime = buffer * total_thread_count * bunch_size; // TODO start even more?
+          probes_for_next_prime = buffer * total_thread_count; // TODO start even more? * bunch_size
 #endif
         }
 
@@ -1428,17 +1458,20 @@ namespace firefly {
         }
 
         // start only thr_n jobs first, because the reconstruction can be done after the first feed
-        // TODO: MPI
+        uint32_t to_start = 0;
+
 #if !WITH_MPI
         if (probes_for_next_prime > thr_n /** bunch_size*/) {
-          uint32_t to_start = thr_n /** bunch_size*/;
+          to_start = thr_n /** bunch_size*/;
+
+          {
 #else
         if (mpi_first_send) {
           mpi_first_send = false;
           send_first_jobs(); // TODO send only start
 
-          queue_probes(std::vector<uint32_t>(n - 1, 1), thr_n * bunch_size);
-          started_probes[std::vector<uint32_t>(n - 1, 1)] += thr_n * bunch_size;
+          queue_probes(std::vector<uint32_t>(n - 1, 1), thr_n); // * bunch_size
+          started_probes[std::vector<uint32_t>(n - 1, 1)] += thr_n; // * bunch_size
 
           new_jobs = true;
           continue_communication = true;
@@ -1452,39 +1485,61 @@ namespace firefly {
 
           proceed = false;
         } else {
-        if (probes_for_next_prime > buffer * total_thread_count * bunch_size) {
-          uint32_t to_start = buffer * total_thread_count * bunch_size;
+          if (probes_for_next_prime > buffer * total_thread_count) { // * bunch_size
+            to_start = buffer * total_thread_count; // * bunch_size
 #endif
 
-          if (verbosity == CHATTY) {
-            INFO_MSG("Starting " + std::to_string(to_start) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - to_start) + " jobs will be started later");
-          }
+            if (verbosity == CHATTY) {
+              INFO_MSG("Starting " + std::to_string(to_start) + " jobs now, the remaining " + std::to_string(probes_for_next_prime - to_start) + " jobs will be started later");
+            }
 
-          queue_probes(std::vector<uint32_t>(n - 1, 1), to_start);
-          started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);
+#if !WITH_MPI
+            queue_probes(std::vector<uint32_t>(n - 1, 1), to_start);
+#else
+            queue_probes(std::vector<uint32_t>(n - 1, 1), to_start, true);
+#endif
+            started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);
+#if !WITH_MPI
+          }
         } else {
-          uint32_t to_start = probes_for_next_prime;
+          {
+#else
+          } else {
+#endif
+            to_start = probes_for_next_prime;
 
-          if (verbosity == CHATTY) {
-            INFO_MSG("Starting " + std::to_string(to_start) + " jobs");
+            if (verbosity == CHATTY) {
+              INFO_MSG("Starting " + std::to_string(to_start) + " jobs");
+            }
+
+#if !WITH_MPI
+            queue_probes(std::vector<uint32_t>(n - 1, 1), to_start);
+#else
+            queue_probes(std::vector<uint32_t>(n - 1, 1), to_start, true);
+#endif
+            started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);
           }
 
-          queue_probes(std::vector<uint32_t>(n - 1, 1), to_start);
-          started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);
+#if !WITH_MPI
         }
+#else
+          cond_val.notify_one();
 
-#if WITH_MPI
-        cond_val.notify_one();
+          {
+            std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-        {
-          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+            while (!proceed) {
+              cond_val.wait(lock_probe_queue);
+            }
 
-          while (!proceed) {
-            cond_val.wait(lock_probe_queue);
+            proceed = false;
           }
 
-          proceed = false;
-        }
+          for (uint32_t j = 0; j != to_start; ++j) {
+            tp.run_task([this]() {
+              get_job();
+            });
+          }
         }
 #endif
 
@@ -1638,7 +1693,7 @@ namespace firefly {
 
   // TODO optimize for bunch_size 1?
   template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::queue_probes(const std::vector<uint32_t>& zi_order, const uint32_t to_start) {
+  void Reconstructor<BlackBoxTemp>::queue_probes(const std::vector<uint32_t>& zi_order, const uint32_t to_start, const bool first) {
     bool ones = false;
 
     if ((prime_it == 0 || safe_mode == true) && zi_order == std::vector<uint32_t> (n - 1, 1)) {
@@ -1705,11 +1760,17 @@ namespace firefly {
       //std::cout << "start " << probes_queued << "\n";
     }
 
+#if WITH_MPI
+    if (!first) {
+#endif
     for (uint32_t j = 0; j != to_start; ++j) {
       tp.run_task([this]() {
         get_job();
       });
     }
+#if WITH_MPI
+    }
+#endif
 
 /*
     if (bunch_size == 1) {
@@ -2199,7 +2260,7 @@ namespace firefly {
                 uint32_t to_start = fed_ones - started_probes[zi_order] + thr_n /** bunch_size*/;
 #else
               if (started_probes[zi_order] - total_thread_count <= fed_ones - 1) { // TODO static_cast<uint32_t>(buffer) * * bunch_size
-                uint32_t to_start = fed_ones - started_probes[zi_order] + static_cast<uint32_t>(buffer) * total_thread_count * bunch_size;
+                uint32_t to_start = fed_ones - started_probes[zi_order] + static_cast<uint32_t>(buffer) * total_thread_count; //TODO * bunch_size
 #endif
                 started_probes[zi_order] += to_start;
 
@@ -2355,7 +2416,6 @@ namespace firefly {
 #if WITH_MPI
       if (requested_probes.empty()) {
         new_jobs = false;
-        break;
       }
 #endif
     }

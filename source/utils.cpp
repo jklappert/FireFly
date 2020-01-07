@@ -268,6 +268,7 @@ namespace firefly {
     return PolynomialFF(n + 1, poly);
   }
 
+// TODO
   uint32_t compute_bunch_size(const uint32_t queue_length, const uint32_t thr_n, const uint32_t bunch_size) {
     uint32_t tmp = queue_length / thr_n;
 
