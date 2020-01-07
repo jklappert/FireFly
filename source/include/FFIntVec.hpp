@@ -89,7 +89,7 @@ namespace firefly {
     typename std::array<FFInt, N>::const_iterator begin() const noexcept;
     typename std::array<FFInt, N>::iterator end() noexcept;
     typename std::array<FFInt, N>::const_iterator end() const noexcept;
-    int size() const noexcept;
+    size_t size() const noexcept;
     inline const FFInt& at(int i) {
       if (i < N - 1)
         return vec[i];

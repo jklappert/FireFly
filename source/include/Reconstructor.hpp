@@ -1150,7 +1150,6 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::run_until_done() {
-    FFInt t = 1;
     std::vector<uint32_t> zi_order(n - 1, 1);
 
     new_prime = false;

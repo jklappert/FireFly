@@ -41,8 +41,8 @@ namespace firefly {
   }
 
   template<int N>
-  int FFIntVec<N>::size() const noexcept {
-    return N;
+  size_t FFIntVec<N>::size() const noexcept {
+    return static_cast<size_t>(N);
   }
 
   template<int N>
