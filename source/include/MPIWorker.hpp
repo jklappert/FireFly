@@ -213,6 +213,9 @@ namespace firefly {
         MPI_Send(timing, 2, MPI_DOUBLE, master, TIMING, MPI_COMM_WORLD);
 
         MPI_Barrier(MPI_COMM_WORLD);
+
+        total_iterations = 0;
+        average_black_box_time = 0.;
       } else if (status.MPI_TAG == END) {
         uint64_t tmp;
         MPI_Recv(&tmp, 1, MPI_UINT64_T, master, END, MPI_COMM_WORLD, &status);
@@ -229,6 +232,10 @@ namespace firefly {
         MPI_Send(timing, 2, MPI_DOUBLE, master, TIMING, MPI_COMM_WORLD);
 
         MPI_Barrier(MPI_COMM_WORLD);
+
+        total_iterations = 0;
+        average_black_box_time = 0.;
+
         break;
       } else {
         ERROR_MSG("Unknown MPI_TAG!");
