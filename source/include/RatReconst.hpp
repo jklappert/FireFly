@@ -64,6 +64,10 @@ namespace firefly {
      */
     RationalFunction get_result();
     /**
+     *  @return the result of the rational function over the current field
+     */
+    std::pair<PolynomialFF, PolynomialFF> get_result_ff();
+    /**
      *  Starts an interpolation job
      *  @return a tuple consisting of:
      *  bool true if it has done anything and false otherwise
@@ -342,6 +346,8 @@ namespace firefly {
     mpz_map combined_primes_di {}; // used for safe mode
     polff_map solved_degs_num {}; /**< Stores solved polynomials of the numerator of the current field */
     polff_map solved_degs_den {}; /**< Stores solved polynomials of the denominator of the current field */
+    ff_map tmp_res_num {}; /**< Stores the temporary numerator result interpolated over the current field */
+    ff_map tmp_res_den {}; /**< Stores the temporary denominator result interpolated over the current field */
     std::vector<uint32_t> normalizer_deg {}; /**< Stores the degree which is used for normalization */
     std::string tag = ""; /**< The tag of this interpolation class for state saving */
     std::string tag_name = ""; /**< The tag name of this interpolation class for state saving */

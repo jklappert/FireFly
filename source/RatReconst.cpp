@@ -1284,6 +1284,10 @@ namespace firefly {
     std::vector<uint32_t> tmp_deg_num {};
     std::vector<uint32_t> tmp_deg_den {};
 
+    // store temporary results
+    tmp_res_num = numerator;
+    tmp_res_den = denominator;
+
     saved_ti = ff_queue_map();
     max_num_coef_num = std::make_pair(0, 0);
     max_num_coef_den = std::make_pair(0, 0);
@@ -1691,6 +1695,18 @@ namespace firefly {
       ERROR_MSG("Trying to access unfinished result.");
       std::exit(EXIT_FAILURE);
     }
+  }
+
+  std::pair<PolynomialFF, PolynomialFF> RatReconst::get_result_ff() {
+    std::unique_lock<std::mutex> lock(mutex_status);
+
+    ff_map tmp_num = convert_to_ffint(g_ni);
+    ff_map tmp_den = convert_to_ffint(g_di);
+
+    tmp_res_num.insert(tmp_num.begin(), tmp_num.end());
+    tmp_res_den.insert(tmp_den.begin(), tmp_den.end());
+
+    return std::make_pair(PolynomialFF(n, tmp_res_num), PolynomialFF(n, tmp_res_den));
   }
 
   bool RatReconst::rec_rat_coef() {
@@ -2923,6 +2939,9 @@ namespace firefly {
   }
 
   bool RatReconst::check_if_done(const FFInt& num, const FFInt& ti) {
+    tmp_res_num.clear();
+    tmp_res_den.clear();
+
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
