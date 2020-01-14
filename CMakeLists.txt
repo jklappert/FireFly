@@ -207,7 +207,7 @@ endif()
 add_subdirectory(doc)
 
 # test
-#if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
-#  enable_testing()
-#  add_subdirectory(test)
-#endif()
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
+  enable_testing()
+  add_subdirectory(test)
+endif()

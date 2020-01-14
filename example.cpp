@@ -18,7 +18,6 @@
 
 #include "DenseSolver.hpp"
 #include "Reconstructor.hpp"
-//#include "Tests.hpp"
 
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
@@ -67,14 +66,6 @@ namespace firefly {
       //mat = {{result[0], result[1]}, {result[2], result[3]}};
       //p = {};
       //calc_determinant_lu(mat, p, 2);
-
-      // Some functions from Test.cpp
-      //result.emplace_back(singular_solver(values));
-      //result.emplace_back(n_eq_1(values[0]));
-      //result.emplace_back(n_eq_4(values));
-      //result.emplace_back(gghh(values));
-      //result.emplace_back(pol_n_eq_3(values));
-      //result.emplace_back(ggh(values));
 
       return result;
     }

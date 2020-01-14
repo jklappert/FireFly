@@ -24,20 +24,21 @@
 #endif
 
 namespace firefly {
-  class BlackBoxUser : public BlackBoxBase {
+  class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
   public:
     BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
 
-    virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+    template<typename FFIntTemp>
+    std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
       //std::vector<FFInt> result;
 
       // Get results from parsed expressions
-      std::vector<FFInt> result = par.evaluate_pre(values);
+      std::vector<FFIntTemp> result = par.evaluate_pre(values);
 
       result.emplace_back(result[0] / result[3]);
 
       // Build the matrix mat
-      mat_ff mat = {{result[0], result[1]}, {result[2], result[3]}};
+      mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
       std::vector<int> p {};
       // Compute LU decomposition of mat
       calc_lu_decomposition(mat, p, 2);
@@ -73,21 +74,21 @@ int main() {
   INFO_MSG("Test safe mode");
   ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_1(p_1);
-  Reconstructor r_1(4, 4, b_1);
+  Reconstructor<BlackBoxUser> r_1(4, 4, b_1);
   r_1.set_safe_interpolation();
   r_1.reconstruct();
   RatReconst::reset();
 
   ShuntingYardParser p_1_2("../../parser_test/s_y_1_v.m", {"x"});
   BlackBoxUser b_1_2(p_1_2);
-  Reconstructor r_1_2(1, 4, b_1_2);
+  Reconstructor<BlackBoxUser> r_1_2(1, 4, b_1_2);
   r_1_2.set_safe_interpolation();
   r_1_2.reconstruct();
   RatReconst::reset();
 
   ShuntingYardParser p_1_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_1_3(p_1_3);
-  Reconstructor r_1_3(4, 4, b_1_3);
+  Reconstructor<BlackBoxUser> r_1_3(4, 4, b_1_3);
   r_1_3.set_safe_interpolation();
   r_1_3.reconstruct();
   INFO_MSG("Safe mode passed");
@@ -97,21 +98,21 @@ int main() {
     INFO_MSG("Test safe mode");
     ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1(p_1);
-    Reconstructor r_1(4, std::thread::hardware_concurrency(), b_1);
+    Reconstructor<BlackBoxUser> r_1(4, std::thread::hardware_concurrency(), b_1);
     r_1.set_safe_interpolation();
     r_1.reconstruct();
     RatReconst::reset();
 
     ShuntingYardParser p_1_2("../../parser_test/s_y_1_v.m", {"x"});
     BlackBoxUser b_1_2(p_1_2);
-    Reconstructor r_1_2(1, std::thread::hardware_concurrency(), b_1_2);
+    Reconstructor<BlackBoxUser> r_1_2(1, std::thread::hardware_concurrency(), b_1_2);
     r_1_2.set_safe_interpolation();
     r_1_2.reconstruct();
     RatReconst::reset();
 
     ShuntingYardParser p_1_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1_3(p_1_3);
-    Reconstructor r_1_3(4, std::thread::hardware_concurrency(), b_1_3);
+    Reconstructor<BlackBoxUser> r_1_3(4, std::thread::hardware_concurrency(), b_1_3);
     r_1_3.set_safe_interpolation();
     r_1_3.reconstruct();
     INFO_MSG("Safe mode passed");

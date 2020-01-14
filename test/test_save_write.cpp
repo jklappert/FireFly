@@ -19,7 +19,6 @@
 #include "DenseSolver.hpp"
 #include "Reconstructor.hpp"
 #include "ShuntingYardParser.hpp"
-#include "Tests.hpp"
 #include "tinydir.h"
 
 #ifdef WITH_MPI
@@ -28,33 +27,26 @@
 
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
-  class BlackBoxUser : public BlackBoxBase {
+  class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
   public:
     BlackBoxUser(const ShuntingYardParser& par_, int mode_) : par(par_), mode(mode_) {};
 
-    virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+    template<typename FFIntTemp>
+    std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
       //std::vector<FFInt> result;
 
       // Get results from parsed expressions
-      std::vector<FFInt> result = par.evaluate_pre(values);
+      std::vector<FFIntTemp> result = par.evaluate_pre(values);
 
       result.emplace_back(result[0] / result[3]);
 
       // Build the matrix mat
-      mat_ff mat = {{result[0], result[1]}, {result[2], result[3]}};
+      mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
       std::vector<int> p {};
       // Compute LU decomposition of mat
       calc_lu_decomposition(mat, p, 2);
       // Compute determinant of mat
       result.emplace_back(calc_determinant_lu(mat, p, 2));
-
-      // Some functions from Test.cpp
-      result.emplace_back(singular_solver(values));
-      result.emplace_back(n_eq_1(values[0]));
-      result.emplace_back(n_eq_4(values));
-      result.emplace_back(gghh(values));
-      result.emplace_back(pol_n_eq_3(values));
-      result.emplace_back(ggh(values));
 
       return result;
     }
@@ -148,7 +140,7 @@ int main() {
     INFO_MSG("Test saving states and starting from them in prime 1");
     ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_4(p_4, 4);
-    Reconstructor r_4(4, 4, b_4);
+    Reconstructor<BlackBoxUser> r_4(4, 4, b_4);
     r_4.enable_scan();
     r_4.set_tags();
     r_4.reconstruct();
@@ -156,7 +148,7 @@ int main() {
     RatReconst::reset();
     ShuntingYardParser p_5("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_5(p_5, 6);
-    Reconstructor r_5(4, 4, b_5);
+    Reconstructor<BlackBoxUser> r_5(4, 4, b_5);
     r_5.set_tags();
     r_5.resume_from_saved_state();
     r_5.reconstruct();
@@ -176,7 +168,7 @@ int main() {
     INFO_MSG("Test saving states and starting from them in prime 2");
     ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_4(p_4, 5);
-    Reconstructor r_4(4, 4, b_4);
+    Reconstructor<BlackBoxUser> r_4(4, 4, b_4);
     r_4.enable_scan();
     r_4.set_tags();
     r_4.reconstruct();
@@ -184,7 +176,7 @@ int main() {
     RatReconst::reset();
     ShuntingYardParser p_5("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_5(p_5, 6);
-    Reconstructor r_5(4, 4, b_5);
+    Reconstructor<BlackBoxUser> r_5(4, 4, b_5);
     r_5.set_tags();
     r_5.resume_from_saved_state();
     r_5.reconstruct();

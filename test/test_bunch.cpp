@@ -26,44 +26,26 @@
 #endif
 
 namespace firefly {
-  class BlackBoxUser : public BlackBoxBase {
+  class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
   public:
     BlackBoxUser(const ShuntingYardParser &par_) : par(par_) {};
 
-    virtual std::vector<FFInt> operator()(const std::vector<FFInt> &values) {
+    template<typename FFIntTemp>
+    std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
       //std::vector<FFInt> result;
 
       // Get results from parsed expressions
-      std::vector<FFInt> result = par.evaluate_pre(values);
+      std::vector<FFIntTemp> result = par.evaluate_pre(values);
 
       result.emplace_back(result[0] / result[3]);
 
       // Build the matrix mat
-      mat_ff mat = {{result[0], result[1]}, {result[2], result[3]}};
+      mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
       std::vector<int> p {};
       // Compute LU decomposition of mat
       calc_lu_decomposition(mat, p, 2);
       // Compute determinant of mat
       result.emplace_back(calc_determinant_lu(mat, p, 2));
-
-      return result;
-    }
-
-    virtual std::vector<std::vector<FFInt>> operator()(const std::vector<std::vector<FFInt>> &values) {
-      // Get results from parsed expressions
-      std::vector<std::vector<FFInt>> result = par.evaluate_pre(values);
-
-      for (size_t i = 0; i != values.size(); ++i) {
-        result[i].emplace_back(result[i][0] / result[i][3]);
-
-        // Build the matrix mat
-        mat_ff mat = {{result[i][0], result[i][1]}, {result[i][2], result[i][3]}};
-        std::vector<int> p {};
-        // Compute LU decomposition of mat
-        calc_lu_decomposition(mat, p, 2);
-        // Compute determinant of mat
-        result[i].emplace_back(calc_determinant_lu(mat, p, 2));
-      }
 
       return result;
     }
@@ -83,14 +65,14 @@ int main() {
   INFO_MSG("Test bunched evaluation");
   ShuntingYardParser p_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_3(p_3);
-  Reconstructor r_3(4, 4, 4, b_3);
+  Reconstructor<BlackBoxUser> r_3(4, 4, 4, b_3);
   r_3.enable_scan();
   r_3.reconstruct();
   RatReconst::reset();
 
   ShuntingYardParser p_3_2("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_3_2(p_3_2);
-  Reconstructor r_3_2(4, 4, 4, b_3_2);
+  Reconstructor<BlackBoxUser> r_3_2(4, 4, 4, b_3_2);
   r_3_2.set_safe_interpolation();
   r_3_2.reconstruct();
   INFO_MSG("Bunched evaluation passed");
@@ -109,14 +91,14 @@ int main() {
     INFO_MSG("Test bunched evaluation");
     ShuntingYardParser p_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_3(p_3);
-    Reconstructor r_3(4, 4, 4, b_3);
+    Reconstructor<BlackBoxUser> r_3(4, 4, 4, b_3);
     r_3.enable_scan();
     r_3.reconstruct();
     RatReconst::reset();
 
     ShuntingYardParser p_3_2("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_3_2(p_3_2);
-    Reconstructor r_3_2(4, 4, 4, b_3_2);
+    Reconstructor<BlackBoxUser> r_3_2(4, 4, 4, b_3_2);
     r_3_2.set_safe_interpolation();
     r_3_2.reconstruct();
     INFO_MSG("Bunched evaluation passed");

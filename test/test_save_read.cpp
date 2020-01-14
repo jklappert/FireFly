@@ -28,20 +28,21 @@
 
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
-  class BlackBoxUser : public BlackBoxBase {
+  class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
   public:
     BlackBoxUser(const ShuntingYardParser& par_, int mode_) : par(par_), mode(mode_) {};
 
-    virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+    template<typename FFIntTemp>
+    std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
       //std::vector<FFInt> result;
 
       // Get results from parsed expressions
-      std::vector<FFInt> result = par.evaluate_pre(values);
+      std::vector<FFIntTemp> result = par.evaluate_pre(values);
 
       result.emplace_back(result[0] / result[3]);
 
       // Build the matrix mat
-      mat_ff mat = {{result[0], result[1]}, {result[2], result[3]}};
+      mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
       std::vector<int> p {};
       // Compute LU decomposition of mat
       calc_lu_decomposition(mat, p, 2);
@@ -144,7 +145,7 @@ int main() {
     INFO_MSG("Test saving states and starting from them in prime 1");
     ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_4(p_4, 4);
-    Reconstructor r_4(4, 4, b_4);
+    Reconstructor<BlackBoxUser> r_4(4, 4, b_4);
     r_4.enable_scan();
     r_4.set_tags();
     r_4.resume_from_saved_state();

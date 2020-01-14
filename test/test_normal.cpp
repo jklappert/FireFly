@@ -19,42 +19,32 @@
 #include "DenseSolver.hpp"
 #include "Reconstructor.hpp"
 #include "ShuntingYardParser.hpp"
-#include "Tests.hpp"
 
 #ifdef WITH_MPI
 #include "MPIWorker.hpp"
 #endif
 
 namespace firefly {
-  class BlackBoxUser : public BlackBoxBase {
+  class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
   public:
     BlackBoxUser(const ShuntingYardParser& par_, int mode_) : par(par_), mode(mode_) {};
 
-    virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+    template<typename FFIntTemp>
+    std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
       //std::vector<FFInt> result;
 
       // Get results from parsed expressions
-      std::vector<FFInt> result = par.evaluate_pre(values);
+      std::vector<FFIntTemp> result = par.evaluate_pre(values);
 
       result.emplace_back(result[0] / result[3]);
 
       // Build the matrix mat
-      mat_ff mat = {{result[0], result[1]}, {result[2], result[3]}};
+      mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
       std::vector<int> p {};
       // Compute LU decomposition of mat
       calc_lu_decomposition(mat, p, 2);
       // Compute determinant of mat
       result.emplace_back(calc_determinant_lu(mat, p, 2));
-
-      // Some functions from Test.cpp
-      if (mode == 0) {
-        result.emplace_back(singular_solver(values));
-        result.emplace_back(n_eq_1(values[0]));
-        result.emplace_back(n_eq_4(values));
-        result.emplace_back(gghh(values));
-        result.emplace_back(pol_n_eq_3(values));
-        result.emplace_back(ggh(values));
-      }
 
       return result;
     }
@@ -88,7 +78,7 @@ int main() {
   INFO_MSG("Test 1 variable");
   ShuntingYardParser p_2("../../parser_test/s_y_1_v.m", {"x"});
   BlackBoxUser b_2(p_2, 2);
-  Reconstructor r_2(1, 4, b_2);
+  Reconstructor<BlackBoxUser> r_2(1, 4, b_2);
   r_2.reconstruct();
   RatReconst::reset();
   INFO_MSG("1 variable passed");
@@ -96,14 +86,14 @@ int main() {
   INFO_MSG("Test normal mode");
   ShuntingYardParser p_0("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_0(p_0, 0);
-  Reconstructor r_0(4, 4, b_0);
+  Reconstructor<BlackBoxUser> r_0(4, 4, b_0);
   r_0.enable_scan();
   r_0.reconstruct();
   RatReconst::reset();
 
   ShuntingYardParser p_0_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_0_1(p_0, 2);
-  Reconstructor r_0_1(4, 4, b_0_1);
+  Reconstructor<BlackBoxUser> r_0_1(4, 4, b_0_1);
   r_0_1.enable_scan();
   r_0_1.reconstruct();
   INFO_MSG("Normal mode passed");
@@ -113,7 +103,7 @@ int main() {
     INFO_MSG("Test 1 variable");
     ShuntingYardParser p_2("../../parser_test/s_y_1_v.m", {"x"});
     BlackBoxUser b_2(p_2, 2);
-    Reconstructor r_2(1, std::thread::hardware_concurrency(), b_2);
+    Reconstructor<BlackBoxUser> r_2(1, std::thread::hardware_concurrency(), b_2);
     r_2.reconstruct();
     RatReconst::reset();
     INFO_MSG("1 variable passed");
@@ -121,14 +111,14 @@ int main() {
     INFO_MSG("Test normal mode");
     ShuntingYardParser p_0("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_0(p_0, 0);
-    Reconstructor r_0(4, std::thread::hardware_concurrency(), b_0);
+    Reconstructor<BlackBoxUser> r_0(4, std::thread::hardware_concurrency(), b_0);
     r_0.enable_scan();
     r_0.reconstruct();
     RatReconst::reset();
 
     ShuntingYardParser p_0_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_0_1(p_0, 2);
-    Reconstructor r_0_1(4, std::thread::hardware_concurrency(), b_0_1);
+    Reconstructor<BlackBoxUser> r_0_1(4, std::thread::hardware_concurrency(), b_0_1);
     r_0_1.enable_scan();
     r_0_1.reconstruct();
     INFO_MSG("Normal mode passed");
