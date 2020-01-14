@@ -33,6 +33,10 @@
 #include "MPIWorker.hpp"
 #endif
 
+#ifdef FLINT
+#include <flint/fmpz_poly.h>
+#endif
+
 #include <chrono>
 #include <tuple>
 #include <sys/stat.h>
@@ -96,6 +100,10 @@ namespace firefly {
      */
     void enable_scan();
     /**
+     *  Enables the scan for factors
+     */
+    void enable_factorization_scan();
+    /**
      *  Activate the safe interpolation mode where the function is completely interpolated in each prime field,
      *  no optimizations are used after the first prime field. Note that this mode cannot handle function changes
      *  which lead to coefficients which will become zero in all but one prime field.
@@ -158,6 +166,7 @@ namespace firefly {
     const int verbosity;
     double average_black_box_time = 0.;
     std::atomic<bool> scan = {false};
+    std::atomic<bool> factorization_scan = {false};
     std::atomic<bool> aborted = {false};
     std::atomic<bool> resumed = {false};
     std::atomic<bool> new_prime = {false};
@@ -172,7 +181,9 @@ namespace firefly {
     RatReconst_list reconst;
     std::vector<std::string> tags;
     std::vector<std::string> file_paths;
+    std::vector<FFInt> rand_zi_fac {};
     std::ofstream logger;
+    std::vector<uint32_t> max_degs {};
     ThreadPool tp;
     // TODO tidy up the mutexes
     std::mutex future_control;
@@ -185,6 +196,8 @@ namespace firefly {
     std::mutex chosen_mutex;
     std::condition_variable condition_future;
     std::condition_variable condition_feed;
+    std::vector<std::vector<std::string>> factorizations {};
+    std::unordered_set<uint32_t> possible_factorizations_funs {};
     std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
     std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes;
     std::deque<std::pair<uint64_t, std::vector<FFInt>>> requested_probes;
@@ -196,6 +209,10 @@ namespace firefly {
     *  Scan the black-box functions for a sparse shift
     */
     void scan_for_shift();
+    /**
+    *  Scan the black-box functions for a sparse shift
+    */
+    void scan_for_factorization();
     /**
      *  Initializes vector of reconstruction objects and starts first probes
      */
@@ -368,6 +385,14 @@ namespace firefly {
     } else {
       scan = true;
     }
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::enable_factorization_scan() {
+#ifndef FLINT
+    ERROR_MSG("FireFly is not compiled with FLINT. No polynomial factorization possible!");
+#endif
+    factorization_scan = true;
   }
 
   template<typename BlackBoxTemp>
@@ -680,11 +705,14 @@ namespace firefly {
           scan = false;
         }
       }
-
-      if (scan) {
+//TODO new
+      if (factorization_scan) {
+        scan_for_factorization();
+      }
+//TODO new end
+      else if (scan) {
         scan_for_shift();
-
-#if !WITH_MPI
+        #if !WITH_MPI
         uint32_t to_start = thr_n ;//* bunch_size; // TODO
         queue_probes(std::vector<uint32_t> (n - 1, 1), to_start);
 #else
@@ -712,7 +740,6 @@ namespace firefly {
             get_job();
           });
         }
-
 #endif
       } else {
         start_first_runs();
@@ -1017,6 +1044,350 @@ namespace firefly {
 
     prime_start = std::chrono::high_resolution_clock::now();
   }
+
+//TODO new
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::scan_for_factorization() {
+#ifdef FLINT
+    factorizations.reserve(n);
+    logger << "Scanning for factorizations\n";
+
+    if (verbosity > SILENT)
+      INFO_MSG("Scanning for factorizations");
+
+    uint32_t total_number_of_factorizations = 0;
+    max_degs = std::vector<uint32_t> (n, 0);
+    shift = std::vector<FFInt> (n, 0);
+    rand_zi_fac = std::vector<FFInt> (n, 0);
+
+    // Run this loop until a proper shift is found
+    for (int i = 0; i != n; ++i) {
+      std::unordered_map<uint32_t,std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> possible_factorizations {};
+      possible_factorizations_funs.clear();
+
+      for (int j = 0; j != n; ++j) {
+        if (j == i)
+          rand_zi_fac[j] = 1;
+        else
+          rand_zi_fac[j] = tmp_rec.get_rand_64();
+      }
+
+      if (verbosity > SILENT) {
+        INFO_MSG("Scanning for factorizations in variable " + std::to_string(i));
+      }
+
+      logger << "Scanning for factorizations in variable " << std::to_string(i) << "\n";
+
+      // 1st part of the algorithm: Check if anything factorizes
+      //------------------------------------------------------------------------
+      start_first_runs();
+      run_until_done();
+
+      uint32_t number_of_factorizations = 0;
+      uint32_t counter = 0;
+      std::string var = "x" + std::to_string(i);
+
+      for (const auto& rec : reconst) {
+        // Initialize FLINT types
+        fmpz_poly_t numerator, denominator;
+        fmpz_poly_factor_t fac_numerator, fac_denominator;
+        fmpz_poly_init(numerator);
+        fmpz_poly_init(denominator);
+        fmpz_poly_factor_init(fac_numerator);
+        fmpz_poly_factor_init(fac_denominator);
+
+        // Initialize polynomials in FLINT style and check for maximal degree
+        for (const auto & coef : std::get<3>(rec)->get_result_ff().numerator.coefs) {
+          if (coef.first[0] > max_degs[i])
+            max_degs[i] = coef.first[0];
+
+          fmpz_poly_set_coeff_ui(numerator, coef.first[0], coef.second.n);
+        }
+
+        for (const auto & coef : std::get<3>(rec)->get_result_ff().denominator.coefs) {
+          if (coef.first[0] > max_degs[i])
+            max_degs[i] = coef.first[0];
+
+          fmpz_poly_set_coeff_ui(denominator, coef.first[0], coef.second.n);
+        }
+
+        // Factorize polynomials
+        fmpz_poly_factor_zassenhaus(fac_numerator, numerator);
+        fmpz_poly_factor_zassenhaus(fac_denominator, denominator);
+
+        // Rewrite and store in result objects
+        if (fac_numerator[0].num + fac_denominator[0].num != 0) {
+          possible_factorizations_funs.emplace(counter);
+          std::unordered_set<std::string> fac_nums;
+          std::unordered_set<std::string> fac_dens;
+
+          for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
+            fac_nums.emplace(fmpz_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str()));
+            ++number_of_factorizations;
+          }
+
+          for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
+            fac_dens.emplace(fmpz_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str()));
+            ++number_of_factorizations;
+          }
+
+          possible_factorizations.emplace(counter, std::make_pair(fac_nums, fac_dens));
+        }
+
+        // Free memory
+        fmpz_poly_clear(numerator);
+        fmpz_poly_clear(denominator);
+        fmpz_poly_factor_clear(fac_numerator);
+        fmpz_poly_factor_clear(fac_denominator);
+        ++counter;
+      }
+
+      if (verbosity > SILENT) {
+        INFO_MSG("Found " + std::to_string(number_of_factorizations) + " possible factorizations in variable " + std::to_string(i));
+      }
+
+      logger << "Found " << std::to_string(number_of_factorizations) << " possible factorizations in variable " << std::to_string(i) << "\n";
+
+      RatReconst::reset();
+      reconst.clear();
+
+      // Reset
+      probes_queued = 0;
+      started_probes.clear();
+      index_map.clear();
+      ind = 0;
+      fed_ones = 0;
+      feed_jobs = 0;
+      interpolate_jobs = 0;
+      iteration = 0;
+#if WITH_MPI
+      iterations_on_this_node = 0;
+#endif
+      items_done = 0;
+      done = false;
+
+      // TODO mutex required here?
+      requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+      computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
+
+      // 2nd part of the algorithm: refine factorizations and check if they are real ones
+      //------------------------------------------------------------------------
+      start_first_runs();
+      run_until_done();
+
+      counter = 0;
+      number_of_factorizations = 0;
+
+      for (const auto& rec : reconst) {
+        if (possible_factorizations_funs.find(counter) != possible_factorizations_funs.end()) {
+        // Initialize FLINT types
+        fmpz_poly_t numerator, denominator;
+        fmpz_poly_factor_t fac_numerator, fac_denominator;
+        fmpz_poly_init(numerator);
+        fmpz_poly_init(denominator);
+        fmpz_poly_factor_init(fac_numerator);
+        fmpz_poly_factor_init(fac_denominator);
+
+        // Initialize polynomials in FLINT style and check for maximal degree
+        for (const auto & coef : std::get<3>(rec)->get_result_ff().numerator.coefs) {
+          fmpz_poly_set_coeff_ui(numerator, coef.first[0], coef.second.n);
+        }
+
+        for (const auto & coef : std::get<3>(rec)->get_result_ff().denominator.coefs) {
+          fmpz_poly_set_coeff_ui(denominator, coef.first[0], coef.second.n);
+        }
+
+        // Factorize polynomials
+        fmpz_poly_factor_zassenhaus(fac_numerator, numerator);
+        fmpz_poly_factor_zassenhaus(fac_denominator, denominator);
+
+        // Rewrite and store in result objects
+        if (fac_numerator[0].num + fac_denominator[0].num != 0) {
+          std::unordered_set<std::string> fac_nums;
+          std::unordered_set<std::string> fac_dens;
+
+          for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
+            std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str());
+            if (possible_factorizations[counter].first.find(possible_fac_tmp) != possible_factorizations[counter].first.end()) {
+              fac_nums.emplace(possible_fac_tmp);
+              ++number_of_factorizations;
+            }
+          }
+
+          for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
+            std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str());
+            if (possible_factorizations[counter].second.find(possible_fac_tmp) != possible_factorizations[counter].second.end()) {
+              fac_dens.emplace(possible_fac_tmp);
+              ++number_of_factorizations;
+            }
+          }
+        }
+
+        // Free memory
+        fmpz_poly_clear(numerator);
+        fmpz_poly_clear(denominator);
+        fmpz_poly_factor_clear(fac_numerator);
+        fmpz_poly_factor_clear(fac_denominator);
+        }
+        ++counter;
+      }
+
+      if (verbosity > SILENT) {
+        INFO_MSG("Found " + std::to_string(number_of_factorizations) + " real factorizations in variable " + std::to_string(i));
+        INFO_MSG("Start reconstruction of coefficients.");
+      }
+
+      logger << "Found " << std::to_string(number_of_factorizations) << " real factorizations in variable " << std::to_string(i) << "\n";
+      logger << "Start reconstruction of coefficients.\n";
+
+      RatReconst::reset();
+      reconst.clear();
+
+      // Reset
+      probes_queued = 0;
+      started_probes.clear();
+      index_map.clear();
+      ind = 0;
+      fed_ones = 0;
+      feed_jobs = 0;
+      interpolate_jobs = 0;
+      iteration = 0;
+#if WITH_MPI
+      iterations_on_this_node = 0;
+#endif
+      items_done = 0;
+      done = false;
+
+      // TODO mutex required here?
+      requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+      computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
+      possible_factorizations.clear();
+      // 3rd part of the algorithm: reconstruct coefficients
+      //------------------------------------------------------------------------
+      start_first_runs();
+      run_until_done();
+
+      counter = 0;
+//TODO save factors
+      for (const auto& rec : reconst) {
+        if (possible_factorizations_funs.find(counter) != possible_factorizations_funs.end()) {
+        // Initialize FLINT types
+        fmpz_poly_t numerator, denominator;
+        fmpz_poly_factor_t fac_numerator, fac_denominator;
+        fmpz_poly_init(numerator);
+        fmpz_poly_init(denominator);
+        fmpz_poly_factor_init(fac_numerator);
+        fmpz_poly_factor_init(fac_denominator);
+
+        // Initialize polynomials in FLINT style and check for maximal degree
+        RationalNumber tmp_gcd (1,1);
+        for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
+          tmp_gcd = gcd(coef.coef, tmp_gcd);
+        }
+
+        for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
+          //fmpz_poly_set_coeff_fmpz(numerator, coef.powers[0], RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator);
+        }
+
+        tmp_gcd = RationalNumber(1, 1);
+        for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
+          tmp_gcd = gcd(coef.coef, tmp_gcd);
+        }
+
+        for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
+          //fmpz_poly_set_coeff_fmpz(denominator, coef.powers[0], RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator);
+        }
+
+        // Factorize polynomials
+        fmpz_poly_factor_zassenhaus(fac_numerator, numerator);
+        fmpz_poly_factor_zassenhaus(fac_denominator, denominator);
+
+        // Rewrite and store in result objects
+        if (fac_numerator[0].num + fac_denominator[0].num != 0) {
+          std::unordered_set<std::string> fac_nums;
+          std::unordered_set<std::string> fac_dens;
+
+          for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
+            std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str());
+            if (possible_factorizations[counter].first.find(possible_fac_tmp) != possible_factorizations[counter].first.end()) {
+              fac_nums.emplace(possible_fac_tmp);
+              ++number_of_factorizations;
+            }
+          }
+
+          for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
+            std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str());
+            if (possible_factorizations[counter].second.find(possible_fac_tmp) != possible_factorizations[counter].second.end()) {
+              fac_dens.emplace(possible_fac_tmp);
+              ++number_of_factorizations;
+            }
+          }
+        }
+
+        // Free memory
+        fmpz_poly_clear(numerator);
+        fmpz_poly_clear(denominator);
+        fmpz_poly_factor_clear(fac_numerator);
+        fmpz_poly_factor_clear(fac_denominator);
+        }
+        ++counter;
+      }
+
+      total_number_of_factorizations += number_of_factorizations;
+
+      RatReconst::reset();
+      reconst.clear();
+
+      // Reset
+      probes_queued = 0;
+      started_probes.clear();
+      index_map.clear();
+      ind = 0;
+      fed_ones = 0;
+      feed_jobs = 0;
+      interpolate_jobs = 0;
+      iteration = 0;
+#if WITH_MPI
+      iterations_on_this_node = 0;
+#endif
+      items_done = 0;
+      done = false;
+
+      // TODO mutex required here?
+      requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+      computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
+    }
+
+//TODO write results to file
+    if (save_states == true) {
+      std::ofstream file;
+      file.open("ff_save/scan");
+      file.close();
+    }
+
+    prime_it = 0;
+    FFInt::set_new_prime(prime_it);
+
+    logger << "Completed factorization scan in "
+      << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count())
+      << " s | " << std::to_string(total_iterations) << " probes in total\n";
+
+    logger << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n\n";
+    logger << "Proceeding with interpolation over prime field F(" << std::to_string(primes()[prime_it]) << ")\n";
+    logger.close();
+    logger.open("firefly.log", std::ios_base::app);
+
+    if (verbosity > SILENT) {
+      INFO_MSG("Completed factorization scan in " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
+               " s | " + std::to_string(total_iterations) + " probes in total");
+      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
+      INFO_MSG("Proceeding with interpolation over prime field F(" + std::to_string(primes()[prime_it]) + ")");
+    }
+
+    prime_start = std::chrono::high_resolution_clock::now();
+#endif
+  }
+//TODO end
 
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::start_first_runs() {
@@ -1758,7 +2129,7 @@ namespace firefly {
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
     } else {
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
-    }
+    }//TODO elseif for factor
 
     for (uint32_t j = 0; j != to_start; ++j) {
       std::vector<FFInt> values(n);

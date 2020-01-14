@@ -24,6 +24,11 @@ namespace firefly {
     mpz_class gcd_(gcd(numerator_, denominator_));
     numerator = numerator_ / gcd_;
     denominator = denominator_ / gcd_;
+
+    if (denominator < 0) {
+      numerator = -numerator;
+      denominator = -denominator;
+    }
   }
 
   RationalNumber::RationalNumber() {}
@@ -113,6 +118,12 @@ namespace firefly {
     }
 
     return str;
+  }
+
+  RationalNumber gcd(const RationalNumber& a, const RationalNumber& b) {
+    mpz_class numerator(gcd(a.numerator * b.denominator, b.numerator * a.denominator));
+    mpz_class denominator(a.denominator * b.denominator);
+    return RationalNumber(numerator, denominator);
   }
 
   std::ostream& operator<< (std::ostream& out, const RationalNumber& a) {

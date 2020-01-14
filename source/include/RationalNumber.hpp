@@ -48,5 +48,6 @@ namespace firefly {
     mpz_class denominator; /**< The denominator of the rational number */
   };
 
+  RationalNumber gcd(const RationalNumber& a, const RationalNumber& b);
   std::ostream& operator<< (std::ostream& out, const RationalNumber&);
 }
