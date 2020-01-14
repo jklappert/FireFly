@@ -96,6 +96,12 @@ namespace firefly {
     void remove_zero_coefs();
     uint32_t n = 0; /**< An integer indicating the number of variables */
     ff_map coefs {};
+    /**
+     *  Transforms the Polynomial object to a string where each variable
+     *  is replaced by the corresponding symbol in a given vector
+     *  @param vars a vector of symbols, e.g. {"x","y","z"}.
+     */
+    std::string to_string(const std::vector<std::string>& vars) const;
   private:
     /**
      *  Calculates a binomial coefficient n over k

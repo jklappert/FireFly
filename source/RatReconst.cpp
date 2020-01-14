@@ -1697,7 +1697,7 @@ namespace firefly {
     }
   }
 
-  std::pair<PolynomialFF, PolynomialFF> RatReconst::get_result_ff() {
+  RationalFunctionFF RatReconst::get_result_ff() {
     std::unique_lock<std::mutex> lock(mutex_status);
 
     ff_map tmp_num = convert_to_ffint(g_ni);
@@ -1706,7 +1706,7 @@ namespace firefly {
     tmp_res_num.insert(tmp_num.begin(), tmp_num.end());
     tmp_res_den.insert(tmp_den.begin(), tmp_den.end());
 
-    return std::make_pair(PolynomialFF(n, tmp_res_num), PolynomialFF(n, tmp_res_den));
+    return RationalFunctionFF(PolynomialFF(n, tmp_res_num), PolynomialFF(n, tmp_res_den));
   }
 
   bool RatReconst::rec_rat_coef() {
@@ -2939,9 +2939,6 @@ namespace firefly {
   }
 
   bool RatReconst::check_if_done(const FFInt& num, const FFInt& ti) {
-    tmp_res_num.clear();
-    tmp_res_den.clear();
-
     {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 

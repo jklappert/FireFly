@@ -21,6 +21,7 @@
 #include "FFThieleInterpolator.hpp"
 #include "PolyReconst.hpp"
 #include "RationalFunction.hpp"
+#include "RationalFunctionFF.hpp"
 
 #include <map>
 
@@ -66,7 +67,7 @@ namespace firefly {
     /**
      *  @return the result of the rational function over the current field
      */
-    std::pair<PolynomialFF, PolynomialFF> get_result_ff();
+    RationalFunctionFF get_result_ff();
     /**
      *  Starts an interpolation job
      *  @return a tuple consisting of:

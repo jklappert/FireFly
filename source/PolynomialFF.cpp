@@ -554,4 +554,36 @@ namespace firefly {
     } else
       return std::to_string((monomials.begin() -> second).n);
   }
+
+  std::string PolynomialFF::to_string(const std::vector<std::string>& vars) const {
+    std::string str;
+
+    if (coefs.empty())
+      str += "0";
+    else {
+      if (vars.size() != n) {
+        ERROR_MSG("Symbol size does not match to number of variables of the polynomial!");
+        std::exit(EXIT_FAILURE);
+      }
+
+      for (const auto & mono : coefs) {
+        str += std::to_string(mono.second.n) + "*";
+
+        for (uint32_t i = 0; i != mono.first.size(); ++i) {
+          if (mono.first[i] > 1) {
+            str += vars[i] + "^" + std::to_string(mono.first[i]) + "*";
+          } else if (mono.first[i] == 1) {
+            str += vars[i] + "*";
+          }
+        }
+
+        str.erase(--str.end());
+        str += "+";
+      }
+
+      str.erase(--str.end());
+    }
+
+    return str;
+  }
 }

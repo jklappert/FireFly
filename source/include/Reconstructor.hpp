@@ -70,13 +70,22 @@ namespace firefly {
      */
     ~Reconstructor();
     /**
-     *  Starts the reconstruction
+     *  Default constructor
      */
-    void reconstruct();
+    Reconstructor() {};
+    /**
+     *  Starts the reconstruction
+     *  @param prime_counter sets how many interpolations have to be performed at most
+     */
+    void reconstruct(uint32_t prime_counter = 100);
     /**
      *  @return the vector of reconstructed rational functions
      */
     std::vector<RationalFunction> get_result();
+    /**
+     *  @return the vector of inteprolated rational functions over the last field
+     */
+    std::vector<RationalFunctionFF> get_result_ff();
     /**
      *  @return a vector of the already reconstructed rational functions and its tag;
      *  they are removed from the internal memory afterwards
@@ -114,6 +123,14 @@ namespace firefly {
      *  run, thus requiring the black box to be probed in the same order.
      */
     void resume_from_saved_state();
+    /**
+     *  Allows to abort the current reconstruction, only valid after prime changes
+     */
+    void abort();
+    /**
+     *  Allows to resume the current reconstruction, only valid after prime changes
+     */
+    void resume();
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     enum RatReconst_status {RECONSTRUCTING, DONE, DELETED};
@@ -141,8 +158,11 @@ namespace firefly {
     const int verbosity;
     double average_black_box_time = 0.;
     std::atomic<bool> scan = {false};
+    std::atomic<bool> aborted = {false};
+    std::atomic<bool> resumed = {false};
     std::atomic<bool> new_prime = {false};
     std::atomic<bool> done = {false};
+    static bool printed_logo;
     bool save_states = false;
     bool resume_from_state = false;
     bool safe_mode = false;
@@ -182,8 +202,9 @@ namespace firefly {
     void start_first_runs();
     /**
      *  Starts new jobs until the reconstruction is done
+     *  @param prime_counter sets how many interpolations have to be performed at most
      */
-    void run_until_done();
+    void run_until_done(uint32_t prime_counter = 100);
     /**
      *  Queues a number of probes for a given zi_order
      *  @param zi_order the order of which a given number of probes should be queued
@@ -246,6 +267,9 @@ namespace firefly {
   };
 
   template<typename BlackBoxTemp>
+  bool Reconstructor<BlackBoxTemp>::printed_logo = false;
+
+  template<typename BlackBoxTemp>
   Reconstructor<BlackBoxTemp>::Reconstructor(const uint32_t n_, const uint32_t thr_n_, BlackBoxBase<BlackBoxTemp>& bb_,
 #if !WITH_MPI
                                const int verbosity_): n(n_), thr_n(thr_n_), bb(bb_), verbosity(verbosity_), tp(thr_n_) {
@@ -260,8 +284,11 @@ namespace firefly {
     logger.open("firefly.log");
 
     if (verbosity > SILENT) {
-      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "."
-                << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
+      if(!printed_logo) {
+        std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "."
+                  << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
+        printed_logo = true;
+      }
       INFO_MSG("Launching " << thr_n << " thread(s) with maximal bunch size 1");
       INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
       logger << "\nFireFly " << FireFly_VERSION_MAJOR << "."
@@ -292,8 +319,11 @@ namespace firefly {
     logger.open("firefly.log");
 
     if (verbosity > SILENT) {
-      std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "."
-                << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
+            if(!printed_logo) {
+        std::cout << "\nFire\033[1;32mFly\033[0m " << FireFly_VERSION_MAJOR << "."
+                  << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
+        printed_logo = true;
+      }
       INFO_MSG("Launching " << thr_n << " thread(s) maximal with bunch size " + std::to_string(bunch_size_));
       INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
       logger << "\nFireFly " << FireFly_VERSION_MAJOR << "."
@@ -601,10 +631,17 @@ namespace firefly {
   }
 
   template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::reconstruct() {
+  void Reconstructor<BlackBoxTemp>::reconstruct(uint32_t prime_counter) {
     start = std::chrono::high_resolution_clock::now();
 
-    done = false;
+    if (!aborted || resumed)
+      done = false;
+
+    if (resumed)
+      resumed = false;
+
+    if (aborted)
+      aborted = false;
 
 #if WITH_MPI
     ThreadPool tp_comm(1);
@@ -704,7 +741,7 @@ namespace firefly {
         file.close();
       }
 
-      run_until_done();
+      run_until_done(prime_counter);
     }
 #if WITH_MPI
     else {
@@ -760,6 +797,17 @@ namespace firefly {
       if (std::get<2>(rec) == DONE) {
         result.emplace_back(std::get<3>(rec)->get_result());
       }
+    }
+
+    return result;
+  }
+
+  template<typename BlackBoxTemp>
+  std::vector<RationalFunctionFF> Reconstructor<BlackBoxTemp>::get_result_ff() {
+    std::vector<RationalFunctionFF> result {};
+
+    for (auto & rec : reconst) {
+      result.emplace_back(std::get<3>(rec)->get_result_ff());
     }
 
     return result;
@@ -1149,7 +1197,7 @@ namespace firefly {
   }
 
   template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::run_until_done() {
+  void Reconstructor<BlackBoxTemp>::run_until_done(uint32_t prime_counter) {
     std::vector<uint32_t> zi_order(n - 1, 1);
 
     new_prime = false;
@@ -1303,6 +1351,9 @@ namespace firefly {
 
         total_iterations += iteration;
         ++prime_it;
+
+        if(prime_it >= prime_counter)
+          done = true;
 
         {
           std::unique_lock<std::mutex> lock_print(print_control);
@@ -2375,6 +2426,25 @@ namespace firefly {
       } else {
         ++it;
       }
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::abort() {
+    logger << "Run aborted\n";
+    INFO_MSG("Run aborted");
+    done = true;
+    aborted = true;
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::resume() {
+    logger << "Run resumed\n";
+    INFO_MSG("Run resumed");
+    if(aborted) {
+      done = false;
+      aborted = false;
+      resumed = true;
     }
   }
 

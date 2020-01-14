@@ -106,6 +106,7 @@ set(LIBSOURCES
   ${SOURCE_PATH}/PolynomialFF.cpp
   ${SOURCE_PATH}/PolyReconst.cpp
   ${SOURCE_PATH}/RationalFunction.cpp
+  ${SOURCE_PATH}/RationalFunctionFF.cpp
   ${SOURCE_PATH}/RationalNumber.cpp
   ${SOURCE_PATH}/RatReconst.cpp
   ${SOURCE_PATH}/ReconstHelper.cpp
@@ -187,6 +188,7 @@ install(FILES
   "${INCLUDE_PATH}/PolynomialFF.hpp"
   "${INCLUDE_PATH}/PolyReconst.hpp"
   "${INCLUDE_PATH}/RationalFunction.hpp"
+  "${INCLUDE_PATH}/RationalFunctionFF.hpp"
   "${INCLUDE_PATH}/RationalNumber.hpp"
   "${INCLUDE_PATH}/RatReconst.hpp"
   "${INCLUDE_PATH}/ReconstHelper.hpp"
@@ -207,7 +209,7 @@ endif()
 add_subdirectory(doc)
 
 # test
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
-  enable_testing()
-  add_subdirectory(test)
-endif()
+#if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
+#  enable_testing()
+#  add_subdirectory(test)
+#endif()

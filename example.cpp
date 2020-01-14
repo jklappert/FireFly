@@ -42,7 +42,7 @@ namespace firefly {
       // Get results from parsed expressions
       std::vector<FFIntTemp> result = par.evaluate_pre(values);
 
-      result.emplace_back(result[0] / result[3]);
+      /*result.emplace_back(result[0] / result[3]);
 
       // Build the matrix mat
       mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
@@ -50,7 +50,7 @@ namespace firefly {
       // Compute LU decomposition of mat
       calc_lu_decomposition(mat, p, 2);
       // Compute determinant of mat
-      result.emplace_back(calc_determinant_lu(mat, p, 2));
+      result.emplace_back(calc_determinant_lu(mat, p, 2));*/
 
       //std::vector<FFIntTemp> b(1);
       //solve_lu(mat, p, b, 2);
@@ -89,6 +89,7 @@ using namespace firefly;
 int main() {
   // Parse the functions from "../s_y_4_v.m" with the variables x1, y, zZ, W
   ShuntingYardParser par("../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+  //ShuntingYardParser par("../parser_test/test.m", {"x", "y", "zZ", "W"});
 
   // Create the user defined black box
   BlackBoxUser bb(par);
@@ -113,6 +114,11 @@ int main() {
 
   // Reconstruct the black box
   reconst.reconstruct();
+  //reconst.reconstruct(1);
+
+  /*for(const auto& rf : reconst.get_result_ff()) {
+    std::cout << rf.to_string({"x","y","z","w"}) << "\n";
+  }*/
 
   /*std::vector<FFInt> vec (4);
   FFIntVec<4> arr1(2);
