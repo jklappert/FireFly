@@ -3048,7 +3048,6 @@ namespace firefly {
       std::unique_lock<std::mutex> lock(mutex_status);
       zi = 1;
     } else { // Get total amount of needed feeds to interpolate this function over the current prime
-
       std::map<uint32_t, uint32_t> r_map {};
 
       // Fill the feed vector
@@ -3167,8 +3166,9 @@ namespace firefly {
             last_number_of_terms = el.first;
             tmp_max_num_eqn = tmp_num_eqn;
           }
-        } else
+        } else {
           needed_feed_vec.emplace_back(std::make_pair(1, num_eqn));
+        }
       }
     }
 

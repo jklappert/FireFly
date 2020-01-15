@@ -97,9 +97,10 @@ int main() {
   // Initialize the Reconstructor
   Reconstructor<BlackBoxUser> reconst(4 /*n_vars*/, 4 /*n_threads*/, 1 /*bunch size*/,
                         bb /*black box*//*,
-                        Reconstructor::CHATTY*/ /* verbosity mode*/);
+                        Reconstructor<BlackBoxUser>::CHATTY*/ /* verbosity mode*/);
 
   // Enables a scan for a sparse shift
+  //reconst.enable_factorization_scan();
   reconst.enable_scan();
 
   // Enables the safe mode
@@ -114,7 +115,26 @@ int main() {
 
   // Reconstruct the black box
   reconst.reconstruct();
-  //reconst.reconstruct(1);
+  /*fmpz_t xx,yy,res;
+  fmpz_poly_t numerator;
+  fmpz_poly_init(numerator);
+  fmpz_init(xx);
+  fmpz_init(yy);
+  fmpz_init(res);
+  fmpz_set_ui(yy, 101);
+  fmpz_poly_set_coeff_fmpz(numerator, 13, yy);
+  fmpz_set_ui(yy, 137);
+  fmpz_poly_set_coeff_fmpz(numerator, 12, yy);
+  fmpz_set_str(xx, "10000000000000000000000000000000000000000000000000000000000000000000000000000", 10);
+  fmpz_poly_set_coeff_fmpz(numerator, 20, xx);
+  fmpz_add(res, xx, yy);
+  fmpz_print(res);
+  fmpz_clear(xx);
+  fmpz_clear(yy);
+  fmpz_clear(res);
+  std::cout << "\n";
+  std::cout << "test " << fmpz_poly_get_str_pretty(numerator,"x1") << "\n";
+  fmpz_poly_clear(numerator);*/
 
   /*for(const auto& rf : reconst.get_result_ff()) {
     std::cout << rf.to_string({"x","y","z","w"}) << "\n";
