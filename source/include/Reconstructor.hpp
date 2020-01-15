@@ -163,7 +163,7 @@ namespace firefly {
     uint32_t interpolate_jobs = 0;
     uint64_t ind = 0;
     BlackBoxBase<BlackBoxTemp>& bb;
-    const int verbosity;
+    int verbosity;
     double average_black_box_time = 0.;
     std::atomic<bool> scan = {false};
     std::atomic<bool> factorization_scan = {false};
@@ -952,8 +952,8 @@ namespace firefly {
 
         logger << "Maximal degree of numerator: " << std::to_string(max_deg_num)
           << " | Maximal degree of denominator: " << std::to_string(max_deg_den) << "\n";
-	      logger.close();
-	      logger.open("firefly.log", std::ios_base::app);
+        logger.close();
+        logger.open("firefly.log", std::ios_base::app);
 
         if (verbosity > SILENT) {
           INFO_MSG("Maximal degree of numerator: " + std::to_string(max_deg_num) + " | Maximal degree of denominator: " + std::to_string(max_deg_den));
@@ -1051,8 +1051,10 @@ namespace firefly {
 #ifdef FLINT
     factorizations.reserve(n);
     logger << "Scanning for factorizations\n";
+    int old_verbosity = verbosity;
+    verbosity = SILENT;
 
-    if (verbosity > SILENT)
+    if (old_verbosity > SILENT)
       INFO_MSG("Scanning for factorizations");
 
     uint32_t total_number_of_factorizations = 0;
@@ -1072,7 +1074,7 @@ namespace firefly {
           rand_zi_fac[j] = tmp_rec.get_rand_64();
       }
 
-      if (verbosity > SILENT) {
+      if (old_verbosity > SILENT) {
         INFO_MSG("Scanning for factorizations in variable " + std::to_string(i));
       }
 
@@ -1096,19 +1098,42 @@ namespace firefly {
         fmpz_poly_factor_init(fac_numerator);
         fmpz_poly_factor_init(fac_denominator);
 
-        // Initialize polynomials in FLINT style and check for maximal degree
-        for (const auto & coef : std::get<3>(rec)->get_result_ff().numerator.coefs) {
-          if (coef.first[0] > max_degs[i])
-            max_degs[i] = coef.first[0];
-
-          fmpz_poly_set_coeff_ui(numerator, coef.first[0], coef.second.n);
+        // Calculate gcd of numerator
+        RationalNumber tmp_gcd (1,1);
+        for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
+          tmp_gcd = gcd(coef.coef, tmp_gcd);
         }
 
-        for (const auto & coef : std::get<3>(rec)->get_result_ff().denominator.coefs) {
-          if (coef.first[0] > max_degs[i])
-            max_degs[i] = coef.first[0];
+        // Rewrite numerator in FLINTs notation and determine maximal degree
+        for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
+          if (coef.powers[0] > max_degs[i]) {
+            max_degs[i] = coef.powers[0];
+          }
 
-          fmpz_poly_set_coeff_ui(denominator, coef.first[0], coef.second.n);
+          fmpz_t tmp;
+          fmpz_init(tmp);
+          fmpz_set_str(tmp, RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator.get_str().c_str(), 10);
+          fmpz_poly_set_coeff_fmpz(numerator, coef.powers[0], tmp);
+          fmpz_clear(tmp);
+        }
+
+        // Calculate gcd of denominator
+        tmp_gcd = RationalNumber(1, 1);
+        for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
+          tmp_gcd = gcd(coef.coef, tmp_gcd);
+        }
+
+        // Rewrite denominator in FLINTs notation and determine maximal degree
+        for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
+          if (coef.powers[0] > max_degs[i]) {
+            max_degs[i] = coef.powers[0];
+          }
+
+          fmpz_t tmp;
+          fmpz_init(tmp);
+          fmpz_set_str(tmp, RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator.get_str().c_str(), 10);
+          fmpz_poly_set_coeff_fmpz(denominator, coef.powers[0], tmp);
+          fmpz_clear(tmp);
         }
 
         // Factorize polynomials
@@ -1142,11 +1167,11 @@ namespace firefly {
         ++counter;
       }
 
-      if (verbosity > SILENT) {
-        INFO_MSG("Found " + std::to_string(number_of_factorizations) + " possible factorizations in variable " + std::to_string(i));
+      if (old_verbosity > SILENT) {
+        INFO_MSG("Found " + std::to_string(number_of_factorizations) + " possible factors in variable " + std::to_string(i));
       }
 
-      logger << "Found " << std::to_string(number_of_factorizations) << " possible factorizations in variable " << std::to_string(i) << "\n";
+      logger << "Found " << std::to_string(number_of_factorizations) << " possible factors in variable " << std::to_string(i) << "\n";
 
       RatReconst::reset();
       reconst.clear();
@@ -1169,8 +1194,7 @@ namespace firefly {
       // TODO mutex required here?
       requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
       computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
-
-      // 2nd part of the algorithm: refine factorizations and check if they are real ones
+      // 2nd part of the algorithm: reconstruct coefficients
       //------------------------------------------------------------------------
       start_first_runs();
       run_until_done();
@@ -1180,158 +1204,88 @@ namespace firefly {
 
       for (const auto& rec : reconst) {
         if (possible_factorizations_funs.find(counter) != possible_factorizations_funs.end()) {
-        // Initialize FLINT types
-        fmpz_poly_t numerator, denominator;
-        fmpz_poly_factor_t fac_numerator, fac_denominator;
-        fmpz_poly_init(numerator);
-        fmpz_poly_init(denominator);
-        fmpz_poly_factor_init(fac_numerator);
-        fmpz_poly_factor_init(fac_denominator);
+          // Initialize FLINT types
+          fmpz_poly_t numerator, denominator;
+          fmpz_poly_factor_t fac_numerator, fac_denominator;
+          fmpz_poly_init(numerator);
+          fmpz_poly_init(denominator);
+          fmpz_poly_factor_init(fac_numerator);
+          fmpz_poly_factor_init(fac_denominator);
 
-        // Initialize polynomials in FLINT style and check for maximal degree
-        for (const auto & coef : std::get<3>(rec)->get_result_ff().numerator.coefs) {
-          fmpz_poly_set_coeff_ui(numerator, coef.first[0], coef.second.n);
-        }
-
-        for (const auto & coef : std::get<3>(rec)->get_result_ff().denominator.coefs) {
-          fmpz_poly_set_coeff_ui(denominator, coef.first[0], coef.second.n);
-        }
-
-        // Factorize polynomials
-        fmpz_poly_factor_zassenhaus(fac_numerator, numerator);
-        fmpz_poly_factor_zassenhaus(fac_denominator, denominator);
-
-        // Rewrite and store in result objects
-        if (fac_numerator[0].num + fac_denominator[0].num != 0) {
-          std::unordered_set<std::string> fac_nums;
-          std::unordered_set<std::string> fac_dens;
-
-          for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
-            std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str());
-            if (possible_factorizations[counter].first.find(possible_fac_tmp) != possible_factorizations[counter].first.end()) {
-              fac_nums.emplace(possible_fac_tmp);
-              ++number_of_factorizations;
-            }
+          // Calculate gcd of numerator
+          RationalNumber tmp_gcd (1,1);
+          for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
+            tmp_gcd = gcd(coef.coef, tmp_gcd);
           }
 
-          for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
-            std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str());
-            if (possible_factorizations[counter].second.find(possible_fac_tmp) != possible_factorizations[counter].second.end()) {
-              fac_dens.emplace(possible_fac_tmp);
-              ++number_of_factorizations;
-            }
+          // Rewrite numerator in FLINTs notation
+          for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
+            fmpz_t tmp;
+            fmpz_init(tmp);
+            fmpz_set_str(tmp, RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator.get_str().c_str(), 10);
+            fmpz_poly_set_coeff_fmpz(numerator, coef.powers[0], tmp);
+            fmpz_clear(tmp);
           }
+
+          // Calculate gcd of denominator
+          tmp_gcd = RationalNumber(1, 1);
+          for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
+            tmp_gcd = gcd(coef.coef, tmp_gcd);
+          }
+
+          // Rewrite denominator in FLINTs notation
+          for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
+            fmpz_t tmp;
+            fmpz_init(tmp);
+            fmpz_set_str(tmp, RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator.get_str().c_str(), 10);
+            fmpz_poly_set_coeff_fmpz(denominator, coef.powers[0], tmp);
+            fmpz_clear(tmp);
+          }
+
+          // Factorize polynomials
+          fmpz_poly_factor_zassenhaus(fac_numerator, numerator);
+          fmpz_poly_factor_zassenhaus(fac_denominator, denominator);
+
+          // Rewrite and store in result objects. Compare to previous factorizations
+          if (fac_numerator[0].num + fac_denominator[0].num != 0) {
+            std::unordered_set<std::string> fac_nums;
+            std::unordered_set<std::string> fac_dens;
+
+            for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
+              std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str());
+              if (possible_factorizations[counter].first.find(possible_fac_tmp) != possible_factorizations[counter].first.end()) {
+                fac_nums.emplace(possible_fac_tmp);
+                ++number_of_factorizations;
+              }
+            }
+
+            for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
+              std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str());
+              if (possible_factorizations[counter].second.find(possible_fac_tmp) != possible_factorizations[counter].second.end()) {
+                fac_dens.emplace(possible_fac_tmp);
+                ++number_of_factorizations;
+              }
+            }
+
+            // Store factorizations
+            possible_factorizations.emplace(counter, std::make_pair(fac_nums, fac_dens));
+          }
+
+          // Free memory
+          fmpz_poly_clear(numerator);
+          fmpz_poly_clear(denominator);
+          fmpz_poly_factor_clear(fac_numerator);
+          fmpz_poly_factor_clear(fac_denominator);
         }
 
-        // Free memory
-        fmpz_poly_clear(numerator);
-        fmpz_poly_clear(denominator);
-        fmpz_poly_factor_clear(fac_numerator);
-        fmpz_poly_factor_clear(fac_denominator);
-        }
         ++counter;
       }
 
-      if (verbosity > SILENT) {
-        INFO_MSG("Found " + std::to_string(number_of_factorizations) + " real factorizations in variable " + std::to_string(i));
-        INFO_MSG("Start reconstruction of coefficients.");
+      if (old_verbosity > SILENT) {
+        INFO_MSG("Found " + std::to_string(number_of_factorizations) + " factors in variable " + std::to_string(i));
       }
 
-      logger << "Found " << std::to_string(number_of_factorizations) << " real factorizations in variable " << std::to_string(i) << "\n";
-      logger << "Start reconstruction of coefficients.\n";
-
-      RatReconst::reset();
-      reconst.clear();
-
-      // Reset
-      probes_queued = 0;
-      started_probes.clear();
-      index_map.clear();
-      ind = 0;
-      fed_ones = 0;
-      feed_jobs = 0;
-      interpolate_jobs = 0;
-      iteration = 0;
-#if WITH_MPI
-      iterations_on_this_node = 0;
-#endif
-      items_done = 0;
-      done = false;
-
-      // TODO mutex required here?
-      requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
-      computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
-      possible_factorizations.clear();
-      // 3rd part of the algorithm: reconstruct coefficients
-      //------------------------------------------------------------------------
-      start_first_runs();
-      run_until_done();
-
-      counter = 0;
-//TODO save factors
-      for (const auto& rec : reconst) {
-        if (possible_factorizations_funs.find(counter) != possible_factorizations_funs.end()) {
-        // Initialize FLINT types
-        fmpz_poly_t numerator, denominator;
-        fmpz_poly_factor_t fac_numerator, fac_denominator;
-        fmpz_poly_init(numerator);
-        fmpz_poly_init(denominator);
-        fmpz_poly_factor_init(fac_numerator);
-        fmpz_poly_factor_init(fac_denominator);
-
-        // Initialize polynomials in FLINT style and check for maximal degree
-        RationalNumber tmp_gcd (1,1);
-        for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
-          tmp_gcd = gcd(coef.coef, tmp_gcd);
-        }
-
-        for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
-          //fmpz_poly_set_coeff_fmpz(numerator, coef.powers[0], RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator);
-        }
-
-        tmp_gcd = RationalNumber(1, 1);
-        for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
-          tmp_gcd = gcd(coef.coef, tmp_gcd);
-        }
-
-        for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
-          //fmpz_poly_set_coeff_fmpz(denominator, coef.powers[0], RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator);
-        }
-
-        // Factorize polynomials
-        fmpz_poly_factor_zassenhaus(fac_numerator, numerator);
-        fmpz_poly_factor_zassenhaus(fac_denominator, denominator);
-
-        // Rewrite and store in result objects
-        if (fac_numerator[0].num + fac_denominator[0].num != 0) {
-          std::unordered_set<std::string> fac_nums;
-          std::unordered_set<std::string> fac_dens;
-
-          for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
-            std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str());
-            if (possible_factorizations[counter].first.find(possible_fac_tmp) != possible_factorizations[counter].first.end()) {
-              fac_nums.emplace(possible_fac_tmp);
-              ++number_of_factorizations;
-            }
-          }
-
-          for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
-            std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str());
-            if (possible_factorizations[counter].second.find(possible_fac_tmp) != possible_factorizations[counter].second.end()) {
-              fac_dens.emplace(possible_fac_tmp);
-              ++number_of_factorizations;
-            }
-          }
-        }
-
-        // Free memory
-        fmpz_poly_clear(numerator);
-        fmpz_poly_clear(denominator);
-        fmpz_poly_factor_clear(fac_numerator);
-        fmpz_poly_factor_clear(fac_denominator);
-        }
-        ++counter;
-      }
+      logger << "Found " << std::to_string(number_of_factorizations) << " factors in variable " << std::to_string(i) << "\n";
 
       total_number_of_factorizations += number_of_factorizations;
 
@@ -1367,6 +1321,8 @@ namespace firefly {
 
     prime_it = 0;
     FFInt::set_new_prime(prime_it);
+
+    verbosity = old_verbosity;
 
     logger << "Completed factorization scan in "
       << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count())
