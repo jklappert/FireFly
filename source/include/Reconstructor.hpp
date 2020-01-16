@@ -264,6 +264,10 @@ namespace firefly {
      */
     template<uint32_t N>
     void start_new_job(std::unique_lock<std::mutex>& lock_probe_queue);
+    /**
+     *  TODO
+     */
+    void reset_new_prime();
 #if WITH_MPI
     int world_size;
     uint32_t total_thread_count = 0;
@@ -966,24 +970,9 @@ namespace firefly {
         ++counter;
       }
 
-      probes_queued = 0;
-      started_probes.clear();
-      //std::cout << "clear 1\n";
-      index_map.clear();
-      ind = 0;
-      fed_ones = 0;
-      feed_jobs = 0;
-      interpolate_jobs = 0;
-      iteration = 0;
-#if WITH_MPI
-      iterations_on_this_node = 0;
-#endif
+      reset_new_prime();
       items_done = 0;
       done = false;
-
-      // TODO mutex required here?
-      requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
-      computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
     }
 
     if (found_shift) {
@@ -1183,24 +1172,9 @@ namespace firefly {
       clean_reconst();
       reconst.clear();
 
-      // Reset
-      probes_queued = 0;
-      started_probes.clear();
-      index_map.clear();
-      ind = 0;
-      fed_ones = 0;
-      feed_jobs = 0;
-      interpolate_jobs = 0;
-      iteration = 0;
-#if WITH_MPI
-      iterations_on_this_node = 0;
-#endif
+      reset_new_prime();
       items_done = 0;
       done = false;
-
-      // TODO mutex required here?
-      requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
-      computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
 
       prime_it = 0;
       FFInt::set_new_prime(primes()[prime_it]);
@@ -1322,26 +1296,11 @@ namespace firefly {
         clean_reconst();
         reconst.clear();
 
-        // Reset
-        probes_queued = 0;
-        started_probes.clear();
-        index_map.clear();
-        ind = 0;
-        fed_ones = 0;
-        feed_jobs = 0;
-        interpolate_jobs = 0;
-        iteration = 0;
-#if WITH_MPI
-        iterations_on_this_node = 0;
-#endif
+        reset_new_prime();
         items_done = 0;
         done = false;
 
-        // TODO mutex required here?
-        requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
-        computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
-
-          prime_it = 0;
+        prime_it = 0;
         FFInt::set_new_prime(primes()[prime_it]);
         bb.prime_changed_internal();
       }
@@ -1374,7 +1333,7 @@ namespace firefly {
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
       INFO_MSG("Proceeding with interpolation over prime field F(" + std::to_string(primes()[prime_it]) + ")");
     }
-    
+
 /*              for (const auto & el : factors) {
                 std::cout << "function " << el.first << "\n";
                 std::cout << "factors num\n";
@@ -1386,7 +1345,7 @@ namespace firefly {
                   std::cout << fac << "\n";
                 }
               }*/
-              
+
     factorization_scan = false;
     prime_start = std::chrono::high_resolution_clock::now();
     std::exit(-1);
@@ -1781,33 +1740,7 @@ namespace firefly {
 
         prime_start = std::chrono::high_resolution_clock::now();
 
-        iteration = 0;
-#if WITH_MPI
-        iterations_on_this_node = 0;
-#endif
-
-        fed_ones = 0;
-        probes_queued = 0;
-        started_probes.clear();
-        //std::cout << "clear 2\n";
-        index_map.clear();
-        ind = 0;
-
-        // Only reset chosen_t when not resuming from a saved state
-        if (!set_anchor_points) {
-          chosen_t.clear();
-        }
-
-        feed_jobs = 0;
-        interpolate_jobs = 0;
-        new_prime = false;
-        items_new_prime = 0;
-        one_done = false;
-        one_new_prime = false;
-
-        // TODO mutex required here?
-        requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
-        computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
+        reset_new_prime();
 
         FFInt::set_new_prime(primes()[prime_it]);
 
@@ -3004,6 +2937,35 @@ namespace firefly {
 
       condition_future.notify_one();
     }
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::reset_new_prime() {
+    iteration = 0;
+  #if WITH_MPI
+    iterations_on_this_node = 0;
+  #endif
+
+    fed_ones = 0;
+    probes_queued = 0;
+    started_probes.clear();
+    index_map.clear();
+    ind = 0;
+    feed_jobs = 0;
+    interpolate_jobs = 0;
+    new_prime = false;
+    items_new_prime = 0;
+    one_done = false;
+    one_new_prime = false;
+
+    // Only reset chosen_t when not resuming from a saved state
+    if (!set_anchor_points) {
+      chosen_t.clear();
+    }
+
+    // TODO mutex required here?
+    requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+    computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
   }
 
 #if WITH_MPI
