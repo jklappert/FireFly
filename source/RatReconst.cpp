@@ -24,6 +24,10 @@
 #include "ReconstHelper.hpp"
 #include "utils.hpp"
 
+#ifdef FLINT
+#include <flint/nmod_poly.h>
+#endif
+
 #include <algorithm>
 #include <sys/stat.h>
 
@@ -84,6 +88,11 @@ namespace firefly {
       ERROR_MSG("You should never want to shift a univariate rational function.");
       std::exit(EXIT_FAILURE);
     }
+  }
+
+  void RatReconst::calc_factors(const std::string& var_) {
+    is_calc_factors = true;
+    var = var_;
   }
 
   void RatReconst::set_zi_shift(const std::vector<uint32_t>& shifted_zis) {
@@ -1670,6 +1679,56 @@ namespace firefly {
 
     tmp_solved_coefs_den = 0;
     tmp_solved_coefs_num = 0;
+
+    if (is_calc_factors) {
+        nmod_poly_t numerator, denominator;
+        nmod_poly_factor_t fac_numerator, fac_denominator;
+        nmod_poly_init(numerator, FFInt::p);
+        nmod_poly_init(denominator, FFInt::p);
+        nmod_poly_factor_init(fac_numerator);
+        nmod_poly_factor_init(fac_denominator);
+
+        // Rewrite numerator in FLINTs notation and determine maximal degree
+        for (const auto & coef : get_result_ff().numerator.coefs) {
+          if (coef.first[0] > max_deg_num)
+            max_deg_num = coef.first[0];
+
+          nmod_poly_set_coeff_ui(numerator, coef.first[0], coef.second.n);
+        }
+
+        // Rewrite denominator in FLINTs notation and determine maximal degree
+        for (const auto & coef : get_result_ff().denominator.coefs) {
+          if (coef.first[0] > max_deg_den)
+            max_deg_den = coef.first[0];
+
+          nmod_poly_set_coeff_ui(denominator, coef.first[0], coef.second.n);
+        }
+
+        // Factorize polynomials
+        nmod_poly_factor_cantor_zassenhaus(fac_numerator, numerator);
+        nmod_poly_factor_cantor_zassenhaus(fac_denominator, denominator);
+
+        // Rewrite and store in result objects
+        if (fac_numerator[0].num + fac_denominator[0].num != 0) {
+          for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
+            std::string tmp_fac = nmod_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str());
+            std::string tmp_factor = "(" + tmp_fac + ")^" + std::to_string(fac_numerator[0].exp[fac_num_num]);
+            factors.first.emplace(tmp_factor);
+          }
+
+          for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
+            std::string tmp_fac = nmod_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str());
+            std::string tmp_factor = "(" + tmp_fac + ")^" + std::to_string(fac_denominator[0].exp[fac_den_num]);
+            factors.second.emplace(tmp_factor);
+          }
+        }
+
+        // Free memory
+        nmod_poly_clear(numerator);
+        nmod_poly_clear(denominator);
+        nmod_poly_factor_clear(fac_numerator);
+        nmod_poly_factor_clear(fac_denominator);
+    }
   }
 
   RationalFunction RatReconst::get_result() {
@@ -1707,6 +1766,10 @@ namespace firefly {
     tmp_res_den.insert(tmp_den.begin(), tmp_den.end());
 
     return RationalFunctionFF(PolynomialFF(n, tmp_res_num), PolynomialFF(n, tmp_res_den));
+  }
+
+  std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> RatReconst::get_factors_ff() {
+    return factors;
   }
 
   bool RatReconst::rec_rat_coef() {
@@ -3331,7 +3394,9 @@ namespace firefly {
     } else if (max_deg_num != -1 && max_deg_den != -1)
       return std::make_pair(max_deg_num, max_deg_den);
     else {
-      WARNING_MSG("Maximal degrees are not known yet.");
+      if (!is_calc_factors)
+        WARNING_MSG("Maximum degrees are not known yet.");
+
       return std::make_pair(0, 0);
     }
   }
@@ -3402,5 +3467,10 @@ namespace firefly {
     file.close();
 
     return tmp;
+  }
+
+  void RatReconst::set_prime_to_max() {
+    std::unique_lock<std::mutex> lock(mutex_status);
+    prime_number = 99;
   }
 }

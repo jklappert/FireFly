@@ -102,7 +102,7 @@ namespace firefly {
     /**
      *  Enables the scan for factors
      */
-    void enable_factorization_scan();
+    void enable_factor_scan();
     /**
      *  Activate the safe interpolation mode where the function is completely interpolated in each prime field,
      *  no optimizations are used after the first prime field. Note that this mode cannot handle function changes
@@ -166,7 +166,7 @@ namespace firefly {
     int verbosity;
     double average_black_box_time = 0.;
     std::atomic<bool> scan = {false};
-    std::atomic<bool> factorization_scan = {false};
+    std::atomic<bool> factor_scan = {false};
     std::atomic<bool> aborted = {false};
     std::atomic<bool> resumed = {false};
     std::atomic<bool> new_prime = {false};
@@ -181,6 +181,7 @@ namespace firefly {
     RatReconst_list reconst;
     std::vector<std::string> tags;
     std::vector<std::string> file_paths;
+    std::string curr_var = "";
     std::vector<FFInt> rand_zi_fac {};
     std::ofstream logger;
     std::vector<uint32_t> max_degs {};
@@ -197,7 +198,7 @@ namespace firefly {
     std::condition_variable condition_future;
     std::condition_variable condition_feed;
     std::vector<std::vector<std::string>> factorizations {};
-    std::unordered_set<uint32_t> possible_factorizations_funs {};
+    std::unordered_set<uint32_t> possible_factors_bb_counter {};
     std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
     std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes;
     std::deque<std::pair<uint64_t, std::vector<FFInt>>> requested_probes;
@@ -212,7 +213,7 @@ namespace firefly {
     /**
     *  Scan the black-box functions for a sparse shift
     */
-    void scan_for_factorization();
+    void scan_for_factors();
     /**
      *  Initializes vector of reconstruction objects and starts first probes
      */
@@ -310,11 +311,11 @@ namespace firefly {
                   << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
         printed_logo = true;
       }
-      INFO_MSG("Launching " << thr_n << " thread(s) with maximal bunch size 1");
+      INFO_MSG("Launching " << thr_n << " thread(s) with maximum bunch size 1");
       INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
       logger << "\nFireFly " << FireFly_VERSION_MAJOR << "."
                 << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n"
-                <<"Launching " << thr_n << " thread(s) with maximal bunch size 1\n"
+                <<"Launching " << thr_n << " thread(s) with maximum bunch size 1\n"
                 <<"Using seed " << std::to_string(seed) << " for random numbers\n";
     }
   }
@@ -327,8 +328,8 @@ namespace firefly {
                                BlackBoxBase<BlackBoxTemp>& bb_, int verbosity_): n(n_), thr_n(thr_n_ - 1), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n), total_thread_count(thr_n) {
 #endif
     if (bunch_size != 1 && bunch_size != 2 && bunch_size != 4 && bunch_size != 8 && bunch_size != 16 && bunch_size != 32 && bunch_size != 64 && bunch_size != 128 && bunch_size != 256) {
-      ERROR_MSG("Maximal bunch size " + std::to_string(bunch_size) + " is no supported power of 2!\nChoose among 1, 2, 4, 8, 16, 32, 64, 128, 256");
-      logger << "Maximal bunch size " << std::to_string(bunch_size) << " is no supported power of 2!\nChoose among 1, 2, 4, 8, 16, 32, 64, 128, 256\n";
+      ERROR_MSG("Maximum bunch size " + std::to_string(bunch_size) + " is no supported power of 2!\nChoose among 1, 2, 4, 8, 16, 32, 64, 128, 256");
+      logger << "Maximum bunch size " << std::to_string(bunch_size) << " is no supported power of 2!\nChoose among 1, 2, 4, 8, 16, 32, 64, 128, 256\n";
       std::exit(EXIT_FAILURE);
     }
 
@@ -345,11 +346,11 @@ namespace firefly {
                   << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n";
         printed_logo = true;
       }
-      INFO_MSG("Launching " << thr_n << " thread(s) maximal with bunch size " + std::to_string(bunch_size_));
+      INFO_MSG("Launching " << thr_n << " thread(s) with maximum bunch size " + std::to_string(bunch_size_));
       INFO_MSG("Using seed " + std::to_string(seed) + " for random numbers");
       logger << "\nFireFly " << FireFly_VERSION_MAJOR << "."
                 << FireFly_VERSION_MINOR << "." << FireFly_VERSION_RELEASE << "\n\n"
-                <<"Launching " << thr_n << " thread(s) with maximal bunch size " << std::to_string(bunch_size_) <<  "\n"
+                <<"Launching " << thr_n << " thread(s) with maximum bunch size " << std::to_string(bunch_size_) <<  "\n"
                 <<"Using seed " + std::to_string(seed) + " for random numbers\n";
     }
   }
@@ -392,11 +393,11 @@ namespace firefly {
   }
 
   template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::enable_factorization_scan() {
+  void Reconstructor<BlackBoxTemp>::enable_factor_scan() {
 #ifndef FLINT
-    ERROR_MSG("FireFly is not compiled with FLINT. No polynomial factorization possible!");
+    ERROR_MSG("FireFly is not compiled with FLINT. No polynomial factoring possible!");
 #endif
-    factorization_scan = true;
+    factor_scan = true;
   }
 
   template<typename BlackBoxTemp>
@@ -710,9 +711,9 @@ namespace firefly {
         }
       }
 //TODO new
-      if (factorization_scan) {
+      if (factor_scan) {
         RatReconst::reset();
-        scan_for_factorization();
+        scan_for_factors();
 
         tmp_rec = RatReconst(n);
         if(safe_mode) tmp_rec.set_safe_interpolation();
@@ -958,13 +959,13 @@ namespace firefly {
         found_shift = false;
         first = false;
 
-        logger << "Maximal degree of numerator: " << std::to_string(max_deg_num)
-          << " | Maximal degree of denominator: " << std::to_string(max_deg_den) << "\n";
+        logger << "Maximum degree of numerator: " << std::to_string(max_deg_num)
+          << " | Maximum degree of denominator: " << std::to_string(max_deg_den) << "\n";
         logger.close();
         logger.open("firefly.log", std::ios_base::app);
 
         if (verbosity > SILENT) {
-          INFO_MSG("Maximal degree of numerator: " + std::to_string(max_deg_num) + " | Maximal degree of denominator: " + std::to_string(max_deg_den));
+          INFO_MSG("Maximum degree of numerator: " + std::to_string(max_deg_num) + " | Maximum degree of denominator: " + std::to_string(max_deg_den));
         }
       } else {
         ++counter;
@@ -1040,7 +1041,7 @@ namespace firefly {
 
 //TODO new
   template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::scan_for_factorization() {
+  void Reconstructor<BlackBoxTemp>::scan_for_factors() {
 #ifdef FLINT
     auto clock_1 = std::chrono::high_resolution_clock::now();
     factorizations.reserve(n);
@@ -1054,243 +1055,120 @@ namespace firefly {
     logger << "Scanning for factors\n";
 
     uint32_t total_number_of_factors = 0;
+    uint32_t number_of_factors = 0;
     max_degs = std::vector<uint32_t> (n, 0);
     shift = std::vector<FFInt> (n, 0);
     rand_zi_fac = std::vector<FFInt> (n, 0);
-    std::unordered_map<uint32_t,std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> factors {};
+    std::unordered_map<uint32_t, std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> factors {};
 
     // Run this loop until a proper shift is found
     for (int i = 0; i != n; ++i) {
+      curr_var = std::to_string(i + 1);
       std::unordered_map<uint32_t,std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> possible_factors {};
-      possible_factorizations_funs.clear();
+      possible_factors_bb_counter.clear();
 
-      for (int j = 0; j != n; ++j) {
-        if (j == i)
-          rand_zi_fac[j] = 1;
-        else
-          rand_zi_fac[j] = tmp_rec.get_rand_32();
-      }
+      uint32_t prime_it_old = prime_it;
 
-      // 1st part of the algorithm: Check if anything factorizes
-      //------------------------------------------------------------------------
-      start_first_runs();
-      run_until_done();
-
-      uint32_t number_of_factors = 0;
-      uint32_t counter = 0;
-      std::string var = "x" + std::to_string(i + 1);
-
-      for (auto& rec : reconst) {
-        std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-        // Initialize FLINT types
-        fmpz_poly_t numerator, denominator;
-        fmpz_poly_factor_t fac_numerator, fac_denominator;
-        fmpz_poly_init(numerator);
-        fmpz_poly_init(denominator);
-        fmpz_poly_factor_init(fac_numerator);
-        fmpz_poly_factor_init(fac_denominator);
-
-        // Calculate gcd of numerator
-        RationalNumber tmp_gcd (1,1);
-        for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
-          tmp_gcd = gcd(coef.coef, tmp_gcd);
-        }
-
-        // Rewrite numerator in FLINTs notation and determine maximal degree
-        for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
-          if (coef.powers[0] > max_degs[i]) {
-            max_degs[i] = coef.powers[0];
-          }
-
-          fmpz_t tmp;
-          fmpz_init(tmp);
-          fmpz_set_str(tmp, RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator.get_str().c_str(), 10);
-          fmpz_poly_set_coeff_fmpz(numerator, coef.powers[0], tmp);
-          fmpz_clear(tmp);
-        }
-
-        // Calculate gcd of denominator
-        tmp_gcd = RationalNumber(1, 1);
-        for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
-          tmp_gcd = gcd(coef.coef, tmp_gcd);
-        }
-
-        // Rewrite denominator in FLINTs notation and determine maximal degree
-        for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
-          if (coef.powers[0] > max_degs[i]) {
-            max_degs[i] = coef.powers[0];
-          }
-
-          fmpz_t tmp;
-          fmpz_init(tmp);
-          fmpz_set_str(tmp, RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator.get_str().c_str(), 10);
-          fmpz_poly_set_coeff_fmpz(denominator, coef.powers[0], tmp);
-          fmpz_clear(tmp);
-        }
-
-        // Factorize polynomials
-        fmpz_poly_factor_zassenhaus(fac_numerator, numerator);
-        fmpz_poly_factor_zassenhaus(fac_denominator, denominator);
-
-        // Rewrite and store in result objects
-        if (fac_numerator[0].num + fac_denominator[0].num != 0) {
-          possible_factorizations_funs.emplace(counter);
-          std::unordered_set<std::string> fac_nums;
-          std::unordered_set<std::string> fac_dens;
-
-          for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
-            fac_nums.emplace(fmpz_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str()));
-            ++number_of_factors;
-          }
-
-          for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
-            fac_dens.emplace(fmpz_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str()));
-            ++number_of_factors;
-          }
-
-          possible_factors.emplace(counter, std::make_pair(fac_nums, fac_dens));
-        }
-
-        // Free memory
-        fmpz_poly_clear(numerator);
-        fmpz_poly_clear(denominator);
-        fmpz_poly_factor_clear(fac_numerator);
-        fmpz_poly_factor_clear(fac_denominator);
-        ++counter;
-
-        std::get<2>(rec) = DELETED;
-        delete std::get<3>(rec);
-      }
-
-      if (old_verbosity > SILENT) {
-        INFO_MSG("Maximal degree of x" + std::to_string(i + 1) + ": " + std::to_string(max_degs[i]) + " | Possible factors in x" + std::to_string(i + 1) + ": " + std::to_string(number_of_factors));
-      }
-
-      logger << "Maximal degree of x" << std::to_string(i + 1) << ": " << std::to_string(max_degs[i]) << " | Possible factors in x" << std::to_string(i + 1) << ": " << std::to_string(number_of_factors) << "\n";
-
-      RatReconst::reset();
-      clean_reconst();
-      reconst.clear();
-
-      reset_new_prime();
-      items_done = 0;
-      done = false;
-
-      prime_it = 0;
-      FFInt::set_new_prime(primes()[prime_it]);
-      bb.prime_changed_internal();
-      // 2nd part of the algorithm: reconstruct coefficients
-      //------------------------------------------------------------------------
-      // Get new parameter point
-      for (int j = 0; j != n; ++j) {
-        if (j == i)
-          rand_zi_fac[j] = 1;
-        else
-          rand_zi_fac[j] = tmp_rec.get_rand_32();
-      }
-
-      if(number_of_factors != 0) {
-        start_first_runs();
-        run_until_done();
-
-        counter = 0;
+      for (int scan_n = 0; scan_n != 2; ++scan_n) {
         number_of_factors = 0;
 
+        for (int j = 0; j != n; ++j) {
+          if (j == i) {
+            rand_zi_fac[j] = 1;
+          } else {
+            rand_zi_fac[j] = tmp_rec.get_rand_64();
+          }
+        }
+
+        start_first_runs();
+        run_until_done();
+        prime_it = prime_it_old;
+
+        uint32_t counter = 0;
+
+        // Get factors
         for (auto& rec : reconst) {
           std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
+          possible_factors.emplace(counter, std::get<3>(rec)->get_factors_ff());
 
-          if (possible_factorizations_funs.find(counter) != possible_factorizations_funs.end()) {
-            // Initialize FLINT types
-            fmpz_poly_t numerator, denominator;
-            fmpz_poly_factor_t fac_numerator, fac_denominator;
-            fmpz_poly_init(numerator);
-            fmpz_poly_init(denominator);
-            fmpz_poly_factor_init(fac_numerator);
-            fmpz_poly_factor_init(fac_denominator);
+          if (prime_it == 0 && scan_n == 0) {
+            // Get maximum degrees
+            auto tmp_max_degs = std::get<3>(rec)->get_max_deg();
 
-            // Calculate gcd of numerator
-            RationalNumber tmp_gcd (1,1);
-            for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
-              tmp_gcd = gcd(coef.coef, tmp_gcd);
+            if (std::max(tmp_max_degs.first, tmp_max_degs.second) > max_degs[i]) {
+              max_degs[i] = std::max(tmp_max_degs.first, tmp_max_degs.second);
             }
 
-            // Rewrite numerator in FLINTs notation
-            for (const auto & coef : std::get<3>(rec)->get_result().numerator.coefs) {
-              fmpz_t tmp;
-              fmpz_init(tmp);
-              fmpz_set_str(tmp, RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator.get_str().c_str(), 10);
-              fmpz_poly_set_coeff_fmpz(numerator, coef.powers[0], tmp);
-              fmpz_clear(tmp);
+            uint32_t tmp_n_fac = std::get<3>(rec)->get_factors_ff().first.size() + std::get<3>(rec)->get_factors_ff().second.size();
+            number_of_factors += tmp_n_fac;
+
+            if (tmp_n_fac != 0) {
+              possible_factors_bb_counter.emplace(counter);
             }
-
-            // Calculate gcd of denominator
-            tmp_gcd = RationalNumber(1, 1);
-            for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
-              tmp_gcd = gcd(coef.coef, tmp_gcd);
-            }
-
-            // Rewrite denominator in FLINTs notation
-            for (const auto & coef : std::get<3>(rec)->get_result().denominator.coefs) {
-              fmpz_t tmp;
-              fmpz_init(tmp);
-              fmpz_set_str(tmp, RationalNumber(coef.coef.numerator * tmp_gcd.denominator,  coef.coef.denominator * tmp_gcd.numerator).numerator.get_str().c_str(), 10);
-              fmpz_poly_set_coeff_fmpz(denominator, coef.powers[0], tmp);
-              fmpz_clear(tmp);
-            }
-
-            // Factorize polynomials
-            fmpz_poly_factor_zassenhaus(fac_numerator, numerator);
-            fmpz_poly_factor_zassenhaus(fac_denominator, denominator);
-
+          } else if (prime_it == 0 && scan_n == 1) {
+            if (possible_factors_bb_counter.find(counter) != possible_factors_bb_counter.end()) {
             // Rewrite and store in result objects. Compare to previous factorizations
-            if (fac_numerator[0].num + fac_denominator[0].num != 0) {
               std::unordered_set<std::string> fac_nums;
               std::unordered_set<std::string> fac_dens;
+              auto tmp_factors = std::get<3>(rec)->get_factors_ff();
 
-              for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
-                std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str());
-                if (possible_factors[counter].first.find(possible_fac_tmp) != possible_factors[counter].first.end()) {
-                  std::string fac_pow = "(" + possible_fac_tmp + ")^" + std::to_string(fac_numerator[0].exp[fac_num_num]);
-                  fac_nums.emplace(fac_pow);
+              // Numerator
+              for (const auto& tmp_factor : tmp_factors.first) {
+                if (possible_factors[counter].first.find(tmp_factor) != possible_factors[counter].first.end()) {
+                  fac_nums.emplace(tmp_factor);
                   ++number_of_factors;
                 }
               }
 
-              for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
-                std::string possible_fac_tmp = fmpz_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str());
-                if (possible_factors[counter].second.find(possible_fac_tmp) != possible_factors[counter].second.end()) {
-                  std::string fac_pow = "(" + possible_fac_tmp + ")^" + std::to_string(fac_denominator[0].exp[fac_den_num]);
-                  fac_dens.emplace(fac_pow);
+              // Denominator
+              for (const auto& tmp_factor : tmp_factors.second) {
+                if (possible_factors[counter].second.find(tmp_factor) != possible_factors[counter].second.end()) {
+                  fac_dens.emplace(tmp_factor);
                   ++number_of_factors;
                 }
               }
 
-              // Store factorizations
+              if (fac_nums.empty() && fac_dens.empty()) {
+                possible_factors_bb_counter.erase(counter);
+              }
+
               factors[counter].first.insert(fac_nums.begin(), fac_nums.end());
               factors[counter].second.insert(fac_dens.begin(), fac_dens.end());
             }
-
-            // Free memory
-            fmpz_poly_clear(numerator);
-            fmpz_poly_clear(denominator);
-            fmpz_poly_factor_clear(fac_numerator);
-            fmpz_poly_factor_clear(fac_denominator);
           }
 
           ++counter;
+
           std::get<2>(rec) = DELETED;
           delete std::get<3>(rec);
         }
 
-        possible_factors.clear();
-
         if (old_verbosity > SILENT) {
-          INFO_MSG("Factors in x" + std::to_string(i + 1) + ": " + std::to_string(number_of_factors) + " | " + std::to_string(total_iterations) + " probes in total");
+          if (prime_it == 0 && scan_n == 0) {
+            INFO_MSG("Maximum degree of x" + std::to_string(i + 1)
+              + ": " + std::to_string(max_degs[i]) + " | Possible factors in x"
+              + std::to_string(i + 1) + ": " + std::to_string(number_of_factors));
+          } else if (prime_it == 0 && scan_n == 1) {
+            INFO_MSG("Factors in x" + std::to_string(i + 1) + ": "
+              + std::to_string(number_of_factors) + " | "
+              + std::to_string(total_iterations) + " probes in total");
+            INFO_MSG("Starting reconstruction of coefficients");
+          }
         }
 
-        logger << "Factors in x" << std::to_string(i + 1) << ": " << std::to_string(number_of_factors) << " | " << std::to_string(total_iterations) << " probes in total" << "\n";
-
-        total_number_of_factors += number_of_factors;
+        if (prime_it == 0 && scan_n == 0) {
+          logger << "Maximum degree of x" << std::to_string(i + 1) << ": "
+            << std::to_string(max_degs[i]) << " | Possible factors in x"
+            << std::to_string(i + 1) << ": " << std::to_string(number_of_factors)
+            << "\n";
+        } else if (prime_it == 0 && scan_n == 1) {
+          possible_factors.clear();
+          total_number_of_factors += number_of_factors;
+          logger << "Factors in x" << std::to_string(i + 1) << ": "
+            << std::to_string(number_of_factors) << " | "
+            << std::to_string(total_iterations) << " probes in total" << "\n";
+          logger << "Starting reconstruction of coefficients\n";
+        }
 
         RatReconst::reset();
         clean_reconst();
@@ -1300,10 +1178,19 @@ namespace firefly {
         items_done = 0;
         done = false;
 
-        prime_it = 0;
-        FFInt::set_new_prime(primes()[prime_it]);
-        bb.prime_changed_internal();
+        // TODO mutex required here?
+        requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+        computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
+
+        if (number_of_factors == 0) {
+            break;
+        }
       }
+
+      // Reset prime
+      prime_it = 0;
+      FFInt::set_new_prime(primes()[prime_it]);
+      bb.prime_changed_internal();
     }
 
 //TODO write results to file
@@ -1312,9 +1199,6 @@ namespace firefly {
       file.open("ff_save/scan");
       file.close();
     }*/
-
-    prime_it = 0;
-    FFInt::set_new_prime(primes()[prime_it]);
 
     verbosity = old_verbosity;
 
@@ -1346,7 +1230,8 @@ namespace firefly {
                 }
               }*/
 
-    factorization_scan = false;
+    factor_scan = false;
+
     prime_start = std::chrono::high_resolution_clock::now();
     std::exit(-1);
 #endif
@@ -1359,7 +1244,7 @@ namespace firefly {
 
     std::vector<uint32_t> zi_order;
 
-    if (!factorization_scan) {
+    if (!factor_scan) {
       shift = tmp_rec.get_zi_shift_vec();
       zi_order = std::vector<uint32_t>(n - 1, 1);
     } else {
@@ -1406,7 +1291,7 @@ namespace firefly {
         t_vec.emplace_back(tmp.first);
         zi_order_vec.emplace_back(std::move(tmp.second));
 
-        if ((prime_it == 0 || safe_mode == true) && (zi_order_vec.back() == std::vector<uint32_t>(n - 1, 1) || factorization_scan && zi_order_vec.back() == std::vector<uint32_t>(0, 1))) {
+        if ((prime_it == 0 || safe_mode == true) && (zi_order_vec.back() == std::vector<uint32_t>(n - 1, 1) || factor_scan && zi_order_vec.back() == std::vector<uint32_t>(0, 1))) {
           ++count_ones;
         }
       }
@@ -1453,7 +1338,7 @@ namespace firefly {
 
     ogzstream file;
 
-    if (!factorization_scan && save_states) {
+    if (!factor_scan && save_states) {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       mkdir("ff_save/states", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       mkdir("ff_save/probes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -1486,7 +1371,7 @@ namespace firefly {
 
     for (uint32_t i = 0; i != items; ++i) {
       RatReconst* rec;
-      if(!factorization_scan) {
+      if (!factor_scan) {
         rec = new RatReconst(n);
 
         if (safe_mode) {
@@ -1510,6 +1395,12 @@ namespace firefly {
         }
       } else {
         rec = new RatReconst(1);
+        rec->calc_factors("x" + curr_var);
+
+        // Remove functions that are irreducible
+        if (!possible_factors_bb_counter.empty() &&  possible_factors_bb_counter.find(i) == possible_factors_bb_counter.end()) {
+          rec->set_prime_to_max();
+        }
       }
 
       rec->feed(t_vec, probes[i], zi_order_vec, prime_it);
@@ -1524,7 +1415,7 @@ namespace firefly {
       reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
     }
 
-    if (!factorization_scan && save_states) {
+    if (!factor_scan && save_states) {
       file.close();
       tags.clear();
     }
@@ -1546,7 +1437,7 @@ namespace firefly {
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::run_until_done(uint32_t prime_counter) {
     std::vector<uint32_t> zi_order;
-    if (!factorization_scan) {
+    if (!factor_scan) {
       zi_order = std::vector<uint32_t> (n - 1, 1);
     } else {
       zi_order = std::vector<uint32_t> (0, 1);
@@ -1672,7 +1563,7 @@ namespace firefly {
 
         clean_reconst();
 
-        if (!factorization_scan && save_states) {
+        if (!factor_scan && save_states) {
           for (uint32_t item = 0; item != items; ++item) {
             std::string probes_file_old = "ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz";
             std::string probes_file_new = "ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it + 1) + ".gz";
@@ -1704,8 +1595,9 @@ namespace firefly {
         total_iterations += iteration;
         ++prime_it;
 
-        if(prime_it >= prime_counter)
+        if(prime_it >= prime_counter || factor_scan) {
           done = true;
+        }
 
         {
           std::unique_lock<std::mutex> lock_print(print_control);
@@ -1723,24 +1615,30 @@ namespace firefly {
             }
           }
 
-          logger << "Completed current prime field in "
-          << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count())
-          << " s | " + std::to_string(total_iterations) << " probes in total\n"
-          << "Average time of the black-box probe: " << std::to_string(average_black_box_time) + " s\n\n"
-          << "Promote to new prime field: F(" << std::to_string(primes()[prime_it]) << ")\n";
+          if (!factor_scan) {
+            logger << "Completed current prime field in "
+            << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count())
+            << " s | " + std::to_string(total_iterations) << " probes in total\n"
+            << "Average time of the black-box probe: " << std::to_string(average_black_box_time) + " s\n\n"
+            << "Promote to new prime field: F(" << std::to_string(primes()[prime_it]) << ")\n";
 
-          if (verbosity > SILENT) {
-            INFO_MSG("Completed current prime field in " +
-                   std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
-                   " s | " + std::to_string(total_iterations) + " probes in total");
-            INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
-            INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
+            if (verbosity > SILENT) {
+              INFO_MSG("Completed current prime field in " +
+                     std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - prime_start).count()) +
+                     " s | " + std::to_string(total_iterations) + " probes in total");
+              INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
+              INFO_MSG("Promote to new prime field: F(" + std::to_string(primes()[prime_it]) + ")");
+            }
           }
         }
 
         prime_start = std::chrono::high_resolution_clock::now();
 
         reset_new_prime();
+
+        if (factor_scan) {
+          break;
+        }
 
         FFInt::set_new_prime(primes()[prime_it]);
 
@@ -1755,85 +1653,83 @@ namespace firefly {
 #endif
         }
 
-        if (!factorization_scan) {
-          if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && !tmp_rec.need_shift(prime_it)) {
-            if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
-              logger << "Disable shift\n";
+        if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && !tmp_rec.need_shift(prime_it)) {
+          if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
+            logger << "Disable shift\n";
 
-              if (verbosity > SILENT)
-                INFO_MSG("Disable shift");
+            if (verbosity > SILENT)
+              INFO_MSG("Disable shift");
 
-              tmp_rec.disable_shift();
-            }
+            tmp_rec.disable_shift();
           }
+        }
 
-          // Set anchor points and the shift to resume from saved probes
-          if (save_states && set_anchor_points) {
-            set_anchor_points = false;
-            std::string line;
-            std::ifstream anchor_point_file;
-            anchor_point_file.open("ff_save/anchor_points");
+        // Set anchor points and the shift to resume from saved probes
+        if (save_states && set_anchor_points) {
+          set_anchor_points = false;
+          std::string line;
+          std::ifstream anchor_point_file;
+          anchor_point_file.open("ff_save/anchor_points");
 
-            if (anchor_point_file.is_open()) {
-              std::getline(anchor_point_file, line);
-              tmp_rec.set_anchor_points(parse_vector_FFInt(line, static_cast<int>(n)));
-            } else {
-              logger << "Anchor point file not found!\n";
-              ERROR_MSG("Anchor point file not found!");
-              std::exit(EXIT_FAILURE);
-            }
-
-            anchor_point_file.close();
-
-            std::ifstream shift_file;
-            shift_file.open("ff_save/shift");
-
-            if (shift_file.is_open()) {
-              std::getline(shift_file, line);
-              tmp_rec.set_shift(parse_vector_FFInt(line, static_cast<int>(n)));
-            } else {
-              logger << "Shift file not found!\n";
-              ERROR_MSG("Shift file not found!");
-              std::exit(EXIT_FAILURE);
-            }
-
-            for (auto & rec : reconst) {
-              if (!std::get<3>(rec)->is_done() && std::get<3>(rec)->get_prime() > prime_it) {
-                ++items_new_prime;
-              }
-            }
+          if (anchor_point_file.is_open()) {
+            std::getline(anchor_point_file, line);
+            tmp_rec.set_anchor_points(parse_vector_FFInt(line, static_cast<int>(n)));
           } else {
-            tmp_rec.generate_anchor_points();
+            logger << "Anchor point file not found!\n";
+            ERROR_MSG("Anchor point file not found!");
+            std::exit(EXIT_FAILURE);
           }
 
-          shift = tmp_rec.get_zi_shift_vec();
+          anchor_point_file.close();
 
-          if (save_states) {
-            std::remove("ff_save/anchor_points");
-            std::ofstream file;
-            file.open("ff_save/anchor_points");
-            std::string tmp_str = "";
+          std::ifstream shift_file;
+          shift_file.open("ff_save/shift");
 
-            for (const auto & el : tmp_rec.get_anchor_points()) {
-              tmp_str += std::to_string(el.n) + " ";
-            }
-
-            tmp_str += std::string("\n");
-            file << tmp_str;
-            file.close();
-
-            std::remove("ff_save/shift");
-            file.open("ff_save/shift");
-            tmp_str = "";
-
-            for (const auto & el : tmp_rec.get_zi_shift_vec()) {
-              tmp_str += std::to_string(el.n) + " ";
-            }
-
-            tmp_str += std::string("\n");
-            file << tmp_str;
-            file.close();
+          if (shift_file.is_open()) {
+            std::getline(shift_file, line);
+            tmp_rec.set_shift(parse_vector_FFInt(line, static_cast<int>(n)));
+          } else {
+            logger << "Shift file not found!\n";
+            ERROR_MSG("Shift file not found!");
+            std::exit(EXIT_FAILURE);
           }
+
+          for (auto & rec : reconst) {
+            if (!std::get<3>(rec)->is_done() && std::get<3>(rec)->get_prime() > prime_it) {
+              ++items_new_prime;
+            }
+          }
+        } else {
+          tmp_rec.generate_anchor_points();
+        }
+
+        shift = tmp_rec.get_zi_shift_vec();
+
+        if (save_states) {
+          std::remove("ff_save/anchor_points");
+          std::ofstream file;
+          file.open("ff_save/anchor_points");
+          std::string tmp_str = "";
+
+          for (const auto & el : tmp_rec.get_anchor_points()) {
+            tmp_str += std::to_string(el.n) + " ";
+          }
+
+          tmp_str += std::string("\n");
+          file << tmp_str;
+          file.close();
+
+          std::remove("ff_save/shift");
+          file.open("ff_save/shift");
+          tmp_str = "";
+
+          for (const auto & el : tmp_rec.get_zi_shift_vec()) {
+            tmp_str += std::to_string(el.n) + " ";
+          }
+
+          tmp_str += std::string("\n");
+          file << tmp_str;
+          file.close();
         }
 
         // start only thr_n jobs first, because the reconstruction can be done after the first feed
@@ -2035,7 +1931,7 @@ namespace firefly {
 
     tp.kill_all();
 
-    if (!factorization_scan && !scan && save_states) {
+    if (!factor_scan && !scan && save_states) {
       for (uint32_t item = 0; item != items; ++item) {
         // remove probe files if the interpolation is done
         std::remove(("ff_save/probes/" + std::to_string(item) + "_" + std::to_string(prime_it) + ".gz").c_str());
@@ -2075,14 +1971,14 @@ namespace firefly {
   void Reconstructor<BlackBoxTemp>::queue_probes(const std::vector<uint32_t>& zi_order, const uint32_t to_start, const bool first) {
     bool ones = false;
 
-    if ((prime_it == 0 || safe_mode == true) && (zi_order == std::vector<uint32_t> (n - 1, 1) || (factorization_scan && zi_order == std::vector<uint32_t> (0, 1)))) {
+    if ((prime_it == 0 || safe_mode == true) && (zi_order == std::vector<uint32_t> (n - 1, 1) || (factor_scan && zi_order == std::vector<uint32_t> (0, 1)))) {
       ones = true;
     }
 
     std::vector<FFInt> rand_zi;
     rand_zi.reserve(zi_order.size());
 
-    if (factorization_scan) {
+    if (factor_scan) {
       rand_zi = rand_zi_fac;
     } else if (!ones && (prime_it != 0 && safe_mode == false)) {
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
@@ -2119,7 +2015,7 @@ namespace firefly {
         }
       }
 
-      if (!factorization_scan) {
+      if (!factor_scan) {
        values[0] = t + shift[0];
 
        for (uint32_t i = 1; i != n; ++i) {
@@ -2458,13 +2354,13 @@ namespace firefly {
         t_vec.emplace_back(tmp.first);
         zi_order_vec.emplace_back(std::move(tmp.second));
 
-        if ((factorization_scan && static_cast<uint32_t>(zi_order_vec.back().size()) != 0) || (!factorization_scan && static_cast<uint32_t>(zi_order_vec.back().size()) != n - 1)) {
+        if ((factor_scan && static_cast<uint32_t>(zi_order_vec.back().size()) != 0) || (!factor_scan && static_cast<uint32_t>(zi_order_vec.back().size()) != n - 1)) {
           logger << "zi_order of probe has wrong length: " << std::to_string(zi_order_vec.back().size()) << "\n";
           ERROR_MSG("zi_order of probe has wrong length: " + std::to_string(zi_order_vec.back().size()));
           std::exit(EXIT_FAILURE);
         }
 
-        if ((prime_it == 0 || safe_mode == true) && (zi_order_vec.back() == std::vector<uint32_t>(n - 1, 1) || (factorization_scan && zi_order_vec.back() == std::vector<uint32_t>(0, 1)))) {
+        if ((prime_it == 0 || safe_mode == true) && (zi_order_vec.back() == std::vector<uint32_t>(n - 1, 1) || (factor_scan && zi_order_vec.back() == std::vector<uint32_t>(0, 1)))) {
           ++count_ones;
         }
       }
@@ -2584,7 +2480,7 @@ namespace firefly {
                 for (uint32_t i = 0; i != some_probes.first; ++i) {
                   std::vector<uint32_t> zi_order;
 
-                  if (!factorization_scan) {
+                  if (!factor_scan) {
                     zi_order = std::vector<uint32_t>(n - 1, counter);
                   } else {
                     zi_order = std::vector<uint32_t>(0, counter);
@@ -2649,7 +2545,7 @@ namespace firefly {
           } else {
             std::vector<uint32_t> zi_order = std::get<3>(rec)->get_zi_order();
 
-            if ((prime_it == 0 || safe_mode == true) && (zi_order == std::vector<uint32_t>(n - 1, 1) || (factorization_scan && zi_order == std::vector<uint32_t>(0, 1)))) {
+            if ((prime_it == 0 || safe_mode == true) && (zi_order == std::vector<uint32_t>(n - 1, 1) || (factor_scan && zi_order == std::vector<uint32_t>(0, 1)))) {
               //lock_exists.unlock();
               std::unique_lock<std::mutex> lock(job_control);
 

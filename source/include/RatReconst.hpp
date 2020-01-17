@@ -69,6 +69,10 @@ namespace firefly {
      */
     RationalFunctionFF get_result_ff();
     /**
+     *  @return the found factors over the current field, first entry is numerator, second is denominator
+     */
+    std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> get_factors_ff();
+    /**
      *  Starts an interpolation job
      *  @return a tuple consisting of:
      *  bool true if it has done anything and false otherwise
@@ -195,6 +199,15 @@ namespace firefly {
      *  Writes current feed to file to reuse this information
      */
     void write_food_to_file();
+    /**
+     *  Calculates factors over the current prime field after the interpolation
+     *  @param var_ sets the variable that should be replaced into the factors
+     */
+    void calc_factors(const std::string& var_ = "x");
+    /**
+     *  Sets the internal prime number to the maximum. This is just a hack function for factor scans.
+     */
+    void set_prime_to_max();
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -352,6 +365,7 @@ namespace firefly {
     std::vector<uint32_t> normalizer_deg {}; /**< Stores the degree which is used for normalization */
     std::string tag = ""; /**< The tag of this interpolation class for state saving */
     std::string tag_name = ""; /**< The tag name of this interpolation class for state saving */
+    std::string var = ""; /**< The variable that is replaced when calculating factors */
     static std::vector<FFInt> shift; /**< The static shift used to obtain a unique normalization */
     static ff_pair_map rand_zi; /**< A static map storing potencies of the anchor points */
     static std::unordered_set<uint32_t> singular_system_set; /**< A static set which indicates if a shift is needed for a given prime field */
@@ -368,8 +382,9 @@ namespace firefly {
     std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec {}; /**< Stores all needed feeds for the next prime field */
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now(); /**< Timestamp that tracks the time until probes should be written to disk */
     ThieleInterpolator t_interpolator; /**< An object for Thiele interpolations */
-    std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> saved_food; /** Data structre used to write already used probes to a file from which one can resume if crashes occur. First FFInt is t second is num */
+    std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> saved_food; /**< Data structre used to write already used probes to a file from which one can resume if crashes occur. First FFInt is t second is num */
     std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
+    std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> factors; /**< Stores the found factors over the current field */
     int max_deg_num = -1; /**< The maximal degree of the numerator */
     int max_deg_den = -1; /**< The maximal degree of the denominator */
     int curr_parsed_variable = -1;  /**< The current variable for the parser */
@@ -379,6 +394,7 @@ namespace firefly {
     uint32_t interpolations = 1;  /**< Indication how many interpolations should be made until one uses Vandermonde systems */
     size_t zero_counter = 0; /**< A counter for feeded zeros */
     bool is_singular_system = false; /**< Indicates whether one needs the shift to avoid singular systems */
+    bool is_calc_factors = false; /**< Indicates whether factors should be calculted after the interpolation */
     bool from_save_state = false; /**< Indicates wether one resumes from a saved state */
     bool is_writing_probes = false; /**< Indicates wether this object is currently writing to a file */
     bool start_interpolation = true; /**< Indicats wether one can start the interpolation */

@@ -100,7 +100,7 @@ int main() {
                         Reconstructor<BlackBoxUser>::CHATTY*/ /* verbosity mode*/);
 
   // Enables a scan for a sparse shift
-  //reconst.enable_factorization_scan();
+  reconst.enable_factor_scan();
   reconst.enable_scan();
 
   // Enables the safe mode
