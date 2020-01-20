@@ -1680,6 +1680,7 @@ namespace firefly {
     tmp_solved_coefs_den = 0;
     tmp_solved_coefs_num = 0;
 
+#ifdef FLINT
     if (is_calc_factors) {
         nmod_poly_t numerator, denominator;
         nmod_poly_factor_t fac_numerator, fac_denominator;
@@ -1729,6 +1730,7 @@ namespace firefly {
         nmod_poly_factor_clear(fac_numerator);
         nmod_poly_factor_clear(fac_denominator);
     }
+#endif
   }
 
   RationalFunction RatReconst::get_result() {
