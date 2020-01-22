@@ -2765,6 +2765,15 @@ namespace firefly {
 
       auto time = std::chrono::duration<double>(time1 - time0).count();
 
+      // TODO
+      std::vector<std::vector<FFInt>> tmp;//(probe.size(), std::vector<FFInt>(N));
+      tmp.reserve(probe.size());
+
+      for (size_t i = 0; i != probe.size(); ++i) {
+        //std::move(probe[i].begin(), probe[i].end(), tmp[i].begin());
+        tmp.emplace_back(std::vector<FFInt>(std::make_move_iterator(probe[i].begin()), std::make_move_iterator(probe[i].end())));
+      }
+
       std::unique_lock<std::mutex> lock(future_control);
 
       iteration += N;
@@ -2776,15 +2785,6 @@ namespace firefly {
       int tmp_iterations = total_iterations + iterations_on_this_node;
       average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
 #endif
-
-      // TODO
-      std::vector<std::vector<FFInt>> tmp;//(probe.size(), std::vector<FFInt>(N));
-      tmp.reserve(probe.size());
-
-      for (size_t i = 0; i != probe.size(); ++i) {
-        //std::move(probe[i].begin(), probe[i].end(), tmp[i].begin());
-        tmp.emplace_back(std::vector<FFInt>(std::make_move_iterator(probe[i].begin()), std::make_move_iterator(probe[i].end())));
-      }
 
       computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
 
@@ -2810,6 +2810,13 @@ namespace firefly {
 
       auto time = std::chrono::duration<double>(time1 - time0).count();
 
+      std::vector<std::vector<FFInt>> tmp;
+      tmp.reserve(probe.size());
+
+      for (size_t i = 0; i != probe.size(); ++i) {
+        tmp.emplace_back(std::vector<FFInt> (1, probe[i]));
+      }
+
       std::unique_lock<std::mutex> lock(future_control);
 
       iteration += N;
@@ -2821,13 +2828,6 @@ namespace firefly {
       int tmp_iterations = total_iterations + iterations_on_this_node;
       average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
 #endif
-
-      std::vector<std::vector<FFInt>> tmp;
-      tmp.reserve(probe.size());
-
-      for (size_t i = 0; i != probe.size(); ++i) {
-        tmp.emplace_back(std::vector<FFInt> (1, probe[i]));
-      }
 
       computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
 
