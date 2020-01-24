@@ -199,6 +199,7 @@ namespace firefly {
     std::condition_variable condition_feed;
     std::vector<std::vector<std::string>> factorizations {};
     std::unordered_set<uint32_t> possible_factors_bb_counter {};
+    std::unordered_map<uint32_t, std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> factors {};
     std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
     std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes;
     std::deque<std::pair<uint64_t, std::vector<FFInt>>> requested_probes;
@@ -214,6 +215,16 @@ namespace firefly {
     *  Scan the black-box functions for a sparse shift
     */
     void scan_for_factors();
+    /**
+     *  Combines results after factor scan in one prime field
+     *  @param poly polynomial in FLINT`s notation
+     *  @param combined_ci the map of combined coefficients
+     *  @param combined_prime previously used combined prime
+     *  @return the combined prime
+     */
+    mpz_class combine_primes(const std::unordered_map<uint32_t, uint64_t>& poly,
+                             std::unordered_map<uint32_t, mpz_class>& combined_ci,
+                             const mpz_class& combined_prime);
     /**
      *  Initializes vector of reconstruction objects and starts first probes
      */
@@ -1059,137 +1070,303 @@ namespace firefly {
     max_degs = std::vector<uint32_t> (n, 0);
     shift = std::vector<FFInt> (n, 0);
     rand_zi_fac = std::vector<FFInt> (n, 0);
-    std::unordered_map<uint32_t, std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> factors {};
 
     // Run this loop until a proper shift is found
     for (int i = 0; i != n; ++i) {
-      curr_var = std::to_string(i + 1);
-      std::unordered_map<uint32_t,std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> possible_factors {};
+      std::unordered_map<uint32_t, std::unordered_map<uint32_t, mpz_class>> combined_ni {};
+      std::unordered_map<uint32_t, std::unordered_map<uint32_t, mpz_class>> combined_di {};
+      mpz_class combined_prime = FFInt::p;
+      bool fac_done = false;
+      curr_var = "x" + std::to_string(i + 1);
       possible_factors_bb_counter.clear();
+      size_t tmp_prime_it = 0;
 
-      uint32_t prime_it_old = prime_it;
+      while (!fac_done) {
+        std::unordered_map<uint32_t,std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> possible_factors {};
 
-      for (int scan_n = 0; scan_n != 2; ++scan_n) {
-        number_of_factors = 0;
+        for (int scan_n = 0; scan_n != 2; ++scan_n) {
+          number_of_factors = 0;
 
-        for (int j = 0; j != n; ++j) {
-          if (j == i) {
-            rand_zi_fac[j] = 1;
-          } else {
-            rand_zi_fac[j] = tmp_rec.get_rand_64();
+          for (int j = 0; j != n; ++j) {
+            if (j == i) {
+              rand_zi_fac[j] = 1;
+            } else {
+              rand_zi_fac[j] = tmp_rec.get_rand_64();
+            }
           }
-        }
 
-        start_first_runs();
-        run_until_done();
-        prime_it = prime_it_old;
+          start_first_runs();
+          run_until_done();
+          prime_it = 0;
 
-        uint32_t counter = 0;
+          uint32_t counter = 0;
 
-        // Get factors
-        for (auto& rec : reconst) {
-          std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-          possible_factors.emplace(counter, std::get<3>(rec)->get_factors_ff());
+          // Get factors
+          for (auto& rec : reconst) {
+            std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
 
-          if (prime_it == 0 && scan_n == 0) {
-            // Get maximum degrees
-            auto tmp_max_degs = std::get<3>(rec)->get_max_deg();
+            if (scan_n == 0) {
+              if (possible_factors_bb_counter.find(counter) != possible_factors_bb_counter.end()) {
+                auto tmp_fac_num_den = std::get<3>(rec)->get_factors_ff();
+                std::unordered_set<std::string> tmp_fac_num {};
+                std::unordered_set<std::string> tmp_fac_den {};
+                tmp_fac_num.insert(tmp_fac_num_den.first.begin(), tmp_fac_num_den.first.end());
+                tmp_fac_den.insert(tmp_fac_num_den.second.begin(), tmp_fac_num_den.second.end());
+                possible_factors.emplace(counter, std::make_pair(tmp_fac_num, tmp_fac_den));
+              }
 
-            if (std::max(tmp_max_degs.first, tmp_max_degs.second) > max_degs[i]) {
-              max_degs[i] = std::max(tmp_max_degs.first, tmp_max_degs.second);
-            }
+              if (tmp_prime_it == 0) {
+                auto tmp_fac_num_den = std::get<3>(rec)->get_factors_ff();
+                std::unordered_set<std::string> tmp_fac_num {};
+                std::unordered_set<std::string> tmp_fac_den {};
+                tmp_fac_num.insert(tmp_fac_num_den.first.begin(), tmp_fac_num_den.first.end());
+                tmp_fac_den.insert(tmp_fac_num_den.second.begin(), tmp_fac_num_den.second.end());
+                possible_factors.emplace(counter, std::make_pair(tmp_fac_num, tmp_fac_den));
 
-            uint32_t tmp_n_fac = std::get<3>(rec)->get_factors_ff().first.size() + std::get<3>(rec)->get_factors_ff().second.size();
-            number_of_factors += tmp_n_fac;
+                // Get maximum degrees
+                auto tmp_max_degs = std::get<3>(rec)->get_max_deg();
 
-            if (tmp_n_fac != 0) {
-              possible_factors_bb_counter.emplace(counter);
-            }
-          } else if (prime_it == 0 && scan_n == 1) {
-            if (possible_factors_bb_counter.find(counter) != possible_factors_bb_counter.end()) {
-            // Rewrite and store in result objects. Compare to previous factorizations
-              std::unordered_set<std::string> fac_nums;
-              std::unordered_set<std::string> fac_dens;
+                if (std::max(tmp_max_degs.first, tmp_max_degs.second) > max_degs[i]) {
+                  max_degs[i] = std::max(tmp_max_degs.first, tmp_max_degs.second);
+                }
+
+                uint32_t tmp_n_fac = tmp_fac_num_den.first.size() + tmp_fac_num_den.second.size();
+                number_of_factors += tmp_n_fac;
+
+                if (tmp_n_fac != 0) {
+                  possible_factors_bb_counter.emplace(counter);
+                }
+              }
+            } else if (scan_n == 1 && possible_factors_bb_counter.find(counter) != possible_factors_bb_counter.end()) {
+              // Rewrite and store in result objects. Compare to previous factorizations
+              std::unordered_set<uint32_t> fac_nums_c {};
+              std::unordered_set<uint32_t> fac_dens_c {};
+
               auto tmp_factors = std::get<3>(rec)->get_factors_ff();
 
               // Numerator
+              uint32_t fac_counter = 0;
               for (const auto& tmp_factor : tmp_factors.first) {
+                bool found = possible_factors[counter].first.find(tmp_factor) != possible_factors[counter].first.end();
+
                 if (possible_factors[counter].first.find(tmp_factor) != possible_factors[counter].first.end()) {
-                  fac_nums.emplace(tmp_factor);
+                  fac_nums_c.emplace(fac_counter);
                   ++number_of_factors;
                 }
+
+                ++fac_counter;
               }
 
+              fac_counter = 0;
               // Denominator
               for (const auto& tmp_factor : tmp_factors.second) {
                 if (possible_factors[counter].second.find(tmp_factor) != possible_factors[counter].second.end()) {
-                  fac_dens.emplace(tmp_factor);
+                  fac_dens_c.emplace(fac_counter);
                   ++number_of_factors;
                 }
+
+                ++fac_counter;
               }
 
-              if (fac_nums.empty() && fac_dens.empty()) {
+              if (fac_nums_c.empty() && fac_dens_c.empty()) {
                 possible_factors_bb_counter.erase(counter);
-              }
+              } else {
+                auto canonical_factors = std::get<3>(rec)->get_canonical_factors(std::make_pair(fac_nums_c, fac_dens_c));
 
-              factors[counter].first.insert(fac_nums.begin(), fac_nums.end());
-              factors[counter].second.insert(fac_dens.begin(), fac_dens.end());
+                if (tmp_prime_it == 0) {
+                  // Init first combinations
+                  std::unordered_map<uint32_t, mpz_class> tmp_combined_ni {};
+                  std::unordered_map<uint32_t, mpz_class> tmp_combined_di {};
+
+                  for (const auto& mon : canonical_factors.first) {
+                    tmp_combined_ni.emplace(std::make_pair(mon.first, mon.second));
+                  }
+
+                  for (const auto& mon : canonical_factors.second) {
+                    tmp_combined_di.emplace(std::make_pair(mon.first, mon.second));
+                  }
+
+                  combined_ni[counter] = tmp_combined_ni;
+                  combined_di[counter] = tmp_combined_di;
+                } else {
+                  // First, check if done, else combine results
+                  bool run_test = true;
+                  bool combine_results = false;
+                  std::unordered_map<std::vector<uint32_t>, RationalNumber, UintHasher> tmp_gni {};
+                  std::unordered_map<std::vector<uint32_t>, RationalNumber, UintHasher> tmp_gdi {};
+
+                  // Reconstruct numerator
+                  for (const auto& ci : combined_ni[counter]) {
+                    mpz_class a = ci.second;
+                    auto res = get_rational_coef(a, combined_prime);
+
+                    if (res.first) {
+                      tmp_gni.emplace(std::make_pair(std::vector<uint32_t> (1, ci.first), res.second));
+                    } else {
+                      run_test = false;
+                      break;
+                    }
+                  }
+
+                  // Reconstruct denominator
+                  if (run_test) {
+                    for (const auto& ci : combined_di[counter]) {
+                      mpz_class a = ci.second;
+                      auto res = get_rational_coef(a, combined_prime);
+
+                      if (res.first) {
+                        tmp_gdi.emplace(std::make_pair(std::vector<uint32_t> (1, ci.first), res.second));
+                      } else {
+                        run_test = false;
+                        combine_results = true;
+                        break;
+                      }
+                    }
+                  } else {
+                    combine_results = true;
+                  }
+
+                  if (run_test) {
+                    if (!tmp_gni.empty()) {
+                      ff_map gi_ffi;
+                      FFInt num = 0;
+
+                      for (const auto& g_i : tmp_gni) {
+                        FFInt n(g_i.second.numerator);
+                        FFInt d(g_i.second.denominator);
+                        gi_ffi.emplace(std::make_pair(g_i.first, n / d));
+                      }
+
+                      for (const auto& coeff : canonical_factors.first) {
+                        num += coeff.second;
+                      }
+
+                      combine_results = !(PolynomialFF(1, gi_ffi).calc({1}) == num);
+                    }
+
+                    if (!combine_results && !tmp_gdi.empty()) {
+                      ff_map gi_ffi;
+                      FFInt num = 0;
+
+                      for (const auto& g_i : tmp_gdi) {
+                        FFInt n(g_i.second.numerator);
+                        FFInt d(g_i.second.denominator);
+                        gi_ffi.emplace(std::make_pair(g_i.first, n / d));
+                      }
+
+                      for (const auto& coeff : canonical_factors.second) {
+                        num += coeff.second;
+                      }
+
+                      combine_results = !(PolynomialFF(1, gi_ffi).calc({1}) == num);
+                    }
+                  }
+
+                  // combine results
+                  if (combine_results) {
+                    mpz_class tmp_combined_prime = combined_prime;
+                    // numerator
+                    if (!canonical_factors.first.empty()) {
+                      combined_prime = combine_primes(canonical_factors.first, combined_ni[counter], tmp_combined_prime);
+                    }
+
+                    // denominator
+                    if (!canonical_factors.second.empty()) {
+                      combined_prime = combine_primes(canonical_factors.second, combined_di[counter], tmp_combined_prime);
+                    }
+                  } else {
+                    possible_factors_bb_counter.erase(counter);
+                    combined_ni.erase(counter);
+                    combined_di.erase(counter);
+                    // Rewrite to result
+                    if (!tmp_gni.empty()) {
+                      factors[counter].first.emplace(Polynomial(tmp_gni).to_string({curr_var}));
+                    }
+
+                    if (!tmp_gdi.empty()) {
+                      factors[counter].second.emplace(Polynomial(tmp_gdi).to_string({curr_var}));
+                    }
+                  }
+                }
+              }
+            }
+
+            ++counter;
+
+            std::get<2>(rec) = DELETED;
+            delete std::get<3>(rec);
+          }
+
+          if (old_verbosity > SILENT) {
+            if (tmp_prime_it == 0 && scan_n == 0) {
+              INFO_MSG("Maximum degree of x" + std::to_string(i + 1)
+                + ": " + std::to_string(max_degs[i]));
+              if (max_degs[i] != 0) {
+                INFO_MSG("Possible factors in x"
+                  + std::to_string(i + 1) + ": " + std::to_string(number_of_factors));
+              } else {
+                INFO_MSG("No factors in x"
+                  + std::to_string(i + 1) + ": " + std::to_string(number_of_factors) + "\n");
+              }
+            } else if (tmp_prime_it == 0 && scan_n == 1) {
+              INFO_MSG("Factors in x" + std::to_string(i + 1) + ": "
+                + std::to_string(number_of_factors));
+             INFO_MSG("Starting reconstruction of coefficients");
             }
           }
 
-          ++counter;
+          if (tmp_prime_it == 0 && scan_n == 0) {
+            logger << "Maximum degree of x" << std::to_string(i + 1) << ": "
+              << std::to_string(max_degs[i]) << "\n";
+            if (max_degs[i] != 0) {
+              logger << "Possible factors in x"
+                << std::to_string(i + 1) << ": " << std::to_string(number_of_factors)
+                << "\n";
+            } else {
+              logger << "No factors in x"
+                << std::to_string(i + 1) << ": " << std::to_string(number_of_factors)
+                << "\n\n";
+            }
+          } else if (tmp_prime_it == 0 && scan_n == 1) {
+            total_number_of_factors += number_of_factors;
+            logger << "Factors in x" << std::to_string(i + 1) << ": "
+              << std::to_string(number_of_factors) << "\n";
+            logger << "Starting reconstruction of coefficients\n";
+          }
 
-          std::get<2>(rec) = DELETED;
-          delete std::get<3>(rec);
-        }
+          RatReconst::reset(false);
+          clean_reconst();
+          reconst.clear();
 
-        if (old_verbosity > SILENT) {
-          if (prime_it == 0 && scan_n == 0) {
-            INFO_MSG("Maximum degree of x" + std::to_string(i + 1)
-              + ": " + std::to_string(max_degs[i]) + " | Possible factors in x"
-              + std::to_string(i + 1) + ": " + std::to_string(number_of_factors));
-          } else if (prime_it == 0 && scan_n == 1) {
-            INFO_MSG("Factors in x" + std::to_string(i + 1) + ": "
-              + std::to_string(number_of_factors) + " | "
-              + std::to_string(total_iterations) + " probes in total");
-            INFO_MSG("Starting reconstruction of coefficients");
+          reset_new_prime();
+          items_done = 0;
+          done = false;
+
+          if (possible_factors_bb_counter.empty()) {
+            fac_done = true;
+            break;
           }
         }
 
-        if (prime_it == 0 && scan_n == 0) {
-          logger << "Maximum degree of x" << std::to_string(i + 1) << ": "
-            << std::to_string(max_degs[i]) << " | Possible factors in x"
-            << std::to_string(i + 1) << ": " << std::to_string(number_of_factors)
-            << "\n";
-        } else if (prime_it == 0 && scan_n == 1) {
-          possible_factors.clear();
-          total_number_of_factors += number_of_factors;
-          logger << "Factors in x" << std::to_string(i + 1) << ": "
-            << std::to_string(number_of_factors) << " | "
-            << std::to_string(total_iterations) << " probes in total" << "\n";
-          logger << "Starting reconstruction of coefficients\n";
-        }
+        // Promote to new prime field
+        if (!fac_done) {
+          ++tmp_prime_it;
+          FFInt::set_new_prime(primes()[tmp_prime_it]);
+          bb.prime_changed_internal();
+        } else {
+          if (old_verbosity > SILENT) {
+            INFO_MSG("Completed factor scan in " + curr_var + " | "
+              + std::to_string(total_iterations) + " probes in total\n");
+          }
 
-        RatReconst::reset();
-        clean_reconst();
-        reconst.clear();
-
-        reset_new_prime();
-        items_done = 0;
-        done = false;
-
-        // TODO mutex required here?
-        requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
-        computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
-
-        if (number_of_factors == 0) {
-            break;
+          logger << "Completed factor scan in " << curr_var << " | "
+            << total_iterations << " probes in total\n\n";
         }
       }
 
       // Reset prime
-      prime_it = 0;
-      FFInt::set_new_prime(primes()[prime_it]);
+      tmp_prime_it = 0;
+      FFInt::set_new_prime(primes()[tmp_prime_it]);
       bb.prime_changed_internal();
     }
 
@@ -1237,6 +1414,30 @@ namespace firefly {
 #endif
   }
 //TODO end
+
+  template<typename BlackBoxTemp>
+  mpz_class Reconstructor<BlackBoxTemp>::combine_primes(const std::unordered_map<uint32_t, uint64_t>& poly,
+                                                        std::unordered_map<uint32_t, mpz_class>& combined_ci,
+                                                        const mpz_class& combined_prime) {
+    std::pair<mpz_class, mpz_class> p1;
+    std::pair<mpz_class, mpz_class> p2;
+    std::pair<mpz_class, mpz_class> p3;
+    std::unordered_map<uint32_t, mpz_class> tmp_coefs {};
+
+    // Convert poly to mpz
+    for (const auto& mon : poly) {
+      tmp_coefs.emplace(std::make_pair(mon.first, mon.second));
+    }
+
+    for (auto it = tmp_coefs.begin(); it != tmp_coefs.end(); ++it) {
+      p2 = std::make_pair(it->second, FFInt::p);
+      p1 = std::make_pair(combined_ci[it->first], combined_prime);
+      p3 = run_chinese_remainder(p1, p2);
+      combined_ci[it->first] = p3.first;
+    }
+
+    return p3.second;
+  }
 
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::start_first_runs() {
@@ -1305,7 +1506,9 @@ namespace firefly {
 
     {
       std::unique_lock<std::mutex> lock(future_control);
-      logger << "Time for the first black-box probe: " << std::to_string(average_black_box_time) << " s\n";
+
+      if (!factor_scan)
+       logger << "Time for the first black-box probe: " << std::to_string(average_black_box_time) << " s\n";
 
       if (verbosity > SILENT)
         INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s");
@@ -1395,7 +1598,7 @@ namespace firefly {
         }
       } else {
         rec = new RatReconst(1);
-        rec->calc_factors("x" + curr_var);
+        rec->calc_factors(curr_var);
 
         // Remove functions that are irreducible
         if (!possible_factors_bb_counter.empty() &&  possible_factors_bb_counter.find(i) == possible_factors_bb_counter.end()) {
@@ -1420,11 +1623,13 @@ namespace firefly {
       tags.clear();
     }
 
-    logger << "Probe: 1 | Done: 0 / " << std::to_string(items)
-    << " | Needs new prime field: " << std::to_string(items_new_prime)
-    << " / " << std::to_string(items) << "\n";
-    logger.close();
-    logger.open("firefly.log", std::ios_base::app);
+    if (!factor_scan) {
+      logger << "Probe: 1 | Done: 0 / " << std::to_string(items)
+        << " | Needs new prime field: " << std::to_string(items_new_prime)
+        << " / " << std::to_string(items) << "\n";
+      logger.close();
+      logger.open("firefly.log", std::ios_base::app);
+    }
 
     if (verbosity > SILENT) {
       INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
@@ -1602,7 +1807,7 @@ namespace firefly {
         {
           std::unique_lock<std::mutex> lock_print(print_control);
 
-          if (one_done || one_new_prime) {
+          if ((one_done || one_new_prime) && !factor_scan) {
             logger << "Probe: " << std::to_string(iteration)
             << " | Done: " << std::to_string(items_done)
             << " / " + std::to_string(items) << " | " << "Needs new prime field: "
@@ -2715,7 +2920,7 @@ namespace firefly {
         case 32:
           start_new_job<32>(lock_probe_queue);
           break;
-        case 64:
+/*        case 64:
           start_new_job<64>(lock_probe_queue);
           break;
         case 128:
@@ -2723,7 +2928,7 @@ namespace firefly {
           break;
         case 256:
           start_new_job<256>(lock_probe_queue);
-          break;
+          break;*/
       }
 
 #if WITH_MPI

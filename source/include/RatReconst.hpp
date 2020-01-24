@@ -23,6 +23,10 @@
 #include "RationalFunction.hpp"
 #include "RationalFunctionFF.hpp"
 
+#ifdef FLINT
+#include <flint/nmod_poly.h>
+#endif
+
 #include <map>
 
 namespace firefly {
@@ -40,8 +44,9 @@ namespace firefly {
     RatReconst(uint32_t n_);
     /**
      *  Resets all static variables of the object
+     *  @param change_prime when set to true, the prime of the FFInts is set to the first one of the prime array
      */
-    static void reset();
+    static void reset(bool change_prime = true);
     /**
      *  Feeds a black-box probe which will be processed by the class.
      *  @param new_ti the value of t for the current feed
@@ -68,10 +73,17 @@ namespace firefly {
      *  @return the result of the rational function over the current field
      */
     RationalFunctionFF get_result_ff();
+#ifdef FLINT
     /**
      *  @return the found factors over the current field, first entry is numerator, second is denominator
      */
-    std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> get_factors_ff();
+    std::pair<std::vector<std::string>, std::vector<std::string>> get_factors_ff();
+    /**
+     *  @param factor_pos includes the positions of the factors that should be brought in canconical form, first entry is numerator, second is denominator
+     *  @return Canonical form of real factors as a maps, where the first entry is the degree and the second is the coefficient for all non-zero entries
+     */
+    std::pair<std::unordered_map<uint32_t, uint64_t>, std::unordered_map<uint32_t, uint64_t>> get_canonical_factors(const std::pair<std::unordered_set<uint32_t>, std::unordered_set<uint32_t>>& factors_pos);
+#endif
     /**
      *  Starts an interpolation job
      *  @return a tuple consisting of:
@@ -384,7 +396,10 @@ namespace firefly {
     ThieleInterpolator t_interpolator; /**< An object for Thiele interpolations */
     std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> saved_food; /**< Data structre used to write already used probes to a file from which one can resume if crashes occur. First FFInt is t second is num */
     std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
-    std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> factors; /**< Stores the found factors over the current field */
+#ifdef FLINT
+    std::pair<std::vector<std::string>, std::vector<std::string>> factors; /**< Stores the found factors over the current field */
+    std::pair<std::vector<std::pair<std::string, uint32_t>>, std::vector<std::pair<std::string, uint32_t>>> factors_flint; /**< Stores the found factors over the current field, second entry is exponent of factor */
+#endif
     int max_deg_num = -1; /**< The maximal degree of the numerator */
     int max_deg_den = -1; /**< The maximal degree of the denominator */
     int curr_parsed_variable = -1;  /**< The current variable for the parser */

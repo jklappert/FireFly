@@ -24,10 +24,6 @@
 #include "ReconstHelper.hpp"
 #include "utils.hpp"
 
-#ifdef FLINT
-#include <flint/nmod_poly.h>
-#endif
-
 #include <algorithm>
 #include <sys/stat.h>
 
@@ -1711,16 +1707,22 @@ namespace firefly {
 
         // Rewrite and store in result objects
         if (fac_numerator[0].num + fac_denominator[0].num != 0) {
+          factors.first.reserve(fac_numerator[0].num);
+          factors_flint.first.reserve(fac_numerator[0].num);
           for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
             std::string tmp_fac = nmod_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str());
             std::string tmp_factor = "(" + tmp_fac + ")^" + std::to_string(fac_numerator[0].exp[fac_num_num]);
-            factors.first.emplace(tmp_factor);
+            factors.first.emplace_back(tmp_factor);
+            factors_flint.first.emplace_back(std::make_pair(nmod_poly_get_str(&fac_numerator[0].p[fac_num_num]), fac_numerator[0].exp[fac_num_num]));
           }
 
+          factors.second.reserve(fac_denominator[0].num);
+          factors_flint.second.reserve(fac_denominator[0].num);
           for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
             std::string tmp_fac = nmod_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str());
             std::string tmp_factor = "(" + tmp_fac + ")^" + std::to_string(fac_denominator[0].exp[fac_den_num]);
-            factors.second.emplace(tmp_factor);
+            factors.second.emplace_back(tmp_factor);
+            factors_flint.second.emplace_back(std::make_pair(nmod_poly_get_str(&fac_denominator[0].p[fac_den_num]), fac_denominator[0].exp[fac_den_num]));
           }
         }
 
@@ -1770,9 +1772,77 @@ namespace firefly {
     return RationalFunctionFF(PolynomialFF(n, tmp_res_num), PolynomialFF(n, tmp_res_den));
   }
 
-  std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> RatReconst::get_factors_ff() {
+#ifdef FLINT
+  std::pair<std::vector<std::string>, std::vector<std::string>> RatReconst::get_factors_ff() {
     return factors;
   }
+
+  // TODO Don't call from main thread!
+  std::pair<std::unordered_map<uint32_t, uint64_t>, std::unordered_map<uint32_t, uint64_t>> RatReconst::get_canonical_factors(const std::pair<std::unordered_set<uint32_t>, std::unordered_set<uint32_t>>& factors_pos) {
+    nmod_poly_t c_numerator, c_denominator;
+    nmod_poly_init(c_numerator, FFInt::p);
+    nmod_poly_init(c_denominator, FFInt::p);
+    nmod_poly_set_coeff_ui(c_numerator, 0, 1);
+    nmod_poly_set_coeff_ui(c_denominator, 0, 1);
+
+    // Numerator
+    for (size_t i = 0; i != factors_flint.first.size(); ++i) {
+      if (factors_pos.first.find(i) != factors_pos.first.end()) {
+        for (size_t j = 0; j != factors_flint.first[i].second; ++j) {
+          nmod_poly_t tmp_1, tmp_2;
+          nmod_poly_init(tmp_1, FFInt::p);
+          nmod_poly_init(tmp_2, FFInt::p);
+          nmod_poly_swap(tmp_1, c_numerator);
+          nmod_poly_set_str(tmp_2, factors_flint.first[i].first.c_str());
+          nmod_poly_mul_classical(c_numerator, tmp_1, tmp_2);
+          nmod_poly_clear(tmp_1);
+          nmod_poly_clear(tmp_2);
+        }
+      }
+    }
+
+    // Denominator
+    for (size_t i = 0; i != factors_flint.second.size(); ++i) {
+      if (factors_pos.second.find(i) != factors_pos.second.end()) {
+        for (size_t j = 0; j != factors_flint.second[i].second; ++j) {
+          nmod_poly_t tmp_1, tmp_2;
+          nmod_poly_init(tmp_1, FFInt::p);
+          nmod_poly_init(tmp_2, FFInt::p);
+          nmod_poly_swap(tmp_1, c_denominator);
+          nmod_poly_set_str(tmp_2, factors_flint.second[i].first.c_str());
+          nmod_poly_mul_classical(c_denominator, tmp_1, tmp_2);
+          nmod_poly_clear(tmp_1);
+          nmod_poly_clear(tmp_2);
+        }
+      }
+    }
+
+    // Set result
+    std::unordered_map<uint32_t, uint64_t> c_numerator_map {};
+    std::unordered_map<uint32_t, uint64_t> c_denominator_map {};
+
+    // Numerator
+    if (factors_pos.first.size() != 0) {
+      for (int i = 0; i != c_numerator->length; ++i) {
+        if (c_numerator->coeffs[i])
+          c_numerator_map.emplace(std::make_pair(i, c_numerator->coeffs[i]));
+      }
+    }
+
+    // Denominator
+    if (factors_pos.second.size() != 0) {
+      for (int i = 0; i != c_denominator->length; ++i) {
+        if (c_denominator->coeffs[i])
+          c_denominator_map.emplace(std::make_pair(i, c_denominator->coeffs[i]));
+      }
+    }
+
+    // Free memory
+    nmod_poly_clear(c_numerator);
+    nmod_poly_clear(c_denominator);
+    return std::make_pair(c_numerator_map, c_denominator_map);
+  }
+#endif
 
   bool RatReconst::rec_rat_coef() {
     bool run_test = true;
@@ -2989,8 +3059,10 @@ namespace firefly {
     }
   }
 
-  void RatReconst::reset() {
-    FFInt::set_new_prime(primes()[0]);
+  void RatReconst::reset(bool change_prime) {
+    if (change_prime)
+      FFInt::set_new_prime(primes()[0]);
+
     std::unique_lock<std::mutex> lock(mutex_statics);
     shift = std::vector<FFInt> ();
     singular_system_set = std::unordered_set<uint32_t>();

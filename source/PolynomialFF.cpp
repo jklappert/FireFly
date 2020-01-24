@@ -567,7 +567,8 @@ namespace firefly {
       }
 
       for (const auto & mono : coefs) {
-        str += std::to_string(mono.second.n) + "*";
+        if(mono.second != 1)
+          str += std::to_string(mono.second.n) + "*";
 
         for (uint32_t i = 0; i != mono.first.size(); ++i) {
           if (mono.first[i] > 1) {
