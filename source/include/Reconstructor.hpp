@@ -1370,12 +1370,47 @@ namespace firefly {
       bb.prime_changed_internal();
     }
 
-//TODO write results to file
-    /*if (save_states == true) {
-      std::ofstream file;
-      file.open("ff_save/scan");
-      file.close();
-    }*/
+    if (save_states) {
+      mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      mkdir("ff_save/factors", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+      for (const auto& tmp_fac : factors) {
+        std::string tmp_fac_s = "";
+
+        if(!tmp_fac.second.first.empty()){
+          tmp_fac_s += "(";
+          for (const auto& tmp_fac_num : tmp_fac.second.first) {
+            tmp_fac_s += "(" + tmp_fac_num + ")*";
+          }
+
+          tmp_fac_s.pop_back();
+          tmp_fac_s += ")";
+        }
+
+        if (!tmp_fac.second.second.empty()) {
+          if (!tmp_fac.second.first.empty()) {
+            tmp_fac_s += "/(";
+          } else {
+            tmp_fac_s += "1/(";
+          }
+
+          for (const auto& tmp_fac_den : tmp_fac.second.second) {
+            tmp_fac_s += "(" + tmp_fac_den + ")*";
+          }
+
+          tmp_fac_s.pop_back();
+          tmp_fac_s += ");\n";
+        } else {
+          tmp_fac_s += ";\n";
+        }
+
+        ogzstream file;
+        std::string file_name = "ff_save/factors/" + std::to_string(tmp_fac.first) + ".gz";
+        file.open(file_name.c_str());
+        file << tmp_fac_s;
+        file.close();
+      }
+    }
 
     verbosity = old_verbosity;
 
