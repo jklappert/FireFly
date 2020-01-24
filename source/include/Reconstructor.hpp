@@ -205,6 +205,7 @@ namespace firefly {
     std::deque<std::pair<uint64_t, std::vector<FFInt>>> requested_probes;
     std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>> computed_probes;
     std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> chosen_t;
+    std::unordered_map<uint32_t, uint32_t> optimal_var_order {}; /**< first is old position, second is new position */
     RatReconst tmp_rec;
     std::vector<FFInt> shift;
     /**
@@ -1070,6 +1071,7 @@ namespace firefly {
     max_degs = std::vector<uint32_t> (n, 0);
     shift = std::vector<FFInt> (n, 0);
     rand_zi_fac = std::vector<FFInt> (n, 0);
+    std::unordered_map<uint32_t, uint32_t> deg_pos_map {};
 
     // Run this loop until a proper shift is found
     for (int i = 0; i != n; ++i) {
@@ -1318,6 +1320,9 @@ namespace firefly {
           if (tmp_prime_it == 0 && scan_n == 0) {
             logger << "Maximum degree of x" << std::to_string(i + 1) << ": "
               << std::to_string(max_degs[i]) << "\n";
+
+            deg_pos_map.emplace(std::make_pair(max_degs[i], i));
+
             if (max_degs[i] != 0) {
               logger << "Possible factors in x"
                 << std::to_string(i + 1) << ": " << std::to_string(number_of_factors)
@@ -1414,11 +1419,29 @@ namespace firefly {
 
     verbosity = old_verbosity;
 
+    std::sort(max_degs.begin(), max_degs.end(), std::greater<uint32_t>());
+
+    for (size_t i = 0; i != n; ++i) {
+      optimal_var_order.emplace(std::make_pair(deg_pos_map[max_degs[i]], i));
+    }
+
     logger << "Completed factor scan in "
       << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - clock_1).count())
       << " s | " << std::to_string(total_iterations) << " probes in total\n";
 
-    logger << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n\n";
+    logger << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n";
+
+    std::string var_order = "Using optimized variable order: {";
+
+    for (size_t i = 0; i != n; ++ i) {
+      if (i != n - 1) {
+        var_order += "x" + std::to_string(optimal_var_order[i] + 1) + ", ";
+      } else {
+        var_order += "x" + std::to_string(optimal_var_order[i] + 1) + "}";
+      }
+    }
+
+    logger << var_order << "\n\n";
     logger << "Proceeding with interpolation over prime field F(" << std::to_string(primes()[prime_it]) << ")\n";
     logger.close();
     logger.open("firefly.log", std::ios_base::app);
@@ -1426,21 +1449,10 @@ namespace firefly {
     if (verbosity > SILENT) {
       INFO_MSG("Completed factor scan in " + std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - clock_1).count()) +
                " s | " + std::to_string(total_iterations) + " probes in total");
-      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
+      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
+      INFO_MSG(var_order + "\n");
       INFO_MSG("Proceeding with interpolation over prime field F(" + std::to_string(primes()[prime_it]) + ")");
     }
-
-/*              for (const auto & el : factors) {
-                std::cout << "function " << el.first << "\n";
-                std::cout << "factors num\n";
-                for(const auto & fac : el.second.first) {
-                  std::cout << fac << "\n";
-                }
-                std::cout << "factors den\n";
-                for(const auto & fac : el.second.second) {
-                  std::cout << fac << "\n";
-                }
-              }*/
 
     factor_scan = false;
 
