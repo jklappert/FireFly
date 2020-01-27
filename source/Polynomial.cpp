@@ -153,7 +153,13 @@ namespace firefly {
   }
 
   std::string Polynomial::generate_horner(std::vector<std::string> vars) const {
-    return generate_horner_mon(coefs, vars);
+    std::vector<std::string> vars_c = vars;
+
+    if (var_pos != -1) {
+      vars_c[0] = vars[var_pos];
+    }
+
+    return generate_horner_mon(coefs, vars_c);
   }
 
   void Polynomial::set_var_pos(int var_pos_) {

@@ -42,7 +42,7 @@ namespace firefly {
       // Get results from parsed expressions
       std::vector<FFIntTemp> result = par.evaluate_pre(values);
 
-      /*result.emplace_back(result[0] / result[3]);
+      result.emplace_back(result[0] / result[3]);
 
       // Build the matrix mat
       mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
@@ -50,7 +50,7 @@ namespace firefly {
       // Compute LU decomposition of mat
       calc_lu_decomposition(mat, p, 2);
       // Compute determinant of mat
-      result.emplace_back(calc_determinant_lu(mat, p, 2));*/
+      result.emplace_back(calc_determinant_lu(mat, p, 2));
 
       //std::vector<FFIntTemp> b(1);
       //solve_lu(mat, p, b, 2);
@@ -89,7 +89,6 @@ using namespace firefly;
 int main() {
   // Parse the functions from "../s_y_4_v.m" with the variables x1, y, zZ, W
   ShuntingYardParser par("../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-  //ShuntingYardParser par("../parser_test/test.m", {"x", "y", "zZ", "W"});
 
   // Create the user defined black box
   BlackBoxUser bb(par);
@@ -99,8 +98,10 @@ int main() {
                         bb /*black box*//*,
                         Reconstructor<BlackBoxUser>::CHATTY*/ /* verbosity mode*/);
 
-  // Enables a scan for a sparse shift
+  // Enables scan for factors
   reconst.enable_factor_scan();
+
+  // Enables a scan for a sparse shift
   reconst.enable_scan();
 
   // Enables the safe mode
@@ -115,26 +116,6 @@ int main() {
 
   // Reconstruct the black box
   reconst.reconstruct();
-  /*fmpz_t xx,yy,res;
-  fmpz_poly_t numerator;
-  fmpz_poly_init(numerator);
-  fmpz_init(xx);
-  fmpz_init(yy);
-  fmpz_init(res);
-  fmpz_set_ui(yy, 101);
-  fmpz_poly_set_coeff_fmpz(numerator, 13, yy);
-  fmpz_set_ui(yy, 137);
-  fmpz_poly_set_coeff_fmpz(numerator, 12, yy);
-  fmpz_set_str(xx, "10000000000000000000000000000000000000000000000000000000000000000000000000000", 10);
-  fmpz_poly_set_coeff_fmpz(numerator, 20, xx);
-  fmpz_add(res, xx, yy);
-  fmpz_print(res);
-  fmpz_clear(xx);
-  fmpz_clear(yy);
-  fmpz_clear(res);
-  std::cout << "\n";
-  std::cout << "test " << fmpz_poly_get_str_pretty(numerator,"x1") << "\n";
-  fmpz_poly_clear(numerator);*/
 
   /*for(const auto& rf : reconst.get_result_ff()) {
     std::cout << rf.to_string({"x","y","z","w"}) << "\n";
@@ -154,10 +135,10 @@ int main() {
   // Print all reconstruced functions
   for (uint32_t i = 0; i < results.size(); ++i) {
     std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
-  }
+  }*/
 
   // Rewrite result in Horner form
-  std::string f15_horner = results[14].generate_horner({"x", "y", "z", "w"});
+  /*std::string f15_horner = results[14].generate_horner({"x", "y", "z", "w"});
   std::cout << "Function 15 in Horner form:\n" << f15_horner << "\n";*/
 
   // Resets all statics in RatReconst to start a new reconstruction

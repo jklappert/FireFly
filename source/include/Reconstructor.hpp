@@ -171,6 +171,7 @@ namespace firefly {
     std::atomic<bool> resumed = {false};
     std::atomic<bool> new_prime = {false};
     std::atomic<bool> done = {false};
+    std::atomic<bool> change_var_order = {false};
     static bool printed_logo;
     bool save_states = false;
     bool resume_from_state = false;
@@ -847,6 +848,10 @@ namespace firefly {
       if (std::get<2>(rec) == DONE) {
         result.emplace_back(std::get<3>(rec)->get_result());
 
+        if (change_var_order) {
+          result.back().set_var_order(optimal_var_order);
+        }
+
         if (factors_rf.find(counter) != factors_rf.end()) {
           for (const auto& factor : factors_rf[counter]) {
             result.back().add_factor(factor);
@@ -1452,6 +1457,10 @@ namespace firefly {
     std::string var_order = "Using optimized variable order: {";
 
     for (size_t i = 0; i != n; ++i) {
+      if (!change_var_order && optimal_var_order[i] != i) {
+        change_var_order = true;
+      }
+
       if (i != n - 1) {
         var_order += "x" + std::to_string(optimal_var_order[i] + 1) + ", ";
       } else {
@@ -2350,11 +2359,21 @@ namespace firefly {
       }
 
       if (!factor_scan) {
-       values[0] = t + shift[0];
+        if (change_var_order) {
+          for (const auto & el : optimal_var_order) {
+            if (el.first == 0) {
+              values[el.second] = t + shift[0];
+            } else {
+              values[el.second] = rand_zi[el.first - 1] * t + shift[el.first];
+            }
+          }
+        } else {
+          values[0] = t + shift[0];
 
-       for (uint32_t i = 1; i != n; ++i) {
-         values[i] = rand_zi[i - 1] * t + shift[i];
-       }
+          for (uint32_t i = 1; i != n; ++i) {
+            values[i] = rand_zi[i - 1] * t + shift[i];
+          }
+        }
       } else {
         for (uint32_t i = 0; i != n; ++i) {
           if (rand_zi_fac[i] == 1) {

@@ -55,10 +55,21 @@ namespace firefly {
      *  @return the factors of this rational function
      */
     std::vector<RationalFunction> get_factors() const;
+    /**
+     *  Changes the variable order according to the replacement map
+     *  @param order_map Replacement map, first entry is key second entry the replacement variable
+     */
+    void set_var_order(const std::unordered_map<uint32_t, uint32_t>& order_map_);
+    /**
+     *  @return the variable order of this object
+     */
+    std::unordered_map<uint32_t, uint32_t> get_order_map() const;
     Polynomial numerator;  /**< The coefficients of the numerator */
     Polynomial denominator; /**< The coefficients of the denominator */
   private:
     std::vector<RationalFunction> factors {};
+    // TODO safe somewhere else?
+    std::unordered_map<uint32_t, uint32_t> order_map {};
   };
 
   std::ostream& operator<<(std::ostream& out, const RationalFunction& rf);

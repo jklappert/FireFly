@@ -70,6 +70,7 @@ namespace firefly {
     std::vector<Monomial> coefs; /**< A vector of monomials which form the polynomial */
     /**
      *  Sets the variable position when working with factors to provide a proper to_string implementation
+     *  @param var_pos_ the multivariate mapping of the position of this variable
      */
     void set_var_pos(int var_pos_);
   private:
