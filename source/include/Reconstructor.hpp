@@ -718,20 +718,24 @@ namespace firefly {
       if (safe_mode) {
         tmp_rec.set_safe_interpolation();
 
+        if (factor_scan) {
+          WARNING_MSG("Disabled factor scan in safe mode!");
+          logger << "Disabled factor scan in safe mode!\n";
+          factor_scan = false;
+        }
+
         if (scan) {
           WARNING_MSG("Disabled shift scan in safe mode!");
           logger << "Disabled shift scan in safe mode!\n";
           scan = false;
-          factor_scan = false;
         }
       }
-//TODO new
+
       if (factor_scan) {
         RatReconst::reset();
         scan_for_factors();
         tmp_rec = RatReconst(n);
       }
-//TODO new end
 
       if (scan) {
         scan_for_shift();
@@ -1066,7 +1070,6 @@ namespace firefly {
     prime_start = std::chrono::high_resolution_clock::now();
   }
 
-//TODO new
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::scan_for_factors() {
 #ifdef FLINT
@@ -1545,7 +1548,6 @@ namespace firefly {
     prime_start = std::chrono::high_resolution_clock::now();
 #endif
   }
-//TODO end
 
   template<typename BlackBoxTemp>
   mpz_class Reconstructor<BlackBoxTemp>::combine_primes(const std::unordered_map<uint32_t, uint64_t>& poly,
