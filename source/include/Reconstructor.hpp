@@ -474,10 +474,107 @@ namespace firefly {
     set_anchor_points = false;
 
     std::ifstream v_file;
+    std::string line;
+    v_file.open("ff_save/var_order.gz");
+
+    // Variable order
+    if (v_file.is_open()) {
+      igzstream order_file;
+      order_file.open("ff_save/var_order.gz");
+
+      while (std::getline(order_file, line)) {
+        auto tmp_vec = parse_vector_32(line, 2);
+        optimal_var_order[tmp_vec[0]] = tmp_vec[1];
+      }
+
+      order_file.close();
+
+      std::string var_order = "Using optimized variable order: {";
+
+      for (size_t i = 0; i != n; ++i) {
+        if (!change_var_order && optimal_var_order[i] != i) {
+          change_var_order = true;
+        }
+
+        if (i != n - 1) {
+          var_order += "x" + std::to_string(optimal_var_order[i] + 1) + ", ";
+        } else {
+          var_order += "x" + std::to_string(optimal_var_order[i] + 1) + "}";
+        }
+      }
+
+      if (verbosity > SILENT) {
+        INFO_MSG(var_order);
+      }
+
+      logger << var_order << "\n";
+    } else {
+      if (verbosity > SILENT) {
+        INFO_MSG("Using default variable order");
+      }
+
+      logger << "Using default variable order\n";
+    }
+
+    v_file.close();
+
+    // Factors
+    tinydir_dir fac_dir;
+    tinydir_open_sorted(&fac_dir, "ff_save/factors");
+
+    std::vector<std::string> fac_files;
+
+    for (size_t i = 0; i != fac_dir.n_files; ++i) {
+      tinydir_file file;
+      tinydir_readfile_n(&fac_dir, &file, i);
+
+      if (!file.is_dir) {
+        fac_files.emplace_back(file.name);
+      }
+    }
+
+    tinydir_close(&fac_dir);
+
+    std::vector<std::string> fac_vars (n);
+    for (size_t i = 0; i != n; ++i) {
+      fac_vars[i] = "x" + std::to_string(i + 1);
+    }
+
+    for (const auto & file : fac_files) {
+      std::string fac_number = "";
+      for (const auto & character : file) {
+        if (character != '.') {
+          fac_number += character;
+        } else {
+          break;
+        }
+      }
+
+      igzstream fac_file;
+      std::string fac_path = "ff_save/factors/" + file;
+      fac_file.open(fac_path.c_str());
+      std::getline(fac_file, line);
+      line.pop_back();
+      ShuntingYardParser parser = ShuntingYardParser();
+      parser.parse_function(line, fac_vars);
+      parser.precompute_tokens();
+      parsed_factors.emplace(std::stoi(fac_number), parser);
+      fac_file.close();
+    }
+
+    size_t tmp_size_factors = parsed_factors.size();
+
+    if (verbosity > SILENT) {
+      INFO_MSG("Parsed " + std::to_string(tmp_size_factors) + " factors");
+    }
+
+    logger << "Parsed " << tmp_size_factors << " factors\n";
+
+    factor_scan = false;
+
     igzstream validation_file;
     validation_file.open("ff_save/validation.gz");
     v_file.open("ff_save/validation.gz");
-    std::string line;
 
     if (v_file.is_open()) {
       std::getline(validation_file, line);
@@ -486,10 +583,15 @@ namespace firefly {
       std::vector<FFInt> result = bb.eval(values);
       size_t counter = 0;
 
+      for (const auto & el : parsed_factors) {
+        result[el.first] /= el.second.evaluate_pre(values)[0];
+      }
+
       while (std::getline(validation_file, line)) {
         if (std::stoul(line) != result[counter]) {
           ERROR_MSG("Validation failed: Entry " + std::to_string(counter) + " does not match the black-box result!");
           logger << "Validation failed: Entry " + std::to_string(counter) + " does not match the black-box result!\n";
+          logger.close();
           std::exit(EXIT_FAILURE);
         }
 
@@ -521,6 +623,10 @@ namespace firefly {
     }
 
     FFInt::set_new_prime(primes()[prime_it]);
+
+    for (auto& el : parsed_factors) {
+      el.second.precompute_tokens();
+    }
 
     tmp_rec.start_from_saved_file(file_paths[0]);
 
@@ -616,6 +722,7 @@ namespace firefly {
       } else {
         ERROR_MSG("Anchor point file not found!");
         logger << "Anchor point file not found!\n";
+        logger.close();
         std::exit(EXIT_FAILURE);
       }
 
@@ -631,6 +738,7 @@ namespace firefly {
       } else {
         ERROR_MSG("Shift file not found!");
         logger << "Shift file not found!\n";
+        logger.close();
         std::exit(EXIT_FAILURE);
       }
     }
@@ -651,6 +759,7 @@ namespace firefly {
           ERROR_MSG("Please remove the directory 'ff_save' and start from the beginning.");
           logger << "Cannot resume from saved state because the scan was not completed.\n";
           logger << "Please remove the directory 'ff_save' and start from the beginning.\n";
+          logger.close();
           std::exit(EXIT_FAILURE);
         }
 
@@ -1471,6 +1580,18 @@ namespace firefly {
       }
     }
 
+    if (save_states && change_var_order) {
+      ogzstream file;
+      std::string file_name = "ff_save/var_order.gz";
+      file.open(file_name.c_str());
+
+      for (size_t i = 0; i != n; ++i) {
+        file << i << " " << optimal_var_order[i] << " \n";
+      }
+
+      file.close();
+    }
+
 
     for (const auto& tmp_fac : factors_str) {
       std::string tmp_fac_s = "";
@@ -1670,6 +1791,7 @@ namespace firefly {
     if (tag_size != 0 && tag_size != items) {
       logger << "Number of tags does not match the black box!\n";
       ERROR_MSG("Number of tags does not match the black box!");
+      logger.close();
       std::exit(EXIT_FAILURE);
     }
 
@@ -1697,10 +1819,25 @@ namespace firefly {
       std::vector<FFInt> rand_zi;
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
 
-      file << (t_vec[0] + shift[0]).n << " ";
+      if (change_var_order) {
+        std::vector<uint64_t> tmp_val (n);
+        for (const auto & el : optimal_var_order) {
+          if (el.first == 0) {
+            tmp_val[el.second] = (t_vec[0] + shift[0]).n;
+          } else {
+            tmp_val[el.second] = (rand_zi[el.first - 1] * t_vec[0] + shift[el.first]).n;
+          }
+        }
 
-      for (uint32_t i = 1; i != n; ++i) {
-        file << (rand_zi[i - 1] * t_vec[0] + shift[i]).n << " ";
+        for (size_t i = 0; i != n; ++i) {
+          file << tmp_val[i] << " ";
+        }
+      } else {
+        file << (t_vec[0] + shift[0]).n << " ";
+
+        for (uint32_t i = 1; i != n; ++i) {
+          file << (rand_zi[i - 1] * t_vec[0] + shift[i]).n << " ";
+        }
       }
 
       file << "\n";
@@ -2022,6 +2159,7 @@ namespace firefly {
           } else {
             logger << "Anchor point file not found!\n";
             ERROR_MSG("Anchor point file not found!");
+            logger.close();
             std::exit(EXIT_FAILURE);
           }
 
@@ -2035,6 +2173,7 @@ namespace firefly {
             tmp_rec.set_shift(parse_vector_FFInt(line, static_cast<int>(n)));
           } else {
             logger << "Shift file not found!\n";
+            logger.close();
             ERROR_MSG("Shift file not found!");
             std::exit(EXIT_FAILURE);
           }
@@ -2712,6 +2851,7 @@ namespace firefly {
         if ((factor_scan && static_cast<uint32_t>(zi_order_vec.back().size()) != 0) || (!factor_scan && static_cast<uint32_t>(zi_order_vec.back().size()) != n - 1)) {
           logger << "zi_order of probe has wrong length: " << std::to_string(zi_order_vec.back().size()) << "\n";
           ERROR_MSG("zi_order of probe has wrong length: " + std::to_string(zi_order_vec.back().size()));
+          logger.close();
           std::exit(EXIT_FAILURE);
         }
 
@@ -3610,6 +3750,7 @@ namespace firefly {
         if ((static_cast<uint32_t>(amount) - 1) % (items + 1) != 0) {
           logger << "Corrupted results recieved: " + std::to_string(amount - 1) << "\n";
           ERROR_MSG("Corrupted results recieved: " + std::to_string(amount - 1));
+          logger.close();
           std::exit(EXIT_FAILURE);
         }
 
