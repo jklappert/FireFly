@@ -26,11 +26,35 @@ namespace firefly {
   RationalFunction::RationalFunction() {}
 
   std::string RationalFunction::to_string(const std::vector<std::string>& vars) const {
-    std::string str = "(" + numerator.to_string(vars) + ")/(";
-    if(!denominator.coefs.empty())
-      str += denominator.to_string(vars) + ")";
-    else
-      str += "1)";
+    std::string str = "";
+    if (!factors.empty()) {
+      std::string num_str = "(";
+      std::string den_str = "(";
+
+      for (const auto& factor : factors) {
+        if (!factor.numerator.coefs.empty())
+          num_str += "(" + factor.numerator.to_string(vars) + ")*";
+
+        if (!factor.denominator.coefs.empty())
+          den_str += "(" + factor.denominator.to_string(vars) + ")*";
+      }
+
+      num_str += "(" + numerator.to_string(vars) + "))/";
+
+      if(!denominator.coefs.empty())
+        den_str += "(" + denominator.to_string(vars) + "))";
+      else
+        den_str += "(1))";
+
+      str += num_str + den_str;
+    } else {
+      str += "(" + numerator.to_string(vars) + ")/(";
+      if(!denominator.coefs.empty())
+        str += denominator.to_string(vars) + ")";
+      else
+        str += "1)";
+    }
+
     return str;
   }
 
@@ -42,5 +66,14 @@ namespace firefly {
 
   std::string RationalFunction::generate_horner(const std::vector<std::string>& vars) const {
     return "(" + numerator.generate_horner(vars) + ")/(" + denominator.generate_horner(vars) + ")";
+  }
+
+  void RationalFunction::add_factor(const RationalFunction& factor) {
+    factors.reserve(factors.size() + 1);
+    factors.emplace_back(factor);
+  }
+
+  std::vector<RationalFunction> RationalFunction::get_factors() const {
+    return factors;
   }
 }

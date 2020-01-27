@@ -58,9 +58,14 @@ namespace firefly {
     if (coefs.empty())
       str += "0";
     else {
-      if (vars.size() != n) {
+      if (vars.size() != n && var_pos == -1) {
         ERROR_MSG("Symbol size does not match to number of variables of the polynomial!");
         std::exit(EXIT_FAILURE);
+      }
+
+      std::vector<std::string> vars_c = vars;
+      if (var_pos != -1) {
+        vars_c[0] = vars[var_pos];
       }
 
       for (const auto & mono : coefs) {
@@ -69,16 +74,16 @@ namespace firefly {
           deg += el;
         }
 
-        if (deg != 0 && mono.coef.numerator != 1 && mono.coef.numerator != 1)
+        if (deg != 0 && (mono.coef.numerator != 1 || mono.coef.denominator != 1))
           str += mono.coef.string() + "*";
         else if (deg == 0)
           str += mono.coef.string() + "*";
 
         for (uint32_t i = 0; i != mono.powers.size(); ++i) {
           if (mono.powers[i] > 1) {
-            str += vars[i] + "^" + std::to_string(mono.powers[i]) + "*";
+            str += vars_c[i] + "^" + std::to_string(mono.powers[i]) + "*";
           } else if (mono.powers[i] == 1) {
-            str += vars[i] + "*";
+            str += vars_c[i] + "*";
           }
         }
 
@@ -149,5 +154,9 @@ namespace firefly {
 
   std::string Polynomial::generate_horner(std::vector<std::string> vars) const {
     return generate_horner_mon(coefs, vars);
+  }
+
+  void Polynomial::set_var_pos(int var_pos_) {
+    var_pos = var_pos_;
   }
 }

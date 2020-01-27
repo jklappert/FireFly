@@ -68,8 +68,13 @@ namespace firefly {
      */
     std::string generate_horner(std::vector<std::string> vars) const;
     std::vector<Monomial> coefs; /**< A vector of monomials which form the polynomial */
+    /**
+     *  Sets the variable position when working with factors to provide a proper to_string implementation
+     */
+    void set_var_pos(int var_pos_);
   private:
     uint32_t n; /**< The number of variables */
+    int var_pos = -1;
   };
 
   std::ostream& operator<< (std::ostream& out, const Polynomial& pol);

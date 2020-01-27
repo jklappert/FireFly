@@ -199,13 +199,14 @@ namespace firefly {
     std::condition_variable condition_feed;
     std::vector<std::vector<std::string>> factorizations {};
     std::unordered_set<uint32_t> possible_factors_bb_counter {};
-    std::unordered_map<uint32_t, std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> factors {};
+    std::unordered_map<uint32_t, std::list<RationalFunction>> factors_rf {};
     std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
     std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes;
     std::deque<std::pair<uint64_t, std::vector<FFInt>>> requested_probes;
     std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>> computed_probes;
     std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> chosen_t;
     std::unordered_map<uint32_t, uint32_t> optimal_var_order {}; /**< first is old position, second is new position */
+    std::unordered_map<uint32_t, ShuntingYardParser> parsed_factors {};
     RatReconst tmp_rec;
     std::vector<FFInt> shift;
     /**
@@ -720,18 +721,18 @@ namespace firefly {
           WARNING_MSG("Disabled shift scan in safe mode!");
           logger << "Disabled shift scan in safe mode!\n";
           scan = false;
+          factor_scan = false;
         }
       }
 //TODO new
       if (factor_scan) {
         RatReconst::reset();
         scan_for_factors();
-
         tmp_rec = RatReconst(n);
-        if(safe_mode) tmp_rec.set_safe_interpolation();
       }
 //TODO new end
-      else if (scan) {
+
+      if (scan) {
         scan_for_shift();
 #if !WITH_MPI
         uint32_t to_start = thr_n ;//* bunch_size; // TODO
@@ -840,10 +841,19 @@ namespace firefly {
   template<typename BlackBoxTemp>
   std::vector<RationalFunction> Reconstructor<BlackBoxTemp>::get_result() {
     std::vector<RationalFunction> result {};
+    uint32_t counter = 0;
 
     for (auto & rec : reconst) {
       if (std::get<2>(rec) == DONE) {
         result.emplace_back(std::get<3>(rec)->get_result());
+
+        if (factors_rf.find(counter) != factors_rf.end()) {
+          for (const auto& factor : factors_rf[counter]) {
+            result.back().add_factor(factor);
+          }
+        }
+
+        ++counter;
       }
     }
 
@@ -1071,6 +1081,7 @@ namespace firefly {
     max_degs = std::vector<uint32_t> (n, 0);
     shift = std::vector<FFInt> (n, 0);
     rand_zi_fac = std::vector<FFInt> (n, 0);
+    std::unordered_map<uint32_t, std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> factors_str {};
 
     // Run this loop until a proper shift is found
     for (int i = 0; i != n; ++i) {
@@ -1085,6 +1096,7 @@ namespace firefly {
 
       while (!fac_done) {
         std::unordered_map<uint32_t,std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> possible_factors {};
+        mpz_class tmp_combined_prime = combined_prime;
 
         for (int scan_n = 0; scan_n != 2; ++scan_n) {
           number_of_factors = 0;
@@ -1237,6 +1249,8 @@ namespace firefly {
                   }
 
                   if (run_test) {
+                    FFInt tmp_rand = tmp_rec.get_rand_64();
+
                     if (!tmp_gni.empty()) {
                       ff_map gi_ffi;
                       FFInt num = 0;
@@ -1248,10 +1262,10 @@ namespace firefly {
                       }
 
                       for (const auto& coeff : canonical_factors.first) {
-                        num += coeff.second;
+                        num += coeff.second*tmp_rand.pow(coeff.first);
                       }
 
-                      combine_results = !(PolynomialFF(1, gi_ffi).calc({1}) == num);
+                      combine_results = !(PolynomialFF(1, gi_ffi).calc({tmp_rand}) == num);
                     }
 
                     if (!combine_results && !tmp_gdi.empty()) {
@@ -1265,16 +1279,15 @@ namespace firefly {
                       }
 
                       for (const auto& coeff : canonical_factors.second) {
-                        num += coeff.second;
+                        num += coeff.second*tmp_rand.pow(coeff.first);
                       }
 
-                      combine_results = !(PolynomialFF(1, gi_ffi).calc({1}) == num);
+                      combine_results = !(PolynomialFF(1, gi_ffi).calc({tmp_rand}) == num);
                     }
                   }
 
                   // combine results
                   if (combine_results) {
-                    mpz_class tmp_combined_prime = combined_prime;
                     // numerator
                     if (!canonical_factors.first.empty()) {
                       combined_prime = combine_primes(canonical_factors.first, combined_ni[counter], tmp_combined_prime);
@@ -1288,14 +1301,23 @@ namespace firefly {
                     possible_factors_bb_counter.erase(counter);
                     combined_ni.erase(counter);
                     combined_di.erase(counter);
+                    Polynomial tmp_numerator;
+                    Polynomial tmp_denominator;
+
                     // Rewrite to result
                     if (!tmp_gni.empty()) {
-                      factors[counter].first.emplace(Polynomial(tmp_gni).to_string({curr_var}));
+                      tmp_numerator = Polynomial(tmp_gni);
+                      factors_str[counter].first.emplace(tmp_numerator.to_string({curr_var}));
+                      tmp_numerator.set_var_pos(i);
                     }
 
                     if (!tmp_gdi.empty()) {
-                      factors[counter].second.emplace(Polynomial(tmp_gdi).to_string({curr_var}));
+                      tmp_denominator = Polynomial(tmp_gdi);
+                      factors_str[counter].second.emplace(tmp_denominator.to_string({curr_var}));
+                      tmp_denominator.set_var_pos(i);
                     }
+
+                    factors_rf[counter].emplace_back(RationalFunction(tmp_numerator, tmp_denominator));
                   }
                 }
               }
@@ -1357,14 +1379,14 @@ namespace firefly {
             }
           } else if (tmp_prime_it == 0 && scan_n == 1) {
             total_number_of_factors += number_of_factors;
+            logger << "Factors in x" << std::to_string(i + 1) << ": "
+              << std::to_string(number_of_factors) << "\n";
 
             if (max_degs[i] != old_max_deg) {
               logger << "Maximum degree of x" << std::to_string(i + 1) << " after factoring: "
                 << std::to_string(max_degs[i]) << "\n";
             }
 
-            logger << "Factors in x" << std::to_string(i + 1) << ": "
-              << std::to_string(number_of_factors) << "\n";
             logger << "Starting reconstruction of coefficients\n";
             logger.close();
             logger.open("firefly.log", std::ios_base::app);
@@ -1409,46 +1431,9 @@ namespace firefly {
     if (save_states) {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       mkdir("ff_save/factors", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-
-      for (const auto& tmp_fac : factors) {
-        std::string tmp_fac_s = "";
-
-        if(!tmp_fac.second.first.empty()){
-          tmp_fac_s += "(";
-          for (const auto& tmp_fac_num : tmp_fac.second.first) {
-            tmp_fac_s += "(" + tmp_fac_num + ")*";
-          }
-
-          tmp_fac_s.pop_back();
-          tmp_fac_s += ")";
-        }
-
-        if (!tmp_fac.second.second.empty()) {
-          if (!tmp_fac.second.first.empty()) {
-            tmp_fac_s += "/(";
-          } else {
-            tmp_fac_s += "1/(";
-          }
-
-          for (const auto& tmp_fac_den : tmp_fac.second.second) {
-            tmp_fac_s += "(" + tmp_fac_den + ")*";
-          }
-
-          tmp_fac_s.pop_back();
-          tmp_fac_s += ");\n";
-        } else {
-          tmp_fac_s += ";\n";
-        }
-
-        ogzstream file;
-        std::string file_name = "ff_save/factors/" + std::to_string(tmp_fac.first) + ".gz";
-        file.open(file_name.c_str());
-        file << tmp_fac_s;
-        file.close();
-      }
     }
 
-    verbosity = old_verbosity;
+    std::vector<std::string> vars (n);
 
     // Reorder variables with regards to their maximum degree
     std::vector<uint32_t> indices (n);
@@ -1458,17 +1443,11 @@ namespace firefly {
                      [&](uint32_t i1, uint32_t i2) {return max_degs[i1] > max_degs[i2];});
 
     std::sort(max_degs.begin(), max_degs.end(), std::greater<uint32_t>());
-    optimal_var_order.clear();
 
     for (size_t i = 0; i != n; ++i) {
       optimal_var_order.emplace(std::make_pair(i, indices[i]));
+      vars[i] = "x" + std::to_string(i + 1);
     }
-
-    logger << "Completed factor scan in "
-      << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - clock_1).count())
-      << " s | " << std::to_string(total_iterations) << " probes in total\n";
-
-    logger << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n";
 
     std::string var_order = "Using optimized variable order: {";
 
@@ -1479,6 +1458,65 @@ namespace firefly {
         var_order += "x" + std::to_string(optimal_var_order[i] + 1) + "}";
       }
     }
+
+
+    for (const auto& tmp_fac : factors_str) {
+      std::string tmp_fac_s = "";
+
+      if(!tmp_fac.second.first.empty()){
+        tmp_fac_s += "(";
+        for (const auto& tmp_fac_num : tmp_fac.second.first) {
+          tmp_fac_s += "(" + tmp_fac_num + ")*";
+        }
+
+        tmp_fac_s.pop_back();
+        tmp_fac_s += ")";
+      }
+
+      if (!tmp_fac.second.second.empty()) {
+        if (!tmp_fac.second.first.empty()) {
+          tmp_fac_s += "/(";
+        } else {
+          tmp_fac_s += "1/(";
+        }
+
+        for (const auto& tmp_fac_den : tmp_fac.second.second) {
+          tmp_fac_s += "(" + tmp_fac_den + ")*";
+        }
+
+        tmp_fac_s.pop_back();
+
+        ShuntingYardParser parser = ShuntingYardParser();
+        parser.parse_function(tmp_fac_s + ")", vars);
+        parser.precompute_tokens();
+        parsed_factors.emplace(tmp_fac.first, parser);
+
+        tmp_fac_s += ");\n";
+      } else {
+        ShuntingYardParser parser = ShuntingYardParser();
+        parser.parse_function(tmp_fac_s, vars);
+        parser.precompute_tokens();
+        parsed_factors.emplace(tmp_fac.first, parser);
+
+        tmp_fac_s += ";\n";
+      }
+
+      if (save_states) {
+        ogzstream file;
+        std::string file_name = "ff_save/factors/" + std::to_string(tmp_fac.first) + ".gz";
+        file.open(file_name.c_str());
+        file << tmp_fac_s;
+        file.close();
+      }
+    }
+
+    verbosity = old_verbosity;
+
+    logger << "Completed factor scan in "
+      << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - clock_1).count())
+      << " s | " << std::to_string(total_iterations) << " probes in total\n";
+
+    logger << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n";
 
     logger << var_order << "\n\n";
     logger << "Proceeding with interpolation over prime field F(" << std::to_string(primes()[prime_it]) << ")\n";
@@ -1496,7 +1534,6 @@ namespace firefly {
     factor_scan = false;
 
     prime_start = std::chrono::high_resolution_clock::now();
-    std::exit(-1);
 #endif
   }
 //TODO end
@@ -1934,6 +1971,12 @@ namespace firefly {
         FFInt::set_new_prime(primes()[prime_it]);
 
         bb.prime_changed_internal();
+
+        if (!parsed_factors.empty()) {
+          for (auto& el : parsed_factors) {
+            el.second.precompute_tokens();
+          }
+        }
 
         // if only a small constant is reconstructed it will not ask for new run
         if (probes_for_next_prime == 0) {
@@ -3062,6 +3105,15 @@ namespace firefly {
 
       for (size_t i = 0; i != probe.size(); ++i) {
         //std::move(probe[i].begin(), probe[i].end(), tmp[i].begin());
+        // Remove factor from bb result
+        if (!factor_scan && parsed_factors.find(i) != parsed_factors.end()) {
+          auto res = parsed_factors[i].evaluate_pre(values_vec);
+
+          for (size_t j = 0; j != N; ++j) {
+            probe[i][j] /= res[0][j];
+          }
+        }
+
         tmp.emplace_back(std::vector<FFInt>(std::make_move_iterator(probe[i].begin()), std::make_move_iterator(probe[i].end())));
       }
 
@@ -3105,6 +3157,14 @@ namespace firefly {
       tmp.reserve(probe.size());
 
       for (size_t i = 0; i != probe.size(); ++i) {
+        if (!factor_scan && parsed_factors.find(i) != parsed_factors.end()) {
+          auto res = parsed_factors[i].evaluate_pre(values_vec);
+
+          for (size_t j = 0; j != N; ++j) {
+            probe[i] /= res[0];
+          }
+        }
+
         tmp.emplace_back(std::vector<FFInt> (1, probe[i]));
       }
 

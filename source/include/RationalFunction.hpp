@@ -46,8 +46,19 @@ namespace firefly {
      *  @return The horner form for this rational function
      */
     std::string generate_horner(const std::vector<std::string>& vars) const;
+    /**
+     *  Adds a rational function as factor for this rational function
+     *  @param factor the factor that will be added to the internal factors
+     */
+    void add_factor(const RationalFunction& factor);
+    /**
+     *  @return the factors of this rational function
+     */
+    std::vector<RationalFunction> get_factors() const;
     Polynomial numerator;  /**< The coefficients of the numerator */
     Polynomial denominator; /**< The coefficients of the denominator */
+  private:
+    std::vector<RationalFunction> factors {};
   };
 
   std::ostream& operator<<(std::ostream& out, const RationalFunction& rf);
