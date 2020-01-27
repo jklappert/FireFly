@@ -1458,9 +1458,10 @@ namespace firefly {
                      [&](uint32_t i1, uint32_t i2) {return max_degs[i1] > max_degs[i2];});
 
     std::sort(max_degs.begin(), max_degs.end(), std::greater<uint32_t>());
+    optimal_var_order.clear();
 
     for (size_t i = 0; i != n; ++i) {
-      optimal_var_order.emplace(std::make_pair(indices[i], i));
+      optimal_var_order.emplace(std::make_pair(i, indices[i]));
     }
 
     logger << "Completed factor scan in "
@@ -1471,7 +1472,7 @@ namespace firefly {
 
     std::string var_order = "Using optimized variable order: {";
 
-    for (size_t i = 0; i != n; ++ i) {
+    for (size_t i = 0; i != n; ++i) {
       if (i != n - 1) {
         var_order += "x" + std::to_string(optimal_var_order[i] + 1) + ", ";
       } else {
