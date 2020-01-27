@@ -1076,6 +1076,7 @@ namespace firefly {
     for (int i = 0; i != n; ++i) {
       std::unordered_map<uint32_t, std::unordered_map<uint32_t, mpz_class>> combined_ni {};
       std::unordered_map<uint32_t, std::unordered_map<uint32_t, mpz_class>> combined_di {};
+      std::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> max_deg_map {};
       mpz_class combined_prime = FFInt::p;
       bool fac_done = false;
       curr_var = "x" + std::to_string(i + 1);
@@ -1126,9 +1127,11 @@ namespace firefly {
 
                 // Get maximum degrees
                 auto tmp_max_degs = std::get<3>(rec)->get_max_deg();
+                max_deg_map.emplace(std::make_pair(counter, tmp_max_degs));
 
-                if (std::max(tmp_max_degs.first, tmp_max_degs.second) > max_degs[i]) {
-                  max_degs[i] = std::max(tmp_max_degs.first, tmp_max_degs.second);
+                uint32_t max_val = std::max(tmp_max_degs.first, tmp_max_degs.second);
+                if (max_val > max_degs[i]) {
+                  max_degs[i] = max_val;
                 }
 
                 uint32_t tmp_n_fac = tmp_fac_num_den.first.size() + tmp_fac_num_den.second.size();
@@ -1178,14 +1181,20 @@ namespace firefly {
                   // Init first combinations
                   std::unordered_map<uint32_t, mpz_class> tmp_combined_ni {};
                   std::unordered_map<uint32_t, mpz_class> tmp_combined_di {};
+                  uint32_t fac_max_deg_num = 0, fac_max_deg_den = 0;
 
                   for (const auto& mon : canonical_factors.first) {
                     tmp_combined_ni.emplace(std::make_pair(mon.first, mon.second));
+                    fac_max_deg_num = std::max(fac_max_deg_num, mon.first);
                   }
 
                   for (const auto& mon : canonical_factors.second) {
                     tmp_combined_di.emplace(std::make_pair(mon.first, mon.second));
+                    fac_max_deg_den = std::max(fac_max_deg_den, mon.first);
                   }
+
+                  max_deg_map[counter].first -= fac_max_deg_num;
+                  max_deg_map[counter].second -= fac_max_deg_den;
 
                   combined_ni[counter] = tmp_combined_ni;
                   combined_di[counter] = tmp_combined_di;
@@ -1298,6 +1307,19 @@ namespace firefly {
             delete std::get<3>(rec);
           }
 
+          uint32_t old_max_deg = max_degs[i];
+          if (tmp_prime_it == 0 && scan_n == 1) {
+            max_degs[i] = 0;
+
+            for (const auto& el : max_deg_map) {
+              uint32_t max_val = std::max(el.second.first, el.second.second);
+
+              if (max_val > max_degs[i]) {
+                max_degs[i] = max_val;
+              }
+            }
+          }
+
           if (old_verbosity > SILENT) {
             if (tmp_prime_it == 0 && scan_n == 0) {
               INFO_MSG("Maximum degree of x" + std::to_string(i + 1)
@@ -1312,6 +1334,10 @@ namespace firefly {
             } else if (tmp_prime_it == 0 && scan_n == 1) {
               INFO_MSG("Factors in x" + std::to_string(i + 1) + ": "
                 + std::to_string(number_of_factors));
+              if (max_degs[i] != old_max_deg) {
+                INFO_MSG("Maximum degree of x" + std::to_string(i + 1) + " after factoring: "
+                  + std::to_string(max_degs[i]));
+              }
              INFO_MSG("Starting reconstruction of coefficients");
             }
           }
@@ -1331,9 +1357,17 @@ namespace firefly {
             }
           } else if (tmp_prime_it == 0 && scan_n == 1) {
             total_number_of_factors += number_of_factors;
+
+            if (max_degs[i] != old_max_deg) {
+              logger << "Maximum degree of x" << std::to_string(i + 1) << " after factoring: "
+                << std::to_string(max_degs[i]) << "\n";
+            }
+
             logger << "Factors in x" << std::to_string(i + 1) << ": "
               << std::to_string(number_of_factors) << "\n";
             logger << "Starting reconstruction of coefficients\n";
+            logger.close();
+            logger.open("firefly.log", std::ios_base::app);
           }
 
           RatReconst::reset(false);
@@ -1416,6 +1450,7 @@ namespace firefly {
 
     verbosity = old_verbosity;
 
+    // Reorder variables with regards to their maximum degree
     std::vector<uint32_t> indices (n);
     std::iota(indices.begin(), indices.end(), 0);
 
