@@ -75,7 +75,12 @@ namespace firefly {
           }
         }
 
-        str.erase(--str.end());
+        if (str.empty()) {
+          str += "1";
+        } else {
+          str.erase(--str.end());
+        }
+
         str += "+";
       }
 
