@@ -64,7 +64,14 @@ namespace firefly {
       }
 
       for (const auto & mono : coefs) {
-        if (mono.coef.numerator != 1 && mono.coef.numerator != 1)
+        uint32_t deg = 0;
+        for (const auto& el : mono.powers) {
+          deg += el;
+        }
+
+        if (deg != 0 && mono.coef.numerator != 1 && mono.coef.numerator != 1)
+          str += mono.coef.string() + "*";
+        else if (deg == 0)
           str += mono.coef.string() + "*";
 
         for (uint32_t i = 0; i != mono.powers.size(); ++i) {
@@ -75,11 +82,7 @@ namespace firefly {
           }
         }
 
-        if (str.empty()) {
-          str += "1";
-        } else {
-          str.erase(--str.end());
-        }
+        str.erase(--str.end());
 
         str += "+";
       }
