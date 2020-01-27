@@ -1071,7 +1071,6 @@ namespace firefly {
     max_degs = std::vector<uint32_t> (n, 0);
     shift = std::vector<FFInt> (n, 0);
     rand_zi_fac = std::vector<FFInt> (n, 0);
-    std::unordered_map<uint32_t, uint32_t> deg_pos_map {};
 
     // Run this loop until a proper shift is found
     for (int i = 0; i != n; ++i) {
@@ -1321,8 +1320,6 @@ namespace firefly {
             logger << "Maximum degree of x" << std::to_string(i + 1) << ": "
               << std::to_string(max_degs[i]) << "\n";
 
-            deg_pos_map.emplace(std::make_pair(max_degs[i], i));
-
             if (max_degs[i] != 0) {
               logger << "Possible factors in x"
                 << std::to_string(i + 1) << ": " << std::to_string(number_of_factors)
@@ -1419,10 +1416,16 @@ namespace firefly {
 
     verbosity = old_verbosity;
 
+    std::vector<uint32_t> indices (n);
+    std::iota(indices.begin(), indices.end(), 0);
+
+    std::stable_sort(indices.begin(), indices.end(),
+                     [&](uint32_t i1, uint32_t i2) {return max_degs[i1] > max_degs[i2];});
+
     std::sort(max_degs.begin(), max_degs.end(), std::greater<uint32_t>());
 
     for (size_t i = 0; i != n; ++i) {
-      optimal_var_order.emplace(std::make_pair(deg_pos_map[max_degs[i]], i));
+      optimal_var_order.emplace(std::make_pair(indices[i], i));
     }
 
     logger << "Completed factor scan in "
