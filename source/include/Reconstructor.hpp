@@ -1307,7 +1307,7 @@ namespace firefly {
                   + std::to_string(i + 1) + ": " + std::to_string(number_of_factors));
               } else {
                 INFO_MSG("No factors in x"
-                  + std::to_string(i + 1) + ": " + std::to_string(number_of_factors) + "\n");
+                  + std::to_string(i + 1) + ": " + std::to_string(number_of_factors));
               }
             } else if (tmp_prime_it == 0 && scan_n == 1) {
               INFO_MSG("Factors in x" + std::to_string(i + 1) + ": "
@@ -1327,7 +1327,7 @@ namespace firefly {
             } else {
               logger << "No factors in x"
                 << std::to_string(i + 1) << ": " << std::to_string(number_of_factors)
-                << "\n\n";
+                << "\n";
             }
           } else if (tmp_prime_it == 0 && scan_n == 1) {
             total_number_of_factors += number_of_factors;
