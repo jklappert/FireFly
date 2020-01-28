@@ -214,10 +214,11 @@ namespace firefly {
     /**
      *  Calculates factors over the current prime field after the interpolation
      *  @param var_ sets the variable that should be replaced into the factors
+     *  @param degs sets the occurring degs to avoid Thiele
      */
-    void calc_factors(const std::string& var_ = "x");
+    void calc_factors(const std::string& var_ = "x", const std::pair<std::list<uint32_t>, std::list<uint32_t>>& degs = std::pair<std::list<uint32_t>, std::list<uint32_t>>());
     /**
-     *  Sets the internal prime number to the maximum. This is just a hack function for factor scans.
+     *  Sets the internal prime number to the maximum. This is just a hacky function for factor scans.
      */
     void set_prime_to_max();
   private:
@@ -273,6 +274,17 @@ namespace firefly {
      *  @param denominator the interpolated denominator of the current prime field
      */
     void combine_primes(ff_map& numerator, ff_map& denominator);
+    /**
+     *  Builds a univariate system of equations for a rational function in the first prime only during factor scan
+     *  @param tmp_ti the currently used value of t
+     *  @param tmp_num the currently probed value of the black box
+     */
+    bool build_factor_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num);
+    /**
+     *  Solves the system of equations for the univariate factor rational function
+     *  @return the solution of the system of equations
+     */
+    std::pair<ff_map, ff_map> solve_factor_uni_gauss();
     /**
      *  Builds a univariate system of equations for a rational function in the first prime
      *  @param tmp_ti the currently used value of t
@@ -396,6 +408,7 @@ namespace firefly {
     ThieleInterpolator t_interpolator; /**< An object for Thiele interpolations */
     std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> saved_food; /**< Data structre used to write already used probes to a file from which one can resume if crashes occur. First FFInt is t second is num */
     std::map<std::vector<uint32_t>, std::vector<std::pair<uint64_t, uint64_t>>> parsed_probes {};
+    std::pair<std::list<uint32_t>, std::list<uint32_t>> factor_degs {}; /**< Stores the degrees after one run with Thiele to build a system of equations instead */
 #ifdef FLINT
     std::pair<std::vector<std::string>, std::vector<std::string>> factors; /**< Stores the found factors over the current field */
     std::pair<std::vector<std::pair<std::string, uint32_t>>, std::vector<std::pair<std::string, uint32_t>>> factors_flint; /**< Stores the found factors over the current field, second entry is exponent of factor */
@@ -423,6 +436,7 @@ namespace firefly {
     bool fed_zero = false; /**< Indicates that the current feed was a zero */
     bool restart_sparse_interpolation = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
     bool normalizer_den_num = false; /**< If true the real normalization degree is the denominator else the numerator */
+    bool skip_thiele = false; /**< If true Thiele is skipped and replaced by system of equations during factor scan */
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,

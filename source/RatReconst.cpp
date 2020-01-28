@@ -86,9 +86,28 @@ namespace firefly {
     }
   }
 
-  void RatReconst::calc_factors(const std::string& var_) {
+  void RatReconst::calc_factors(const std::string& var_, const std::pair<std::list<uint32_t>, std::list<uint32_t>>& degs) {
     is_calc_factors = true;
     var = var_;
+    factor_degs = degs;
+
+    if (!factor_degs.first.empty() || !factor_degs.second.empty())
+      skip_thiele = true;
+
+    for (const auto& el : factor_degs.first) {
+      if (el == 0) {
+        normalize_to_den = false;
+        return;
+      }
+    }
+
+    for (const auto& el : factor_degs.second) {
+      if (el == 0) {
+        normalize_to_den = true;
+        return;
+      }
+    }
+
   }
 
   void RatReconst::set_zi_shift(const std::vector<uint32_t>& shifted_zis) {
@@ -312,7 +331,10 @@ namespace firefly {
             return;
 
         if (max_deg_num == -1) {// Use Thiele
-          check = t_interpolator.add_point(num, new_ti);;
+          if (!skip_thiele)
+            check = t_interpolator.add_point(num, new_ti);
+          else
+            check = build_factor_uni_gauss(new_ti, num);
         } else {
           std::queue<std::pair<FFInt, FFInt>> t_food;
 
@@ -356,14 +378,16 @@ namespace firefly {
 
         if (check) {
           check = false;
-
           std::pair<ff_map, ff_map> canonical;
 
           // If the maximal/minimal degree of the polynomials are not set
           // determine them and save all information
           if (max_deg_num == -1) {
+            if (!skip_thiele)
+              canonical = t_interpolator.get_result();
+            else
+              canonical = solve_factor_uni_gauss();
 
-            canonical = t_interpolator.get_result();
             PolynomialFF numerator = PolynomialFF(1, canonical.first);
             PolynomialFF denominator = PolynomialFF(1, canonical.second);
 
@@ -1991,6 +2015,66 @@ namespace firefly {
   void RatReconst::disable_shift() {
     std::unique_lock<std::mutex> lock_statics(mutex_statics);
     shift = std::vector<FFInt> (n, 0);
+  }
+
+  bool RatReconst::build_factor_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num) {
+    std::vector<FFInt> eq;
+    eq.reserve(num_eqn + 1);
+
+    FFInt res(0);
+    // Build system of equations;
+    for (const auto & el : factor_degs.first) {
+      if (!normalize_to_den && el == 0)
+        res = -1;
+      else
+        eq.emplace_back(tmp_ti.pow(el));
+    }
+
+    for (const auto & el : factor_degs.second) {
+      if (normalize_to_den && el == 0)
+        res = tmp_num;
+      else
+        eq.emplace_back(-tmp_num * tmp_ti.pow(el));
+    }
+
+    eq.emplace_back(res);
+    coef_mat.emplace_back(std::move(eq));
+
+    if (coef_mat.size() == factor_degs.first.size() + factor_degs.second.size() - 1)
+      return true;
+    else
+      return false;
+  }
+
+  std::pair<ff_map, ff_map> RatReconst::solve_factor_uni_gauss() {
+    std::vector<FFInt> results = solve_gauss_system(coef_mat, coef_mat.size());
+    coef_mat.clear();
+
+    ff_map numerator;
+    ff_map denominator;
+    uint32_t counter = 0;
+
+    for (const auto & el : factor_degs.first) {
+      std::vector<uint32_t> power = {el};
+      if (!normalize_to_den && el == 0)
+        numerator.emplace(std::make_pair(std::move(power), 1));
+      else {
+        numerator.emplace(std::make_pair(std::move(power), results[counter]));
+        counter ++;
+      }
+    }
+
+    for (const auto & el : factor_degs.second) {
+      std::vector<uint32_t> power = {el};
+      if (normalize_to_den && el == 0)
+        denominator.emplace(std::make_pair(std::move(power), 1));
+      else {
+        denominator.emplace(std::make_pair(std::move(power), results[counter]));
+        counter ++;
+      }
+    }
+
+    return std::make_pair(numerator, denominator);
   }
 
   void RatReconst::build_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num, const std::vector<FFInt>& yis) {

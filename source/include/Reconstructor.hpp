@@ -201,6 +201,7 @@ namespace firefly {
     std::vector<std::vector<std::string>> factorizations {};
     std::unordered_set<uint32_t> possible_factors_bb_counter {};
     std::unordered_map<uint32_t, std::list<RationalFunction>> factors_rf {};
+    std::unordered_map<uint32_t, std::pair<std::list<uint32_t>, std::list<uint32_t>>> factors_degs {};
     std::unordered_map<uint64_t, std::pair<FFInt, std::vector<uint32_t>>> index_map;
     std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes;
     std::deque<std::pair<uint64_t, std::vector<FFInt>>> requested_probes;
@@ -1174,6 +1175,7 @@ namespace firefly {
       curr_var = "x" + std::to_string(i + 1);
       possible_factors_bb_counter.clear();
       size_t tmp_prime_it = 0;
+      factors_degs.clear();
 
       while (!fac_done) {
         std::unordered_map<uint32_t,std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> possible_factors {};
@@ -1229,6 +1231,21 @@ namespace firefly {
 
                 uint32_t tmp_n_fac = tmp_fac_num_den.first.size() + tmp_fac_num_den.second.size();
                 number_of_factors += tmp_n_fac;
+
+                // Save occurring degrees to perform Thiele just once
+                auto tmp_rf = std::get<3>(rec)->get_result_ff();
+                std::list<uint32_t> deg_list_num {};
+                std::list<uint32_t> deg_list_den {};
+
+                for (const auto& el : tmp_rf.numerator.coefs) {
+                  deg_list_num.emplace_back(el.first[0]);
+                }
+
+                for (const auto& el : tmp_rf.denominator.coefs) {
+                  deg_list_den.emplace_back(el.first[0]);
+                }
+
+                factors_degs.emplace(std::make_pair(counter, std::make_pair(deg_list_num, deg_list_den)));
 
                 if (tmp_n_fac != 0) {
                   possible_factors_bb_counter.emplace(counter);
@@ -1657,6 +1674,7 @@ namespace firefly {
     }
 
     factor_scan = false;
+    factors_degs.clear();
 
     prime_start = std::chrono::high_resolution_clock::now();
 #endif
@@ -1861,7 +1879,11 @@ namespace firefly {
         }
       } else {
         rec = new RatReconst(1);
-        rec->calc_factors(curr_var);
+        if (factors_degs.empty()) {
+          rec->calc_factors(curr_var);
+        } else {
+          rec->calc_factors(curr_var, factors_degs[i]);
+        }
 
         // Remove functions that are irreducible
         if (!possible_factors_bb_counter.empty() &&  possible_factors_bb_counter.find(i) == possible_factors_bb_counter.end()) {
