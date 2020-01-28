@@ -165,4 +165,8 @@ namespace firefly {
   void Polynomial::set_var_pos(int var_pos_) {
     var_pos = var_pos_;
   }
+
+  int Polynomial::get_var_pos() const {
+    return var_pos;
+  }
 }

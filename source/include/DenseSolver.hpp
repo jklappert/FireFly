@@ -61,6 +61,21 @@ namespace firefly {
   std::cout << "Inverse LU\n" << inv[0][0] << " " << inv[0][1] << " " << inv[0][2] << "\n"
   << inv[1][0] << " " << inv[1][1] << " " << inv[1][2] << "\n"
   << inv[2][0] << " " << inv[2][1] << " " << inv[2][2] << "\n";*/
+//TODO modify result above
+  /*      //std::vector<FFIntTemp> b(1);
+      //solve_lu(mat, p, b, 2);
+
+      //mat = {{result[0], result[1]}, {result[2], result[3]}};
+      //calc_inverse(mat, 2);
+      //mat = {{result[0], result[1]}, {result[2], result[3]}};
+      //solve_gauss_system(mat, 2);
+      //mat = {{result[0], result[1]}, {result[2], result[3]}};
+      //p = {};
+      //mat_ff<FFIntTemp> mat2;
+      //calc_inverse_lu(mat, mat2, p, 2);
+      //mat = {{result[0], result[1]}, {result[2], result[3]}};
+      //p = {};
+      //calc_determinant_lu(mat, p, 2);*/
 
   template<typename FFIntTemp>
   using mat_ff = std::vector<std::vector<FFIntTemp>>;

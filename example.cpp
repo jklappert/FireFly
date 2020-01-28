@@ -46,26 +46,15 @@ namespace firefly {
 
       // Build the matrix mat
       mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
+
+      // Permutation vector
       std::vector<int> p {};
+
       // Compute LU decomposition of mat
       calc_lu_decomposition(mat, p, 2);
+
       // Compute determinant of mat
       result.emplace_back(calc_determinant_lu(mat, p, 2));
-
-      //std::vector<FFIntTemp> b(1);
-      //solve_lu(mat, p, b, 2);
-
-      //mat = {{result[0], result[1]}, {result[2], result[3]}};
-      //calc_inverse(mat, 2);
-      //mat = {{result[0], result[1]}, {result[2], result[3]}};
-      //solve_gauss_system(mat, 2);
-      //mat = {{result[0], result[1]}, {result[2], result[3]}};
-      //p = {};
-      //mat_ff<FFIntTemp> mat2;
-      //calc_inverse_lu(mat, mat2, p, 2);
-      //mat = {{result[0], result[1]}, {result[2], result[3]}};
-      //p = {};
-      //calc_determinant_lu(mat, p, 2);
 
       return result;
     }
@@ -117,17 +106,11 @@ int main() {
   // Reconstruct the black box
   reconst.reconstruct();
 
+  // Get results after the first interpolation. Has to be called with
+  // reconst.reconstruct(1) to work
   /*for(const auto& rf : reconst.get_result_ff()) {
     std::cout << rf.to_string({"x","y","z","w"}) << "\n";
   }*/
-
-  /*std::vector<FFInt> vec (4);
-  FFIntVec<4> arr1(2);
-  // move array to vector
-  std::move(arr1.begin(), arr1.end(), vec.begin());
-  FFIntVec<4> arr2;
-  // move vector to array
-  std::move(vec.begin(), vec.end(), arr2.begin());*/
 
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();

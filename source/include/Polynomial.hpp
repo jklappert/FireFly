@@ -73,6 +73,10 @@ namespace firefly {
      *  @param var_pos_ the multivariate mapping of the position of this variable
      */
     void set_var_pos(int var_pos_);
+    /**
+     *  @return variable position if multivariate conribution is mapped univariatly
+     */
+    int get_var_pos() const;
   private:
     uint32_t n; /**< The number of variables */
     int var_pos = -1;
