@@ -1726,8 +1726,13 @@ namespace firefly {
         }
 
         // Factorize polynomials
-        nmod_poly_factor_cantor_zassenhaus(fac_numerator, numerator);
-        nmod_poly_factor_cantor_zassenhaus(fac_denominator, denominator);
+        nmod_poly_factor_kaltofen_shoup(fac_numerator, numerator);
+        nmod_poly_factor_kaltofen_shoup(fac_denominator, denominator);
+        //nmod_poly_factor_cantor_zassenhaus(fac_numerator, numerator);
+        //nmod_poly_factor_cantor_zassenhaus(fac_denominator, denominator);
+        // Berlekamp is fastest but does not find all factors for some reason
+        //nmod_poly_factor_berlekamp(fac_numerator, numerator);
+        //nmod_poly_factor_berlekamp(fac_denominator, denominator);
 
         // Rewrite and store in result objects
         if (fac_numerator[0].num + fac_denominator[0].num != 0) {
