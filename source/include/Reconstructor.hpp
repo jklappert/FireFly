@@ -38,6 +38,7 @@
 #endif
 
 #include <chrono>
+#include <numeric>
 #include <tuple>
 #include <sys/stat.h>
 
