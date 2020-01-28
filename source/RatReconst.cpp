@@ -1726,6 +1726,7 @@ namespace firefly {
         }
 
         // Factorize polynomials
+        //TODO replace FLINT with NTL? According to NTLs benchmarks their factorization algorithms are more efficient
         nmod_poly_factor_kaltofen_shoup(fac_numerator, numerator);
         nmod_poly_factor_kaltofen_shoup(fac_denominator, denominator);
         //nmod_poly_factor_cantor_zassenhaus(fac_numerator, numerator);
