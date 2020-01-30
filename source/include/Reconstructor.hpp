@@ -1513,11 +1513,13 @@ namespace firefly {
         } else {
           if (old_verbosity > SILENT) {
             INFO_MSG("Completed factor scan in " + curr_var + " | "
-              + std::to_string(total_iterations) + " probes in total\n");
+              + std::to_string(total_iterations) + " probes in total");
+            INFO_MSG("Needed prime fields: " + std::to_string(tmp_prime_it + 1) + "\n");
           }
 
           logger << "Completed factor scan in " << curr_var << " | "
-            << total_iterations << " probes in total\n\n";
+            << total_iterations << " probes in total\n";
+          logger << "Needed prime fields: " << tmp_prime_it + 1 << "\n\n";
         }
       }
 
@@ -1880,6 +1882,7 @@ namespace firefly {
         }
       } else {
         rec = new RatReconst(1);
+
         if (factors_degs.empty()) {
           rec->calc_factors(curr_var);
         } else {
@@ -3545,7 +3548,13 @@ namespace firefly {
   void Reconstructor<BlackBoxTemp>::send_first_jobs() {
     mpi_setup();
 
-    std::vector<uint32_t> zi_order = std::vector<uint32_t>(n - 1, 1);
+    std::vector<uint32_t> zi_order;
+
+    if (!factor_scan) {
+      zi_order = std::vector<uint32_t>(n - 1, 1);
+    } else {
+      zi_order = std::vector<uint32_t>(0, 1);
+    }
 
     std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
@@ -3553,7 +3562,12 @@ namespace firefly {
       started_probes.emplace(std::make_pair(zi_order, 0));
     }
 
-    std::vector<FFInt> rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+    std::vector<FFInt> rand_zi;
+    if (factor_scan) {
+      rand_zi = rand_zi_fac;
+    } else {
+      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+    }
 
     std::unique_lock<std::mutex> chosen_lock(chosen_mutex); // TODO is this really required?
 
@@ -3571,6 +3585,7 @@ namespace firefly {
 
       //std::cout << "first send " << probes_queued << "\n";
 
+      // TODO adapt new variable order
       std::vector<uint64_t> values;
       values.reserve(static_cast<uint32_t>(to_start) * (n + 1));
 
@@ -3601,12 +3616,26 @@ namespace firefly {
           chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
         }
 
-        //values[ii * (n + 1) + 1] = (t + shift[0]).n;
-        values.emplace_back((t + shift[0]).n);
+        if (change_var_order) {
+          std::vector<uint64_t> tmp_values (n);
+          for (const auto & el : optimal_var_order) {
+            if (el.first == 0) {
+              tmp_values[el.second] = (t + shift[0]).n;
+            } else {
+              tmp_values[el.second] = (rand_zi[el.first - 1] * t + shift[el.first]).n;
+            }
+          }
 
-        for (uint32_t j = 1; j != n; ++j) {
-          //values[ii * (n + 1) + j + 1] = (t * rand_zi[j - 1] + shift[j]).n;
-          values.emplace_back((t * rand_zi[j - 1] + shift[j]).n);
+          values.insert(values.end(), tmp_values.begin(), tmp_values.end());
+
+        } else {
+          //values[ii * (n + 1) + 1] = (t + shift[0]).n;
+          values.emplace_back((t + shift[0]).n);
+
+          for (uint32_t j = 1; j != n; ++j) {
+            //values[ii * (n + 1) + j + 1] = (t * rand_zi[j - 1] + shift[j]).n;
+            values.emplace_back((t * rand_zi[j - 1] + shift[j]).n);
+          }
         }
 
         index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
@@ -3735,8 +3764,10 @@ namespace firefly {
 
         uint64_t prime_tmp = static_cast<uint64_t>(prime_it);
 
-        if (!scan) {
+        if (!scan && !factor_scan) {
           ++prime_tmp;
+        } else if (factor_scan) {
+          prime_tmp = static_cast<uint64_t>(fac_prime_it);
         }
 
         for (int i = 1; i != world_size; ++i) {
