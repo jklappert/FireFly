@@ -730,11 +730,11 @@ namespace firefly {
     }
 
     logger << "All files loaded | Done: " << std::to_string(items_done) << " / " << std::to_string(items) <<
-      " | " << "Needs new prime field: " << std::to_string(items_new_prime) << " / " << std::to_string(items - items_done) << "\n";
+      " | " << "Requires new prime field: " << std::to_string(items_new_prime) << " / " << std::to_string(items - items_done) << "\n";
 
     if (verbosity > SILENT) {
       INFO_MSG("All files loaded | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
-               " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+               " | " + "Requires new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
     }
   }
 
@@ -889,25 +889,25 @@ namespace firefly {
     if (one_done || one_new_prime) {
       logger << "Probe: " << std::to_string(iteration) <<
                  " | Done: " << std::to_string(items_done) << " / " << std::to_string(items) <<
-                 " | " << "Needs new prime field: " << std::to_string(items_new_prime) << " / " << std::to_string(items - items_done) << "\n";
+                 " | " << "Requires new prime field: " << std::to_string(items_new_prime) << " / " << std::to_string(items - items_done) << "\n";
     }
 
     logger << "Completed reconstruction in "
       << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count())
       << " s | " << std::to_string(total_iterations) << " probes in total\n"
-      << "Needed prime fields: " << std::to_string(prime_it) << " + 1\n"
+      << "Required prime fields: " << std::to_string(prime_it) << " + 1\n"
       << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n";
 
     if (verbosity > SILENT) {
       if (one_done || one_new_prime) {
         INFO_MSG("Probe: " + std::to_string(iteration) +
                  " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
-                 " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done) + "\n");
+                 " | " + "Requires new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done) + "\n");
       }
 
       INFO_MSG("Completed reconstruction in " +
                std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count()) + " s | " + std::to_string(total_iterations) + " probes in total");
-      INFO_MSG("Needed prime fields: " + std::to_string(prime_it) + " + 1");
+      INFO_MSG("Required prime fields: " + std::to_string(prime_it) + " + 1");
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
     }
   }
@@ -1514,12 +1514,12 @@ namespace firefly {
           if (old_verbosity > SILENT) {
             INFO_MSG("Completed factor scan in " + curr_var + " | "
               + std::to_string(total_iterations) + " probes in total");
-            INFO_MSG("Needed prime fields: " + std::to_string(tmp_prime_it + 1) + "\n");
+            INFO_MSG("Required prime fields: " + std::to_string(tmp_prime_it + 1) + "\n");
           }
 
           logger << "Completed factor scan in " << curr_var << " | "
             << total_iterations << " probes in total\n";
-          logger << "Needed prime fields: " << tmp_prime_it + 1 << "\n\n";
+          logger << "Required prime fields: " << tmp_prime_it + 1 << "\n\n";
         }
       }
 
@@ -1914,14 +1914,14 @@ namespace firefly {
 
     if (!factor_scan) {
       logger << "Probe: 1 | Done: 0 / " << std::to_string(items)
-        << " | Needs new prime field: " << std::to_string(items_new_prime)
+        << " | Requires new prime field: " << std::to_string(items_new_prime)
         << " / " << std::to_string(items) << "\n";
       logger.close();
       logger.open("firefly.log", std::ios_base::app);
     }
 
     if (verbosity > SILENT) {
-      INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
+      INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Requires new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
     }
 
     queue_probes(zi_order, static_cast<uint32_t>(probes.front().size()));
@@ -2099,13 +2099,13 @@ namespace firefly {
           if ((one_done || one_new_prime) && !factor_scan) {
             logger << "Probe: " << std::to_string(iteration)
             << " | Done: " << std::to_string(items_done)
-            << " / " + std::to_string(items) << " | " << "Needs new prime field: "
+            << " / " + std::to_string(items) << " | " << "Requires new prime field: "
             << std::to_string(items_new_prime) << " / " << std::to_string(items - items_done) << "\n";
 
             if (verbosity > SILENT) {
             INFO_MSG("Probe: " + std::to_string(iteration) +
                      " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
-                     " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+                     " | " + "Requires new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
             }
           }
 
@@ -2928,7 +2928,7 @@ namespace firefly {
         std::unique_lock<std::mutex> lock_print(print_control);
         logger << "Probe: " + std::to_string(iteration)
         << " | Done: " << std::to_string(items_done) << " / " << std::to_string(items)
-        << " | " << "Needs new prime field: " << std::to_string(items_new_prime)
+        << " | " << "Requires new prime field: " << std::to_string(items_new_prime)
         << " / " << std::to_string(items - items_done) << "\n";
         logger.close();
         logger.open("firefly.log", std::ios_base::app);
@@ -2936,7 +2936,7 @@ namespace firefly {
         if (verbosity > SILENT) {
           INFO_MSG("Probe: " + std::to_string(iteration) +
                    " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
-                   " | " + "Needs new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
+                   " | " + "Requires new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
         }
       }
     }
