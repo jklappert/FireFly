@@ -1514,12 +1514,14 @@ namespace firefly {
           if (old_verbosity > SILENT) {
             INFO_MSG("Completed factor scan in " + curr_var + " | "
               + std::to_string(total_iterations) + " probes in total");
-            INFO_MSG("Required prime fields: " + std::to_string(tmp_prime_it + 1) + "\n");
+            INFO_MSG("Required prime fields: " + std::to_string(tmp_prime_it + 1));
+            INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
           }
 
           logger << "Completed factor scan in " << curr_var << " | "
             << total_iterations << " probes in total\n";
-          logger << "Required prime fields: " << tmp_prime_it + 1 << "\n\n";
+          logger << "Required prime fields: " << tmp_prime_it + 1 << "\n"
+            << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n\n";
         }
       }
 
@@ -1775,10 +1777,10 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock(future_control);
 
-      if (!factor_scan)
+      if (!factor_scan && factors_rf.empty())
        logger << "Time for the first black-box probe: " << std::to_string(average_black_box_time) << " s\n";
 
-      if (verbosity > SILENT)
+      if (verbosity > SILENT && !factor_scan && factors_rf.empty())
         INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s");
     }
 
