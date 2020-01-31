@@ -3389,7 +3389,7 @@ namespace firefly {
         if (!scan && !factor_scan) {
           ++prime_tmp;
         } else if (factor_scan) {
-          prime_tmp = static_cast<uint64_t>(fac_prime_it);
+          prime_tmp = static_cast<uint64_t>(prime_tmp);//TODO
         }
 
         for (int i = 1; i != world_size; ++i) {

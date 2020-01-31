@@ -169,7 +169,7 @@ namespace firefly {
             case 32:
               queue_new_job<32>(values_list, started);
               break;
-            case 64:
+            /*case 64:
               queue_new_job<64>(values_list, started);
               break;
             case 128:
@@ -177,7 +177,7 @@ namespace firefly {
               break;
             case 256:
               queue_new_job<256>(values_list, started);
-              break;
+              break;*/
           }
 
           started += next_bunch;
