@@ -19,8 +19,10 @@
 #pragma once
 
 #include "FFInt.hpp"
-#include "RationalNumber.hpp"
+#include "RationalFunction.hpp"
 
+#include <list>
+#include <unordered_map>
 #include <vector>
 
 namespace firefly {
@@ -50,4 +52,9 @@ namespace firefly {
   *  @return the parsed prime number
   */
   uint32_t parse_prime_number(const std::string& file_name);
+  /**
+   *  Parses saved factors to RationalFunction objects
+   *  @return A map of rational function objects
+   */
+  std::unordered_map<uint32_t, std::list<RationalFunction>> parse_factors_rf();
 }

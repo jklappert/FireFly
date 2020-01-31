@@ -289,10 +289,6 @@ namespace firefly {
      *  Parses saved factors from ff_save/factors
      */
     void parse_factors();
-    /**
-     *  Parses saved factors from ff_save/factors_rf
-     */
-    void parse_factors_rf();
 #if WITH_MPI
     int world_size;
     uint32_t total_thread_count = 0;
@@ -530,7 +526,7 @@ namespace firefly {
 
     // Factors
     parse_factors();
-    parse_factors_rf();
+    factors_rf =  parse_factors_rf();
 
     igzstream validation_file;
     validation_file.open("ff_save/validation.gz");
@@ -3450,92 +3446,6 @@ namespace firefly {
     logger << "Parsed " << tmp_size_factors << " factors\n";
 
     factor_scan = false;
-  }
-
-  template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::parse_factors_rf() {
-    std::string line;
-    tinydir_dir fac_dir;
-    tinydir_open_sorted(&fac_dir, "ff_save/factors_rf");
-
-    std::vector<std::string> fac_files;
-
-    for (size_t i = 0; i != fac_dir.n_files; ++i) {
-      tinydir_file file;
-      tinydir_readfile_n(&fac_dir, &file, i);
-
-      if (!file.is_dir) {
-        fac_files.emplace_back(file.name);
-      }
-    }
-
-    tinydir_close(&fac_dir);
-
-    for (const auto & file : fac_files) {
-      std::string fac_number = "";
-      for (const auto & character : file) {
-        if (character != '.') {
-          fac_number += character;
-        } else {
-          break;
-        }
-      }
-
-      rn_map tmp_numerator;
-      rn_map tmp_denominator;
-
-      igzstream fac_file;
-      std::string fac_path = "ff_save/factors_rf/" + file;
-      fac_file.open(fac_path.c_str());
-      bool is_num = false;
-      bool is_den = false;
-      bool is_var = true;
-      int var_pos = -1;
-
-      while (std::getline(fac_file, line)) {
-        if (line == "var") {
-          is_var = true;
-          is_num = false;
-          is_den = false;
-
-          if (!tmp_numerator.empty() || !tmp_denominator.empty()) {
-            Polynomial tmp_num(tmp_numerator);
-            Polynomial tmp_den(tmp_denominator);
-            tmp_num.set_var_pos(var_pos);
-            tmp_den.set_var_pos(var_pos);
-            factors_rf[std::stoi(fac_number)].emplace_back(RationalFunction(tmp_num, tmp_den));
-          }
-
-          tmp_numerator.clear();
-          tmp_denominator.clear();
-        } else if (line == "numerator") {
-          is_num = true;
-          is_den = false;
-        } else if (line == "denominator") {
-          is_den = true;
-          is_num = false;
-        } else if(is_var) {
-          is_var = false;
-          var_pos = std::stoi(line);
-        } else if(is_num) {
-          std::vector<uint32_t> tmp_vec = parse_vector_32(line, 1);
-          tmp_numerator.emplace(std::make_pair(tmp_vec, parse_rational_number(line)));
-        } else {
-          std::vector<uint32_t> tmp_vec = parse_vector_32(line, 1);
-          tmp_denominator.emplace(std::make_pair(tmp_vec, parse_rational_number(line)));
-        }
-      }
-
-      if (!tmp_numerator.empty() || !tmp_denominator.empty()) {
-        Polynomial tmp_num(tmp_numerator);
-        Polynomial tmp_den(tmp_denominator);
-        tmp_num.set_var_pos(var_pos);
-        tmp_den.set_var_pos(var_pos);
-        factors_rf[std::stoi(fac_number)].emplace_back(RationalFunction(tmp_num, tmp_den));
-      }
-
-      fac_file.close();
-    }
   }
 
 #if WITH_MPI

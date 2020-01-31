@@ -1740,19 +1740,29 @@ namespace firefly {
           factors.first.reserve(fac_numerator[0].num);
           factors_flint.first.reserve(fac_numerator[0].num);
           for (int fac_num_num = 0; fac_num_num != fac_numerator[0].num; ++fac_num_num) {
-            std::string tmp_fac = nmod_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str());
+            char *tmp_fac_str_pretty_ptr = nmod_poly_get_str_pretty(&fac_numerator[0].p[fac_num_num], var.c_str());
+            std::string tmp_fac(tmp_fac_str_pretty_ptr);
             std::string tmp_factor = "(" + tmp_fac + ")^" + std::to_string(fac_numerator[0].exp[fac_num_num]);
             factors.first.emplace_back(tmp_factor);
-            factors_flint.first.emplace_back(std::make_pair(nmod_poly_get_str(&fac_numerator[0].p[fac_num_num]), fac_numerator[0].exp[fac_num_num]));
+            flint_free(tmp_fac_str_pretty_ptr);
+            char *tmp_fac_str_ptr = nmod_poly_get_str(&fac_numerator[0].p[fac_num_num]);
+            std::string tmp_fac_str(tmp_fac_str_ptr);
+            factors_flint.first.emplace_back(std::make_pair(tmp_fac_str, fac_numerator[0].exp[fac_num_num]));
+            flint_free(tmp_fac_str_ptr);
           }
 
           factors.second.reserve(fac_denominator[0].num);
           factors_flint.second.reserve(fac_denominator[0].num);
           for (int fac_den_num = 0; fac_den_num != fac_denominator[0].num; ++fac_den_num) {
-            std::string tmp_fac = nmod_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str());
+            char *tmp_fac_str_pretty_ptr = nmod_poly_get_str_pretty(&fac_denominator[0].p[fac_den_num], var.c_str());
+            std::string tmp_fac(tmp_fac_str_pretty_ptr);
             std::string tmp_factor = "(" + tmp_fac + ")^" + std::to_string(fac_denominator[0].exp[fac_den_num]);
             factors.second.emplace_back(tmp_factor);
-            factors_flint.second.emplace_back(std::make_pair(nmod_poly_get_str(&fac_denominator[0].p[fac_den_num]), fac_denominator[0].exp[fac_den_num]));
+            flint_free(tmp_fac_str_pretty_ptr);
+            char *tmp_fac_str_ptr = nmod_poly_get_str(&fac_denominator[0].p[fac_den_num]);
+            std::string tmp_fac_str(tmp_fac_str_ptr);
+            factors_flint.second.emplace_back(std::make_pair(tmp_fac_str, fac_denominator[0].exp[fac_den_num]));
+            flint_free(tmp_fac_str_ptr);
           }
         }
 

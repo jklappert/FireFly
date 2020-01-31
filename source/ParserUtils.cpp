@@ -16,7 +16,9 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
+#include "gzstream.hpp"
 #include "ParserUtils.hpp"
+#include "tinydir.h"
 
 namespace firefly {
   std::vector<uint32_t> parse_vector_32(std::string& line, int number_of_parameters) {
@@ -72,5 +74,93 @@ namespace firefly {
     std::string prime = reverse_file_name.substr(0, pos);
     std::reverse(prime.begin(), prime.end());
     return std::stoi(prime);
+  }
+
+  std::unordered_map<uint32_t, std::list<RationalFunction>> parse_factors_rf() {
+    std::unordered_map<uint32_t, std::list<RationalFunction>> factors_rf {};
+    std::string line;
+    tinydir_dir fac_dir;
+    tinydir_open_sorted(&fac_dir, "ff_save/factors_rf");
+
+    std::vector<std::string> fac_files;
+
+    for (size_t i = 0; i != fac_dir.n_files; ++i) {
+      tinydir_file file;
+      tinydir_readfile_n(&fac_dir, &file, i);
+
+      if (!file.is_dir) {
+        fac_files.emplace_back(file.name);
+      }
+    }
+
+    tinydir_close(&fac_dir);
+
+    for (const auto & file : fac_files) {
+      std::string fac_number = "";
+      for (const auto & character : file) {
+        if (character != '.') {
+          fac_number += character;
+        } else {
+          break;
+        }
+      }
+
+      rn_map tmp_numerator;
+      rn_map tmp_denominator;
+
+      igzstream fac_file;
+      std::string fac_path = "ff_save/factors_rf/" + file;
+      fac_file.open(fac_path.c_str());
+      bool is_num = false;
+      bool is_den = false;
+      bool is_var = true;
+      int var_pos = -1;
+
+      while (std::getline(fac_file, line)) {
+        if (line == "var") {
+          is_var = true;
+          is_num = false;
+          is_den = false;
+
+          if (!tmp_numerator.empty() || !tmp_denominator.empty()) {
+            Polynomial tmp_num(tmp_numerator);
+            Polynomial tmp_den(tmp_denominator);
+            tmp_num.set_var_pos(var_pos);
+            tmp_den.set_var_pos(var_pos);
+            factors_rf[std::stoi(fac_number)].emplace_back(RationalFunction(tmp_num, tmp_den));
+          }
+
+          tmp_numerator.clear();
+          tmp_denominator.clear();
+        } else if (line == "numerator") {
+          is_num = true;
+          is_den = false;
+        } else if (line == "denominator") {
+          is_den = true;
+          is_num = false;
+        } else if(is_var) {
+          is_var = false;
+          var_pos = std::stoi(line);
+        } else if(is_num) {
+          std::vector<uint32_t> tmp_vec = parse_vector_32(line, 1);
+          tmp_numerator.emplace(std::make_pair(tmp_vec, parse_rational_number(line)));
+        } else {
+          std::vector<uint32_t> tmp_vec = parse_vector_32(line, 1);
+          tmp_denominator.emplace(std::make_pair(tmp_vec, parse_rational_number(line)));
+        }
+      }
+
+      if (!tmp_numerator.empty() || !tmp_denominator.empty()) {
+        Polynomial tmp_num(tmp_numerator);
+        Polynomial tmp_den(tmp_denominator);
+        tmp_num.set_var_pos(var_pos);
+        tmp_den.set_var_pos(var_pos);
+        factors_rf[std::stoi(fac_number)].emplace_back(RationalFunction(tmp_num, tmp_den));
+      }
+
+      fac_file.close();
+    }
+
+    return factors_rf;
   }
 }
