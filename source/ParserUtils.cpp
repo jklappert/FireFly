@@ -163,4 +163,53 @@ namespace firefly {
 
     return factors_rf;
   }
+
+  std::unordered_map<uint32_t, ShuntingYardParser> parse_factors(uint32_t n) {
+    std::unordered_map<uint32_t, ShuntingYardParser> parsed_factors {};
+    std::string line;
+    tinydir_dir fac_dir;
+    tinydir_open_sorted(&fac_dir, "ff_save/factors");
+
+    std::vector<std::string> fac_files;
+
+    for (size_t i = 0; i != fac_dir.n_files; ++i) {
+      tinydir_file file;
+      tinydir_readfile_n(&fac_dir, &file, i);
+
+      if (!file.is_dir) {
+        fac_files.emplace_back(file.name);
+      }
+    }
+
+    tinydir_close(&fac_dir);
+
+    std::vector<std::string> fac_vars (n);
+    for (size_t i = 0; i != n; ++i) {
+      fac_vars[i] = "x" + std::to_string(i + 1);
+    }
+
+    for (const auto & file : fac_files) {
+      std::string fac_number = "";
+      for (const auto & character : file) {
+        if (character != '.') {
+          fac_number += character;
+        } else {
+          break;
+        }
+      }
+
+      igzstream fac_file;
+      std::string fac_path = "ff_save/factors/" + file;
+      fac_file.open(fac_path.c_str());
+      std::getline(fac_file, line);
+      line.pop_back();
+      ShuntingYardParser parser = ShuntingYardParser();
+      parser.parse_function(line, fac_vars);
+      parser.precompute_tokens();
+      parsed_factors.emplace(std::stoi(fac_number), parser);
+      fac_file.close();
+    }
+
+    return parsed_factors;
+  }
 }

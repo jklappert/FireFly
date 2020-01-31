@@ -285,10 +285,6 @@ namespace firefly {
      *  TODO
      */
     void reset_new_prime();
-    /**
-     *  Parses saved factors from ff_save/factors
-     */
-    void parse_factors();
 #if WITH_MPI
     int world_size;
     uint32_t total_thread_count = 0;
@@ -416,6 +412,7 @@ namespace firefly {
   void Reconstructor<BlackBoxTemp>::enable_factor_scan() {
 #ifndef FLINT
     ERROR_MSG("FireFly is not compiled with FLINT. No polynomial factoring possible!");
+    std::exit(EXIT_FAILURE);
 #endif
     factor_scan = true;
   }
@@ -525,7 +522,17 @@ namespace firefly {
     v_file.close();
 
     // Factors
-    parse_factors();
+    parsed_factors = parse_factors(n);
+    size_t tmp_size_factors = parsed_factors.size();
+
+    if (verbosity > SILENT) {
+      INFO_MSG("Parsed " + std::to_string(tmp_size_factors) + " factors");
+    }
+
+    logger << "Parsed " << tmp_size_factors << " factors\n";
+
+    factor_scan = false;
+
     factors_rf =  parse_factors_rf();
 
     igzstream validation_file;
@@ -2568,245 +2575,6 @@ namespace firefly {
     }
 #endif
 
-/*
-    if (bunch_size == 1) {
-#ifndef WITH_MPI
-      std::vector<FFInt> values(n);
-#endif
-      FFInt t;
-
-      for (uint32_t j = 0; j != to_start; ++j) {
-#ifdef WITH_MPI
-        std::vector<uint64_t> values(n + 1);
-#endif
-        t = tmp_rec.get_rand_64();
-
-        // check if t was already used for this zi_order
-        {
-          std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
-
-          auto it = chosen_t.find(zi_order);
-
-          if (it != chosen_t.end()) {
-            auto itt = it->second.find(t.n);
-
-            if (itt != it->second.end()) {
-              --j;
-
-              //std::unique_lock<std::mutex> lock_print(print_control);
-
-              //WARNING_MSG("Found a duplicate of t, choosing a new one");
-
-              continue;
-            } else {
-              it->second.emplace(t.n);
-            }
-          } else {
-            chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
-          }
-        }
-
-#ifndef WITH_MPI
-        values[0] = t + shift[0];
-
-        for (uint32_t i = 1; i != n; ++i) {
-          values[i] = rand_zi[i - 1] * t + shift[i];
-        }
-
-        // TODO: Why is this required already here?
-        std::unique_lock<std::mutex> lock(future_control);
-
-        if (ones) {
-          probes.emplace_front(std::make_tuple(t, zi_order, probe_future()));
-          auto it = probes.begin();
-
-          probe_future future = tp.run_priority_packaged_task([this, values, it]() {
-            auto time0 = std::chrono::high_resolution_clock::now();
-
-            std::vector<FFInt> probe = bb(values);
-
-            auto time1 = std::chrono::high_resolution_clock::now();
-
-            std::unique_lock<std::mutex> lock(future_control);
-
-            ++probes_finished;
-            finished_probes_it.emplace(it);
-
-            condition_future.notify_one();
-
-            return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
-          });
-
-          std::get<2>(*it) = std::move(future);
-        } else {
-          probes.emplace_back(std::make_tuple(t, zi_order, probe_future()));
-          auto it = --(probes.end());
-
-          probe_future future = tp.run_packaged_task([this, values, it]() {
-            auto time0 = std::chrono::high_resolution_clock::now();
-
-            std::vector<FFInt> probe = bb(values);
-
-            auto time1 = std::chrono::high_resolution_clock::now();
-
-            std::unique_lock<std::mutex> lock(future_control);
-
-            ++probes_finished;
-            finished_probes_it.emplace(it);
-
-            condition_future.notify_one();
-
-            return std::make_pair(std::move(probe), std::chrono::duration<double>(time1 - time0).count());
-          });
-
-          std::get<2>(*it) = std::move(future);
-        }
-#else
-        values[1] = (t + shift[0]).n;
-
-        for (uint32_t i = 1; i != n; ++i) {
-          values[i + 1] = (rand_zi[i - 1] * t + shift[i]).n;
-        }
-
-        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
-
-        values[0] = ind;
-
-        index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
-        ++ind;
-
-        value_queue.emplace(std::move(values));
-#endif
-      }
-    } else {
-      for (uint32_t j = 0; j != to_start / bunch_size; ++j) {
-#ifndef WITH_MPI
-        std::vector<FFInt> t_vec;
-        t_vec.reserve(bunch_size);
-        std::vector<std::vector<FFInt>> values_vec;
-        values_vec.reserve(bunch_size);
-#else
-        // TODO this queues the jobs in a correct order so that zi_order is fixed for bunch_size entries
-        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
-#endif
-
-        for (uint32_t i = 0; i != bunch_size; ++i) {
-#ifndef WITH_MPI
-          std::vector<FFInt> values(n);
-#else
-          std::vector<uint64_t> values(n + 1);
-#endif
-
-          FFInt t = tmp_rec.get_rand_64();
-
-          // check if t was already used for this zi_order
-          {
-            std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
-
-            auto it = chosen_t.find(zi_order);
-
-            if (it != chosen_t.end()) {
-              auto itt = it->second.find(t.n);
-
-              if (itt != it->second.end()) {
-                --i;
-
-                //std::unique_lock<std::mutex> lock_print(print_control);
-
-                //WARNING_MSG("Found a duplicate of t, choosing a new one");
-
-                continue;
-              } else {
-                it->second.emplace(t.n);
-              }
-            } else {
-              chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
-            }
-          }
-
-#ifndef WITH_MPI
-          values[0] = t + shift[0];
-
-          for (uint32_t i = 1; i != n; ++i) {
-            values[i] = rand_zi[i - 1] * t + shift[i];
-          }
-
-          t_vec.emplace_back(t);
-          values_vec.emplace_back(std::move(values));
-#else
-          values[1] = (t + shift[0]).n;
-
-          for (uint32_t i = 1; i != n; ++i) {
-            values[i + 1] = (rand_zi[i - 1] * t + shift[i]).n;
-          }
-
-          values[0] = ind;
-
-          index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
-          ++ind;
-
-          value_queue.emplace(std::move(values));
-#endif
-        }
-
-#ifndef WITH_MPI
-        // TODO: Why is this required already here?
-        std::unique_lock<std::mutex> lock(future_control);
-
-        if (ones) {
-          probes_bunch.emplace_front(std::make_tuple(t_vec, zi_order, probe_future_bunch()));
-          auto it = probes_bunch.begin();
-
-          probe_future_bunch future = tp.run_priority_packaged_task([this, values_vec, it]() {
-            auto time0 = std::chrono::high_resolution_clock::now();
-
-            std::vector<std::vector<FFInt>> probe_vec = bb(values_vec);
-
-            auto time1 = std::chrono::high_resolution_clock::now();
-
-            std::unique_lock<std::mutex> lock(future_control);
-
-            probes_finished += bunch_size;
-            finished_probes_bunch_it.emplace(it);
-
-            condition_future.notify_one();
-
-            return std::make_pair(std::move(probe_vec), std::chrono::duration<double>(time1 - time0).count());
-          });
-
-          std::get<2>(*it) = std::move(future);
-        } else {
-          probes_bunch.emplace_back(std::make_tuple(t_vec, zi_order, probe_future_bunch()));
-          auto it = --(probes_bunch.end());
-
-          probe_future_bunch future = tp.run_packaged_task([this, values_vec, it]() {
-            auto time0 = std::chrono::high_resolution_clock::now();
-
-            std::vector<std::vector<FFInt>> probe_vec = bb(values_vec);
-
-            auto time1 = std::chrono::high_resolution_clock::now();
-
-            std::unique_lock<std::mutex> lock(future_control);
-
-            probes_finished += bunch_size;
-            finished_probes_bunch_it.emplace(it);
-
-            condition_future.notify_one();
-
-            return std::make_pair(std::move(probe_vec), std::chrono::duration<double>(time1 - time0).count());
-          });
-
-          std::get<2>(*it) = std::move(future);
-        }
-#endif
-      }
-    }
-
-    std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
-
-    probes_queued += to_start;
-*/
-
 #if WITH_MPI
     new_jobs = true;
 #endif
@@ -3389,63 +3157,6 @@ namespace firefly {
     // TODO mutex required here?
     requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
     computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
-  }
-
-  template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::parse_factors() {
-    std::string line;
-    tinydir_dir fac_dir;
-    tinydir_open_sorted(&fac_dir, "ff_save/factors");
-
-    std::vector<std::string> fac_files;
-
-    for (size_t i = 0; i != fac_dir.n_files; ++i) {
-      tinydir_file file;
-      tinydir_readfile_n(&fac_dir, &file, i);
-
-      if (!file.is_dir) {
-        fac_files.emplace_back(file.name);
-      }
-    }
-
-    tinydir_close(&fac_dir);
-
-    std::vector<std::string> fac_vars (n);
-    for (size_t i = 0; i != n; ++i) {
-      fac_vars[i] = "x" + std::to_string(i + 1);
-    }
-
-    for (const auto & file : fac_files) {
-      std::string fac_number = "";
-      for (const auto & character : file) {
-        if (character != '.') {
-          fac_number += character;
-        } else {
-          break;
-        }
-      }
-
-      igzstream fac_file;
-      std::string fac_path = "ff_save/factors/" + file;
-      fac_file.open(fac_path.c_str());
-      std::getline(fac_file, line);
-      line.pop_back();
-      ShuntingYardParser parser = ShuntingYardParser();
-      parser.parse_function(line, fac_vars);
-      parser.precompute_tokens();
-      parsed_factors.emplace(std::stoi(fac_number), parser);
-      fac_file.close();
-    }
-
-    size_t tmp_size_factors = parsed_factors.size();
-
-    if (verbosity > SILENT) {
-      INFO_MSG("Parsed " + std::to_string(tmp_size_factors) + " factors");
-    }
-
-    logger << "Parsed " << tmp_size_factors << " factors\n";
-
-    factor_scan = false;
   }
 
 #if WITH_MPI

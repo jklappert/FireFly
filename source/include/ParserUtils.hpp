@@ -57,4 +57,10 @@ namespace firefly {
    *  @return A map of rational function objects
    */
   std::unordered_map<uint32_t, std::list<RationalFunction>> parse_factors_rf();
+  /**
+   *  Parses saved factors to ShuntingYardParser objects
+   *  @param n the number of variables
+   *  @return A map of ShuntingYardParser objects
+   */
+  std::unordered_map<uint32_t, ShuntingYardParser> parse_factors(uint32_t n);
 }
