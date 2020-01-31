@@ -282,7 +282,7 @@ namespace firefly {
       tmp |= tmp >> 8;
       tmp |= tmp >> 16;
 
-      tmp = (++tmp) >> 1;
+      tmp = (tmp + 1) >> 1;
 
       //std::cout << tmp << "\n";
 

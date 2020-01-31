@@ -1711,7 +1711,7 @@ namespace firefly {
 
         // Rewrite numerator in FLINTs notation and determine maximal degree
         for (const auto & coef : get_result_ff().numerator.coefs) {
-          if (coef.first[0] > max_deg_num)
+          if (coef.first[0] > static_cast<uint32_t>(max_deg_num))
             max_deg_num = coef.first[0];
 
           nmod_poly_set_coeff_ui(numerator, coef.first[0], coef.second.n);
@@ -1719,7 +1719,7 @@ namespace firefly {
 
         // Rewrite denominator in FLINTs notation and determine maximal degree
         for (const auto & coef : get_result_ff().denominator.coefs) {
-          if (coef.first[0] > max_deg_den)
+          if (coef.first[0] > static_cast<uint32_t>(max_deg_den))
             max_deg_den = coef.first[0];
 
           nmod_poly_set_coeff_ui(denominator, coef.first[0], coef.second.n);

@@ -1167,7 +1167,7 @@ namespace firefly {
     std::unordered_map<uint32_t, std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> factors_str {};
 
     // Run this loop until a proper shift is found
-    for (int i = 0; i != n; ++i) {
+    for (size_t i = 0; i != n; ++i) {
       std::unordered_map<uint32_t, std::unordered_map<uint32_t, mpz_class>> combined_ni {};
       std::unordered_map<uint32_t, std::unordered_map<uint32_t, mpz_class>> combined_di {};
       std::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> max_deg_map {};
@@ -1185,7 +1185,7 @@ namespace firefly {
         for (int scan_n = 0; scan_n != 2; ++scan_n) {
           number_of_factors = 0;
 
-          for (int j = 0; j != n; ++j) {
+          for (size_t j = 0; j != n; ++j) {
             if (j == i) {
               rand_zi_fac[j] = 1;
             } else {
@@ -1262,8 +1262,6 @@ namespace firefly {
               // Numerator
               uint32_t fac_counter = 0;
               for (const auto& tmp_factor : tmp_factors.first) {
-                bool found = possible_factors[counter].first.find(tmp_factor) != possible_factors[counter].first.end();
-
                 if (possible_factors[counter].first.find(tmp_factor) != possible_factors[counter].first.end()) {
                   fac_nums_c.emplace(fac_counter);
                   ++number_of_factors;
@@ -1762,7 +1760,7 @@ namespace firefly {
         t_vec.emplace_back(tmp.first);
         zi_order_vec.emplace_back(std::move(tmp.second));
 
-        if ((prime_it == 0 || safe_mode == true) && (zi_order_vec.back() == std::vector<uint32_t>(n - 1, 1) || factor_scan && zi_order_vec.back() == std::vector<uint32_t>(0, 1))) {
+        if ((prime_it == 0 || safe_mode == true) && (zi_order_vec.back() == std::vector<uint32_t>(n - 1, 1) || (factor_scan && zi_order_vec.back() == std::vector<uint32_t>(0, 1)))) {
           ++count_ones;
         }
       }
@@ -2471,6 +2469,7 @@ namespace firefly {
   }
 
   // TODO optimize for bunch_size 1?
+  // TODO write a function for MPI to avoid unused parameters
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::queue_probes(const std::vector<uint32_t>& zi_order, const uint32_t to_start, const bool first) {
     bool ones = false;
