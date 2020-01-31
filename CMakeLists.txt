@@ -209,7 +209,11 @@ endif()
 add_subdirectory(doc)
 
 # test
-#if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
-#  enable_testing()
-#  add_subdirectory(test)
-#endif()
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
+  enable_testing()
+  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+  add_subdirectory(test)
+endif()
+
+add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "-- To run the example type: ./example")
+add_custom_command(TARGET example POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "-- To compile and run tests type: make check")
