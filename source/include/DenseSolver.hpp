@@ -156,10 +156,11 @@ namespace firefly {
   *  Solves the given system of equations using a Gauss-Jordan algorithm
   *  @param a the (n x (n + 1)) matrix which represents the system of equations, e.q., (x, x^2, | f(x))
   *  @param n the number of equations
+  *  @param force forces to give solution also for singular systems
   *  @return The solved coefficients of the systems
   */
  template<typename FFIntTemp>
-  std::vector<FFIntTemp> solve_gauss_system(mat_ff<FFIntTemp>& a, uint32_t n) {
+  std::vector<FFIntTemp> solve_gauss_system(mat_ff<FFIntTemp>& a, uint32_t n, bool force = false) {
     // Transform the matrix in upper triangular form
     for (uint32_t i = 0; i < n; ++i) {
       // search for maximum in this column
@@ -195,7 +196,7 @@ namespace firefly {
 
     std::vector<FFIntTemp> results(n);
 
-    if (a[n - 1][n - 1] != FFIntTemp(0)) { // TODO new == operator?
+    if (force || a[n - 1][n - 1] != FFIntTemp(0)) { // TODO new == operator?
       // Solve equation A * x = b for an upper triangular matrix
       for (int i = n - 1; i >= 0; i--) {
         results[i] = a[i][n] / a[i][i];
