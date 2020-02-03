@@ -83,9 +83,11 @@ int main() {
   BlackBoxUser bb(par);
 
   // Initialize the Reconstructor
-  Reconstructor<BlackBoxUser> reconst(4 /*n_vars*/, 4 /*n_threads*/, 1 /*bunch size*/,
-                        bb /*black box*//*,
-                        Reconstructor<BlackBoxUser>::CHATTY*/ /* verbosity mode*/);
+  Reconstructor<BlackBoxUser> reconst(4 /*n_vars*/,
+                                      8 /*n_threads*/,
+                                      1 /*bunch size*/,
+                                      bb /*black box*//*,
+                                      Reconstructor<BlackBoxUser>::CHATTY*/ /* verbosity mode*/);
 
   // Enables scan for factors
   reconst.enable_factor_scan();

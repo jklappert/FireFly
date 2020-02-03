@@ -107,7 +107,6 @@ namespace firefly {
         return;
       }
     }
-
   }
 
   void RatReconst::set_zi_shift(const std::vector<uint32_t>& shifted_zis) {
@@ -161,8 +160,8 @@ namespace firefly {
 
           ++prime_number;
 
-          if (prime_number == 100) {
-            ERROR_MSG("Your interpolation requests more than 100 primes.");
+          if (prime_number == 300) {
+            ERROR_MSG("Your interpolation requests more than 300 primes.");
             std::exit(EXIT_FAILURE);
           } else if (zero_counter == 3 && prime_number == 3) {
             new_prime = false;
@@ -239,8 +238,8 @@ namespace firefly {
 
           ++prime_number;
 
-          if (prime_number == 100) {
-            ERROR_MSG("Your interpolation requests more than 100 primes.");
+          if (prime_number == 300) {
+            ERROR_MSG("Your interpolation requests more than 300 primes.");
             std::exit(EXIT_FAILURE);
           } else if (zero_counter == 3 && prime_number == 3) {
             new_prime = false;
@@ -417,6 +416,8 @@ namespace firefly {
               }
 
               t_interpolator = ThieleInterpolator();
+              // TODO return list of degrees for system of equations
+              // similar to get result ff, clear when shift is accepted no external input needed
               return;
             }
 
@@ -1691,8 +1692,8 @@ namespace firefly {
       first_feed = true;
       check_interpolation = true;
 
-      if (prime_number == 100) {
-        ERROR_MSG("Your interpolation requests more than 100 primes.");
+      if (prime_number == 300) {
+        ERROR_MSG("Your interpolation requests more than 300 primes.");
         std::exit(EXIT_FAILURE);
       }
     }
@@ -2035,19 +2036,19 @@ namespace firefly {
 
   bool RatReconst::build_factor_uni_gauss(const FFInt& tmp_ti, const FFInt& tmp_num) {
     std::vector<FFInt> eq;
-    eq.reserve(num_eqn + 1);
+    eq.reserve(factor_degs.first.size() + factor_degs.second.size());
 
     FFInt res(0);
     // Build system of equations;
     for (const auto & el : factor_degs.first) {
-      if (!normalize_to_den && el == 0)
+      if (!scan && !normalize_to_den && el == 0)
         res = -1;
       else
         eq.emplace_back(tmp_ti.pow(el));
     }
 
     for (const auto & el : factor_degs.second) {
-      if (normalize_to_den && el == 0)
+      if (!scan && normalize_to_den && el == 0)
         res = tmp_num;
       else
         eq.emplace_back(-tmp_num * tmp_ti.pow(el));
@@ -2056,7 +2057,13 @@ namespace firefly {
     eq.emplace_back(res);
     coef_mat.emplace_back(std::move(eq));
 
-    if (coef_mat.size() == factor_degs.first.size() + factor_degs.second.size() - 1)
+    size_t size = factor_degs.first.size() + factor_degs.second.size();
+
+    //std::cout << coef_mat.size() << " " << size << "\n";
+    if (!scan)
+      size -= 1;
+
+    if (coef_mat.size() == size)
       return true;
     else
       return false;
@@ -2072,20 +2079,22 @@ namespace firefly {
 
     for (const auto & el : factor_degs.first) {
       std::vector<uint32_t> power = {el};
-      if (!normalize_to_den && el == 0)
+      if (!scan && !normalize_to_den && el == 0)
         numerator.emplace(std::make_pair(std::move(power), 1));
       else {
-        numerator.emplace(std::make_pair(std::move(power), results[counter]));
+        if (results[counter] != 0)
+          numerator.emplace(std::make_pair(std::move(power), results[counter]));
         counter ++;
       }
     }
 
     for (const auto & el : factor_degs.second) {
       std::vector<uint32_t> power = {el};
-      if (normalize_to_den && el == 0)
+      if (!scan && normalize_to_den && el == 0)
         denominator.emplace(std::make_pair(std::move(power), 1));
       else {
-        denominator.emplace(std::make_pair(std::move(power), results[counter]));
+        if (results[counter] != 0)
+          denominator.emplace(std::make_pair(std::move(power), results[counter]));
         counter ++;
       }
     }
@@ -3172,7 +3181,7 @@ namespace firefly {
   }
 
   void RatReconst::set_safe_interpolation() {
-    interpolations = 100;
+    interpolations = 300;
   }
 
   bool RatReconst::check_if_done(const FFInt& num, const FFInt& ti) {
@@ -3645,6 +3654,6 @@ namespace firefly {
 
   void RatReconst::set_prime_to_max() {
     std::unique_lock<std::mutex> lock(mutex_status);
-    prime_number = 99;
+    prime_number = 299;
   }
 }

@@ -82,7 +82,7 @@ namespace firefly {
      *  Starts the reconstruction
      *  @param prime_counter sets how many interpolations have to be performed at most
      */
-    void reconstruct(uint32_t prime_counter = 100);
+    void reconstruct(uint32_t prime_counter = 300);
     /**
      *  @return the vector of reconstructed rational functions
      */
@@ -238,7 +238,7 @@ namespace firefly {
      *  Starts new jobs until the reconstruction is done
      *  @param prime_counter sets how many interpolations have to be performed at most
      */
-    void run_until_done(uint32_t prime_counter = 100);
+    void run_until_done(uint32_t prime_counter = 300);
     /**
      *  Queues a number of probes for a given zi_order
      *  @param zi_order the order of which a given number of probes should be queued
