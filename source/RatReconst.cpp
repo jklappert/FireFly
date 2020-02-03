@@ -398,6 +398,16 @@ namespace firefly {
 
               uint32_t tmp_max_deg_num = numerator.max_deg()[0];
               uint32_t tmp_max_deg_den = denominator.max_deg()[0];
+              factor_degs.first.clear();
+              factor_degs.second.clear();
+
+              for (const auto& el : numerator.coefs) {
+                factor_degs.first.emplace_back(el.first[0]);
+              }
+
+              for (const auto& el : denominator.coefs) {
+                factor_degs.second.emplace_back(el.first[0]);
+              }
 
               {
                 std::unique_lock<std::mutex> lock_status(mutex_status);
@@ -420,6 +430,9 @@ namespace firefly {
               // similar to get result ff, clear when shift is accepted no external input needed
               return;
             }
+
+            factor_degs.first.clear();
+            factor_degs.second.clear();
 
             max_deg_num = numerator.max_deg()[0];
             max_deg_den = denominator.max_deg()[0];
@@ -2043,6 +2056,8 @@ namespace firefly {
     for (const auto & el : factor_degs.first) {
       if (!scan && !normalize_to_den && el == 0)
         res = -1;
+      else if (scan && el == all_shift_max_degs[0])
+        res = -tmp_ti.pow(el);
       else
         eq.emplace_back(tmp_ti.pow(el));
     }
@@ -2057,11 +2072,7 @@ namespace firefly {
     eq.emplace_back(res);
     coef_mat.emplace_back(std::move(eq));
 
-    size_t size = factor_degs.first.size() + factor_degs.second.size();
-
-    //std::cout << coef_mat.size() << " " << size << "\n";
-    if (!scan)
-      size -= 1;
+    size_t size = factor_degs.first.size() + factor_degs.second.size() - 1;
 
     if (coef_mat.size() == size)
       return true;
@@ -2079,11 +2090,12 @@ namespace firefly {
 
     for (const auto & el : factor_degs.first) {
       std::vector<uint32_t> power = {el};
-      if (!scan && !normalize_to_den && el == 0)
+      if ((!scan && !normalize_to_den && el == 0) || (scan && el == all_shift_max_degs[0]))
         numerator.emplace(std::make_pair(std::move(power), 1));
       else {
         if (results[counter] != 0)
           numerator.emplace(std::make_pair(std::move(power), results[counter]));
+
         counter ++;
       }
     }
@@ -2348,6 +2360,10 @@ namespace firefly {
       file << "normalize_to_den\n" << std::to_string(normalize_to_den) << "\n";
       file.close();
     }
+
+    /*factor_degs.first.clear();
+    factor_degs.second.clear();*/
+    skip_thiele = true;
 
     scan = false;
   }
