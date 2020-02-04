@@ -44,7 +44,7 @@ endif()
 
 # enable optimization
 if(CMAKE_BUILD_TYPE STREQUAL Release)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pthread -g")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -pthread -g")
 endif()
 
 # set paths

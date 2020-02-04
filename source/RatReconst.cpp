@@ -115,7 +115,7 @@ namespace firefly {
       shift = std::vector<FFInt> (n);
       curr_shift = shifted_zis;
 
-      for (uint32_t i = 0; i < n; ++i) {
+      for (size_t i = 0; i != n; ++i) {
         if (shifted_zis[i] == 1)
           shift[i] = FFInt(get_rand_64());
       }
@@ -826,7 +826,7 @@ namespace firefly {
               zi = 2;
             } else if (zi > 0) {
               // set new random
-              for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
+              for (uint32_t tmp_zi = 2; tmp_zi != n + 1; ++tmp_zi) {
                 auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
                 std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
@@ -1877,7 +1877,7 @@ namespace firefly {
 
     // Numerator
     if (factors_pos.first.size() != 0) {
-      for (int i = 0; i != c_numerator->length; ++i) {
+      for (size_t i = 0; i != c_numerator->length; ++i) {
         if (c_numerator->coeffs[i])
           c_numerator_map.emplace(std::make_pair(i, c_numerator->coeffs[i]));
       }
@@ -1885,7 +1885,7 @@ namespace firefly {
 
     // Denominator
     if (factors_pos.second.size() != 0) {
-      for (int i = 0; i != c_denominator->length; ++i) {
+      for (size_t i = 0; i != c_denominator->length; ++i) {
         if (c_denominator->coeffs[i])
           c_denominator_map.emplace(std::make_pair(i, c_denominator->coeffs[i]));
       }
@@ -2024,7 +2024,7 @@ namespace firefly {
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
       yis[0] = ti + shift[0];
 
-      for (uint32_t i = 1; i < n; ++i) {
+      for (uint32_t i = 1; i != n; ++i) {
         yis[i] = ti * rand_zi[std::make_pair(i + 1, 1)].pow(curr_zi_order[i - 1]) + shift[i];
       }
     }
@@ -2396,7 +2396,7 @@ namespace firefly {
     std::vector<uint32_t> zero_deg(n);
     PolynomialFF zero_poly(n, {{zero_deg, 0}});
 
-    for (uint32_t i = 0; i < deg; ++i) {
+    for (uint32_t i = 0; i != deg; ++i) {
       res.emplace(std::make_pair(i, zero_poly));
     }
 
