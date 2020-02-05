@@ -152,6 +152,7 @@ namespace firefly {
     const uint32_t thr_n;
     const uint32_t bunch_size = 1;
     uint32_t prime_it = 0;
+    uint32_t prime_it_fac = 0;
     uint32_t total_iterations = 0;
     uint32_t iteration = 0;
     uint32_t probes_queued = 0;
@@ -180,6 +181,7 @@ namespace firefly {
     bool one_done = false;
     bool one_new_prime = false;
     bool set_anchor_points = false;
+    bool scanned_factors = false;
     RatReconst_list reconst;
     std::vector<std::string> tags;
     std::vector<std::string> file_paths;
@@ -231,9 +233,14 @@ namespace firefly {
                              std::unordered_map<uint32_t, mpz_class>& combined_ci,
                              const mpz_class& combined_prime);
     /**
+     *  TODO
      *  Initializes vector of reconstruction objects and starts first probes
      */
-    void start_first_runs();
+    void start_first_runs(bool first = true);
+    /**
+     * TODO
+     */
+    void queue_new_ones();
     /**
      *  Starts new jobs until the reconstruction is done
      *  @param prime_counter sets how many interpolations have to be performed at most
@@ -806,42 +813,16 @@ namespace firefly {
       if (factor_scan) {
         RatReconst::reset();
         scan_for_factors();
+
         tmp_rec = RatReconst(n);
+        scanned_factors = true;
       }
 
       if (scan) {
         scan_for_shift();
-#if !WITH_MPI
-        uint32_t to_start = thr_n ;//* bunch_size; // TODO
-        queue_probes(std::vector<uint32_t> (n - 1, 1), to_start);
-#else
-        uint32_t to_start = buffer * total_thread_count; // TODO: start even more? * bunch_size
-        queue_probes(std::vector<uint32_t> (n - 1, 1), to_start, true);
-#endif
-
-        started_probes.emplace(std::vector<uint32_t> (n - 1, 1), to_start);
-
-#if WITH_MPI
-        cond_val.notify_one();
-
-        {
-          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
-
-          while (!proceed) {
-            cond_val.wait(lock_probe_queue);
-          }
-
-          proceed = false;
-        }
-
-        for (uint32_t j = 0; j != to_start; ++j) {
-          tp.run_task([this]() {
-            get_job();
-          });
-        }
-#endif
+        queue_new_ones();
       } else {
-        start_first_runs();
+        start_first_runs(!scanned_factors);
       }
     } else {
       scan = false;
@@ -997,7 +978,7 @@ namespace firefly {
 
     tmp_rec.scan_for_sparsest_shift();
 
-    start_first_runs();
+    start_first_runs(!scanned_factors);
 
     uint32_t max_deg_num = 0;
     uint32_t max_deg_den = 0;
@@ -1007,36 +988,7 @@ namespace firefly {
       if (!first) {
         tmp_rec.set_zi_shift(shift_vec[counter]);
         shift = tmp_rec.get_zi_shift_vec();
-
-#if !WITH_MPI
-        uint32_t to_start = thr_n ;//* bunch_size; // TODO
-        queue_probes(std::vector<uint32_t> (n - 1, 1), to_start);
-#else
-        uint32_t to_start = buffer * total_thread_count; // TODO: start even more? * bunch_size
-        queue_probes(std::vector<uint32_t> (n - 1, 1), to_start, true);
-#endif
-
-        started_probes.emplace(std::vector<uint32_t> (n - 1, 1), to_start);
-
-#if WITH_MPI
-        cond_val.notify_one();
-
-        {
-          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
-
-          while (!proceed) {
-            cond_val.wait(lock_probe_queue);
-          }
-
-          proceed = false;
-        }
-
-        for (uint32_t j = 0; j != to_start; ++j) {
-          tp.run_task([this]() {
-            get_job();
-          });
-        }
-#endif
+        queue_new_ones();
       }
 
       run_until_done();
@@ -1162,6 +1114,7 @@ namespace firefly {
 
     logger << "Scanning for factors\n";
 
+    bool first = true;
     uint32_t total_number_of_factors = 0;
     uint32_t number_of_factors = 0;
     max_degs = std::vector<uint32_t> (n, 0);
@@ -1169,7 +1122,7 @@ namespace firefly {
     rand_zi_fac = std::vector<FFInt> (n, 0);
     std::unordered_map<uint32_t, std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> factors_str {};
 
-    // Run this loop until a proper shift is found
+    // Scan in all variables
     for (size_t i = 0; i != n; ++i) {
       std::unordered_map<uint32_t, std::unordered_map<uint32_t, mpz_class>> combined_ni {};
       std::unordered_map<uint32_t, std::unordered_map<uint32_t, mpz_class>> combined_di {};
@@ -1178,7 +1131,7 @@ namespace firefly {
       bool fac_done = false;
       curr_var = "x" + std::to_string(i + 1);
       possible_factors_bb_counter.clear();
-      size_t tmp_prime_it = 0;
+      prime_it_fac = 0;
       factors_degs.clear();
 
       while (!fac_done) {
@@ -1196,8 +1149,11 @@ namespace firefly {
             }
           }
 
-          start_first_runs();
+          start_first_runs(first);
+          first = false;
+
           run_until_done();
+          reset_new_prime();
           prime_it = 0;
 
           uint32_t counter = 0;
@@ -1216,7 +1172,7 @@ namespace firefly {
                 possible_factors.emplace(counter, std::make_pair(tmp_fac_num, tmp_fac_den));
               }
 
-              if (tmp_prime_it == 0) {
+              if (prime_it_fac == 0) {
                 auto tmp_fac_num_den = std::get<3>(rec)->get_factors_ff();
                 std::unordered_set<std::string> tmp_fac_num {};
                 std::unordered_set<std::string> tmp_fac_den {};
@@ -1289,7 +1245,7 @@ namespace firefly {
               } else {
                 auto canonical_factors = std::get<3>(rec)->get_canonical_factors(std::make_pair(fac_nums_c, fac_dens_c));
 
-                if (tmp_prime_it == 0) {
+                if (prime_it_fac == 0) {
                   // Init first combinations
                   std::unordered_map<uint32_t, mpz_class> tmp_combined_ni {};
                   std::unordered_map<uint32_t, mpz_class> tmp_combined_di {};
@@ -1430,7 +1386,7 @@ namespace firefly {
           }
 
           uint32_t old_max_deg = max_degs[i];
-          if (tmp_prime_it == 0 && scan_n == 1) {
+          if (prime_it_fac == 0 && scan_n == 1) {
             max_degs[i] = 0;
 
             for (const auto& el : max_deg_map) {
@@ -1443,7 +1399,7 @@ namespace firefly {
           }
 
           if (old_verbosity > SILENT) {
-            if (tmp_prime_it == 0 && scan_n == 0) {
+            if (prime_it_fac == 0 && scan_n == 0) {
               INFO_MSG("Maximum degree of x" + std::to_string(i + 1)
                 + ": " + std::to_string(max_degs[i]));
               if (max_degs[i] != 0) {
@@ -1453,7 +1409,7 @@ namespace firefly {
                 INFO_MSG("No factors in x"
                   + std::to_string(i + 1) + ": " + std::to_string(number_of_factors));
               }
-            } else if (tmp_prime_it == 0 && scan_n == 1) {
+            } else if (prime_it_fac == 0 && scan_n == 1) {
               INFO_MSG("Factors in x" + std::to_string(i + 1) + ": "
                 + std::to_string(number_of_factors));
               if (max_degs[i] != old_max_deg) {
@@ -1464,7 +1420,7 @@ namespace firefly {
             }
           }
 
-          if (tmp_prime_it == 0 && scan_n == 0) {
+          if (prime_it_fac == 0 && scan_n == 0) {
             logger << "Maximum degree of x" << std::to_string(i + 1) << ": "
               << std::to_string(max_degs[i]) << "\n";
 
@@ -1477,7 +1433,7 @@ namespace firefly {
                 << std::to_string(i + 1) << ": " << std::to_string(number_of_factors)
                 << "\n";
             }
-          } else if (tmp_prime_it == 0 && scan_n == 1) {
+          } else if (prime_it_fac == 0 && scan_n == 1) {
             total_number_of_factors += number_of_factors;
             logger << "Factors in x" << std::to_string(i + 1) << ": "
               << std::to_string(number_of_factors) << "\n";
@@ -1508,27 +1464,27 @@ namespace firefly {
 
         // Promote to new prime field
         if (!fac_done) {
-          ++tmp_prime_it;
-          FFInt::set_new_prime(primes()[tmp_prime_it]);
+          ++prime_it_fac;
+          FFInt::set_new_prime(primes()[prime_it_fac]);
           bb.prime_changed_internal();
         } else {
           if (old_verbosity > SILENT) {
             INFO_MSG("Completed factor scan in " + curr_var + " | "
               + std::to_string(total_iterations) + " probes in total");
-            INFO_MSG("Required prime fields: " + std::to_string(tmp_prime_it + 1));
+            INFO_MSG("Required prime fields: " + std::to_string(prime_it_fac + 1));
             INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s\n");
           }
 
           logger << "Completed factor scan in " << curr_var << " | "
             << total_iterations << " probes in total\n";
-          logger << "Required prime fields: " << tmp_prime_it + 1 << "\n"
+          logger << "Required prime fields: " << prime_it_fac + 1 << "\n"
             << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n\n";
         }
       }
 
       // Reset prime
-      tmp_prime_it = 0;
-      FFInt::set_new_prime(primes()[tmp_prime_it]);
+      prime_it_fac = 0;
+      FFInt::set_new_prime(primes()[prime_it_fac]);
       bb.prime_changed_internal();
     }
 
@@ -1711,7 +1667,7 @@ namespace firefly {
   }
 
   template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::start_first_runs() {
+  void Reconstructor<BlackBoxTemp>::start_first_runs(bool first) {
     prime_start = std::chrono::high_resolution_clock::now();
 
     std::vector<uint32_t> zi_order;
@@ -1723,17 +1679,31 @@ namespace firefly {
       zi_order = std::vector<uint32_t>(0, 1);
     }
 
-    uint32_t to_start = thr_n ;//* bunch_size;
-
 #if !WITH_MPI
+    uint32_t to_start = thr_n;//* bunch_size;
     queue_probes(zi_order, to_start);
 #else
+    uint32_t to_start = buffer * total_thread_count;//* bunch_size;
     queue_probes(zi_order, to_start, true);
 #endif
     started_probes.emplace(zi_order, to_start);
 
 #if WITH_MPI
-    send_first_jobs();
+    if (first) {
+      send_first_jobs();
+    } else {
+      cond_val.notify_one();
+
+      {
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        while (!proceed) {
+          cond_val.wait(lock_probe_queue);
+        }
+
+        proceed = false;
+      }
+    }
 
     for (uint32_t j = 0; j != to_start; ++j) {
       tp.run_task([this]() {
@@ -1789,7 +1759,7 @@ namespace firefly {
     size_t tag_size = tags.size();
 
 #if WITH_MPI
-    {
+    if (first) {
       std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
       continue_communication = true;
@@ -1832,8 +1802,7 @@ namespace firefly {
 
       file.open("ff_save/validation.gz");
 
-      std::vector<FFInt> rand_zi;
-      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
+      std::vector<FFInt> rand_zi= tmp_rec.get_rand_zi_vec(zi_order, false);
 
       if (change_var_order) {
         std::vector<uint64_t> tmp_val (n);
@@ -1932,6 +1901,39 @@ namespace firefly {
   }
 
   template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::queue_new_ones() {
+#if !WITH_MPI
+    uint32_t to_start = thr_n ;//* bunch_size; // TODO
+    queue_probes(std::vector<uint32_t> (n - 1, 1), to_start);
+#else
+    uint32_t to_start = buffer * total_thread_count; // TODO: start even more? * bunch_size
+    queue_probes(std::vector<uint32_t> (n - 1, 1), to_start, true);
+#endif
+
+    started_probes.emplace(std::vector<uint32_t> (n - 1, 1), to_start);
+
+#if WITH_MPI
+    cond_val.notify_one();
+
+    {
+      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+      while (!proceed) {
+        cond_val.wait(lock_probe_queue);
+      }
+
+      proceed = false;
+    }
+
+    for (uint32_t j = 0; j != to_start; ++j) {
+      tp.run_task([this]() {
+        get_job();
+      });
+    }
+#endif
+  }
+
+  template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::run_until_done(uint32_t prime_counter) {
     std::vector<uint32_t> zi_order;
     if (!factor_scan) {
@@ -2008,7 +2010,7 @@ namespace firefly {
           proceed = false;
         }
 
-        uint32_t to_start = buffer * thr_n ;//* bunch_size; // TODO
+        uint32_t to_start = thr_n;//* bunch_size; // TODO
 
         queue_probes(zi_order, to_start);
         started_probes[zi_order] += to_start;
@@ -2040,6 +2042,10 @@ namespace firefly {
 
     while (!done) {
       if (new_prime) {
+        if (factor_scan) {
+          break;
+        }
+
         //if (prime_it == 1) exit(-1);
 #if WITH_MPI
         {
@@ -2074,6 +2080,11 @@ namespace firefly {
           }
         }
 
+        ++prime_it;
+        if(prime_it >= prime_counter || factor_scan) {
+          done = true;
+        }
+
 #if WITH_MPI
         {
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
@@ -2090,11 +2101,6 @@ namespace firefly {
 #endif
 
         total_iterations += iteration;
-        ++prime_it;
-
-        if(prime_it >= prime_counter || factor_scan) {
-          done = true;
-        }
 
         {
           std::unique_lock<std::mutex> lock_print(print_control);
@@ -2132,13 +2138,7 @@ namespace firefly {
         prime_start = std::chrono::high_resolution_clock::now();
 
         reset_new_prime();
-
-        if (factor_scan) {
-          break;
-        }
-
         FFInt::set_new_prime(primes()[prime_it]);
-
         bb.prime_changed_internal();
 
         if (!parsed_factors.empty()) {
@@ -2542,7 +2542,7 @@ namespace firefly {
           if (rand_zi_fac[i] == 1) {
             values[i] = t;
           } else {
-            values[i] = FFInt(rand_zi_fac[i].n);
+            values[i] = FFInt(rand_zi_fac[i]);
           }
         }
       }
@@ -3103,10 +3103,7 @@ namespace firefly {
       for (size_t i = 0; i != probe.size(); ++i) {
         if (!factor_scan && parsed_factors.find(i) != parsed_factors.end()) {
           auto res = parsed_factors[i].evaluate_pre(values_vec);
-
-          for (size_t j = 0; j != N; ++j) {
-            probe[i] /= res[0];
-          }
+          probe[i] /= res[0];
         }
 
         tmp.emplace_back(std::vector<FFInt> (1, probe[i]));
@@ -3238,25 +3235,35 @@ namespace firefly {
           chosen_t.emplace(std::make_pair(zi_order, std::unordered_set<uint64_t>( {t.n})));
         }
 
-        if (change_var_order) {
-          std::vector<uint64_t> tmp_values (n);
-          for (const auto & el : optimal_var_order) {
-            if (el.first == 0) {
-              tmp_values[el.second] = (t + shift[0]).n;
-            } else {
-              tmp_values[el.second] = (rand_zi[el.first - 1] * t + shift[el.first]).n;
+        if (!factor_scan) {
+          if (change_var_order) {
+            std::vector<uint64_t> tmp_values (n);
+
+            for (const auto & el : optimal_var_order) {
+              if (el.first == 0) {
+                tmp_values[el.second] = (t + shift[0]).n;
+              } else {
+                tmp_values[el.second] = (rand_zi[el.first - 1] * t + shift[el.first]).n;
+              }
+            }
+
+            values.insert(values.end(), tmp_values.begin(), tmp_values.end());
+          } else {
+            //values[ii * (n + 1) + 1] = (t + shift[0]).n;
+            values.emplace_back((t + shift[0]).n);
+
+            for (uint32_t j = 1; j != n; ++j) {
+              //values[ii * (n + 1) + j + 1] = (t * rand_zi[j - 1] + shift[j]).n;
+              values.emplace_back((t * rand_zi[j - 1] + shift[j]).n);
             }
           }
-
-          values.insert(values.end(), tmp_values.begin(), tmp_values.end());
-
         } else {
-          //values[ii * (n + 1) + 1] = (t + shift[0]).n;
-          values.emplace_back((t + shift[0]).n);
-
-          for (uint32_t j = 1; j != n; ++j) {
-            //values[ii * (n + 1) + j + 1] = (t * rand_zi[j - 1] + shift[j]).n;
-            values.emplace_back((t * rand_zi[j - 1] + shift[j]).n);
+          for (uint32_t i = 0; i != n; ++i) {
+            if (rand_zi[i] == 1) {
+              values.emplace_back(t.n);
+            } else {
+              values.emplace_back(rand_zi_fac[i].n);
+            }
           }
         }
 
@@ -3384,13 +3391,8 @@ namespace firefly {
 
         //std::cout << "com np\n";
 
-        uint64_t prime_tmp = static_cast<uint64_t>(prime_it);
-
-        if (!scan && !factor_scan) {
-          ++prime_tmp;
-        } else if (factor_scan) {
-          prime_tmp = static_cast<uint64_t>(prime_tmp);//TODO
-        }
+        // send the new-prime signal but not the actual prime
+        uint64_t prime_tmp = 1;
 
         for (int i = 1; i != world_size; ++i) {
           MPI_Isend(&prime_tmp, 1, MPI_UINT64_T, i, NEW_PRIME, MPI_COMM_WORLD, &requests[i - 1]);
@@ -3483,6 +3485,27 @@ namespace firefly {
         proceed = true;
 
         cond_val.notify_one();
+
+        // send the actual new prime
+        requests = new MPI_Request[world_size - 1];
+
+        if (!factor_scan) {
+          prime_tmp = static_cast<uint64_t>(prime_it);
+        } else {
+          prime_tmp = prime_it_fac;
+        }
+
+        //std::cout << "c next prime " << prime_tmp << "\n";
+
+        for (int i = 1; i != world_size; ++i) {
+          MPI_Isend(&prime_tmp, 1, MPI_UINT64_T, i, NEW_PRIME, MPI_COMM_WORLD, &requests[i - 1]);
+        }
+
+        MPI_Waitall(world_size - 1, requests, MPI_STATUSES_IGNORE);
+
+        delete[] requests;
+
+        MPI_Barrier(MPI_COMM_WORLD);
 
         empty_nodes = std::queue<std::pair<int, uint64_t>>();
 
@@ -3579,8 +3602,63 @@ namespace firefly {
           std::vector<std::vector<FFInt>> results(items, std::vector<FFInt>(1)); // TODO do not initialize here
           //results.reserve(items);
 
+          std::vector<FFInt> values;
+          values.reserve(n);
+          FFInt t;
+          std::vector<uint32_t> zi_order;
+          zi_order.reserve(n - 1);
+          std::vector<FFInt> rand_zi;
+          rand_zi.reserve(n - 1);
+
+          if (!factor_scan) {
+            {
+              std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+              auto tmp = index_map[index];
+              t = tmp.first;
+              zi_order = tmp.second;
+            }
+
+            if (zi_order != std::vector<uint32_t> (n - 1, 1) && (prime_it != 0 && safe_mode == false)) {
+              rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+            } else {
+              rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
+            }
+
+            if (!factor_scan) {
+              if (change_var_order) {
+                for (const auto & el : optimal_var_order) {
+                  if (el.first == 0) {
+                    values[el.second] = t + shift[0];
+                  } else {
+                    values[el.second] = rand_zi[el.first - 1] * t + shift[el.first];
+                  }
+                }
+              } else {
+                values[0] = t + shift[0];
+
+                for (uint32_t i = 1; i != n; ++i) {
+                  values[i] = rand_zi[i - 1] * t + shift[i];
+                }
+              }
+            } else {
+              for (uint32_t i = 0; i != n; ++i) {
+                if (rand_zi_fac[i] == 1) {
+                  values[i] = t;
+                } else {
+                  values[i] = FFInt(rand_zi_fac[i]);
+                }
+              }
+            }
+          }
+
           for (uint32_t j = 1; j != items + 1; ++j) {
             results[j - 1][0] = results_list[i * (items + 1) + j];
+
+            if (!factor_scan && parsed_factors.find(j - 1) != parsed_factors.end()) {
+              auto res = parsed_factors[j - 1].evaluate_pre(values);
+              results[j - 1][0] /= res[0];
+            }
           }
 
           std::unique_lock<std::mutex> lock_res(future_control);

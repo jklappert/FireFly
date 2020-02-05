@@ -130,6 +130,7 @@ int main() {
                           bunch_size /*bunch size*/,
                           bb /*black box*//*, Reconstructor::CHATTY*/);
 
+    reconst.enable_factor_scan();
     reconst.enable_scan();
 
     reconst.reconstruct();
