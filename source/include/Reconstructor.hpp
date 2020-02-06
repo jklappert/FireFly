@@ -1030,7 +1030,6 @@ namespace firefly {
         ++counter;
       }
 
-      reset_new_prime();
       items_done = 0;
       done = false;
     }
@@ -1157,7 +1156,6 @@ namespace firefly {
           first = false;
 
           run_until_done();
-          reset_new_prime();
           prime_it = 0;
 
           uint32_t counter = 0;
@@ -2482,6 +2480,7 @@ namespace firefly {
 #endif
 
     total_iterations += iteration;
+    reset_new_prime();
   }
 
   // TODO optimize for bunch_size 1?
