@@ -1729,7 +1729,7 @@ namespace firefly {
 
     uint32_t count_ones = 0;
 
-    {// TODO mutex required?
+    {
       std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
       for (const auto& index : indices) {
@@ -2024,21 +2024,6 @@ namespace firefly {
 #if WITH_MPI
         proceed = true;
         mpi_first_send = true;
-        //send_first_jobs(); // TODO sends useless jobs to prepare all variables
-
-        //{
-        //  std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
-
-        //  new_jobs = true;
-
-        //  cond_val.notify_one();
-
-        //  while (!proceed) {
-        //    cond_val.wait(lock_probe_queue);
-        //  }
-
-        //  proceed = false;
-        //} // TODO end useless
 #endif
       }
     }
@@ -2484,7 +2469,6 @@ namespace firefly {
   }
 
   // TODO optimize for bunch_size 1?
-  // TODO write a function for MPI to avoid unused parameters
   template<typename BlackBoxTemp>
 #if !WITH_MPI
   void Reconstructor<BlackBoxTemp>::queue_probes(const std::vector<uint32_t>& zi_order, const uint32_t to_start) {
@@ -3037,7 +3021,7 @@ namespace firefly {
     //std::cout << "start with " << N << " of " << requested_probes.size() << "\n";
 
     if (N != 1) {
-      std::vector<FFIntVec<N>> values_vec(n); // TODO do not fill
+      std::vector<FFIntVec<N>> values_vec(n);
 
       for (uint32_t i = 0; i != N; ++i) {
         indices.emplace_back(requested_probes.front().first);
@@ -3666,7 +3650,7 @@ namespace firefly {
           }
 
           for (uint32_t j = 1; j != items + 1; ++j) {
-            results[j - 1][0] = results_list[i * (items + 1) + j];
+            results.emplace_back(std::vector<FFInt> (1, results_list[i * (items + 1) + j]));
 
             if (!factor_scan && parsed_factors.find(j - 1) != parsed_factors.end()) {
               auto res = parsed_factors[j - 1].evaluate_pre(values);
@@ -3677,9 +3661,9 @@ namespace firefly {
           std::unique_lock<std::mutex> lock_res(future_control);
 
           computed_probes.emplace(std::make_pair(std::vector<uint64_t>(1, index), std::move(results)));
-        }
 
-        condition_future.notify_one(); // TODO mutex?
+          condition_future.notify_one();
+        }
 
         uint64_t free_slots = results_list[amount - 1];
 
