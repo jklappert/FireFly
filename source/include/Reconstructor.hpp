@@ -3059,12 +3059,10 @@ namespace firefly {
 
       auto time = std::chrono::duration<double>(time1 - time0).count();
 
-      // TODO
-      std::vector<std::vector<FFInt>> tmp;//(probe.size(), std::vector<FFInt>(N));
+      std::vector<std::vector<FFInt>> tmp;
       tmp.reserve(probe.size());
 
       for (size_t i = 0; i != probe.size(); ++i) {
-        //std::move(probe[i].begin(), probe[i].end(), tmp[i].begin());
         // Remove factor from bb result
         if (!factor_scan && parsed_factors.find(i) != parsed_factors.end()) {
           auto res = parsed_factors[i].evaluate_pre(values_vec);
@@ -3096,10 +3094,6 @@ namespace firefly {
       indices.emplace_back(requested_probes.front().first);
 
       std::vector<FFInt> values_vec(std::make_move_iterator(requested_probes.front().second.begin()), std::make_move_iterator(requested_probes.front().second.end()));
-
-      //for (uint32_t j = 0; j != n; ++j) {
-      //  values_vec.emplace_back(requested_probes.front().second[j]);
-      //}
 
       requested_probes.pop_front();
 
@@ -3617,8 +3611,8 @@ namespace firefly {
 
         for (uint32_t i = 0; i != new_results; ++i) {
           uint64_t index = results_list[i * (items + 1)];
-          std::vector<std::vector<FFInt>> results(items, std::vector<FFInt>(1)); // TODO do not initialize here
-          //results.reserve(items);
+          std::vector<std::vector<FFInt>> results;
+          results.reserve(items);
 
           // TODO multiply factors on workers
           std::vector<FFInt> values;
