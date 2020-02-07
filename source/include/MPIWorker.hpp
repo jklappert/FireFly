@@ -77,10 +77,7 @@ namespace firefly {
     MPI_Bcast(&prime, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
 
     FFInt::set_new_prime(primes()[prime]);
-
-    if (prime != 0) {
-      bb.prime_changed_internal();
-    }
+    bb.prime_changed_internal();
 
     //std::cout << "worker " << FFInt::p << "\n";
 
@@ -189,21 +186,15 @@ namespace firefly {
           lock.unlock();
         }
       } else if (status.MPI_TAG == NEW_PRIME) {
-        //std::cout << "worker new prime\n";
+        //std::cout << "\n\nworker new prime\n\n";
 
+        // receive the prime signal but not the actual prime
         uint64_t prime;
         MPI_Recv(&prime, 1, MPI_UINT64_T, master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
         tp.kill_all();
         results.clear();
         tasks = 0;
-
-        if (prime != 0) {
-          FFInt::set_new_prime(primes()[static_cast<uint32_t>(prime)]);
-          bb.prime_changed_internal();
-        }
-
-        //std::cout << "worker " << FFInt::p << "\n";
 
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Wait(&request, MPI_STATUS_IGNORE);
@@ -216,6 +207,14 @@ namespace firefly {
 
         total_iterations = 0;
         average_black_box_time = 0.;
+
+        // receive next prime
+        MPI_Recv(&prime, 1, MPI_UINT64_T, master, NEW_PRIME, MPI_COMM_WORLD, &status);
+
+        FFInt::set_new_prime(primes()[static_cast<uint32_t>(prime)]);
+        bb.prime_changed_internal();
+
+        MPI_Barrier(MPI_COMM_WORLD);
       } else if (status.MPI_TAG == END) {
         uint64_t tmp;
         MPI_Recv(&tmp, 1, MPI_UINT64_T, master, END, MPI_COMM_WORLD, &status);
