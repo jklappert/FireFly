@@ -1877,7 +1877,7 @@ namespace firefly {
 
     // Numerator
     if (factors_pos.first.size() != 0) {
-      for (size_t i = 0; i != c_numerator->length; ++i) {
+      for (size_t i = 0; i != static_cast<size_t>(c_numerator->length); ++i) {
         if (c_numerator->coeffs[i])
           c_numerator_map.emplace(std::make_pair(i, c_numerator->coeffs[i]));
       }
@@ -1885,7 +1885,7 @@ namespace firefly {
 
     // Denominator
     if (factors_pos.second.size() != 0) {
-      for (size_t i = 0; i != c_denominator->length; ++i) {
+      for (size_t i = 0; i != static_cast<size_t>(c_denominator->length); ++i) {
         if (c_denominator->coeffs[i])
           c_denominator_map.emplace(std::make_pair(i, c_denominator->coeffs[i]));
       }
