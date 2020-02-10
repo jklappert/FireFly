@@ -186,12 +186,17 @@ namespace firefly {
     }
 
     void kill_all() {
-      {
-        std::unique_lock<std::mutex> lock(mutex);
+      std::unique_lock<std::mutex> lock(mutex);
+
+      tasks = std::deque<std::function<void()>>();
+
+      while (!all_threads_idle()) {
         tasks = std::deque<std::function<void()>>();
+
+        condition_wait.wait(lock);
       }
 
-      while (wait());
+      tasks = std::deque<std::function<void()>>();
     }
 
   private:
