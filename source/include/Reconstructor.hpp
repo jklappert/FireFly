@@ -939,7 +939,7 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   std::vector<std::pair<std::string, RationalFunction>> Reconstructor<BlackBoxTemp>::get_early_results() {
-    if (scan) {
+    if (factor_scan || scan) {
       return std::vector<std::pair<std::string, RationalFunction>> {};
     }
 
@@ -955,6 +955,16 @@ namespace firefly {
           result.emplace_back(std::make_pair(std::get<3>(rec)->get_tag_name(), std::get<3>(rec)->get_result()));
         } else {
           result.emplace_back(std::make_pair(std::to_string(std::get<0>(rec)), std::get<3>(rec)->get_result()));
+        }
+
+        if (change_var_order) {
+          result.back().second.set_var_order(optimal_var_order);
+        }
+
+        if (factors_rf.find(std::get<0>(rec)) != factors_rf.end()) {
+          for (const auto& factor : factors_rf[std::get<0>(rec)]) {
+            result.back().second.add_factor(factor);
+          }
         }
 
         std::get<2>(rec) = DELETED;
