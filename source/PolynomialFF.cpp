@@ -573,9 +573,9 @@ namespace firefly {
         }
 
         if (deg != 0 && mono.second.n != 1)
-          str += mono.second.n + "*";
+          str += std::to_string(mono.second.n) + "*";
         else if (deg == 0)
-          str += mono.second.n + "*";
+          str += std::to_string(mono.second.n) + "*";
 
         for (uint32_t i = 0; i != mono.first.size(); ++i) {
           if (mono.first[i] > 1) {

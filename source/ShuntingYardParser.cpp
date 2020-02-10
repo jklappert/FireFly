@@ -174,16 +174,16 @@ namespace firefly {
     auto time1 = std::chrono::high_resolution_clock::now();
 
     if (!check_is_equal) {
-      INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " functions in "
+      INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " function(s) in "
                + std::to_string(std::chrono::duration<double>(time1 - time0).count())
                + " s");
     } else {
       evaluation_positions.shrink_to_fit();
       BaseReconst::reset();
-      INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " functions of which "
-               + std::to_string(parsed_fun_c - equal_fun_c) + " are different in "
+      INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " function(s) in "
                + std::to_string(std::chrono::duration<double>(time1 - time0).count())
                + " s");
+      INFO_MSG("Found " + std::to_string(parsed_fun_c - equal_fun_c) + " different function(s)");
     }
   }
 
@@ -697,6 +697,7 @@ namespace firefly {
       result += r[tmp];
     }
 
+    result.shrink_to_fit();
     //std::cout << "validate\n" << line << "\n" << result << "\n";
     return result;
   }
