@@ -43,7 +43,7 @@
 #include <sys/stat.h>
 
 namespace firefly {
-  typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
+  typedef std::tuple<uint64_t, std::atomic<int>, RatReconst*> RatReconst_tuple;
   typedef std::list<RatReconst_tuple> RatReconst_list;
 
   /**
@@ -142,7 +142,7 @@ namespace firefly {
     void resume();
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
-    enum RatReconst_status {RECONSTRUCTING, DONE, DELETED};
+    enum RatReconst_status {RECONSTRUCTING, DONE, DELETE};
 
   private:
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
@@ -390,22 +390,11 @@ namespace firefly {
     auto it = reconst.begin();
 
     while (it != reconst.end()) {
-      if (std::get<2>(*it) == DELETED) {
-        // delete mutex
-        delete std::get<1>(*it);
+      // delete RatReconst
+      delete std::get<2>(*it);
 
-        // remove from list
-        it = reconst.erase(it);
-      } else {
-        // delete mutex
-        delete std::get<1>(*it);
-
-        // delete RatReconst
-        delete std::get<3>(*it);
-
-        // remove from list
-        it = reconst.erase(it);
-      }
+      // remove from list
+      it = reconst.erase(it);
     }
   }
 
@@ -666,9 +655,8 @@ namespace firefly {
 
       if (rec->is_done()) {
         ++items_done;
-        std::mutex* mut = new std::mutex;
 
-        reconst.emplace_back(std::make_tuple(i, mut, DONE, rec));
+        reconst.emplace_back(std::make_tuple(i, DONE, rec));
       } else {
         if (rec->is_new_prime()) {
           probes_for_next_prime = std::max(probes_for_next_prime, rec->get_num_eqn());
@@ -679,9 +667,7 @@ namespace firefly {
           }
         }
 
-        std::mutex* mut = new std::mutex;
-
-        reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
+        reconst.emplace_back(std::make_tuple(i, RECONSTRUCTING, rec));
       }
     }
 
@@ -906,8 +892,8 @@ namespace firefly {
     uint32_t counter = 0;
 
     for (auto & rec : reconst) {
-      if (std::get<2>(rec) == DONE) {
-        result.emplace_back(std::get<3>(rec)->get_result());
+      if (std::get<1>(rec) == DONE) {
+        result.emplace_back(std::get<2>(rec)->get_result());
 
         if (change_var_order) {
           result.back().set_var_order(optimal_var_order);
@@ -931,7 +917,7 @@ namespace firefly {
     std::vector<RationalFunctionFF> result {};
 
     for (auto & rec : reconst) {
-      result.emplace_back(std::get<3>(rec)->get_result_ff());
+      result.emplace_back(std::get<2>(rec)->get_result_ff());
     }
 
     return result;
@@ -948,13 +934,11 @@ namespace firefly {
     std::vector<std::pair<std::string, RationalFunction>> result;
 
     for (auto & rec : reconst) {
-      std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-
-      if (std::get<2>(rec) == DONE) {
+      if (std::get<1>(rec) == DONE) {
         if (save_states) {
-          result.emplace_back(std::make_pair(std::get<3>(rec)->get_tag_name(), std::get<3>(rec)->get_result()));
+          result.emplace_back(std::make_pair(std::get<2>(rec)->get_tag_name(), std::get<2>(rec)->get_result()));
         } else {
-          result.emplace_back(std::make_pair(std::to_string(std::get<0>(rec)), std::get<3>(rec)->get_result()));
+          result.emplace_back(std::make_pair(std::to_string(std::get<0>(rec)), std::get<2>(rec)->get_result()));
         }
 
         if (change_var_order) {
@@ -967,8 +951,9 @@ namespace firefly {
           }
         }
 
-        std::get<2>(rec) = DELETED;
-        delete std::get<3>(rec);
+        // TODO delete or clear memory?
+        std::get<1>(rec) = DELETE;
+        //delete std::get<2>(rec);
       }
     }
 
@@ -1010,14 +995,14 @@ namespace firefly {
       found_shift = true;
 
       for (auto & rec : reconst) {
-        std::get<2>(rec) = RECONSTRUCTING;
+        std::get<1>(rec) = RECONSTRUCTING;
 
-        if (!(std::get<3>(rec)->is_shift_working())) {
+        if (!(std::get<2>(rec)->is_shift_working())) {
           found_shift = false;
         }
 
         if (first) {
-          std::pair<uint32_t, uint32_t> degs = std::get<3>(rec)->get_max_deg();
+          std::pair<uint32_t, uint32_t> degs = std::get<2>(rec)->get_max_deg();
 
           max_deg_num = std::max(max_deg_num, degs.first);
           max_deg_den = std::max(max_deg_den, degs.second);
@@ -1053,8 +1038,8 @@ namespace firefly {
     shift = tmp_rec.get_zi_shift_vec();
 
     for (auto & rec : reconst) {
-      std::get<2>(rec) = RECONSTRUCTING;
-      std::get<3>(rec)->accept_shift();
+      std::get<1>(rec) = RECONSTRUCTING;
+      std::get<2>(rec)->accept_shift();
     }
 
     scan = false;
@@ -1172,11 +1157,9 @@ namespace firefly {
 
           // Get factors
           for (auto& rec : reconst) {
-            std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-
             if (scan_n == 0) {
               if (possible_factors_bb_counter.find(counter) != possible_factors_bb_counter.end()) {
-                auto tmp_fac_num_den = std::get<3>(rec)->get_factors_ff();
+                auto tmp_fac_num_den = std::get<2>(rec)->get_factors_ff();
                 std::unordered_set<std::string> tmp_fac_num {};
                 std::unordered_set<std::string> tmp_fac_den {};
                 tmp_fac_num.insert(tmp_fac_num_den.first.begin(), tmp_fac_num_den.first.end());
@@ -1185,7 +1168,7 @@ namespace firefly {
               }
 
               if (prime_it_fac == 0) {
-                auto tmp_fac_num_den = std::get<3>(rec)->get_factors_ff();
+                auto tmp_fac_num_den = std::get<2>(rec)->get_factors_ff();
                 std::unordered_set<std::string> tmp_fac_num {};
                 std::unordered_set<std::string> tmp_fac_den {};
                 tmp_fac_num.insert(tmp_fac_num_den.first.begin(), tmp_fac_num_den.first.end());
@@ -1193,7 +1176,7 @@ namespace firefly {
                 possible_factors.emplace(counter, std::make_pair(tmp_fac_num, tmp_fac_den));
 
                 // Get maximum degrees
-                auto tmp_max_degs = std::get<3>(rec)->get_max_deg();
+                auto tmp_max_degs = std::get<2>(rec)->get_max_deg();
                 max_deg_map.emplace(std::make_pair(counter, tmp_max_degs));
 
                 uint32_t max_val = std::max(tmp_max_degs.first, tmp_max_degs.second);
@@ -1205,7 +1188,7 @@ namespace firefly {
                 number_of_factors += tmp_n_fac;
 
                 // Save occurring degrees to perform Thiele just once
-                auto tmp_rf = std::get<3>(rec)->get_result_ff();
+                auto tmp_rf = std::get<2>(rec)->get_result_ff();
                 std::list<uint32_t> deg_list_num {};
                 std::list<uint32_t> deg_list_den {};
 
@@ -1228,7 +1211,7 @@ namespace firefly {
               std::unordered_set<uint32_t> fac_nums_c {};
               std::unordered_set<uint32_t> fac_dens_c {};
 
-              auto tmp_factors = std::get<3>(rec)->get_factors_ff();
+              auto tmp_factors = std::get<2>(rec)->get_factors_ff();
 
               // Numerator
               uint32_t fac_counter = 0;
@@ -1255,7 +1238,7 @@ namespace firefly {
               if (fac_nums_c.empty() && fac_dens_c.empty()) {
                 possible_factors_bb_counter.erase(counter);
               } else {
-                auto canonical_factors = std::get<3>(rec)->get_canonical_factors(std::make_pair(fac_nums_c, fac_dens_c));
+                auto canonical_factors = std::get<2>(rec)->get_canonical_factors(std::make_pair(fac_nums_c, fac_dens_c));
 
                 if (prime_it_fac == 0) {
                   // Init first combinations
@@ -1393,8 +1376,8 @@ namespace firefly {
 
             ++counter;
 
-            std::get<2>(rec) = DELETED;
-            delete std::get<3>(rec);
+            std::get<1>(rec) = DELETE;
+            //delete std::get<2>(rec);
           }
 
           uint32_t old_max_deg = max_degs[i];
@@ -1889,9 +1872,7 @@ namespace firefly {
         ++items_new_prime;
       }
 
-      std::mutex* mut = new std::mutex;
-
-      reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
+      reconst.emplace_back(std::make_tuple(i, RECONSTRUCTING, rec));
     }
 
     if (!factor_scan && save_states) {
@@ -1981,7 +1962,7 @@ namespace firefly {
         uint32_t counter = 0;
 
         for (auto & rec : reconst) {
-          if (std::get<3>(rec)->get_prime() == 0) {
+          if (std::get<2>(rec)->get_prime() == 0) {
             ++counter;
 
             tp.run_priority_task([this, &rec]() {
@@ -2202,7 +2183,7 @@ namespace firefly {
           }
 
           for (auto & rec : reconst) {
-            if (!std::get<3>(rec)->is_done() && std::get<3>(rec)->get_prime() > prime_it) {
+            if (!std::get<2>(rec)->is_done() && std::get<2>(rec)->get_prime() > prime_it) {
               ++items_new_prime;
             }
           }
@@ -2663,16 +2644,12 @@ namespace firefly {
     uint32_t counter = 0;
 
     for (auto & rec : reconst) {
-      std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-
-      if (std::get<2>(rec) == RECONSTRUCTING) {
-        lock_exists.unlock();
-
-        std::pair<bool, uint32_t> done_prime = std::get<3>(rec)->get_done_and_prime();
+      if (std::get<1>(rec) == RECONSTRUCTING) {
+        std::pair<bool, uint32_t> done_prime = std::get<2>(rec)->get_done_and_prime();
 
         if (!done_prime.first) {
           if (done_prime.second == prime_it) {
-            auto interpolate_and_write = std::get<3>(rec)->feed(t_vec, probes[std::get<0>(rec)], zi_order_vec, prime_it);
+            auto interpolate_and_write = std::get<2>(rec)->feed(t_vec, probes[std::get<0>(rec)], zi_order_vec, prime_it);
 
             if (interpolate_and_write.first) {
               ++counter;
@@ -2684,7 +2661,7 @@ namespace firefly {
 
             if (interpolate_and_write.second) {
               tp.run_priority_task([this, &rec]() {
-                std::get<3>(rec)->write_food_to_file();
+                std::get<2>(rec)->write_food_to_file();
               });
             }
           }
@@ -2725,15 +2702,10 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::interpolate_job(RatReconst_tuple& rec) {
-    std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-
-    if (std::get<2>(rec) == RECONSTRUCTING) {
-      lock_exists.unlock();
-
-      std::tuple<bool, bool, uint32_t> interpolated_done_prime = std::get<3>(rec)->interpolate();
+    if (std::get<1>(rec) == RECONSTRUCTING) {
+      std::tuple<bool, bool, uint32_t> interpolated_done_prime = std::get<2>(rec)->interpolate();
 
       if (std::get<0>(interpolated_done_prime)) { // interpolated
-        //lock_exists.lock();
         // start new jobs if required
         if (!std::get<1>(interpolated_done_prime)) { // not done
           if (std::get<2>(interpolated_done_prime) > prime_it) { // compare prime counters
@@ -2746,13 +2718,11 @@ namespace firefly {
 
             std::unique_lock<std::mutex> lock(job_control);
 
-            if (std::get<3>(rec)->get_num_eqn() > probes_for_next_prime) {
-              probes_for_next_prime = std::get<3>(rec)->get_num_eqn();
+            if (std::get<2>(rec)->get_num_eqn() > probes_for_next_prime) {
+              probes_for_next_prime = std::get<2>(rec)->get_num_eqn();
             }
-
-            //lock_exists.unlock();
           } else if (!safe_mode && prime_it != 0) {
-            std::vector<std::pair<uint32_t, uint32_t>> all_required_probes = std::get<3>(rec)->get_needed_feed_vec();
+            std::vector<std::pair<uint32_t, uint32_t>> all_required_probes = std::get<2>(rec)->get_needed_feed_vec();
 
             if (!all_required_probes.empty()) {
               uint32_t counter = 1;
@@ -2831,10 +2801,9 @@ namespace firefly {
               }
             }
           } else {
-            std::vector<uint32_t> zi_order = std::get<3>(rec)->get_zi_order();
+            std::vector<uint32_t> zi_order = std::get<2>(rec)->get_zi_order();
 
             if ((prime_it == 0 || safe_mode == true) && (zi_order == std::vector<uint32_t>(n - 1, 1) || (factor_scan && zi_order == std::vector<uint32_t>(0, 1)))) {
-              //lock_exists.unlock();
               std::unique_lock<std::mutex> lock(job_control);
 
 #if !WITH_MPI
@@ -2857,9 +2826,8 @@ namespace firefly {
                 queue_probes(zi_order, to_start);
               }
             } else {
-              uint32_t required_probes = std::get<3>(rec)->get_num_eqn();
+              uint32_t required_probes = std::get<2>(rec)->get_num_eqn();
 
-              //lock_exists.unlock();
               std::unique_lock<std::mutex> lock(job_control);
 
               auto it = started_probes.find(zi_order);
@@ -2914,25 +2882,18 @@ namespace firefly {
             }
           }
         } else {
-          lock_exists.lock();
-
           // to be sure that no other thread does the same
           // TODO: Why is this necessary?
-          if (std::get<2>(rec) == RECONSTRUCTING) {
-            std::get<2>(rec) = DONE;
+          std::lock_guard<std::mutex> lock_status(status_control);
 
-            lock_exists.unlock();
-            std::unique_lock<std::mutex> lock_status(status_control);
+          if (std::get<1>(rec) == RECONSTRUCTING) {
+            std::get<1>(rec) = DONE;
 
             ++items_done;
             one_done = true;
-          } else {
-            lock_exists.unlock();
           }
         }
       }
-    } else {
-      lock_exists.unlock();
     }
 
     std::unique_lock<std::mutex> lock(feed_control);
@@ -2948,9 +2909,9 @@ namespace firefly {
     auto it = reconst.begin();
 
     while (it != reconst.end()) {
-      if (std::get<2>(*it) == DELETED) {
-        // delete mutex
-        delete std::get<1>(*it);
+      if (std::get<1>(*it) == DELETE) {
+        // delete RatReconst
+        delete std::get<2>(*it);
 
         // remove from list
         it = reconst.erase(it);
