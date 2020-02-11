@@ -848,8 +848,8 @@ namespace firefly {
                     rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
                 }
 
-                for (uint32_t tmp_zi = 1; tmp_zi != zi - 1; ++tmp_zi) {
-                  tmp_zi_order[tmp_zi - 1]++;
+                for (uint32_t tmp_zi = 2; tmp_zi != zi; ++tmp_zi) {
+                  tmp_zi_order[tmp_zi - 2]++;
                 }
               }
             }
@@ -3698,8 +3698,8 @@ namespace firefly {
       std::vector<std::vector<uint32_t>> tmp_zi_orders(vandermonde_size, curr_zi_order);
 
       for (size_t i = 1; i != vandermonde_size; ++i) {
-        for (uint32_t tmp_zi = 1; tmp_zi != zi - 1; ++tmp_zi) {
-           tmp_zi_orders[i][tmp_zi - 1]++;
+        for (uint32_t tmp_zi = 2; tmp_zi != zi; ++tmp_zi) {
+           tmp_zi_orders[i][tmp_zi - 2]++;
         }
       }
 
