@@ -838,12 +838,19 @@ namespace firefly {
               zi = 2;
             } else if (zi > 0) {
               // set new random
-              for (uint32_t tmp_zi = 2; tmp_zi != n + 1; ++tmp_zi) {
-                auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
-                std::lock_guard<std::mutex> lock_statics(mutex_statics);
+              std::vector<uint32_t> tmp_zi_order = curr_zi_order;
+              for (size_t vandermonde_multi = 0; vandermonde_multi != vandermonde_size; ++vandermonde_multi) {
+                for (uint32_t tmp_zi = 2; tmp_zi != n + 1; ++tmp_zi) {
+                  auto key = std::make_pair(tmp_zi, tmp_zi_order[tmp_zi - 2]);
+                  std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
-                if (rand_zi.find(key) == rand_zi.end())
-                  rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
+                  if (rand_zi.find(key) == rand_zi.end())
+                    rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
+                }
+
+                for (uint32_t tmp_zi = 1; tmp_zi != zi - 1; ++tmp_zi) {
+                  tmp_zi_order[tmp_zi - 1]++;
+                }
               }
             }
 

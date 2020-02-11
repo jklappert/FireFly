@@ -988,6 +988,6 @@ namespace firefly {
     if (zi == 1)
       return 1;
     else
-      return nums.size() - rec_degs.size();
+      return rec_degs.size() - nums.size();
   }
 }
