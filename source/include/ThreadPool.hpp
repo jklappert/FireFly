@@ -85,7 +85,7 @@ namespace firefly {
     // waits for all tasks to finish and closes threads
     ~ThreadPool() {
       {
-        std::unique_lock<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         stop = true;
       }
 
@@ -112,7 +112,7 @@ namespace firefly {
         (*ptask)();
       } else {
         {
-          std::unique_lock<std::mutex> lock(mutex);
+          std::lock_guard<std::mutex> lock(mutex);
           tasks.emplace_back([ptask]() { (*ptask)(); });
         }
         condition.notify_one();
@@ -133,7 +133,7 @@ namespace firefly {
         (*ptask)();
       } else {
         {
-          std::unique_lock<std::mutex> lock(mutex);
+          std::lock_guard<std::mutex> lock(mutex);
           tasks.emplace_front([ptask]() { (*ptask)(); });
         }
         condition.notify_one();
@@ -149,7 +149,7 @@ namespace firefly {
         task();
       } else {
         {
-          std::unique_lock<std::mutex> lock(mutex);
+          std::lock_guard<std::mutex> lock(mutex);
           tasks.emplace_back(std::forward<Task>(task));
         }
         condition.notify_one();
@@ -162,7 +162,7 @@ namespace firefly {
         task();
       } else {
         {
-          std::unique_lock<std::mutex> lock(mutex);
+          std::lock_guard<std::mutex> lock(mutex);
           tasks.emplace_front(std::forward<Task>(task));
         }
         condition.notify_one();
@@ -171,7 +171,7 @@ namespace firefly {
 
     std::size_t size() const { return threads.size(); }
 
-    std::size_t queue_size() { std::unique_lock<std::mutex> lock(mutex); return tasks.size(); }
+    std::size_t queue_size() { std::lock_guard<std::mutex> lock(mutex); return tasks.size(); }
 
     // if some threads are working, waits until one finishes and returns true; if all threads are idle, returns false
     bool wait() {

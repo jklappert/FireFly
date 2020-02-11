@@ -110,12 +110,12 @@ namespace firefly {
   }
 
   uint32_t BaseReconst::get_num_eqn() const {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     return num_eqn;
   }
 
   uint32_t BaseReconst::get_prime() const {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     return prime_number;
   }
 
@@ -157,27 +157,27 @@ namespace firefly {
   }
 
   uint32_t BaseReconst::get_zi() const {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     return zi;
   }
 
   std::vector<uint32_t> BaseReconst::get_zi_order() const {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     return std::vector<uint32_t>(curr_zi_order.begin(), curr_zi_order.end());
   }
 
   bool BaseReconst::is_done() const {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     return done;
   }
 
   std::pair<bool, uint32_t> BaseReconst::get_done_and_prime() const {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     return std::make_pair(done, prime_number);
   }
 
   bool BaseReconst::is_new_prime() const {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     return new_prime;
   }
 
@@ -209,7 +209,7 @@ namespace firefly {
 
   void BaseReconst::pc32_init(uint64_t seed) {
     {
-      std::unique_lock<std::mutex> lock_statics(mutex_state);
+      std::lock_guard<std::mutex> lock_statics(mutex_state);
       state = seed + increment;
     }
     pcg32();
@@ -219,7 +219,7 @@ namespace firefly {
     uint64_t x;
     uint32_t count;
     {
-      std::unique_lock<std::mutex> lock_statics(mutex_state);
+      std::lock_guard<std::mutex> lock_statics(mutex_state);
       x = state;
       count = static_cast<uint32_t>((x >> 59));
       state = x * multiplier + increment;
@@ -236,7 +236,7 @@ namespace firefly {
   uint64_t BaseReconst::xoshiro256ss() {
     uint64_t result;
     {
-      std::unique_lock<std::mutex> lock_statics(mutex_state);
+      std::lock_guard<std::mutex> lock_statics(mutex_state);
       result = rol64(s[1] * 5, 7) * 9;
       const uint64_t t = s[1] << 17;
 
@@ -263,7 +263,7 @@ namespace firefly {
 
   void BaseReconst::xoshiro256ss_init(uint64_t seed) {
     {
-      std::unique_lock<std::mutex> lock_statics(mutex_state);
+      std::lock_guard<std::mutex> lock_statics(mutex_state);
       splitmix64_state = seed + increment;
       s[0] = splitmix64();
       s[1] = splitmix64();
