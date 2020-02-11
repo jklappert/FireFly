@@ -981,4 +981,13 @@ namespace firefly {
   void PolyReconst::set_bt(bool use_bt_new) {
     use_bt = use_bt_new;
   }
+
+  uint32_t PolyReconst::get_vandermonde_num_eqn() const {
+    std::lock_guard<std::mutex> lock(mutex_status);
+
+    if (zi == 1)
+      return 1;
+    else
+      return nums.size() - rec_degs.size();
+  }
 }

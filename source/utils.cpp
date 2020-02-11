@@ -141,6 +141,17 @@ namespace firefly {
     return false;
   }
 
+  bool a_eq_b(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b) {
+    for (int i = a.size() - 1; i != -1; --i) {
+      if (a[i] == b[i])
+        continue;
+      else
+        return false;
+    }
+
+    return true;
+  }
+
   bool a_grt_b_s(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b) {
     uint32_t deg1 = 0;
     uint32_t deg2 = 0;

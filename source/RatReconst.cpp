@@ -629,6 +629,7 @@ namespace firefly {
               std::unique_lock<std::mutex> lock(mutex_status);
               zi = 2;
               curr_zi_order = std::vector<uint32_t> (n - 1, 1);
+              vandermonde_size = 1;
             }
 
             // After all new interpolation points, iterate over all interpolation
@@ -642,9 +643,14 @@ namespace firefly {
                 std::unique_lock<std::mutex> lock(mutex_status);
                 zi = tmp_zi;
                 curr_zi_order = tmp_zi_ord;
+                vandermonde_size = p_rec.second.get_vandermonde_num_eqn();
               } else if (zi == tmp_zi && a_grt_b(tmp_zi_ord, curr_zi_order)) {
                 std::unique_lock<std::mutex> lock(mutex_status);
                 curr_zi_order = tmp_zi_ord;
+                vandermonde_size = p_rec.second.get_vandermonde_num_eqn();
+              } else if (zi == tmp_zi && a_eq_b(tmp_zi_ord, curr_zi_order) && vandermonde_size < p_rec.second.get_vandermonde_num_eqn()) {
+                std::unique_lock<std::mutex> lock(mutex_status);
+                vandermonde_size = p_rec.second.get_vandermonde_num_eqn();
               }
             }
 
@@ -657,9 +663,14 @@ namespace firefly {
                 std::unique_lock<std::mutex> lock(mutex_status);
                 zi = tmp_zi;
                 curr_zi_order = tmp_zi_ord;
+                vandermonde_size = p_rec.second.get_vandermonde_num_eqn();
               } else if (zi == tmp_zi && a_grt_b(tmp_zi_ord, curr_zi_order)) {
                 std::unique_lock<std::mutex> lock(mutex_status);
                 curr_zi_order = tmp_zi_ord;
+                vandermonde_size = p_rec.second.get_vandermonde_num_eqn();
+              } else if (zi == tmp_zi && a_eq_b(tmp_zi_ord, curr_zi_order) && vandermonde_size < p_rec.second.get_vandermonde_num_eqn()) {
+                std::unique_lock<std::mutex> lock(mutex_status);
+                vandermonde_size = p_rec.second.get_vandermonde_num_eqn();
               }
             }
 
@@ -667,6 +678,7 @@ namespace firefly {
             if (coef_n.size() == 0 && coef_d.size() == 0) {
               saved_num_num.clear();
               saved_num_den.clear();
+              vandermonde_size = 1;
               FFInt const_den = 0;
 
               // Calculate shift polynomials and combine with previous ones if there is any shift
@@ -3671,5 +3683,23 @@ namespace firefly {
   void RatReconst::set_prime_to_max() {
     std::unique_lock<std::mutex> lock(mutex_status);
     prime_number = 299;
+  }
+
+  std::pair<std::vector<std::vector<uint32_t>>, uint32_t> RatReconst::get_zi_orders() const {
+    std::lock_guard<std::mutex> lock(mutex_status);
+
+    if (zi < 3) {
+      return std::make_pair(std::vector<std::vector<uint32_t>> (1, curr_zi_order), num_eqn);
+    } else {
+      std::vector<std::vector<uint32_t>> tmp_zi_orders(vandermonde_size, curr_zi_order);
+
+      for (size_t i = 1; i != vandermonde_size; ++i) {
+        for (uint32_t tmp_zi = 1; tmp_zi != zi - 1; ++tmp_zi) {
+           tmp_zi_orders[i][tmp_zi - 1]++;
+        }
+      }
+
+      return std::make_pair(tmp_zi_orders, num_eqn);
+    }
   }
 }

@@ -108,6 +108,11 @@ namespace firefly {
      *  @param use_bt_new if true Newton Interpolation is used, if false it is not used
      */
     static void set_bt(bool use_bt_new);
+    /**
+     *  Returns how many additional equations are required to solve the Vandermonde system
+     *  @return the required number of equations
+     */
+    uint32_t get_vandermonde_num_eqn() const;
   private:
     /**
      *  Starts the real interpolation managed by the class itself

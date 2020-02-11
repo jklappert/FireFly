@@ -79,7 +79,12 @@ namespace firefly {
    *  @param b the reference vector for the comparison
    */
   bool a_grt_b_s(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b);
-
+  /**
+   *  Checks whether two vectors are equal
+   *  @param a first vector which should be probed if it its greater
+   *  @param b the reference vector for the comparison
+   */
+  bool a_eq_b(const std::vector<uint32_t>& a, const std::vector<uint32_t>& b);
   /**
    *  Generates a vector of possible tuples of 1 and 0 for a given length r
    *  @param r the length of the vector

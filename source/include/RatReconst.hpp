@@ -221,6 +221,11 @@ namespace firefly {
      *  Sets the internal prime number to the maximum. This is just a hacky function for factor scans.
      */
     void set_prime_to_max();
+    /**
+     *  Returns a pair of a vector of required zi_orders and multiplicities
+     *  @return a pair of a vector of required zi_orders and multiplicities
+     */
+    std::pair<std::vector<std::vector<uint32_t>>, uint32_t> get_zi_orders() const;
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -415,6 +420,7 @@ namespace firefly {
 #endif
     int max_deg_num = -1; /**< The maximal degree of the numerator */
     int max_deg_den = -1; /**< The maximal degree of the denominator */
+    uint32_t vandermonde_size = 1; /**< Multiplicity of Vandermonde systems requried by PolyReconst */
     int curr_parsed_variable = -1;  /**< The current variable for the parser */
     uint32_t tmp_solved_coefs_num = 0; /**< A temporary variable that saves how many coefficients of the numerator have already been interpolated */
     uint32_t tmp_solved_coefs_den = 0; /**< A temporary variable that saves how many coefficients of the denominator have already been interpolated */
