@@ -99,9 +99,7 @@ namespace firefly {
         uint64_t free = buffer * static_cast<uint64_t>(thr_n);
         MPI_Isend(&free, 1, MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD, &request);
       } else {
-        while (results.empty()) {
-          cond.wait(lock);
-        }
+        cond.wait(lock, [this](){return !results.empty();});
 
         results.emplace_back(buffer * static_cast<uint64_t>(thr_n) - tasks);
         tmp_results = std::move(results);
@@ -295,7 +293,7 @@ namespace firefly {
       result_uint.emplace_back(result[i].n);
     }
 
-    std::unique_lock<std::mutex> lock(mut);
+    std::lock_guard<std::mutex> lock(mut);
     ++total_iterations;
 
     auto time = std::chrono::duration<double>(time1 - time0).count();
@@ -326,7 +324,7 @@ namespace firefly {
       }
     }
 
-    std::unique_lock<std::mutex> lock(mut);
+    std::lock_guard<std::mutex> lock(mut);
     total_iterations += result.front().size();
 
     auto time = std::chrono::duration<double>(time1 - time0).count();

@@ -43,7 +43,7 @@
 #include <sys/stat.h>
 
 namespace firefly {
-  typedef std::tuple<uint64_t, std::mutex*, int, RatReconst*> RatReconst_tuple;
+  typedef std::tuple<uint64_t, std::atomic<int>, RatReconst*> RatReconst_tuple;
   typedef std::list<RatReconst_tuple> RatReconst_list;
 
   /**
@@ -142,7 +142,7 @@ namespace firefly {
     void resume();
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
-    enum RatReconst_status {RECONSTRUCTING, DONE, DELETED};
+    enum RatReconst_status {RECONSTRUCTING, DONE, DELETE};
 
   private:
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
@@ -192,13 +192,21 @@ namespace firefly {
     ThreadPool tp;
     // TODO tidy up the mutexes
     std::mutex future_control;
+    // average_black_box_time, computed_probes, iteration
     std::mutex job_control;
+    // fed_ones, started_probes, probes_for_next_prime
     std::mutex feed_control;
+    // interpolate_jobs, feed_jobs
     std::mutex print_control;
+    // protects nothing, just makes sure that the messages are printed after each other
     std::mutex status_control;
+    // items_done, items_new_prime, done, new_prime, one_done, one_new_prime
     std::mutex mutex_probe_queue;
+    // continue_communication, proceed, index_map, requested_probes, new_jobs, probes_queued, ind
     std::mutex clean;
+    // reconst (only outside access and clean_reconst)
     std::mutex chosen_mutex;
+    // chosen_t
     std::condition_variable condition_future;
     std::condition_variable condition_feed;
     std::vector<std::vector<std::string>> factorizations {};
@@ -390,22 +398,11 @@ namespace firefly {
     auto it = reconst.begin();
 
     while (it != reconst.end()) {
-      if (std::get<2>(*it) == DELETED) {
-        // delete mutex
-        delete std::get<1>(*it);
+      // delete RatReconst
+      delete std::get<2>(*it);
 
-        // remove from list
-        it = reconst.erase(it);
-      } else {
-        // delete mutex
-        delete std::get<1>(*it);
-
-        // delete RatReconst
-        delete std::get<3>(*it);
-
-        // remove from list
-        it = reconst.erase(it);
-      }
+      // remove from list
+      it = reconst.erase(it);
     }
   }
 
@@ -666,9 +663,8 @@ namespace firefly {
 
       if (rec->is_done()) {
         ++items_done;
-        std::mutex* mut = new std::mutex;
 
-        reconst.emplace_back(std::make_tuple(i, mut, DONE, rec));
+        reconst.emplace_back(std::make_tuple(i, DONE, rec));
       } else {
         if (rec->is_new_prime()) {
           probes_for_next_prime = std::max(probes_for_next_prime, rec->get_num_eqn());
@@ -679,9 +675,7 @@ namespace firefly {
           }
         }
 
-        std::mutex* mut = new std::mutex;
-
-        reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
+        reconst.emplace_back(std::make_tuple(i, RECONSTRUCTING, rec));
       }
     }
 
@@ -774,11 +768,9 @@ namespace firefly {
     ThreadPool tp_comm(1);
     tp_comm.run_priority_task([this]() {
       {
-        std::unique_lock<std::mutex> lock(mutex_probe_queue);
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-        while (!continue_communication) {
-          cond_val.wait(lock);
-        }
+        cond_val.wait(lock_probe_queue, [this](){return continue_communication;});
 
         continue_communication = false;
         proceed = true;
@@ -865,9 +857,7 @@ namespace firefly {
 
         cond_val.notify_one();
 
-        while (!proceed) {
-          cond_val.wait(lock_probe_queue);
-        }
+        cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
         proceed = false;
       }
@@ -906,8 +896,8 @@ namespace firefly {
     uint32_t counter = 0;
 
     for (auto & rec : reconst) {
-      if (std::get<2>(rec) == DONE) {
-        result.emplace_back(std::get<3>(rec)->get_result());
+      if (std::get<1>(rec) == DONE) {
+        result.emplace_back(std::get<2>(rec)->get_result());
 
         if (change_var_order) {
           result.back().set_var_order(optimal_var_order);
@@ -931,7 +921,7 @@ namespace firefly {
     std::vector<RationalFunctionFF> result {};
 
     for (auto & rec : reconst) {
-      result.emplace_back(std::get<3>(rec)->get_result_ff());
+      result.emplace_back(std::get<2>(rec)->get_result_ff());
     }
 
     return result;
@@ -939,26 +929,35 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   std::vector<std::pair<std::string, RationalFunction>> Reconstructor<BlackBoxTemp>::get_early_results() {
-    if (scan) {
+    if (factor_scan || scan) {
       return std::vector<std::pair<std::string, RationalFunction>> {};
     }
 
-    std::unique_lock<std::mutex> lock_clean(clean);
+    std::lock_guard<std::mutex> lock_clean(clean);
 
     std::vector<std::pair<std::string, RationalFunction>> result;
 
     for (auto & rec : reconst) {
-      std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-
-      if (std::get<2>(rec) == DONE) {
+      if (std::get<1>(rec) == DONE) {
         if (save_states) {
-          result.emplace_back(std::make_pair(std::get<3>(rec)->get_tag_name(), std::get<3>(rec)->get_result()));
+          result.emplace_back(std::make_pair(std::get<2>(rec)->get_tag_name(), std::get<2>(rec)->get_result()));
         } else {
-          result.emplace_back(std::make_pair(std::to_string(std::get<0>(rec)), std::get<3>(rec)->get_result()));
+          result.emplace_back(std::make_pair(std::to_string(std::get<0>(rec)), std::get<2>(rec)->get_result()));
         }
 
-        std::get<2>(rec) = DELETED;
-        delete std::get<3>(rec);
+        if (change_var_order) {
+          result.back().second.set_var_order(optimal_var_order);
+        }
+
+        if (factors_rf.find(std::get<0>(rec)) != factors_rf.end()) {
+          for (const auto& factor : factors_rf[std::get<0>(rec)]) {
+            result.back().second.add_factor(factor);
+          }
+        }
+
+        // TODO delete or clear memory?
+        std::get<1>(rec) = DELETE;
+        //delete std::get<2>(rec);
       }
     }
 
@@ -1000,14 +999,14 @@ namespace firefly {
       found_shift = true;
 
       for (auto & rec : reconst) {
-        std::get<2>(rec) = RECONSTRUCTING;
+        std::get<1>(rec) = RECONSTRUCTING;
 
-        if (!(std::get<3>(rec)->is_shift_working())) {
+        if (!(std::get<2>(rec)->is_shift_working())) {
           found_shift = false;
         }
 
         if (first) {
-          std::pair<uint32_t, uint32_t> degs = std::get<3>(rec)->get_max_deg();
+          std::pair<uint32_t, uint32_t> degs = std::get<2>(rec)->get_max_deg();
 
           max_deg_num = std::max(max_deg_num, degs.first);
           max_deg_den = std::max(max_deg_den, degs.second);
@@ -1043,8 +1042,8 @@ namespace firefly {
     shift = tmp_rec.get_zi_shift_vec();
 
     for (auto & rec : reconst) {
-      std::get<2>(rec) = RECONSTRUCTING;
-      std::get<3>(rec)->accept_shift();
+      std::get<1>(rec) = RECONSTRUCTING;
+      std::get<2>(rec)->accept_shift();
     }
 
     scan = false;
@@ -1162,11 +1161,9 @@ namespace firefly {
 
           // Get factors
           for (auto& rec : reconst) {
-            std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-
             if (scan_n == 0) {
               if (possible_factors_bb_counter.find(counter) != possible_factors_bb_counter.end()) {
-                auto tmp_fac_num_den = std::get<3>(rec)->get_factors_ff();
+                auto tmp_fac_num_den = std::get<2>(rec)->get_factors_ff();
                 std::unordered_set<std::string> tmp_fac_num {};
                 std::unordered_set<std::string> tmp_fac_den {};
                 tmp_fac_num.insert(tmp_fac_num_den.first.begin(), tmp_fac_num_den.first.end());
@@ -1175,7 +1172,7 @@ namespace firefly {
               }
 
               if (prime_it_fac == 0) {
-                auto tmp_fac_num_den = std::get<3>(rec)->get_factors_ff();
+                auto tmp_fac_num_den = std::get<2>(rec)->get_factors_ff();
                 std::unordered_set<std::string> tmp_fac_num {};
                 std::unordered_set<std::string> tmp_fac_den {};
                 tmp_fac_num.insert(tmp_fac_num_den.first.begin(), tmp_fac_num_den.first.end());
@@ -1183,7 +1180,7 @@ namespace firefly {
                 possible_factors.emplace(counter, std::make_pair(tmp_fac_num, tmp_fac_den));
 
                 // Get maximum degrees
-                auto tmp_max_degs = std::get<3>(rec)->get_max_deg();
+                auto tmp_max_degs = std::get<2>(rec)->get_max_deg();
                 max_deg_map.emplace(std::make_pair(counter, tmp_max_degs));
 
                 uint32_t max_val = std::max(tmp_max_degs.first, tmp_max_degs.second);
@@ -1195,7 +1192,7 @@ namespace firefly {
                 number_of_factors += tmp_n_fac;
 
                 // Save occurring degrees to perform Thiele just once
-                auto tmp_rf = std::get<3>(rec)->get_result_ff();
+                auto tmp_rf = std::get<2>(rec)->get_result_ff();
                 std::list<uint32_t> deg_list_num {};
                 std::list<uint32_t> deg_list_den {};
 
@@ -1218,7 +1215,7 @@ namespace firefly {
               std::unordered_set<uint32_t> fac_nums_c {};
               std::unordered_set<uint32_t> fac_dens_c {};
 
-              auto tmp_factors = std::get<3>(rec)->get_factors_ff();
+              auto tmp_factors = std::get<2>(rec)->get_factors_ff();
 
               // Numerator
               uint32_t fac_counter = 0;
@@ -1245,7 +1242,7 @@ namespace firefly {
               if (fac_nums_c.empty() && fac_dens_c.empty()) {
                 possible_factors_bb_counter.erase(counter);
               } else {
-                auto canonical_factors = std::get<3>(rec)->get_canonical_factors(std::make_pair(fac_nums_c, fac_dens_c));
+                auto canonical_factors = std::get<2>(rec)->get_canonical_factors(std::make_pair(fac_nums_c, fac_dens_c));
 
                 if (prime_it_fac == 0) {
                   // Init first combinations
@@ -1383,8 +1380,8 @@ namespace firefly {
 
             ++counter;
 
-            std::get<2>(rec) = DELETED;
-            delete std::get<3>(rec);
+            std::get<1>(rec) = DELETE;
+            //delete std::get<2>(rec);
           }
 
           uint32_t old_max_deg = max_degs[i];
@@ -1702,9 +1699,7 @@ namespace firefly {
       {
         std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-        while (!proceed) {
-          cond_val.wait(lock_probe_queue);
-        }
+        cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
         proceed = false;
       }
@@ -1730,7 +1725,7 @@ namespace firefly {
     uint32_t count_ones = 0;
 
     {
-      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+      std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
       for (const auto& index : indices) {
         auto tmp = std::move(index_map[index]);
@@ -1745,13 +1740,13 @@ namespace firefly {
     }
 
     if (count_ones != 0) {
-      std::unique_lock<std::mutex> lock_status(job_control);
+      std::lock_guard<std::mutex> lock_status(job_control);
 
       fed_ones += count_ones;
     }
 
     {
-      std::unique_lock<std::mutex> lock(future_control);
+      std::lock_guard<std::mutex> lock(future_control);
 
       if (!factor_scan && factors_rf.empty())
        logger << "Time for the first black-box probe: " << std::to_string(average_black_box_time) << " s\n";
@@ -1771,9 +1766,7 @@ namespace firefly {
 
       cond_val.notify_one();
 
-      while (!proceed) {
-        cond_val.wait(lock_probe_queue);
-      }
+      cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
       proceed = false;
     }
@@ -1879,9 +1872,7 @@ namespace firefly {
         ++items_new_prime;
       }
 
-      std::mutex* mut = new std::mutex;
-
-      reconst.emplace_back(std::make_tuple(i, mut, RECONSTRUCTING, rec));
+      reconst.emplace_back(std::make_tuple(i, RECONSTRUCTING, rec));
     }
 
     if (!factor_scan && save_states) {
@@ -1916,7 +1907,7 @@ namespace firefly {
 #endif
 
     {
-      std::unique_lock<std::mutex> lock(job_control);
+      std::lock_guard<std::mutex> lock(job_control);
 
       started_probes.emplace(std::vector<uint32_t> (n - 1, 1), to_start);
     }
@@ -1927,9 +1918,7 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-      while (!proceed) {
-        cond_val.wait(lock_probe_queue);
-      }
+      cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
       proceed = false;
     }
@@ -1963,7 +1952,7 @@ namespace firefly {
         INFO_MSG("Resuming in prime field: F(" + std::to_string(primes()[prime_it]) + ")");
 
         {
-          std::unique_lock<std::mutex> lock_status(feed_control);
+          std::lock_guard<std::mutex> lock_status(feed_control);
 
           interpolate_jobs += items;
         }
@@ -1971,7 +1960,7 @@ namespace firefly {
         uint32_t counter = 0;
 
         for (auto & rec : reconst) {
-          if (std::get<3>(rec)->get_prime() == 0) {
+          if (std::get<2>(rec)->get_prime() == 0) {
             ++counter;
 
             tp.run_priority_task([this, &rec]() {
@@ -1981,7 +1970,7 @@ namespace firefly {
         }
 
         {
-          std::unique_lock<std::mutex> lock_status(feed_control);
+          std::lock_guard<std::mutex> lock_status(feed_control);
 
           interpolate_jobs -= (items - counter);
         }
@@ -2006,9 +1995,7 @@ namespace firefly {
 
           cond_val.notify_one();
 
-          while (!proceed) {
-            cond_val.wait(lock_probe_queue);
-          }
+          cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
           proceed = false;
         }
@@ -2042,9 +2029,7 @@ namespace firefly {
           requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
           new_jobs = false;
 
-          while (!proceed) {
-            cond_val.wait(lock_probe_queue);
-          }
+          cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
           proceed = false;
         }
@@ -2084,9 +2069,7 @@ namespace firefly {
           continue_communication = true;
           cond_val.notify_one();
 
-          while (!proceed) {
-            cond_val.wait(lock_probe_queue);
-          }
+          cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
           proceed = false;
         }
@@ -2095,7 +2078,7 @@ namespace firefly {
         total_iterations += iteration;
 
         {
-          std::unique_lock<std::mutex> lock_print(print_control);
+          std::lock_guard<std::mutex> lock_print(print_control);
 
           if ((one_done || one_new_prime) && !factor_scan) {
             logger << "Probe: " << std::to_string(iteration)
@@ -2192,7 +2175,7 @@ namespace firefly {
           }
 
           for (auto & rec : reconst) {
-            if (!std::get<3>(rec)->is_done() && std::get<3>(rec)->get_prime() > prime_it) {
+            if (!std::get<2>(rec)->is_done() && std::get<2>(rec)->get_prime() > prime_it) {
               ++items_new_prime;
             }
           }
@@ -2251,9 +2234,7 @@ namespace firefly {
 
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-          while (!proceed) {
-            cond_val.wait(lock_probe_queue);
-          }
+          cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
           proceed = false;
         } else {
@@ -2300,9 +2281,7 @@ namespace firefly {
           {
             std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-            while (!proceed) {
-              cond_val.wait(lock_probe_queue);
-            }
+            cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
             proceed = false;
           }
@@ -2326,13 +2305,13 @@ namespace firefly {
       get_probe(indices, probes);
 
       if (verbosity > SILENT && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - last_print_time).count() > 2.) {
-        std::unique_lock<std::mutex> lock_print(print_control);
+        std::lock_guard<std::mutex> lock_print(print_control);
         last_print_time = std::chrono::high_resolution_clock::now();
         std::cerr << "\033[1;34mFireFly info:\033[0m Probe: " << iteration << "\r";
       }
 
       {
-        std::unique_lock<std::mutex> lock_feed(feed_control);
+        std::lock_guard<std::mutex> lock_feed(feed_control);
 
         ++feed_jobs;
       }
@@ -2342,7 +2321,7 @@ namespace firefly {
       });
 
       {
-        std::unique_lock<std::mutex> lock_status(status_control);
+        std::lock_guard<std::mutex> lock_status(status_control);
 
         if (items_done == items) {
           done = true;
@@ -2418,9 +2397,7 @@ namespace firefly {
       requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
       new_jobs = false;
 
-      while (!proceed) {
-        cond_val.wait(lock_probe_queue);
-      }
+      cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
       proceed = false;
     }
@@ -2456,9 +2433,7 @@ namespace firefly {
       continue_communication = true;
       cond_val.notify_one();
 
-      while (!proceed) {
-        cond_val.wait(lock_probe_queue);
-      }
+      cond_val.wait(lock_probe_queue, [this](){return proceed;});
 
       proceed = false;
     }
@@ -2498,7 +2473,7 @@ namespace firefly {
 
       // check if t was already used for this zi_order
       {
-        std::unique_lock<std::mutex> chosen_lock(chosen_mutex);
+        std::lock_guard<std::mutex> chosen_lock(chosen_mutex);
 
         auto it = chosen_t.find(zi_order);
 
@@ -2547,7 +2522,7 @@ namespace firefly {
         }
       }
 
-      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+      std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
       if (ones) {
         requested_probes.emplace_front(std::make_pair(ind, std::move(values)));
@@ -2585,9 +2560,7 @@ namespace firefly {
     {
       std::unique_lock<std::mutex> lock_future(future_control);
 
-      while (computed_probes.size() == 0) {
-        condition_future.wait(lock_future);
-      }
+      condition_future.wait(lock_future, [this](){return computed_probes.size() != 0;});
 
       //std::cout << computed_probes.size() << "\n";
 
@@ -2598,7 +2571,7 @@ namespace firefly {
       //std::cout << "get " << indices.size() << "\n";
     }
 
-    std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+    std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
     probes_queued -= static_cast<uint32_t>(indices.size());
 
@@ -2609,7 +2582,7 @@ namespace firefly {
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::feed_job(const std::vector<uint64_t>& indices, const std::vector<std::vector<FFInt>>& probes) {
     {
-      std::unique_lock<std::mutex> lock(feed_control);
+      std::lock_guard<std::mutex> lock(feed_control);
 
       interpolate_jobs += items;
     }
@@ -2622,7 +2595,7 @@ namespace firefly {
     uint32_t count_ones = 0;
 
     {
-      std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+      std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
       for (const auto& index : indices) {
         //std::cout << "access index " << index << "\n";
@@ -2645,7 +2618,7 @@ namespace firefly {
     }
 
     if (count_ones != 0) {
-      std::unique_lock<std::mutex> lock_status(job_control);
+      std::lock_guard<std::mutex> lock_status(job_control);
 
       fed_ones += count_ones;
     }
@@ -2653,16 +2626,12 @@ namespace firefly {
     uint32_t counter = 0;
 
     for (auto & rec : reconst) {
-      std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-
-      if (std::get<2>(rec) == RECONSTRUCTING) {
-        lock_exists.unlock();
-
-        std::pair<bool, uint32_t> done_prime = std::get<3>(rec)->get_done_and_prime();
+      if (std::get<1>(rec) == RECONSTRUCTING) {
+        std::pair<bool, uint32_t> done_prime = std::get<2>(rec)->get_done_and_prime();
 
         if (!done_prime.first) {
           if (done_prime.second == prime_it) {
-            auto interpolate_and_write = std::get<3>(rec)->feed(t_vec, probes[std::get<0>(rec)], zi_order_vec, prime_it);
+            auto interpolate_and_write = std::get<2>(rec)->feed(t_vec, probes[std::get<0>(rec)], zi_order_vec, prime_it);
 
             if (interpolate_and_write.first) {
               ++counter;
@@ -2674,7 +2643,7 @@ namespace firefly {
 
             if (interpolate_and_write.second) {
               tp.run_priority_task([this, &rec]() {
-                std::get<3>(rec)->write_food_to_file();
+                std::get<2>(rec)->write_food_to_file();
               });
             }
           }
@@ -2683,14 +2652,14 @@ namespace firefly {
     }
 
     {
-      std::unique_lock<std::mutex> lock_status(status_control);
+      std::lock_guard<std::mutex> lock_status(status_control);
 
       if (!scan && (one_done || one_new_prime)) {
         one_done = false;
         one_new_prime = false;
 
-        std::unique_lock<std::mutex> lock_future(future_control);
-        std::unique_lock<std::mutex> lock_print(print_control);
+        std::lock_guard<std::mutex> lock_future(future_control);
+        std::lock_guard<std::mutex> lock_print(print_control);
         logger << "Probe: " + std::to_string(iteration)
         << " | Done: " << std::to_string(items_done) << " / " << std::to_string(items)
         << " | " << "Requires new prime field: " << std::to_string(items_new_prime)
@@ -2706,7 +2675,7 @@ namespace firefly {
       }
     }
 
-    std::unique_lock<std::mutex> lock(feed_control);
+    std::lock_guard<std::mutex> lock(feed_control);
 
     interpolate_jobs -= (items - counter);
     --feed_jobs;
@@ -2715,34 +2684,27 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::interpolate_job(RatReconst_tuple& rec) {
-    std::unique_lock<std::mutex> lock_exists(*(std::get<1>(rec)));
-
-    if (std::get<2>(rec) == RECONSTRUCTING) {
-      lock_exists.unlock();
-
-      std::tuple<bool, bool, uint32_t> interpolated_done_prime = std::get<3>(rec)->interpolate();
+    if (std::get<1>(rec) == RECONSTRUCTING) {
+      std::tuple<bool, bool, uint32_t> interpolated_done_prime = std::get<2>(rec)->interpolate();
 
       if (std::get<0>(interpolated_done_prime)) { // interpolated
-        //lock_exists.lock();
         // start new jobs if required
         if (!std::get<1>(interpolated_done_prime)) { // not done
           if (std::get<2>(interpolated_done_prime) > prime_it) { // compare prime counters
             {
-              std::unique_lock<std::mutex> lock_status(status_control);
+              std::lock_guard<std::mutex> lock_status(status_control);
 
               one_new_prime = true;
               ++items_new_prime;
             }
 
-            std::unique_lock<std::mutex> lock(job_control);
+            std::lock_guard<std::mutex> lock(job_control);
 
-            if (std::get<3>(rec)->get_num_eqn() > probes_for_next_prime) {
-              probes_for_next_prime = std::get<3>(rec)->get_num_eqn();
+            if (std::get<2>(rec)->get_num_eqn() > probes_for_next_prime) {
+              probes_for_next_prime = std::get<2>(rec)->get_num_eqn();
             }
-
-            //lock_exists.unlock();
           } else if (!safe_mode && prime_it != 0) {
-            std::vector<std::pair<uint32_t, uint32_t>> all_required_probes = std::get<3>(rec)->get_needed_feed_vec();
+            std::vector<std::pair<uint32_t, uint32_t>> all_required_probes = std::get<2>(rec)->get_needed_feed_vec();
 
             if (!all_required_probes.empty()) {
               uint32_t counter = 1;
@@ -2788,7 +2750,7 @@ namespace firefly {
                         msg = msg.substr(0, msg.length() - 2);
                         msg += ") " + std::to_string(to_start) + " time(s)";
 
-                        std::unique_lock<std::mutex> lock_print(print_control);
+                        std::lock_guard<std::mutex> lock_print(print_control);
 
                         INFO_MSG(msg);
                       }
@@ -2810,7 +2772,7 @@ namespace firefly {
                       msg = msg.substr(0, msg.length() - 2);
                       msg += ") " + std::to_string(required_probes) + " time(s)";
 
-                      std::unique_lock<std::mutex> lock_print(print_control);
+                      std::lock_guard<std::mutex> lock_print(print_control);
 
                       INFO_MSG(msg);
                     }
@@ -2821,10 +2783,9 @@ namespace firefly {
               }
             }
           } else {
-            std::vector<uint32_t> zi_order = std::get<3>(rec)->get_zi_order();
+            std::vector<uint32_t> zi_order = std::get<2>(rec)->get_zi_order();
 
             if ((prime_it == 0 || safe_mode == true) && (zi_order == std::vector<uint32_t>(n - 1, 1) || (factor_scan && zi_order == std::vector<uint32_t>(0, 1)))) {
-              //lock_exists.unlock();
               std::unique_lock<std::mutex> lock(job_control);
 
 #if !WITH_MPI
@@ -2839,7 +2800,7 @@ namespace firefly {
                 lock.unlock();
 
                 if (verbosity == CHATTY) {
-                  std::unique_lock<std::mutex> lock_print(print_control);
+                  std::lock_guard<std::mutex> lock_print(print_control);
 
                   INFO_MSG("Starting ones: " + std::to_string(to_start));
                 }
@@ -2847,9 +2808,8 @@ namespace firefly {
                 queue_probes(zi_order, to_start);
               }
             } else {
-              uint32_t required_probes = std::get<3>(rec)->get_num_eqn();
+              uint32_t required_probes = std::get<2>(rec)->get_num_eqn();
 
-              //lock_exists.unlock();
               std::unique_lock<std::mutex> lock(job_control);
 
               auto it = started_probes.find(zi_order);
@@ -2872,7 +2832,7 @@ namespace firefly {
                     msg = msg.substr(0, msg.length() - 2);
                     msg += ") " + std::to_string(to_start) + " time(s)";
 
-                    std::unique_lock<std::mutex> lock_print(print_control);
+                    std::lock_guard<std::mutex> lock_print(print_control);
 
                     INFO_MSG(msg);
                   }
@@ -2894,7 +2854,7 @@ namespace firefly {
                   msg = msg.substr(0, msg.length() - 2);
                   msg += ") " + std::to_string(required_probes) + " time(s)";
 
-                  std::unique_lock<std::mutex> lock_print(print_control);
+                  std::lock_guard<std::mutex> lock_print(print_control);
 
                   INFO_MSG(msg);
                 }
@@ -2904,28 +2864,21 @@ namespace firefly {
             }
           }
         } else {
-          lock_exists.lock();
-
           // to be sure that no other thread does the same
           // TODO: Why is this necessary?
-          if (std::get<2>(rec) == RECONSTRUCTING) {
-            std::get<2>(rec) = DONE;
+          std::lock_guard<std::mutex> lock_status(status_control);
 
-            lock_exists.unlock();
-            std::unique_lock<std::mutex> lock_status(status_control);
+          if (std::get<1>(rec) == RECONSTRUCTING) {
+            std::get<1>(rec) = DONE;
 
             ++items_done;
             one_done = true;
-          } else {
-            lock_exists.unlock();
           }
         }
       }
-    } else {
-      lock_exists.unlock();
     }
 
-    std::unique_lock<std::mutex> lock(feed_control);
+    std::lock_guard<std::mutex> lock(feed_control);
 
     --interpolate_jobs;
     condition_feed.notify_one();
@@ -2933,14 +2886,14 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::clean_reconst() {
-    std::unique_lock<std::mutex> lock_clean(clean);
+    std::lock_guard<std::mutex> lock_clean(clean);
 
     auto it = reconst.begin();
 
     while (it != reconst.end()) {
-      if (std::get<2>(*it) == DELETED) {
-        // delete mutex
-        delete std::get<1>(*it);
+      if (std::get<1>(*it) == DELETE) {
+        // delete RatReconst
+        delete std::get<2>(*it);
 
         // remove from list
         it = reconst.erase(it);
@@ -3059,7 +3012,7 @@ namespace firefly {
         tmp.emplace_back(std::vector<FFInt>(std::make_move_iterator(probe[i].begin()), std::make_move_iterator(probe[i].end())));
       }
 
-      std::unique_lock<std::mutex> lock(future_control);
+      std::lock_guard<std::mutex> lock(future_control);
 
       iteration += N;
 #if !WITH_MPI
@@ -3103,7 +3056,7 @@ namespace firefly {
         tmp.emplace_back(std::vector<FFInt> (1, probe[i]));
       }
 
-      std::unique_lock<std::mutex> lock(future_control);
+      std::lock_guard<std::mutex> lock(future_control);
 
       iteration += N;
 #if !WITH_MPI
@@ -3170,8 +3123,8 @@ namespace firefly {
       zi_order = std::vector<uint32_t>(0, 1);
     }
 
-    std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
-    std::unique_lock<std::mutex> lock_job(job_control);
+    std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
+    std::lock_guard<std::mutex> lock_job(job_control);
 
     if (started_probes.find(zi_order) != started_probes.end()) {
       started_probes.emplace(std::make_pair(zi_order, 0));
@@ -3184,7 +3137,7 @@ namespace firefly {
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
     }
 
-    std::unique_lock<std::mutex> chosen_lock(chosen_mutex); // TODO is this really required?
+    std::lock_guard<std::mutex> chosen_lock(chosen_mutex); // TODO is this really required?
 
     for (int i = 1; i != world_size; ++i) {
       uint64_t to_start;
@@ -3310,7 +3263,7 @@ namespace firefly {
         MPI_Barrier(MPI_COMM_WORLD);
 
         {
-          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+          std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
           proceed = true;
 
@@ -3354,9 +3307,7 @@ namespace firefly {
         {
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-          while (!continue_communication) {
-            cond_val.wait(lock_probe_queue);
-          }
+          cond_val.wait(lock_probe_queue, [this](){return continue_communication;});
 
           continue_communication = false;
         }
@@ -3373,7 +3324,7 @@ namespace firefly {
           average_black_box_time += weights[i] / total_weight * timings[i];
         }
 
-        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+        std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
         proceed = true;
 
@@ -3401,7 +3352,7 @@ namespace firefly {
         MPI_Barrier(MPI_COMM_WORLD);
 
         {
-          std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+          std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
           proceed = true;
 
@@ -3447,9 +3398,7 @@ namespace firefly {
         {
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-          while (!continue_communication) {
-            cond_val.wait(lock_probe_queue);
-          }
+          cond_val.wait(lock_probe_queue, [this](){return continue_communication;});
 
           continue_communication = false;
         }
@@ -3474,9 +3423,7 @@ namespace firefly {
 
         cond_val.notify_one();
 
-        while (!new_jobs) {
-          cond_val.wait(lock_probe_queue);
-        }
+        cond_val.wait(lock_probe_queue, [this](){return new_jobs.load();});
 
         proceed = true;
 
@@ -3542,7 +3489,7 @@ namespace firefly {
           }
         }
       } else if (restart_empty_nodes) {
-        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+        std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
         while (!empty_nodes.empty() && !requested_probes.empty()) {
           auto node = empty_nodes.front();
@@ -3609,7 +3556,7 @@ namespace firefly {
 
           if (!factor_scan) {
             {
-              std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+              std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
               auto tmp = index_map[index];
               t = tmp.first;
@@ -3658,7 +3605,7 @@ namespace firefly {
             }
           }
 
-          std::unique_lock<std::mutex> lock_res(future_control);
+          std::lock_guard<std::mutex> lock_res(future_control);
 
           computed_probes.emplace(std::make_pair(std::vector<uint64_t>(1, index), std::move(results)));
 
@@ -3667,7 +3614,7 @@ namespace firefly {
 
         uint64_t free_slots = results_list[amount - 1];
 
-        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+        std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
         if (requested_probes.size() != 0) {
           uint32_t size = compute_job_number(static_cast<uint32_t>(requested_probes.size()), static_cast<uint32_t>(free_slots), thr_n, bunch_size);

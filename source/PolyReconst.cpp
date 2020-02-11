@@ -35,7 +35,7 @@ namespace firefly {
   bool PolyReconst::use_bt = true;
 
   PolyReconst::PolyReconst(uint32_t n_, const int deg_inp, const bool with_rat_reconst_inp) {
-    std::unique_lock<std::mutex> lock_status(mutex_status);
+    std::lock_guard<std::mutex> lock_status(mutex_status);
 
     type = POLY;
     n = n_;
@@ -55,7 +55,7 @@ namespace firefly {
   PolyReconst::PolyReconst() {}
 
   void PolyReconst::set_anchor_points(const std::vector<FFInt>& anchor_points, bool force) {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
     if (rand_zi.empty() || force) {
       rand_zi.clear();
@@ -68,7 +68,7 @@ namespace firefly {
   }
 
   void PolyReconst::feed(const FFInt& num, const std::vector<uint32_t>& feed_zi_ord, const uint32_t fed_prime) {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
 
     if (fed_prime == prime_number)
       queue.emplace_back(std::make_tuple(num, feed_zi_ord));
@@ -77,7 +77,7 @@ namespace firefly {
   // this function is not thread-safe; therefore, it should only be called from RatReconst
   void PolyReconst::feed(const std::vector<FFInt>& new_yis, const FFInt& num) {
     {
-      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
       for (uint32_t j = 0; j < n; ++j) {
         rand_zi.emplace(std::make_pair(j + 1, curr_zi_order[j]), new_yis[j]);
@@ -141,7 +141,7 @@ namespace firefly {
 
           if (runtest) {
             {
-              std::unique_lock<std::mutex> lock(mutex_status);
+              std::lock_guard<std::mutex> lock(mutex_status);
               done = test_guess(num);
             }
 
@@ -150,7 +150,7 @@ namespace firefly {
               combined_ci.clear();
               max_deg.clear();
               use_chinese_remainder = false;
-              std::unique_lock<std::mutex> lock(mutex_status);
+              std::lock_guard<std::mutex> lock(mutex_status);
               new_prime = false;
               return;
             }
@@ -160,7 +160,7 @@ namespace firefly {
 
           if (!use_chinese_remainder) use_chinese_remainder = true;
 
-          std::unique_lock<std::mutex> lock(mutex_status);
+          std::lock_guard<std::mutex> lock(mutex_status);
           zi = 1;
           new_prime = false;
         }
@@ -240,7 +240,7 @@ namespace firefly {
             lambda.erase(zero_element);
           }
 
-          std::unique_lock<std::mutex> lock(mutex_status);
+          std::lock_guard<std::mutex> lock(mutex_status);
           curr_zi_order[zi - 1]++;
         } else {
           // Build Vandermonde system
@@ -278,7 +278,7 @@ namespace firefly {
           if (nums.size() == rec_degs.size()) {
             const uint32_t order_save = curr_zi_order[zi - 1];
             {
-              std::unique_lock<std::mutex> lock(mutex_status);
+              std::lock_guard<std::mutex> lock(mutex_status);
               curr_zi_order = std::vector<uint32_t> (n, 1);
               curr_zi_order[zi - 1] = order_save + 1;
             }
@@ -378,7 +378,7 @@ namespace firefly {
 
           } else {
             // increase all zi order of the lower stages by one
-            std::unique_lock<std::mutex> lock(mutex_status);
+            std::lock_guard<std::mutex> lock(mutex_status);
 
             for (uint32_t tmp_zi = 1; tmp_zi < zi; ++tmp_zi) {
               curr_zi_order[tmp_zi - 1]++;
@@ -411,12 +411,12 @@ namespace firefly {
             }
 
             if (rec_degs.size() == 0 && zi != n) {
-              std::unique_lock<std::mutex> lock(mutex_status);
+              std::lock_guard<std::mutex> lock(mutex_status);
               zi = n;
             }
 
             if (zi != n) {
-              std::unique_lock<std::mutex> lock(mutex_status);
+              std::lock_guard<std::mutex> lock(mutex_status);
               zi ++;
               // The monomials which have to be reconstructed have to
               // ordered in a monotonical way to utilize the Vandermonde
@@ -477,7 +477,7 @@ namespace firefly {
 
           if (check && zi == n) {
             {
-              std::unique_lock<std::mutex> lock(mutex_status);
+              std::lock_guard<std::mutex> lock(mutex_status);
               curr_zi_order = std::vector<uint32_t> (n, 1);
             }
 
@@ -540,7 +540,7 @@ namespace firefly {
               nums = std::vector<FFInt>();
             }
 
-            std::unique_lock<std::mutex> lock(mutex_status);
+            std::lock_guard<std::mutex> lock(mutex_status);
             new_prime = true;
             prime_number ++;
             check = false;
@@ -553,7 +553,7 @@ namespace firefly {
     if (!with_rat_reconst) {
       for (uint32_t tmp_zi = 1; tmp_zi <= n; ++tmp_zi) {
         auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1]);
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
+        std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
         if (rand_zi.find(key) == rand_zi.end())
           rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
@@ -665,7 +665,7 @@ namespace firefly {
   }
 
   void PolyReconst::generate_anchor_points() {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
     rand_zi.clear();
 
@@ -676,12 +676,12 @@ namespace firefly {
   }
 
   FFInt PolyReconst::get_rand_zi(uint32_t zi, uint32_t order) const {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
     return rand_zi.at(std::make_pair(zi, order));
   }
 
   std::vector<FFInt> PolyReconst::get_rand_zi_vec(const std::vector<uint32_t>& orders) const {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> yis {};
 
     for (uint32_t i = 0; i < n; ++i) {
@@ -692,12 +692,12 @@ namespace firefly {
   }
 
   bool PolyReconst::is_rand_zi_empty() const {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
     return rand_zi.empty();
   }
 
   void PolyReconst::reset() {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
     rand_zi = ff_pair_map();
   }
 
@@ -821,7 +821,7 @@ namespace firefly {
         roots.first.emplace_back(a);
         roots.second.emplace_back(count);
         {
-          std::unique_lock<std::mutex> lock_statics(mutex_statics);
+          std::lock_guard<std::mutex> lock_statics(mutex_statics);
           rand_zi.emplace(std::make_pair(std::make_pair(zi, count), a));
         }
       }

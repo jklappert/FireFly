@@ -43,7 +43,7 @@ namespace firefly {
     combined_prime = FFInt::p;
 
     {
-      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
       if (shift.empty()) {
         shift = std::vector<FFInt> (n);
@@ -111,7 +111,7 @@ namespace firefly {
 
   void RatReconst::set_zi_shift(const std::vector<uint32_t>& shifted_zis) {
     {
-      std::unique_lock<std::mutex> lock(mutex_statics);
+      std::lock_guard<std::mutex> lock(mutex_statics);
       shift = std::vector<FFInt> (n);
       curr_shift = shifted_zis;
 
@@ -125,7 +125,7 @@ namespace firefly {
   std::pair<bool, bool> RatReconst::feed(const FFInt& new_ti, const FFInt& num,
                                          const std::vector<uint32_t>& fed_zi_ord,
                                          const uint32_t fed_prime) {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     bool write_to_file = false;
     bool interpolate = false;
 
@@ -203,7 +203,7 @@ namespace firefly {
   std::pair<bool, bool> RatReconst::feed(const std::vector<FFInt>& new_ti, const std::vector<FFInt>& num,
                                          const std::vector<std::vector<uint32_t>>& fed_zi_ord,
                                          const uint32_t fed_prime) {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     bool write_to_file = false;
     bool interpolate = false;
 
@@ -392,7 +392,7 @@ namespace firefly {
 
             if (scan) {
               {
-                std::unique_lock<std::mutex> lock(mutex_status);
+                std::lock_guard<std::mutex> lock(mutex_status);
                 done = true;
               }
 
@@ -410,7 +410,7 @@ namespace firefly {
               }
 
               {
-                std::unique_lock<std::mutex> lock_status(mutex_status);
+                std::lock_guard<std::mutex> lock_status(mutex_status);
                 shift_works = false;
               }
 
@@ -498,7 +498,7 @@ namespace firefly {
               // set number of equations needed for univariate rational function
               // reconstruction needed for multivariate polynomial feed
               {
-                std::unique_lock<std::mutex> lock(mutex_status);
+                std::lock_guard<std::mutex> lock(mutex_status);
                 num_eqn = max_deg_den + max_deg_num + 2 - tmp_solved_coefs_num - tmp_solved_coefs_den;
               }
             }
@@ -555,7 +555,7 @@ namespace firefly {
                 coef_d.emplace_back(std::make_pair(deg, PolyReconst(n - 1, deg, true)));
               }
 
-              std::unique_lock<std::mutex> lock(mutex_status);
+              std::lock_guard<std::mutex> lock(mutex_status);
               zi = 2;
             }
 
@@ -626,7 +626,7 @@ namespace firefly {
 
             // First reset values to give a starting point for comparison
             {
-              std::unique_lock<std::mutex> lock(mutex_status);
+              std::lock_guard<std::mutex> lock(mutex_status);
               zi = 2;
               curr_zi_order = std::vector<uint32_t> (n - 1, 1);
               vandermonde_size = 1;
@@ -640,12 +640,12 @@ namespace firefly {
               std::vector<uint32_t> tmp_zi_ord = p_rec.second.get_zi_order();
 
               if (zi < tmp_zi) {
-                std::unique_lock<std::mutex> lock(mutex_status);
+                std::lock_guard<std::mutex> lock(mutex_status);
                 zi = tmp_zi;
                 curr_zi_order = tmp_zi_ord;
                 vandermonde_size = p_rec.second.get_vandermonde_num_eqn();
               } else if (zi == tmp_zi && a_grt_b(tmp_zi_ord, curr_zi_order)) {
-                std::unique_lock<std::mutex> lock(mutex_status);
+                std::lock_guard<std::mutex> lock(mutex_status);
                 curr_zi_order = tmp_zi_ord;
                 vandermonde_size = p_rec.second.get_vandermonde_num_eqn();
               } else if (zi == tmp_zi && a_eq_b(tmp_zi_ord, curr_zi_order) && vandermonde_size < p_rec.second.get_vandermonde_num_eqn()) {
@@ -660,12 +660,12 @@ namespace firefly {
               std::vector<uint32_t> tmp_zi_ord = p_rec.second.get_zi_order();
 
               if (zi < tmp_zi) {
-                std::unique_lock<std::mutex> lock(mutex_status);
+                std::lock_guard<std::mutex> lock(mutex_status);
                 zi = tmp_zi;
                 curr_zi_order = tmp_zi_ord;
                 vandermonde_size = p_rec.second.get_vandermonde_num_eqn();
               } else if (zi == tmp_zi && a_grt_b(tmp_zi_ord, curr_zi_order)) {
-                std::unique_lock<std::mutex> lock(mutex_status);
+                std::lock_guard<std::mutex> lock(mutex_status);
                 curr_zi_order = tmp_zi_ord;
                 vandermonde_size = p_rec.second.get_vandermonde_num_eqn();
               } else if (zi == tmp_zi && a_eq_b(tmp_zi_ord, curr_zi_order) && vandermonde_size < p_rec.second.get_vandermonde_num_eqn()) {
@@ -833,14 +833,14 @@ namespace firefly {
 
               combine_primes(numerator.coefs, denominator.coefs);
 
-              std::unique_lock<std::mutex> lock(mutex_status);
+              std::lock_guard<std::mutex> lock(mutex_status);
               std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
               zi = 2;
             } else if (zi > 0) {
               // set new random
               for (uint32_t tmp_zi = 2; tmp_zi != n + 1; ++tmp_zi) {
                 auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 2]);
-                std::unique_lock<std::mutex> lock_statics(mutex_statics);
+                std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
                 if (rand_zi.find(key) == rand_zi.end())
                   rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
@@ -1181,7 +1181,7 @@ namespace firefly {
 
               combine_primes(solved_num.coefs, solved_den.coefs);
               {
-                std::unique_lock<std::mutex> lock(mutex_status);
+                std::lock_guard<std::mutex> lock(mutex_status);
                 std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
               }
               // reset solved coefficients
@@ -1193,17 +1193,15 @@ namespace firefly {
               solved_den.coefs = zero_deg;
             } else {
               // increase zi order by 1
-              {
-                std::unique_lock<std::mutex> lock(mutex_status);
-                saved_ti.erase(curr_zi_order);
-                std::transform(curr_zi_order.begin(), curr_zi_order.end(),
-                curr_zi_order.begin(), [](uint32_t x) {return x + 1;});
+              std::lock_guard<std::mutex> lock(mutex_status);
+              saved_ti.erase(curr_zi_order);
+              std::transform(curr_zi_order.begin(), curr_zi_order.end(),
+              curr_zi_order.begin(), [](uint32_t x) {return x + 1;});
 
-                if (!is_singular_system)
-                  num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
-                else
-                  num_eqn = shifted_max_num_eqn - tmp_solved_coefs_num - tmp_solved_coefs_den;
-              }
+              if (!is_singular_system)
+                num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
+              else
+                num_eqn = shifted_max_num_eqn - tmp_solved_coefs_num - tmp_solved_coefs_den;
             }
           }
         }
@@ -1328,7 +1326,7 @@ namespace firefly {
     }
 
     {
-      std::unique_lock<std::mutex> lock(mutex_status);
+      std::lock_guard<std::mutex> lock(mutex_status);
       num_eqn = max_deg_den + max_deg_num + 2 - tmp_solved_coefs_num - tmp_solved_coefs_den;
     }
 
@@ -1651,13 +1649,13 @@ namespace firefly {
         if (is_singular_system) {
           set_singular_system_vars();
           {
-            std::unique_lock<std::mutex> lock_statics(mutex_statics);
+            std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
             if (singular_system_set.find(prime_number + 1) == singular_system_set.end())
               singular_system_set.emplace(prime_number + 1);
           }
 
-          std::unique_lock<std::mutex> lock(mutex_status);
+          std::lock_guard<std::mutex> lock(mutex_status);
           num_eqn = shifted_max_num_eqn;
         } else {
           if (n > 1) {
@@ -1670,7 +1668,7 @@ namespace firefly {
             }
           }
 
-          std::unique_lock<std::mutex> lock(mutex_status);
+          std::lock_guard<std::mutex> lock(mutex_status);
           num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
         }
       }
@@ -1802,7 +1800,7 @@ namespace firefly {
   }
 
   RationalFunction RatReconst::get_result() {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
 
     if (done) {
       if (result.numerator.coefs.empty()) {
@@ -1827,7 +1825,7 @@ namespace firefly {
   }
 
   RationalFunctionFF RatReconst::get_result_ff() {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
 
     ff_map tmp_num = convert_to_ffint(g_ni);
     ff_map tmp_den = convert_to_ffint(g_di);
@@ -2033,7 +2031,7 @@ namespace firefly {
 
     std::vector<FFInt> yis = std::vector<FFInt> (n);
     {
-      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      std::lock_guard<std::mutex> lock_statics(mutex_statics);
       yis[0] = ti + shift[0];
 
       for (uint32_t i = 1; i != n; ++i) {
@@ -2055,7 +2053,7 @@ namespace firefly {
   }
 
   void RatReconst::disable_shift() {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
     shift = std::vector<FFInt> (n, 0);
   }
 
@@ -2243,7 +2241,7 @@ namespace firefly {
   }
 
   void RatReconst::generate_anchor_points() {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
     rand_zi.clear();
 
@@ -2262,13 +2260,12 @@ namespace firefly {
     rec.set_anchor_points(anchor_points, true);
 
     if (!shift.empty() && n > 1) {
-
       for (auto & el : shift) el = FFInt(el.n);
     }
   }
 
   void RatReconst::set_anchor_points(const std::vector<FFInt>& anchor_points) {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
     rand_zi.clear();
 
@@ -2283,7 +2280,7 @@ namespace firefly {
   }
 
   void RatReconst::set_shift(const std::vector<FFInt>& shift_) {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
     if (n > 1)
       shift = shift_;
@@ -2322,7 +2319,7 @@ namespace firefly {
   }
 
   FFInt RatReconst::get_rand_zi(uint32_t zi, uint32_t order) const {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
     return rand_zi.at(std::make_pair(zi, order));
   }
 
@@ -2331,7 +2328,7 @@ namespace firefly {
       for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
         auto key = std::make_pair(tmp_zi, order[tmp_zi - 2]);
 
-        std::unique_lock<std::mutex> lock_statics(mutex_statics);
+        std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
         if (rand_zi.find(key) == rand_zi.end())
           rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
@@ -2340,7 +2337,7 @@ namespace firefly {
 
     std::vector<FFInt> res {};
 
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
     for (uint32_t i = 2; i <= n; ++i) {
       res.emplace_back(rand_zi.at(std::make_pair(i, order[i - 2])));
@@ -2350,12 +2347,12 @@ namespace firefly {
   }
 
   FFInt RatReconst::get_zi_shift(uint32_t zi) const {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
     return shift[zi - 1];
   }
 
   bool RatReconst::is_shift_working() {
-    std::unique_lock<std::mutex> lock_status(mutex_status);
+    std::lock_guard<std::mutex> lock_status(mutex_status);
     std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
     done = false;
     zi = 1;
@@ -2381,17 +2378,17 @@ namespace firefly {
   }
 
   bool RatReconst::get_is_interpolating() const {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     return is_interpolating;
   }
 
   std::vector<FFInt> RatReconst::get_zi_shift_vec() const {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
     return shift;
   }
 
   bool RatReconst::need_shift(uint32_t prime_counter) {
-    std::unique_lock<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
     for (uint32_t i = 0; i < n; ++i) {
       shift[i] = FFInt(shift[i].n);
@@ -2414,7 +2411,7 @@ namespace firefly {
 
     std::vector<FFInt> tmp_shift;
     {
-      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      std::lock_guard<std::mutex> lock_statics(mutex_statics);
       tmp_shift = shift;
     }
 
@@ -2505,7 +2502,7 @@ namespace firefly {
     file << "shift\n";
 
     {
-      std::unique_lock<std::mutex> lock(mutex_statics);
+      std::lock_guard<std::mutex> lock(mutex_statics);
 
       for (uint32_t i = 0; i != n; ++i) {
         file << (shift[i] != 0 ? "1 " : "0 ");
@@ -2650,7 +2647,7 @@ namespace firefly {
     igzstream file(file_name.c_str());
     bool first = true;
     {
-      std::unique_lock<std::mutex> lock_status(mutex_status);
+      std::lock_guard<std::mutex> lock_status(mutex_status);
       prime_number = parse_prime_number(file_name) + 1;
     }
     check_interpolation = true;
@@ -2675,7 +2672,7 @@ namespace firefly {
             std::getline(file, line);
             normalize_to_den = std::stoi(line);
             file.close();
-            std::unique_lock<std::mutex> lock_status(mutex_status);
+            std::lock_guard<std::mutex> lock_status(mutex_status);
             prime_number = 0;
             check_interpolation = false;
             return std::make_pair(true, 0);
@@ -2689,7 +2686,7 @@ namespace firefly {
           parsed_variables[COMBINED_PRIME] = true;
         } else if (is_zero) {
           if (prime_number > 2) {
-            std::unique_lock<std::mutex> lock_status(mutex_status);
+            std::lock_guard<std::mutex> lock_status(mutex_status);
             new_prime = false;
             done = true;
             g_ni[std::vector<uint32_t>(n)] = RationalNumber(0, 1);
@@ -2702,7 +2699,7 @@ namespace firefly {
             check_interpolation = false;
             zero_counter = prime_number;
             {
-              std::unique_lock<std::mutex> lock(mutex_status);
+              std::lock_guard<std::mutex> lock(mutex_status);
               std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
               new_prime = true;
             }
@@ -2779,7 +2776,7 @@ namespace firefly {
           } else {
             switch (curr_parsed_variable) {
               case COMBINED_PRIME: {
-                std::unique_lock<std::mutex> lock_status(mutex_status);
+                std::lock_guard<std::mutex> lock_status(mutex_status);
                 combined_prime = mpz_class(line);
                 break;
               }
@@ -2790,7 +2787,7 @@ namespace firefly {
               }
 
               case IS_DONE: {
-                std::unique_lock<std::mutex> lock_status(mutex_status);
+                std::lock_guard<std::mutex> lock_status(mutex_status);
                 done = std::stoi(line);
                 break;
               }
@@ -2807,7 +2804,7 @@ namespace firefly {
 
               case NEED_PRIME_SHIFT: {
                 tmp_need_shift = std::stoi(line);
-                std::unique_lock<std::mutex> lock_statics(mutex_statics);
+                std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
                 if (!is_done() && tmp_need_shift && singular_system_set.find(prime_number) == singular_system_set.end())
                   singular_system_set.emplace(prime_number);
@@ -2817,7 +2814,7 @@ namespace firefly {
 
               case NORMALIZER_DEG: {
                 normalizer_deg = parse_vector_32(line);
-                std::unique_lock<std::mutex> lock_status(mutex_status);
+                std::lock_guard<std::mutex> lock_status(mutex_status);
 
                 n = normalizer_deg.size();
                 break;
@@ -2841,7 +2838,7 @@ namespace firefly {
               case SHIFT: {
                 if (!is_done()) {
                   std::vector<uint32_t> tmp_vec = parse_vector_32(line);
-                  std::unique_lock<std::mutex> lock_statics(mutex_statics);
+                  std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
                   for (uint32_t i = 0; i != n; ++i) {
                     if (tmp_vec[i] != 0 && shift[i] == 0)
@@ -3009,13 +3006,13 @@ namespace firefly {
       for (const auto & el : combined_di) add_non_solved_den(el.first);
 
       {
-        std::unique_lock<std::mutex> lock(mutex_status);
+        std::lock_guard<std::mutex> lock(mutex_status);
         std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
         new_prime = true;
       }
 
       if (prime_number >= interpolations) {
-        std::unique_lock<std::mutex> lock(mutex_status);
+        std::lock_guard<std::mutex> lock(mutex_status);
         num_eqn = non_solved_degs_num.size() + non_solved_degs_den.size();
       }
 
@@ -3191,7 +3188,7 @@ namespace firefly {
     }
 
     {
-      std::unique_lock<std::mutex> lock(mutex_status);
+      std::lock_guard<std::mutex> lock(mutex_status);
       num_eqn = shifted_max_num_eqn;
     }
   }
@@ -3200,7 +3197,7 @@ namespace firefly {
     if (change_prime)
       FFInt::set_new_prime(primes()[0]);
 
-    std::unique_lock<std::mutex> lock(mutex_statics);
+    std::lock_guard<std::mutex> lock(mutex_statics);
     shift = std::vector<FFInt> ();
     singular_system_set = std::unordered_set<uint32_t>();
     rand_zi = ff_pair_map();
@@ -3233,7 +3230,7 @@ namespace firefly {
     if (rec_rat_coef()) {
       bool tmp_done = test_guess(num, ti);
       {
-        std::unique_lock<std::mutex> lock(mutex_status);
+        std::lock_guard<std::mutex> lock(mutex_status);
         done = tmp_done;
       }
 
@@ -3243,7 +3240,7 @@ namespace firefly {
         if (tag.size() != 0)
           save_state();
 
-        std::unique_lock<std::mutex> lock(mutex_status);
+        std::lock_guard<std::mutex> lock(mutex_status);
         new_prime = false;
         curr_zi_order = std::vector<uint32_t>();
         use_chinese_remainder = false;
@@ -3275,7 +3272,7 @@ namespace firefly {
     if (!use_chinese_remainder) use_chinese_remainder = true;
 
     {
-      std::unique_lock<std::mutex> lock(mutex_status);
+      std::lock_guard<std::mutex> lock(mutex_status);
       new_prime = false;
     }
 
@@ -3319,7 +3316,7 @@ namespace firefly {
     }
 
     if (prime_number < interpolations) {
-      std::unique_lock<std::mutex> lock(mutex_status);
+      std::lock_guard<std::mutex> lock(mutex_status);
       zi = 1;
     } else { // Get total amount of needed feeds to interpolate this function over the current prime
       std::map<uint32_t, uint32_t> r_map {};
@@ -3592,7 +3589,7 @@ namespace firefly {
     std::vector<FFInt> res(n - 1);
 
     for (uint32_t i = 2; i <= n; ++i) {
-      std::unique_lock<std::mutex> lock_statics(mutex_statics);
+      std::lock_guard<std::mutex> lock_statics(mutex_statics);
       res[i - 2] = rand_zi[std::make_pair(i, 1)];
     }
 
@@ -3681,7 +3678,7 @@ namespace firefly {
   }
 
   void RatReconst::set_prime_to_max() {
-    std::unique_lock<std::mutex> lock(mutex_status);
+    std::lock_guard<std::mutex> lock(mutex_status);
     prime_number = 299;
   }
 
