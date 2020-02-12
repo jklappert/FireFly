@@ -1570,10 +1570,22 @@ namespace firefly {
       }
     }
 
+#if WITH_MPI
+    MPI_Request* requests = new MPI_Request[world_size - 1];
+
+    for (int i = 1; i != world_size; ++i) {
+      MPI_Isend(&FFInt::p, 1, MPI_UINT64_T, i, FACTORS, MPI_COMM_WORLD, &requests[i - 1]);
+    }
+
+    MPI_Waitall(world_size - 1, requests, MPI_STATUSES_IGNORE);
+
+    delete[] requests;
+#endif
+
     for (const auto& tmp_fac : factors_str) {
       std::string tmp_fac_s = "";
 
-      if(!tmp_fac.second.first.empty()){
+      if (!tmp_fac.second.first.empty()) {
         tmp_fac_s += "(";
         for (const auto& tmp_fac_num : tmp_fac.second.first) {
           tmp_fac_s += "(" + tmp_fac_num + ")*";
@@ -1595,21 +1607,50 @@ namespace firefly {
         }
 
         tmp_fac_s.pop_back();
-
-        ShuntingYardParser parser = ShuntingYardParser();
-        parser.parse_function(tmp_fac_s + ")", vars);
-        parser.precompute_tokens();
-        parsed_factors.emplace(tmp_fac.first, parser);
-
-        tmp_fac_s += ");\n";
-      } else {
-        ShuntingYardParser parser = ShuntingYardParser();
-        parser.parse_function(tmp_fac_s, vars);
-        parser.precompute_tokens();
-        parsed_factors.emplace(tmp_fac.first, parser);
-
-        tmp_fac_s += ";\n";
+        tmp_fac_s += ")";
       }
+
+      ShuntingYardParser parser = ShuntingYardParser();
+      parser.parse_function(tmp_fac_s, vars);
+      parser.precompute_tokens();
+      parsed_factors.emplace(tmp_fac.first, parser);
+
+#if WITH_MPI
+      const int batch_size = 2147483645; // 2147483647 is the largest signed 32-bit integer
+      const int split = static_cast<int>(tmp_fac_s.size()) / batch_size;
+
+      if (split > 1) {
+        int tmp;
+        if (static_cast<int>(tmp_fac_s.size()) % batch_size == 0) {
+          tmp = -split;
+        } else {
+          tmp = - 1 - split;
+        }
+        MPI_Bcast(&tmp, 1, MPI_INT, master, MPI_COMM_WORLD);
+      } else if (split == 1 && static_cast<int>(tmp_fac_s.size()) != batch_size) {
+        int tmp = - 1 - split;
+        MPI_Bcast(&tmp, 1, MPI_INT, master, MPI_COMM_WORLD);
+      }
+
+      for (int i = 0; i != 1 + split; ++i) {
+        if (i == split) {
+          int amount = static_cast<int>(tmp_fac_s.size()) - i * batch_size;
+          if (amount != 0) {
+            MPI_Bcast(&amount, 1, MPI_INT, master, MPI_COMM_WORLD);
+            MPI_Bcast(&tmp_fac_s[i * batch_size], amount, MPI_CHAR, master, MPI_COMM_WORLD);
+          }
+        } else {
+          int amount = batch_size;
+          MPI_Bcast(&amount, 1, MPI_INT, firefly::master, MPI_COMM_WORLD);
+          MPI_Bcast(&tmp_fac_s[i * batch_size], amount, MPI_CHAR, master, MPI_COMM_WORLD);
+        }
+      }
+
+      uint32_t function_number = tmp_fac.first;
+      MPI_Bcast(&function_number, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
+#endif
+
+      tmp_fac_s += ";\n";
 
       if (save_states) {
         ogzstream file;
@@ -1619,6 +1660,13 @@ namespace firefly {
         file.close();
       }
     }
+
+#if WITH_MPI
+    int end = -1;
+    MPI_Bcast(&end, 1, MPI_INT, firefly::master, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     logger << "Completed factor scan in "
       << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - clock_1).count())
@@ -3565,64 +3613,8 @@ namespace firefly {
           std::vector<std::vector<FFInt>> results;
           results.reserve(items);
 
-          // TODO multiply factors on workers
-          std::vector<FFInt> values;
-          values.reserve(n);
-          FFInt t;
-          std::vector<uint32_t> zi_order;
-          zi_order.reserve(n - 1);
-          std::vector<FFInt> rand_zi;
-          rand_zi.reserve(n - 1);
-
-          if (!factor_scan) {
-            {
-              std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
-
-              auto tmp = index_map[index];
-              t = tmp.first;
-              zi_order = tmp.second;
-            }
-
-            if (zi_order != std::vector<uint32_t> (n - 1, 1) && (prime_it != 0 && safe_mode == false)) {
-              rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
-            } else {
-              rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
-            }
-
-            if (!factor_scan) {
-              if (change_var_order) {
-                for (const auto & el : optimal_var_order) {
-                  if (el.first == 0) {
-                    values[el.second] = t + shift[0];
-                  } else {
-                    values[el.second] = rand_zi[el.first - 1] * t + shift[el.first];
-                  }
-                }
-              } else {
-                values[0] = t + shift[0];
-
-                for (uint32_t i = 1; i != n; ++i) {
-                  values[i] = rand_zi[i - 1] * t + shift[i];
-                }
-              }
-            } else {
-              for (uint32_t i = 0; i != n; ++i) {
-                if (rand_zi_fac[i] == 1) {
-                  values[i] = t;
-                } else {
-                  values[i] = FFInt(rand_zi_fac[i]);
-                }
-              }
-            }
-          }
-
           for (uint32_t j = 1; j != items + 1; ++j) {
             results.emplace_back(std::vector<FFInt> (1, results_list[i * (items + 1) + j]));
-
-            if (!factor_scan && parsed_factors.find(j - 1) != parsed_factors.end()) {
-              auto res = parsed_factors[j - 1].evaluate_pre(values);
-              results[j - 1][0] /= res[0];
-            }
           }
 
           std::lock_guard<std::mutex> lock_res(future_control);

@@ -29,7 +29,7 @@
 namespace firefly {
   constexpr int master = 0;
   constexpr uint64_t buffer = 2;
-  enum MPI_tags {VALUES, RESULT, NEW_PRIME, TIMING, END};
+  enum MPI_tags {VALUES, RESULT, NEW_PRIME, TIMING, FACTORS, END};
 
   template<typename BlackBoxTemp>
   class MPIWorker {
@@ -48,6 +48,7 @@ namespace firefly {
     ThreadPool tp;
     BlackBoxBase<BlackBoxTemp>& bb;
     std::vector<uint64_t> results;
+    std::unordered_map<uint32_t, ShuntingYardParser> parsed_factors {};
     std::mutex mut;
     std::condition_variable cond;
 
@@ -57,8 +58,8 @@ namespace firefly {
     template<uint32_t N>
     void queue_new_job(const std::vector<uint64_t>& values_list, const uint32_t start);
     void compute(const uint64_t index, const std::vector<FFInt>& values_vec);
-    template<typename FFIntTemp>
-    void compute(const std::vector<uint64_t>& index_vec, const std::vector<FFIntTemp>& values_vec);
+    template<uint32_t N>
+    void compute(const std::vector<uint64_t>& index_vec, const std::vector<FFIntVec<N>>& values_vec);
   };
 
   template<typename BlackBoxTemp>
@@ -206,11 +207,72 @@ namespace firefly {
         total_iterations = 0;
         average_black_box_time = 0.;
 
+        MPI_Status np_or_fac;
+        MPI_Probe(master, MPI_ANY_TAG, MPI_COMM_WORLD, &np_or_fac);
+
+        if (np_or_fac.MPI_TAG == FACTORS) {
+          uint64_t tmp;
+          MPI_Recv(&tmp, 1, MPI_UINT64_T, master, FACTORS, MPI_COMM_WORLD, &np_or_fac);
+
+          parsed_factors.clear();
+
+          std::vector<std::string> vars (n);
+
+          for (size_t i = 0; i != n; ++i) {
+            vars[i] = "x" + std::to_string(i + 1);
+          }
+
+          // Receive factors
+          while (true) {
+            int amount;
+            int multiple = 1;
+            MPI_Bcast(&amount, 1, MPI_INT, master, MPI_COMM_WORLD);
+
+            if (amount == -1) {
+              break;
+            } else if (amount < -1) {
+              multiple = -amount;
+            }
+
+            std::string tmp_fac_s = "";
+
+            for (int j = 0; j != multiple; ++j) {
+              if (multiple != 1) {
+                MPI_Bcast(&amount, 1, MPI_INT, master, MPI_COMM_WORLD);
+              }
+
+              char* fac_c = new char[amount];
+              MPI_Bcast(fac_c, amount, MPI_CHAR, master, MPI_COMM_WORLD);
+
+              for (int i = 0; i != amount; ++i) {
+                tmp_fac_s += fac_c[i];
+              }
+
+              delete[] fac_c;
+            }
+
+            uint32_t function_number;
+            MPI_Bcast(&function_number, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
+
+            ShuntingYardParser parser = ShuntingYardParser();
+            parser.parse_function(tmp_fac_s, vars);
+            parsed_factors.emplace(function_number, parser);
+          }
+
+          MPI_Barrier(MPI_COMM_WORLD);
+        }
+
         // receive next prime
-        MPI_Recv(&prime, 1, MPI_UINT64_T, master, NEW_PRIME, MPI_COMM_WORLD, &status);
+        MPI_Recv(&prime, 1, MPI_UINT64_T, master, NEW_PRIME, MPI_COMM_WORLD, &np_or_fac);
 
         FFInt::set_new_prime(primes()[static_cast<uint32_t>(prime)]);
         bb.prime_changed_internal();
+
+        if (!parsed_factors.empty()) {
+          for (auto & el : parsed_factors) {
+            el.second.precompute_tokens();
+          }
+        }
 
         MPI_Barrier(MPI_COMM_WORLD);
       } else if (status.MPI_TAG == END) {
@@ -258,7 +320,7 @@ namespace firefly {
       }
 
       tp.run_task([this, indices = std::move(indices), values_vec = std::move(values_vec)]() {
-        compute(indices, values_vec);
+        compute<N>(indices, values_vec);
       });
     } else {
       std::vector<FFInt> values_vec;
@@ -290,13 +352,19 @@ namespace firefly {
     result_uint.emplace_back(index);
 
     for (size_t i = 0; i != result.size(); ++i) {
+      if (parsed_factors.find(i) != parsed_factors.end()) {
+        auto fac = parsed_factors[i].evaluate_pre(values_vec);
+        result[i] /= fac[0];
+      }
+
       result_uint.emplace_back(result[i].n);
     }
 
-    std::lock_guard<std::mutex> lock(mut);
-    ++total_iterations;
-
     auto time = std::chrono::duration<double>(time1 - time0).count();
+
+    std::lock_guard<std::mutex> lock(mut);
+
+    ++total_iterations;
     average_black_box_time = (average_black_box_time * (total_iterations - 1) + time) / total_iterations;
     results.insert(results.end(), result_uint.begin(), result_uint.end());
     --tasks;
@@ -305,18 +373,31 @@ namespace firefly {
   }
 
   template<typename BlackBoxTemp>
-  template<typename FFIntTemp>
-  void MPIWorker<BlackBoxTemp>::compute(const std::vector<uint64_t>& index_vec, const std::vector<FFIntTemp>& values_vec) {
+  template<uint32_t N>
+  void MPIWorker<BlackBoxTemp>::compute(const std::vector<uint64_t>& index_vec, const std::vector<FFIntVec<N>>& values_vec) {
     auto time0 = std::chrono::high_resolution_clock::now();
 
-    std::vector<FFIntTemp> result = bb.eval(values_vec);
+    std::vector<FFIntVec<N>> result = bb.eval(values_vec);
 
     auto time1 = std::chrono::high_resolution_clock::now();
 
     std::vector<uint64_t> result_uint;
     result_uint.reserve(result.front().size() * (1 + result.size()));
 
-    for (size_t j = 0; j != result.front().size(); ++j) {
+    if (!parsed_factors.empty()) {
+      // Remove factors from bb result
+      for (size_t i = 0; i != result.size(); ++i) {
+        if (parsed_factors.find(i) != parsed_factors.end()) {
+          auto res = parsed_factors[i].evaluate_pre(values_vec);
+
+          for (size_t j = 0; j != N; ++j) {
+            result[i][j] /= res[0][j];
+          }
+        }
+      }
+    }
+
+    for (size_t j = 0; j != N; ++j) {
       result_uint.emplace_back(index_vec[j]);
 
       for (size_t i = 0; i != result.size(); ++i) {
@@ -324,10 +405,11 @@ namespace firefly {
       }
     }
 
-    std::lock_guard<std::mutex> lock(mut);
-    total_iterations += result.front().size();
-
     auto time = std::chrono::duration<double>(time1 - time0).count();
+
+    std::lock_guard<std::mutex> lock(mut);
+
+    total_iterations += result.front().size();
     average_black_box_time = (average_black_box_time * (total_iterations - 1) + time) / total_iterations;
     results.insert(results.end(), result_uint.begin(), result_uint.end());
     --tasks;

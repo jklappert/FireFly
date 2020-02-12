@@ -117,10 +117,23 @@ int main() {
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();
 
+  //std::ofstream file;
+  //file.open("test.m");
+  //file << "{";
+  //std::string str = "";
+
   // Print all reconstruced functions
   for (uint32_t i = 0; i < results.size(); ++i) {
     std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
-  }*/
+
+    //file << str << "\n";
+    //str = results[i].to_string( {"x", "y", "z", "w"}) + "\n,";
+  }
+
+  //str.pop_back();
+  //file << str << "}\n";
+  //file.close();
+  */
 
   // Rewrite result in Horner form
   /*std::string f15_horner = results[14].generate_horner({"x", "y", "z", "w"});
