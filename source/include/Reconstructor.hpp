@@ -182,6 +182,7 @@ namespace firefly {
     bool one_new_prime = false;
     bool set_anchor_points = false;
     bool scanned_factors = false;
+    bool first_print = true;
     RatReconst_list reconst;
     std::vector<std::string> tags;
     std::vector<std::string> file_paths;
@@ -1101,8 +1102,6 @@ namespace firefly {
 #ifdef FLINT
     auto clock_1 = std::chrono::high_resolution_clock::now();
     factorizations.reserve(n);
-    int old_verbosity = verbosity;
-    verbosity = SILENT;
 
     if (save_states) {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -1110,7 +1109,7 @@ namespace firefly {
       mkdir("ff_save/factors_rf", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
 
-    if (old_verbosity > SILENT) {
+    if (verbosity > SILENT) {
       INFO_MSG("Scanning for factors");
     }
 
@@ -1153,6 +1152,14 @@ namespace firefly {
 
           start_first_runs(first);
           first = false;
+
+          if (prime_it_fac == 0 && scan_n == 0) {
+            if (verbosity > SILENT) {
+              INFO_MSG("Scanning for factors in " + curr_var);
+            }
+
+            logger << "Scanning for factors in " << curr_var << "\n";
+          }
 
           run_until_done();
           prime_it = 0;
@@ -1397,19 +1404,19 @@ namespace firefly {
             }
           }
 
-          if (old_verbosity > SILENT) {
+          if (verbosity > SILENT) {
             if (prime_it_fac == 0 && scan_n == 0) {
               INFO_MSG("Maximum degree of x" + std::to_string(i + 1)
                 + ": " + std::to_string(max_degs[i]));
               if (max_degs[i] != 0) {
-                INFO_MSG("Possible factors in x"
+                INFO_MSG("Potential factors in x"
                   + std::to_string(i + 1) + ": " + std::to_string(number_of_factors));
               } else {
                 INFO_MSG("No factors in x"
                   + std::to_string(i + 1) + ": " + std::to_string(number_of_factors));
               }
             } else if (prime_it_fac == 0 && scan_n == 1) {
-              INFO_MSG("Factors in x" + std::to_string(i + 1) + ": "
+              INFO_MSG("Identified factors in x" + std::to_string(i + 1) + ": "
                 + std::to_string(number_of_factors));
               if (max_degs[i] != old_max_deg) {
                 INFO_MSG("Maximum degree of x" + std::to_string(i + 1) + " after factoring: "
@@ -1424,7 +1431,7 @@ namespace firefly {
               << std::to_string(max_degs[i]) << "\n";
 
             if (max_degs[i] != 0) {
-              logger << "Possible factors in x"
+              logger << "Potential factors in x"
                 << std::to_string(i + 1) << ": " << std::to_string(number_of_factors)
                 << "\n";
             } else {
@@ -1434,7 +1441,7 @@ namespace firefly {
             }
           } else if (prime_it_fac == 0 && scan_n == 1) {
             total_number_of_factors += number_of_factors;
-            logger << "Factors in x" << std::to_string(i + 1) << ": "
+            logger << "Identified actors in x" << std::to_string(i + 1) << ": "
               << std::to_string(number_of_factors) << "\n";
 
             if (max_degs[i] != old_max_deg) {
@@ -1467,7 +1474,7 @@ namespace firefly {
           FFInt::set_new_prime(primes()[prime_it_fac]);
           bb.prime_changed_internal();
         } else {
-          if (old_verbosity > SILENT) {
+          if (verbosity > SILENT) {
             INFO_MSG("Completed factor scan in " + curr_var + " | "
               + std::to_string(total_iterations) + " probes in total");
             INFO_MSG("Required prime fields: " + std::to_string(prime_it_fac + 1));
@@ -1563,10 +1570,22 @@ namespace firefly {
       }
     }
 
+#if WITH_MPI
+    MPI_Request* requests = new MPI_Request[world_size - 1];
+
+    for (int i = 1; i != world_size; ++i) {
+      MPI_Isend(&FFInt::p, 1, MPI_UINT64_T, i, FACTORS, MPI_COMM_WORLD, &requests[i - 1]);
+    }
+
+    MPI_Waitall(world_size - 1, requests, MPI_STATUSES_IGNORE);
+
+    delete[] requests;
+#endif
+
     for (const auto& tmp_fac : factors_str) {
       std::string tmp_fac_s = "";
 
-      if(!tmp_fac.second.first.empty()){
+      if (!tmp_fac.second.first.empty()) {
         tmp_fac_s += "(";
         for (const auto& tmp_fac_num : tmp_fac.second.first) {
           tmp_fac_s += "(" + tmp_fac_num + ")*";
@@ -1588,21 +1607,50 @@ namespace firefly {
         }
 
         tmp_fac_s.pop_back();
-
-        ShuntingYardParser parser = ShuntingYardParser();
-        parser.parse_function(tmp_fac_s + ")", vars);
-        parser.precompute_tokens();
-        parsed_factors.emplace(tmp_fac.first, parser);
-
-        tmp_fac_s += ");\n";
-      } else {
-        ShuntingYardParser parser = ShuntingYardParser();
-        parser.parse_function(tmp_fac_s, vars);
-        parser.precompute_tokens();
-        parsed_factors.emplace(tmp_fac.first, parser);
-
-        tmp_fac_s += ";\n";
+        tmp_fac_s += ")";
       }
+
+      ShuntingYardParser parser = ShuntingYardParser();
+      parser.parse_function(tmp_fac_s, vars);
+      parser.precompute_tokens();
+      parsed_factors.emplace(tmp_fac.first, parser);
+
+#if WITH_MPI
+      const int batch_size = 2147483645; // 2147483647 is the largest signed 32-bit integer
+      const int split = static_cast<int>(tmp_fac_s.size()) / batch_size;
+
+      if (split > 1) {
+        int tmp;
+        if (static_cast<int>(tmp_fac_s.size()) % batch_size == 0) {
+          tmp = -split;
+        } else {
+          tmp = - 1 - split;
+        }
+        MPI_Bcast(&tmp, 1, MPI_INT, master, MPI_COMM_WORLD);
+      } else if (split == 1 && static_cast<int>(tmp_fac_s.size()) != batch_size) {
+        int tmp = - 1 - split;
+        MPI_Bcast(&tmp, 1, MPI_INT, master, MPI_COMM_WORLD);
+      }
+
+      for (int i = 0; i != 1 + split; ++i) {
+        if (i == split) {
+          int amount = static_cast<int>(tmp_fac_s.size()) - i * batch_size;
+          if (amount != 0) {
+            MPI_Bcast(&amount, 1, MPI_INT, master, MPI_COMM_WORLD);
+            MPI_Bcast(&tmp_fac_s[i * batch_size], amount, MPI_CHAR, master, MPI_COMM_WORLD);
+          }
+        } else {
+          int amount = batch_size;
+          MPI_Bcast(&amount, 1, MPI_INT, firefly::master, MPI_COMM_WORLD);
+          MPI_Bcast(&tmp_fac_s[i * batch_size], amount, MPI_CHAR, master, MPI_COMM_WORLD);
+        }
+      }
+
+      uint32_t function_number = tmp_fac.first;
+      MPI_Bcast(&function_number, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
+#endif
+
+      tmp_fac_s += ";\n";
 
       if (save_states) {
         ogzstream file;
@@ -1613,7 +1661,12 @@ namespace firefly {
       }
     }
 
-    verbosity = old_verbosity;
+#if WITH_MPI
+    int end = -1;
+    MPI_Bcast(&end, 1, MPI_INT, firefly::master, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     logger << "Completed factor scan in "
       << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - clock_1).count())
@@ -1622,7 +1675,11 @@ namespace firefly {
     logger << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n";
 
     logger << var_order << "\n\n";
-    logger << "Proceeding with interpolation over prime field F(" << std::to_string(primes()[prime_it]) << ")\n";
+
+    if (!scan) {
+      logger << "Proceeding with interpolation over prime field F(" << std::to_string(primes()[prime_it]) << ")\n";
+    }
+
     logger.close();
     logger.open("firefly.log", std::ios_base::app);
 
@@ -1631,7 +1688,10 @@ namespace firefly {
                " s | " + std::to_string(total_iterations) + " probes in total");
       INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
       INFO_MSG(var_order + "\n");
-      INFO_MSG("Proceeding with interpolation over prime field F(" + std::to_string(primes()[prime_it]) + ")");
+
+      if (!scan) {
+        INFO_MSG("Proceeding with interpolation over prime field F(" + std::to_string(primes()[prime_it]) + ")");
+      }
     }
 
     factor_scan = false;
@@ -1748,11 +1808,13 @@ namespace firefly {
     {
       std::lock_guard<std::mutex> lock(future_control);
 
-      if (!factor_scan && factors_rf.empty())
-       logger << "Time for the first black-box probe: " << std::to_string(average_black_box_time) << " s\n";
+      if (first_print) {
+        logger << "Time for the first black-box probe: " << std::to_string(average_black_box_time) << " s\n";
 
-      if (verbosity > SILENT && !factor_scan && factors_rf.empty())
-        INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s");
+        if (verbosity > SILENT) {
+          INFO_MSG("Time for the first black-box probe: " + std::to_string(average_black_box_time) + " s");
+        }
+      }
     }
 
     items = static_cast<uint32_t>(probes.size());
@@ -1880,16 +1942,20 @@ namespace firefly {
       tags.clear();
     }
 
-    if (!factor_scan) {
-      logger << "Probe: 1 | Done: 0 / " << std::to_string(items)
-        << " | Requires new prime field: " << std::to_string(items_new_prime)
-        << " / " << std::to_string(items) << "\n";
+    if (verbosity > SILENT && first_print) {
+      first_print = false;
+
+      std::string msg = std::to_string(items) + " functions will be interpolated";
+
+      if (factor_scan) {
+        msg += "\n";
+      }
+
+      logger << msg << "\n";
       logger.close();
       logger.open("firefly.log", std::ios_base::app);
-    }
 
-    if (verbosity > SILENT) {
-      INFO_MSG("Probe: 1 | Done: 0 / " + std::to_string(items) + " | Requires new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items));
+      INFO_MSG(msg);
     }
 
     queue_probes(zi_order, static_cast<uint32_t>(probes.front().size()));
@@ -2304,7 +2370,7 @@ namespace firefly {
 
       get_probe(indices, probes);
 
-      if (verbosity > SILENT && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - last_print_time).count() > 2.) {
+      if (verbosity > SILENT && !factor_scan && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - last_print_time).count() > 2.) {
         std::lock_guard<std::mutex> lock_print(print_control);
         last_print_time = std::chrono::high_resolution_clock::now();
         std::cerr << "\033[1;34mFireFly info:\033[0m Probe: " << iteration << "\r";
@@ -2654,7 +2720,7 @@ namespace firefly {
     {
       std::lock_guard<std::mutex> lock_status(status_control);
 
-      if (!scan && (one_done || one_new_prime)) {
+      if (!factor_scan && !scan && (one_done || one_new_prime)) {
         one_done = false;
         one_new_prime = false;
 
@@ -3547,64 +3613,8 @@ namespace firefly {
           std::vector<std::vector<FFInt>> results;
           results.reserve(items);
 
-          // TODO multiply factors on workers
-          std::vector<FFInt> values;
-          values.reserve(n);
-          FFInt t;
-          std::vector<uint32_t> zi_order;
-          zi_order.reserve(n - 1);
-          std::vector<FFInt> rand_zi;
-          rand_zi.reserve(n - 1);
-
-          if (!factor_scan) {
-            {
-              std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
-
-              auto tmp = index_map[index];
-              t = tmp.first;
-              zi_order = tmp.second;
-            }
-
-            if (zi_order != std::vector<uint32_t> (n - 1, 1) && (prime_it != 0 && safe_mode == false)) {
-              rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
-            } else {
-              rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
-            }
-
-            if (!factor_scan) {
-              if (change_var_order) {
-                for (const auto & el : optimal_var_order) {
-                  if (el.first == 0) {
-                    values[el.second] = t + shift[0];
-                  } else {
-                    values[el.second] = rand_zi[el.first - 1] * t + shift[el.first];
-                  }
-                }
-              } else {
-                values[0] = t + shift[0];
-
-                for (uint32_t i = 1; i != n; ++i) {
-                  values[i] = rand_zi[i - 1] * t + shift[i];
-                }
-              }
-            } else {
-              for (uint32_t i = 0; i != n; ++i) {
-                if (rand_zi_fac[i] == 1) {
-                  values[i] = t;
-                } else {
-                  values[i] = FFInt(rand_zi_fac[i]);
-                }
-              }
-            }
-          }
-
           for (uint32_t j = 1; j != items + 1; ++j) {
             results.emplace_back(std::vector<FFInt> (1, results_list[i * (items + 1) + j]));
-
-            if (!factor_scan && parsed_factors.find(j - 1) != parsed_factors.end()) {
-              auto res = parsed_factors[j - 1].evaluate_pre(values);
-              results[j - 1][0] /= res[0];
-            }
           }
 
           std::lock_guard<std::mutex> lock_res(future_control);

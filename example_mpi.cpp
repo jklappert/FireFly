@@ -120,7 +120,7 @@ int main() {
   // Create the user defined black box
   BlackBoxUser bb(par);
 
-  uint32_t bunch_size = 16;
+  uint32_t bunch_size = 1;
 
   //std::this_thread::sleep_for(std::chrono::seconds(15));
 
@@ -134,6 +134,27 @@ int main() {
     reconst.enable_scan();
 
     reconst.reconstruct();
+
+    // Get results
+    /*std::vector<RationalFunction> results = reconst.get_result();
+
+    //std::ofstream file;
+    //file.open("test.m");
+    //file << "{";
+    //std::string str = "";
+
+    // Print all reconstruced functions
+    for (uint32_t i = 0; i < results.size(); ++i) {
+      std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
+
+      //file << str << "\n";
+      //str = results[i].to_string( {"x", "y", "z", "w"}) + "\n,";
+    }
+
+    //str.pop_back();
+    //file << str << "}\n";
+    //file.close();
+    */
   } else {
     MPIWorker<BlackBoxUser>(4 /*n_vars*/,
               std::thread::hardware_concurrency() /*n_threads*/,
