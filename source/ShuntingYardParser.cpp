@@ -61,6 +61,13 @@ namespace firefly {
     std::vector<FFInt> check_vars_2;
     std::unordered_map<std::pair<uint64_t, uint64_t>, uint64_t, UintPairHasher> check_map;
 
+    for (const auto& p : primes()) {
+      if (FFInt::p == p)
+	break;
+
+      ++prime_counter;
+    }
+
     if (check_is_equal) {
       size_t c = 0;
       size_t s = vars_map.size();
@@ -70,23 +77,16 @@ namespace firefly {
       uint64_t seed = static_cast<uint64_t>(std::time(0));
       base.set_seed(seed);
 
-      FFInt::set_new_prime(primes()[prime_counter != 99 ? prime_counter + 1 : prime_counter - 1]);
+      FFInt::set_new_prime(primes()[prime_counter != 299 ? prime_counter + 1 : prime_counter - 1]);
 
       for (size_t i = 0; i != s; ++i) {
-        check_vars_2.emplace_back(base.get_rand_64());
+        check_vars_1.emplace_back(base.get_rand_64());
       }
 
       FFInt::set_new_prime(primes()[prime_counter]);
 
       for (size_t i = 0; i != s; ++i) {
         check_vars_2.emplace_back(base.get_rand_64());
-      }
-
-      for (const auto& p : primes()) {
-        if (FFInt::p == p)
-          prime_counter = c;
-
-        ++c;
       }
     }
 
@@ -121,10 +121,10 @@ namespace firefly {
           ++parsed_fun_c;
 
           if (check_is_equal) {
-            FFInt::set_new_prime(primes()[prime_counter != 99 ? prime_counter + 1 : prime_counter - 1]);
-            FFInt v1 = evaluate(functions.back(), check_vars_2);
+            FFInt::set_new_prime(primes()[prime_counter != 299 ? prime_counter + 1 : prime_counter - 1]);
+            FFInt v1 = evaluate(functions.back(), check_vars_1);
             FFInt::set_new_prime(primes()[prime_counter]);
-            FFInt v2 = evaluate(functions.back(), check_vars_1);
+            FFInt v2 = evaluate(functions.back(), check_vars_2);
 
             if (check_map.find(std::make_pair(v1.n, v2.n)) != check_map.end()) {
               functions.pop_back();
@@ -150,10 +150,10 @@ namespace firefly {
         ++parsed_fun_c;
 
         if (check_is_equal) {
-          FFInt::set_new_prime(primes()[prime_counter != 99 ? prime_counter + 1 : prime_counter - 1]);
-          FFInt v1 = evaluate(functions.back(), check_vars_2);
+          FFInt::set_new_prime(primes()[prime_counter != 299 ? prime_counter + 1 : prime_counter - 1]);
+          FFInt v1 = evaluate(functions.back(), check_vars_1);
           FFInt::set_new_prime(primes()[prime_counter]);
-          FFInt v2 = evaluate(functions.back(), check_vars_1);
+          FFInt v2 = evaluate(functions.back(), check_vars_2);
 
           if (check_map.find(std::make_pair(v1.n, v2.n)) != check_map.end()) {
             functions.pop_back();
