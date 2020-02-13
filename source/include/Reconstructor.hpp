@@ -335,6 +335,7 @@ namespace firefly {
                                int verbosity_): n(n_), thr_n(thr_n_ - 1), bb(bb_), verbosity(verbosity_), tp(thr_n) {
 #endif
     FFInt::set_new_prime(primes()[prime_it]);
+    bb.prime_changed_internal();
     uint64_t seed = static_cast<uint64_t>(std::time(0));
     BaseReconst().set_seed(seed);
     tmp_rec = RatReconst(n);
@@ -370,6 +371,7 @@ namespace firefly {
     }
 
     FFInt::set_new_prime(primes()[prime_it]);
+    bb.prime_changed_internal();
     uint64_t seed = static_cast<uint64_t>(std::time(0));
     BaseReconst().set_seed(seed);
     tmp_rec = RatReconst(n);
@@ -595,6 +597,7 @@ namespace firefly {
     }
 
     FFInt::set_new_prime(primes()[prime_it]);
+    bb.prime_changed_internal();
 
     for (auto& el : parsed_factors) {
       el.second.precompute_tokens();
