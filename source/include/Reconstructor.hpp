@@ -1948,7 +1948,7 @@ namespace firefly {
     if (verbosity > SILENT && first_print) {
       first_print = false;
 
-      std::string msg = std::to_string(items) + " functions will be interpolated";
+      std::string msg = std::to_string(items) + " function(s) will be interpolated";
 
       if (factor_scan) {
         msg += "\n";
