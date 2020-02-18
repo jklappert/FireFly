@@ -975,13 +975,10 @@ namespace firefly {
     if (verbosity > SILENT)
       INFO_MSG("Scanning for a sparse shift");
 
-    // Generate all possible combinations of shifting variables
-    const auto shift_vec = generate_possible_shifts(n);
-
+    std::vector<uint32_t> current_shift(n, 0);
     bool first = true;
     bool found_shift = false;
     uint32_t counter = 0;
-    uint32_t bound = static_cast<uint32_t>(shift_vec.size());
 
     tmp_rec.scan_for_sparsest_shift();
 
@@ -991,11 +988,23 @@ namespace firefly {
     uint32_t max_deg_den = 0;
 
     // Run this loop until a proper shift is found
-    while (!found_shift && counter != bound) {
+    while (!found_shift) {
       if (!first) {
-        tmp_rec.set_zi_shift(shift_vec[counter]);
-        shift = tmp_rec.get_zi_shift_vec();
-        queue_new_ones();
+        if (counter != 0) {
+          auto shift_pair = generate_next_permutation(current_shift);
+          if (shift_pair.first) {
+            current_shift = shift_pair.second;
+            tmp_rec.set_zi_shift(current_shift);
+            shift = tmp_rec.get_zi_shift_vec();
+            queue_new_ones();
+          } else {
+            break;
+          }
+        } else {
+          tmp_rec.set_zi_shift(current_shift);
+          shift = tmp_rec.get_zi_shift_vec();
+          queue_new_ones();
+        }
       }
 
       run_until_done();
@@ -1038,7 +1047,7 @@ namespace firefly {
     }
 
     if (found_shift) {
-      tmp_rec.set_zi_shift(shift_vec[counter - 1]);
+      tmp_rec.set_zi_shift(current_shift);
     } else {
       tmp_rec.set_zi_shift(std::vector<uint32_t> (n, 1));
     }
@@ -1061,7 +1070,7 @@ namespace firefly {
     if (found_shift) {
       std::string msg = "";
 
-      for (const auto & el : shift_vec[counter - 1]) {
+      for (const auto & el : current_shift) {
         msg += std::to_string(el) + ", ";
       }
 

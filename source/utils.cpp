@@ -168,11 +168,41 @@ namespace firefly {
     return true;
   }
 
+  std::pair<bool, std::vector<uint32_t>> generate_next_permutation(std::vector<uint32_t>& curr_per) {
+    uint32_t* curr_per_arr = &curr_per[0];
+    int size = curr_per.size();
+
+    bool got_next_per = std::next_permutation(curr_per_arr, curr_per_arr + size);
+
+    if (got_next_per)
+      return std::make_pair(true, std::vector<uint32_t> (curr_per_arr, curr_per_arr + size));
+    else {
+      int num_of_ones = 0;
+
+      for (int i = 0; i != size; ++i) {
+        if (curr_per[i] == 1)
+          ++num_of_ones;
+      }
+
+      if (num_of_ones == size)
+        return std::make_pair(false, std::vector<uint32_t> (size, 0));
+      else {
+        std::vector<uint32_t> new_per (size, 0);
+
+        for (int i = size - 1; i >= size - 1 - num_of_ones; i--) {
+          new_per[i] = 1;
+        }
+
+        return std::make_pair(true, new_per);
+      }
+    }
+  }
+
   std::vector<std::vector<uint32_t>> generate_possible_shifts(uint32_t r) {
     std::vector<std::vector<uint32_t>> result;
-    uint32_t size = 1;
-    uint32_t exp = r;
-    uint32_t base = 2;
+    size_t size = 1;
+    size_t exp = r;
+    size_t base = 2;
 
     while (exp) {
       if (exp & 1)

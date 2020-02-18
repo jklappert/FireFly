@@ -90,7 +90,12 @@ namespace firefly {
    *  @param r the length of the vector
    */
   std::vector<std::vector<uint32_t>> generate_possible_shifts(uint32_t r);
-
+  /**
+   *  Generates the next binary permutation
+   *  @param curr_per current permutation
+   *  @return a pair where the first bool indicates if the second entry is a new permutation
+   */
+  std::pair<bool, std::vector<uint32_t>> generate_next_permutation(std::vector<uint32_t>& curr_per);
   // TODO
   uint32_t compute_bunch_size(const uint32_t queue_length, const uint32_t thr_n, const uint32_t bunch_size);
   uint32_t compute_job_number(const uint32_t queue_length, const uint32_t threads, const uint32_t total_threads, const uint32_t bunch_size);
