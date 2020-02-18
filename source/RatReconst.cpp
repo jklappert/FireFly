@@ -583,12 +583,12 @@ namespace firefly {
             // from the system of equations. When a higher degree is interpolated,
             // try to interpolate the missing degrees sparsely.
             for (auto it = coef_n.begin(); it != coef_n.end(); ++it) {
-              if (it->second.get_zi_order() == curr_zi_order || restart_sparse_interpolation) {
+              if (it->second.get_zi_order() == curr_zi_order || restart_sparse_interpolation_num) {
                 bool poly_done = false;
 
-                if (restart_sparse_interpolation) {
+                if (restart_sparse_interpolation_num) {
                   it -> second = PolyReconst(n - 1, it->first, true);
-                  restart_sparse_interpolation = false;
+                  restart_sparse_interpolation_num = false;
                 }
 
                 if (dense_solve_degs_num.find(it->first) != dense_solve_degs_num.end())
@@ -604,12 +604,12 @@ namespace firefly {
             }
 
             for (auto it = coef_d.begin(); it != coef_d.end(); ++it) {
-              if (it->second.get_zi_order() == curr_zi_order || restart_sparse_interpolation) {
+              if (it->second.get_zi_order() == curr_zi_order || restart_sparse_interpolation_den) {
                 bool poly_done = false;
 
-                if (restart_sparse_interpolation) {
+                if (restart_sparse_interpolation_den) {
                   it -> second = PolyReconst(n - 1, it->first, true);
-                  restart_sparse_interpolation = false;
+                  restart_sparse_interpolation_den = false;
                 }
 
                 if (dense_solve_degs_den.find(it->first) != dense_solve_degs_den.end())
@@ -1278,7 +1278,7 @@ namespace firefly {
           if (coef_n.size() > 1) {
             uint32_t tmp_deg = (++coef_n.begin()) -> first;
             dense_solve_degs_num.erase(tmp_deg);
-            restart_sparse_interpolation = true;
+            restart_sparse_interpolation_num = true;
 
             for (uint32_t tmp_deg_2 = curr_deg - 1; tmp_deg_2 > tmp_deg; tmp_deg_2--) {
               if (solved_degs_num.find(tmp_deg_2) != solved_degs_num.end()) {
@@ -1312,7 +1312,7 @@ namespace firefly {
           if (coef_d.size() > 1) {
             uint32_t tmp_deg = (++coef_d.begin()) -> first;
             dense_solve_degs_den.erase(tmp_deg);
-            restart_sparse_interpolation = true;
+            restart_sparse_interpolation_den = true;
 
             for (uint32_t tmp_deg_2 = curr_deg - 1; tmp_deg_2 > tmp_deg; tmp_deg_2--) {
               if (solved_degs_den.find(tmp_deg_2) != solved_degs_den.end()) {

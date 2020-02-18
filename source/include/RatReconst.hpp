@@ -440,7 +440,8 @@ namespace firefly {
     bool first_feed = true; /**< Indicates whether this is the first feed in the current field */
     bool check_interpolation = false; /**< Indicates whether one has to check the interpolation point */
     bool fed_zero = false; /**< Indicates that the current feed was a zero */
-    bool restart_sparse_interpolation = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
+    bool restart_sparse_interpolation_num = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
+    bool restart_sparse_interpolation_den = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
     bool normalizer_den_num = false; /**< If true the real normalization degree is the denominator else the numerator */
     bool skip_thiele = false; /**< If true Thiele is skipped and replaced by system of equations during factor scan */
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
