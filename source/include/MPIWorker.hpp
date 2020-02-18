@@ -64,11 +64,21 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   MPIWorker<BlackBoxTemp>::MPIWorker(uint32_t n_, uint32_t thr_n_, BlackBoxBase<BlackBoxTemp>& bb_) : n(n_), thr_n(thr_n_), tp(thr_n_), bb(bb_) {
+    if (thr_n == 0) {
+      ERROR_MSG("Worker started without threads. Abort.");
+      std::exit(EXIT_FAILURE);
+    }
+
     run();
   }
 
   template<typename BlackBoxTemp>
   MPIWorker<BlackBoxTemp>::MPIWorker(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase<BlackBoxTemp>& bb_) : n(n_), thr_n(thr_n_), bunch_size(bunch_size_), tp(thr_n_), bb(bb_) {
+    if (thr_n == 0) {
+      ERROR_MSG("Worker started without threads. Abort.");
+      std::exit(EXIT_FAILURE);
+    }
+
     run();
   }
 
@@ -185,18 +195,22 @@ namespace firefly {
           lock.unlock();
         }
       } else if (status.MPI_TAG == NEW_PRIME) {
+        MPI_Cancel(&request);
         //std::cout << "\n\nworker new prime\n\n";
-
-        // receive the prime signal but not the actual prime
-        uint64_t prime;
-        MPI_Recv(&prime, 1, MPI_UINT64_T, master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
         tp.kill_all();
         results.clear();
         tasks = 0;
 
-        MPI_Barrier(MPI_COMM_WORLD);
+        // receive the prime signal but not the actual prime
+        uint64_t prime;
+        MPI_Recv(&prime, 1, MPI_UINT64_T, master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
         MPI_Wait(&request, MPI_STATUS_IGNORE);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        uint64_t last_package_of_prime = 0;
+        MPI_Send(&last_package_of_prime, 1, MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD);
 
         double timing[2] = {average_black_box_time, static_cast<double>(total_iterations)};
 
@@ -260,6 +274,8 @@ namespace firefly {
           }
 
           MPI_Barrier(MPI_COMM_WORLD);
+
+          //std::cout << "factors recieved\n";
         }
 
         // receive next prime
@@ -276,15 +292,20 @@ namespace firefly {
 
         MPI_Barrier(MPI_COMM_WORLD);
       } else if (status.MPI_TAG == END) {
-        uint64_t tmp;
-        MPI_Recv(&tmp, 1, MPI_UINT64_T, master, END, MPI_COMM_WORLD, &status);
+        MPI_Cancel(&request);
 
         tp.kill_all();
         results.clear();
         tasks = 0;
 
-        MPI_Barrier(MPI_COMM_WORLD);
+        uint64_t tmp;
+        MPI_Recv(&tmp, 1, MPI_UINT64_T, master, END, MPI_COMM_WORLD, &status);
+
         MPI_Wait(&request, MPI_STATUS_IGNORE);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        uint64_t last_package_of_prime = 0;
+        MPI_Send(&last_package_of_prime, 1, MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD);
 
         double timing[2] = {average_black_box_time, static_cast<double>(total_iterations)};
 
