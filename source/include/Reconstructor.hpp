@@ -822,7 +822,15 @@ namespace firefly {
         scan_for_shift();
         queue_new_ones();
       } else {
-        start_first_runs(!scanned_factors);
+        if (scanned_factors && items == 0) {
+          done = true;
+        } else {
+          start_first_runs(!scanned_factors);
+        }
+
+        if (items == 0) {
+          done = true;
+        }
       }
     } else {
       scan = false;
@@ -983,6 +991,10 @@ namespace firefly {
     tmp_rec.scan_for_sparsest_shift();
 
     start_first_runs(!scanned_factors);
+
+    if (items == 0) {
+      return;
+    }
 
     uint32_t max_deg_num = 0;
     uint32_t max_deg_den = 0;
@@ -1164,6 +1176,12 @@ namespace firefly {
 
           start_first_runs(first);
           first = false;
+
+          if (items == 0) {
+            scan = false;
+            scanned_factors = true;
+            return;
+          }
 
           if (prime_it_fac == 0 && scan_n == 0) {
             if (verbosity > SILENT) {
@@ -1958,6 +1976,14 @@ namespace firefly {
 
     if (verbosity > SILENT && first_print) {
       first_print = false;
+
+      if (items == 0) {
+        INFO_MSG("Black box has no entries");
+        logger << "Black box has no entries\n";
+        logger.close();
+        logger.open("firefly.log", std::ios_base::app);
+        return;
+      }
 
       std::string msg = std::to_string(items) + " function(s) will be interpolated";
 
