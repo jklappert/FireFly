@@ -3560,9 +3560,8 @@ namespace firefly {
         //std::cout << "com through\n";
 
         for (int k = 1; k != world_size; ++k) {
-          MPI_Status status_new_send;
           uint64_t free_slots;
-          MPI_Recv(&free_slots, 1, MPI_UINT64_T, k, RESULT, MPI_COMM_WORLD, &status_new_send);
+          MPI_Recv(&free_slots, 1, MPI_UINT64_T, k, RESULT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
           if (requested_probes.size() != 0) {
             uint32_t size = compute_job_number(static_cast<uint32_t>(requested_probes.size()), static_cast<uint32_t>(free_slots), thr_n, bunch_size);
@@ -3588,10 +3587,10 @@ namespace firefly {
 
             //std::cout << "sending " << size << " jobs\n";
 
-            MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, status_new_send.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
-          } else if (free_slots == nodes[status_new_send.MPI_SOURCE]) {
-            //std::cout << "com np empty nodes " << status_new_send.MPI_SOURCE << " " << free_slots << "\n";
-            empty_nodes.emplace(std::make_pair(status_new_send.MPI_SOURCE, free_slots));
+            MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, k, VALUES, MPI_COMM_WORLD);
+          } else if (free_slots == nodes[k]) {
+            //std::cout << "com np empty nodes " << k << " " << free_slots << "\n";
+            empty_nodes.emplace(std::make_pair(k, free_slots));
           }
         }
       } else if (restart_empty_nodes) {
@@ -3620,7 +3619,7 @@ namespace firefly {
 
           //std::cout << "restart: sending " << size << " jobs\n";
 
-          MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
+          MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, node.first, VALUES, MPI_COMM_WORLD);
         }
 
         if (requested_probes.empty()) {
@@ -3666,7 +3665,7 @@ namespace firefly {
 
         std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
-        if (requested_probes.size() != 0) {
+        if (!requested_probes.empty()) {
           uint32_t size = compute_job_number(static_cast<uint32_t>(requested_probes.size()), static_cast<uint32_t>(free_slots), thr_n, bunch_size);
 
           std::vector<uint64_t> values;
