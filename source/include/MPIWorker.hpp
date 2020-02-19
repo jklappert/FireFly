@@ -195,7 +195,7 @@ namespace firefly {
           lock.unlock();
         }
       } else if (status.MPI_TAG == NEW_PRIME) {
-        MPI_Cancel(&request);
+        //MPI_Cancel(&request);
         //std::cout << "\n\nworker new prime\n\n";
 
         tp.kill_all();
@@ -207,10 +207,11 @@ namespace firefly {
         MPI_Recv(&prime, 1, MPI_UINT64_T, master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
         MPI_Wait(&request, MPI_STATUS_IGNORE);
-        MPI_Barrier(MPI_COMM_WORLD);
 
         uint64_t last_package_of_prime = 0;
         MPI_Send(&last_package_of_prime, 1, MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD);
+
+        MPI_Barrier(MPI_COMM_WORLD);
 
         double timing[2] = {average_black_box_time, static_cast<double>(total_iterations)};
 
@@ -292,7 +293,7 @@ namespace firefly {
 
         MPI_Barrier(MPI_COMM_WORLD);
       } else if (status.MPI_TAG == END) {
-        MPI_Cancel(&request);
+        //MPI_Cancel(&request);
 
         tp.kill_all();
         results.clear();
@@ -302,10 +303,11 @@ namespace firefly {
         MPI_Recv(&tmp, 1, MPI_UINT64_T, master, END, MPI_COMM_WORLD, &status);
 
         MPI_Wait(&request, MPI_STATUS_IGNORE);
-        MPI_Barrier(MPI_COMM_WORLD);
 
         uint64_t last_package_of_prime = 0;
         MPI_Send(&last_package_of_prime, 1, MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD);
+
+        MPI_Barrier(MPI_COMM_WORLD);
 
         double timing[2] = {average_black_box_time, static_cast<double>(total_iterations)};
 
