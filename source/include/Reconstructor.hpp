@@ -167,6 +167,7 @@ namespace firefly {
     BlackBoxBase<BlackBoxTemp>& bb;
     int verbosity;
     double average_black_box_time = 0.;
+    std::atomic<uint32_t> probes_fed = {0};
     std::atomic<bool> scan = {false};
     std::atomic<bool> factor_scan = {false};
     std::atomic<bool> aborted = {false};
@@ -877,7 +878,7 @@ namespace firefly {
 #endif
 
     if (one_done || one_new_prime) {
-      logger << "Probe: " << std::to_string(iteration) <<
+      logger << "Probe: " << std::to_string(probes_fed) <<
                  " | Done: " << std::to_string(items_done) << " / " << std::to_string(items) <<
                  " | " << "Requires new prime field: " << std::to_string(items_new_prime) << " / " << std::to_string(items - items_done) << "\n";
     }
@@ -890,7 +891,7 @@ namespace firefly {
 
     if (verbosity > SILENT) {
       if (one_done || one_new_prime) {
-        INFO_MSG("Probe: " + std::to_string(iteration) +
+        INFO_MSG("Probe: " + std::to_string(probes_fed) +
                  " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
                  " | " + "Requires new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done) + "\n");
       }
@@ -2187,13 +2188,13 @@ namespace firefly {
           std::lock_guard<std::mutex> lock_print(print_control);
 
           if ((one_done || one_new_prime) && !factor_scan) {
-            logger << "Probe: " << std::to_string(iteration)
+            logger << "Probe: " << std::to_string(probes_fed)
             << " | Done: " << std::to_string(items_done)
             << " / " + std::to_string(items) << " | " << "Requires new prime field: "
             << std::to_string(items_new_prime) << " / " << std::to_string(items - items_done) << "\n";
 
             if (verbosity > SILENT) {
-            INFO_MSG("Probe: " + std::to_string(iteration) +
+            INFO_MSG("Probe: " + std::to_string(probes_fed) +
                      " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
                      " | " + "Requires new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
             }
@@ -2403,7 +2404,7 @@ namespace firefly {
         probes_for_next_prime = 0;
       }
 
-      //if (iteration == 1000) exit(-1);
+      //if (probes_fed == 1000) exit(-1);
 
       std::vector<uint64_t> indices;
       std::vector<std::vector<FFInt>> probes;
@@ -2413,7 +2414,7 @@ namespace firefly {
       if (verbosity > SILENT && !factor_scan && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - last_print_time).count() > 2.) {
         std::lock_guard<std::mutex> lock_print(print_control);
         last_print_time = std::chrono::high_resolution_clock::now();
-        std::cerr << "\033[1;34mFireFly info:\033[0m Probe: " << iteration << "\r";
+        std::cerr << "\033[1;34mFireFly info:\033[0m Probe: " << probes_fed << "\r";
       }
 
       {
@@ -2486,7 +2487,7 @@ namespace firefly {
                                      + " " + std::to_string(items_done) + " | "
                                      + std::to_string(feed_jobs) + " "
                                      + std::to_string(interpolate_jobs) + " | "
-                                     + std::to_string(iteration) + " "
+                                     + std::to_string(probes_fed) + " "
                                      + std::to_string(fed_ones) + " | "
                                      + std::to_string(probes_queued) + " "
                                      + std::to_string(computed_probes.size()) + " "
@@ -2677,6 +2678,8 @@ namespace firefly {
       //std::cout << "get " << indices.size() << "\n";
     }
 
+    probes_fed += indices.size();
+
     std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
     probes_queued -= static_cast<uint32_t>(indices.size());
@@ -2764,9 +2767,8 @@ namespace firefly {
         one_done = false;
         one_new_prime = false;
 
-        std::lock_guard<std::mutex> lock_future(future_control);
         std::lock_guard<std::mutex> lock_print(print_control);
-        logger << "Probe: " + std::to_string(iteration)
+        logger << "Probe: " + std::to_string(probes_fed)
         << " | Done: " << std::to_string(items_done) << " / " << std::to_string(items)
         << " | " << "Requires new prime field: " << std::to_string(items_new_prime)
         << " / " << std::to_string(items - items_done) << "\n";
@@ -2774,7 +2776,7 @@ namespace firefly {
         logger.open("firefly.log", std::ios_base::app);
 
         if (verbosity > SILENT) {
-          INFO_MSG("Probe: " + std::to_string(iteration) +
+          INFO_MSG("Probe: " + std::to_string(probes_fed) +
                    " | Done: " + std::to_string(items_done) + " / " + std::to_string(items) +
                    " | " + "Requires new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done));
         }
@@ -3185,6 +3187,7 @@ namespace firefly {
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::reset_new_prime() {
     iteration = 0;
+    probes_fed = 0;
   #if WITH_MPI
     iterations_on_this_node = 0;
     new_jobs = false;
