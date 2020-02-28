@@ -63,13 +63,12 @@ namespace firefly {
 
     for (const auto& p : primes()) {
       if (FFInt::p == p)
-	break;
+        break;
 
       ++prime_counter;
     }
 
     if (check_is_equal) {
-      size_t c = 0;
       size_t s = vars_map.size();
       check_vars_1.reserve(s);
       check_vars_2.reserve(s);

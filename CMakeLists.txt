@@ -93,6 +93,7 @@ endif()
 
 # Firefly library files
 set(LIBSOURCES
+  ${SOURCE_PATH}/AmplitudeParser.cpp
   ${SOURCE_PATH}/BaseReconst.cpp
   ${SOURCE_PATH}/FFInt.cpp
   ${SOURCE_PATH}/FFIntVec.cpp
@@ -172,6 +173,7 @@ DESTINATION "${LIB_INSTALL_DIR}/pkgconfig")
 
 # install public headers
 install(FILES
+  "${INCLUDE_PATH}/AmplitudeParser.hpp"
   "${INCLUDE_PATH}/BaseReconst.hpp"
   "${INCLUDE_PATH}/BlackBoxBase.hpp"
   "${INCLUDE_PATH}/DenseSolver.hpp"
