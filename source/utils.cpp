@@ -330,13 +330,13 @@ namespace firefly {
       //if (tmp2 != tmp) {
       //  tmp <<= 1;
       //}
+
+      if ((tmp << 1) < queue_length && tmp * thr_n != queue_length) {
+        tmp <<= 1;
+      }
     } else {
       tmp = 1;
     }
-
-    //if (tmp * thr_n < queue_length) {
-    //  tmp <<= 1;
-    //}
 
     //std::cout << queue_length << " " << tmp << " " << std::min(bunch_size, tmp) << "\n";
 
