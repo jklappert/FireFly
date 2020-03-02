@@ -25,10 +25,12 @@ namespace firefly {
 
   AmplitudeParser::AmplitudeParser() {}
 
-  AmplitudeParser::AmplitudeParser(const std::vector<std::string>& vars) {
+  AmplitudeParser::AmplitudeParser(const std::vector<std::string>& vars, const std::list<std::string>& integral_families_) {
     for (uint32_t i = 0; i != vars.size(); ++i) {
       vars_map.emplace(std::make_pair(vars[i], i));
     }
+
+    integral_families = integral_families_;
   }
 
   void AmplitudeParser::parse_file(const std::string& amplitude_file) {
@@ -50,7 +52,7 @@ namespace firefly {
     }
   };
 
-  void AmplitudeParser::parse_string(const std::string& amplitude, const std::list<std::string>& integral_families) {
+  void AmplitudeParser::parse_string(const std::string& amplitude) {
     std::string amplitude_c = amplitude;
     amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), ' '), amplitude_c.end());
     amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '\n'), amplitude_c.end());
@@ -91,8 +93,10 @@ namespace firefly {
                 std::size_t tmp_found = amplitude_c.find(tmp_fam, found + 1);
 
                 if (tmp_found != std::string::npos) {
-                  coef_end_pos = tmp_found - 2;
-                  break;
+                  if (coef_end_pos == 0)
+                    coef_end_pos = tmp_found - 2;
+                  else
+                    coef_end_pos = std::min(coef_end_pos, tmp_found - 2);
                 }
               }
 
@@ -125,5 +129,60 @@ namespace firefly {
       ERROR_MSG("Amplitude has no content");
       std::exit(EXIT_FAILURE);
     }
-  };
+  }
+
+  void AmplitudeParser::parse_ibp_table_file(const std::string& ibp_table) {
+    // Check if file exists
+    std::ifstream infile(ibp_table);
+
+    if (!infile.good()) {
+      ERROR_MSG("File '" + ibp_table + "' does not exist!");
+      std::exit(EXIT_FAILURE);
+    }
+
+    std::ifstream istream;
+    istream.open(ibp_table);
+
+    std::string line;
+
+    while (std::getline(istream, line, '}')) {
+      //parse_ibp_table_string(line);
+    }
+  }
+
+  void AmplitudeParser::parse_ibp_table_string(const std::string& ibp_table) {
+    // Check if file exists
+    std::string ibp_table_c = ibp_table;
+    ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), ' '), ibp_table_c.end());
+    ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '\n'), ibp_table_c.end());
+    ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '{'), ibp_table_c.end());
+    ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '}'), ibp_table_c.end());
+
+    size_t pos = ibp_table_c.find("->");
+    size_t old_pos = 0;
+
+    while (pos != std::string::npos) {
+      std::string lhs = ibp_table_c.substr(old_pos, pos - old_pos);
+      std::string rhs;
+      old_pos = pos + 2;
+      size_t tmp_pos = ibp_table_c.find("->", old_pos);
+
+      // reached end of table
+      if (tmp_pos == std::string::npos) {
+        rhs = ibp_table_c.substr(old_pos + 1);
+        parse_string(lhs);
+        parse_string(rhs);
+        break;
+      } else {
+        tmp_pos = ibp_table_c.rfind("[", tmp_pos);
+        tmp_pos = ibp_table_c.rfind(",", tmp_pos);
+        rhs = ibp_table_c.substr(old_pos, tmp_pos - old_pos);
+        old_pos = tmp_pos + 1;
+        pos = ibp_table_c.find("->", old_pos);
+      }
+
+      parse_string(lhs);
+      parse_string(rhs);
+    }
+  }
 }

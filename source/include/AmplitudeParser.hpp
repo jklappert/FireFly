@@ -41,7 +41,7 @@ namespace firefly {
      *  @param file The path to the file in which the rational functions are stored
      *  @param vars A vector which specifies the variables of the functions. Each variable is allowed to be built of lower and upper case letters and numbers up to 16 characters.
      */
-    AmplitudeParser(const std::vector<std::string>& vars);
+    AmplitudeParser(const std::vector<std::string>& vars, const std::list<std::string>& integral_families_);
     /**
      * 
      */
@@ -49,23 +49,17 @@ namespace firefly {
     /**
      * 
      */
-    void parse_string(const std::string& amplitude, const std::list<std::string>& integral_families);
+    void parse_string(const std::string& amplitude);
     /**
-     *  Parses a rational function given as a string and validates the function on request
-     *  @param fun The rational function to be parsed as a string
-     *  @param vars A vector which specifies the variables of the function
-     *  @param validate_fun validates the function if set to true
+     * 
      */
-    void parse_function(const std::string& fun, const std::vector<std::string>& vars, bool validate_fun = false);
+    void parse_ibp_table_file(const std::string& ibp_table);
     /**
-     *  Evaluates all functions for a given parameter point and returns their result.
-     *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
-     *  @return The values of the parsed functions as a vector.
+     * 
      */
-    template<typename FFIntTemp>
-    std::vector<FFIntTemp> evaluate_pre(const std::vector<FFIntTemp>& values) const;
+    void parse_ibp_table_string(const std::string& ibp_table);
   private:
     std::unordered_map<std::string, int> vars_map {}; /**< This map holds the conversion of the used variables to an integer value to map variables to parameter points */
+    std::list<std::string> integral_families{};
   };
-
 }
