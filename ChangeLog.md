@@ -1,3 +1,14 @@
+FireFly 1.3.5
+=============
+
+Bug fixes
+---------
+
+ * Fixed FFInt::pow yielding a wrong result for powers close to the prime number
+ in the default implementation of FFInt. We thank Herschel Chawdhry for the bug
+ report.
+
+
 FireFly 1.3.4
 =============
 
