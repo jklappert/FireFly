@@ -817,6 +817,10 @@ namespace firefly {
 
         tmp_rec = RatReconst(n);
         scanned_factors = true;
+        if (items == 0) {
+          scan = false;
+          done = true;
+        }
       }
 
       if (scan) {

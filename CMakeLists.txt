@@ -139,13 +139,16 @@ if("${WITH_MPI}" STREQUAL true)
   set(EXAMPLE_EXE ${PROJECT_SOURCE_DIR}/example_mpi.cpp)
 else()
   set(EXAMPLE_EXE ${PROJECT_SOURCE_DIR}/example.cpp)
+  set(INSERT_IBPS_EXE ${PROJECT_SOURCE_DIR}/insert_ibps.cpp)
 endif()
 
 if("${CUSTOM}" STREQUAL "true")
   message("-- ${Red}Using custom modular arithmetic. The example is thus not compiled.${ColourReset}")
 else()
   add_executable(example ${EXAMPLE_EXE})
+  add_executable(insert_ibps ${INSERT_IBPS_EXE})
   target_link_libraries(example ${LIBS})
+  target_link_libraries(insert_ibps ${LIBS})
 endif()
 
 # install libraries

@@ -30,7 +30,9 @@
 namespace firefly {
   namespace coef_type {
     enum coef_type {
-      PREFACTOR = 0
+      PREFACTOR = 0,
+      REPEATED_REP = 1,
+      COEF_TYPE_SIZE = 2,
     }; /**< The key to identify a prefactor from a MI coefficient */
   }
 
@@ -46,7 +48,7 @@ namespace firefly {
                         const std::vector<std::string>& functions,
                         const std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>>& amplitude_mapping_) {
       integral_size = integral_size_;
-      mi_size = mi_size_ - 1;
+      mi_size = mi_size_ - coef_type::COEF_TYPE_SIZE;
       par = ShuntingYardParser(functions, vars, true);
       n = vars.size();
       amplitude_mapping = amplitude_mapping_;
@@ -61,13 +63,10 @@ namespace firefly {
       for (size_t i = 0; i != integral_size; ++i) {
         FFIntTemp prefactor(0);
         for (const auto& mi_map : amplitude_mapping[i]) {
-          bool pref_only = true;
-          if (mi_map.second == coef_type::PREFACTOR)
+          if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP)
             prefactor += res[mi_map.first];
-          else {
-            pref_only = false;
-            result[mi_map.second - 1] += prefactor*res[mi_map.first];
-          }
+          else
+            result[mi_map.second - coef_type::COEF_TYPE_SIZE] += prefactor*res[mi_map.first];
         }
       }
 
@@ -145,7 +144,7 @@ namespace firefly {
     std::vector<std::string> functions{};
     ShuntingYardParser sy_parser;
     size_t distinct_integral_counter = 0;
-    size_t distinct_master_counter = 1;
+    size_t distinct_master_counter = coef_type::COEF_TYPE_SIZE;
     size_t parser_counter = 0;
   };
 }

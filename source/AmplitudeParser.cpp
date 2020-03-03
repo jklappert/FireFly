@@ -34,20 +34,25 @@ namespace firefly {
 
   void AmplitudeParser::parse_file(const std::string& amplitude_file) {
     // Check if file exists
-    std::ifstream infile(amplitude_file);
+    std::ifstream infile_test(amplitude_file);
+    std::ifstream infile;
 
-    if (!infile.good()) {
+    if (!infile_test.good()) {
       ERROR_MSG("File '" + amplitude_file + "' does not exist!");
       std::exit(EXIT_FAILURE);
     }
 
-    std::ifstream istream;
-    istream.open(amplitude_file);
+    infile.open(amplitude_file);
 
     std::string line;
+    size_t counter = 0;
 
-    while (std::getline(istream, line, ';')) {
-      parse_amplitude_file(line);
+    while (std::getline(infile, line, ';')) {
+      if (counter == 1)
+        break;
+
+      parse_amplitude_string(line);
+      ++counter;
     }
   }
 
@@ -173,22 +178,28 @@ namespace firefly {
 
   void AmplitudeParser::parse_ibp_table_file(const std::string& ibp_table) {
     // Check if file exists
-    std::ifstream infile(ibp_table);
+    std::ifstream infile_test(ibp_table);
+    std::ifstream infile;
 
-    if (!infile.good()) {
+    if (!infile_test.good()) {
       ERROR_MSG("File '" + ibp_table + "' does not exist!");
       std::exit(EXIT_FAILURE);
     }
 
     INFO_MSG("Parsing IBP table of " + ibp_table);
 
-    std::ifstream istream;
-    istream.open(ibp_table);
+    infile.open(ibp_table);
 
     std::string line;
 
-    while (std::getline(istream, line, '}')) {
+    size_t counter = 0;
+
+    while (std::getline(infile, line, '}')) {
+      if (counter == 1)
+        break;
+
       parse_ibp_table_string(line);
+      ++counter;
     }
   }
 
@@ -230,12 +241,13 @@ namespace firefly {
           for (const auto & mi_coef : repl_rhs) {
             if (masters.find(mi_coef.first) == masters.end()) {
               masters.emplace(std::make_pair(mi_coef.first, distinct_master_counter));
-              masters_inv.emplace(std::make_pair(distinct_master_counter - 1, mi_coef.first));
+              masters_inv.emplace(std::make_pair(distinct_master_counter - coef_type::COEF_TYPE_SIZE, mi_coef.first));
               ++distinct_master_counter;
             }
 
-            functions.emplace_back(mi_coef.second);
             amplitude_mapping[integrals[repl_lhs[0].first]].emplace_back(std::make_pair(parser_counter, masters[mi_coef.first]));
+            functions.emplace_back(mi_coef.second);
+
             ++parser_counter;
           }
         }
@@ -250,6 +262,7 @@ namespace firefly {
       }
 
       auto repl_lhs = parse_string(lhs);
+
       if (integrals.find(repl_lhs[0].first) != integrals.end()) {
         if (repl_integrals.find(repl_lhs[0].first) != repl_integrals.end()) {
           ERROR_MSG("Several replacement rules for integral " + repl_lhs[0].first);
@@ -264,12 +277,13 @@ namespace firefly {
         for (const auto & mi_coef : repl_rhs) {
           if (masters.find(mi_coef.first) == masters.end()) {
             masters.emplace(std::make_pair(mi_coef.first, distinct_master_counter));
-            masters_inv.emplace(std::make_pair(distinct_master_counter - 1, mi_coef.first));
+            masters_inv.emplace(std::make_pair(distinct_master_counter - coef_type::COEF_TYPE_SIZE, mi_coef.first));
             ++distinct_master_counter;
           }
 
-          functions.emplace_back(mi_coef.second);
           amplitude_mapping[integrals[repl_lhs[0].first]].emplace_back(std::make_pair(parser_counter, masters[mi_coef.first]));
+          functions.emplace_back(mi_coef.second);
+
           ++parser_counter;
         }
       }
@@ -279,28 +293,28 @@ namespace firefly {
     auto time1 = std::chrono::high_resolution_clock::now();
     INFO_MSG("Parsed IBP table in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
     INFO_MSG("Found " + std::to_string(required_repl_counter) + " required replacement rules");
-    INFO_MSG("Found " + std::to_string(distinct_master_counter - 1) + " distinct master integrals in total\n");
+    INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " distinct master integrals in total\n");
   }
 
   FFAmplitudeBlackBox AmplitudeParser::build_black_box() {
     bool found_unreplaced_integral = false;
 
     for (const auto & integral : integrals) {
-      if (repl_integrals.find(integral.first) == repl_integrals.end()){
+      if (repl_integrals.find(integral.first) == repl_integrals.end()) {
         found_unreplaced_integral = true;
         INFO_MSG("No replacements found for integral: " + integral.first);
         masters.emplace(std::make_pair(integral.first, distinct_master_counter));
-        masters_inv.emplace(std::make_pair(distinct_master_counter - 1, integral.first));
+        masters_inv.emplace(std::make_pair(distinct_master_counter - coef_type::COEF_TYPE_SIZE, integral.first));
 
         functions.emplace_back("1");
-        amplitude_mapping[integral.second].emplace_back(std::make_pair(parser_counter, distinct_integral_counter));
+        amplitude_mapping[integral.second].emplace_back(std::make_pair(parser_counter, distinct_master_counter));
         ++distinct_master_counter;
         ++parser_counter;
       }
     }
 
     if (found_unreplaced_integral) {
-      INFO_MSG("Found " + std::to_string(distinct_master_counter - 1) + " distinct master integrals in total\n");
+      INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " distinct master integrals in total\n");
     }
 
     return FFAmplitudeBlackBox(distinct_integral_counter, distinct_master_counter, vars, functions, amplitude_mapping);

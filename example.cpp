@@ -43,7 +43,7 @@ namespace firefly {
       // Get results from parsed expressions
       std::vector<FFIntTemp> result = par.evaluate_pre(values);
 
-      /*result.emplace_back(result[0] / result[3]);
+      result.emplace_back(result[0] / result[3]);
 
       // Build the matrix mat
       mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
@@ -55,7 +55,7 @@ namespace firefly {
       calc_lu_decomposition(mat, p, 2);
 
       // Compute determinant of mat
-      result.emplace_back(calc_determinant_lu(mat, p, 2));*/
+      result.emplace_back(calc_determinant_lu(mat, p, 2));
 
       return result;
     }
@@ -108,12 +108,6 @@ int main() {
 
   // Reconstruct the black box
   reconst.reconstruct();
-
-  /*AmplitudeParser ap;
-  std::string amp = std::string(" NPLx13[0,1,1,1,1,0,1,0,2]*(((s)*mH2+s^2)/(mH2^2+(-s)*mH2+(8*mt2)*s)) ")
-    + std::string("+ NPLx13[0,1,1,1,1,0,1,0,1]*(((2*d-9)*mH2+(2*d-9)*s)/(mH2^2+(-s)*mH2+(8*mt2)*s))") 
-    + std::string("+ PL2[0,0,1,1,1,0,0,2,1]*((2*mH2^2+(-8*mt2)*mH2)/(mH2^3+(-s-2*mt2)*mH2^2+((10*mt2)*s)*mH2+(-16*mt2^2)*s))");
-  ap.parse_string(amp, {"NPLx13", "PL2"});*/
 
   // Get results after the first interpolation. Has to be called with
   // reconst.reconstruct(1) to work
