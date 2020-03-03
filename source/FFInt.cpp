@@ -172,7 +172,7 @@ namespace firefly {
         base = n;
       } else {
         // treat as negative exponent
-        exp = p - ffint.n;
+        exp = p - ffint.n - 1;
         base = mod_inv(n, p); // =1/b.c
       }
 
