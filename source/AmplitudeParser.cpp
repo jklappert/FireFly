@@ -303,12 +303,15 @@ namespace firefly {
       if (repl_integrals.find(integral.first) == repl_integrals.end()) {
         found_unreplaced_integral = true;
         INFO_MSG("No replacements found for integral: " + integral.first);
-        masters.emplace(std::make_pair(integral.first, distinct_master_counter));
-        masters_inv.emplace(std::make_pair(distinct_master_counter - coef_type::COEF_TYPE_SIZE, integral.first));
+        if (masters.find(integral.first) == masters.end()) {
+          masters.emplace(std::make_pair(integral.first, distinct_master_counter));
+          masters_inv.emplace(std::make_pair(distinct_master_counter - coef_type::COEF_TYPE_SIZE, integral.first));
+          amplitude_mapping[integral.second].emplace_back(std::make_pair(parser_counter, distinct_master_counter));
+          ++distinct_master_counter;
+        } else
+          amplitude_mapping[integral.second].emplace_back(std::make_pair(parser_counter, masters[integral.first]));
 
         functions.emplace_back("1");
-        amplitude_mapping[integral.second].emplace_back(std::make_pair(parser_counter, distinct_master_counter));
-        ++distinct_master_counter;
         ++parser_counter;
       }
     }
