@@ -115,6 +115,7 @@ set(LIBSOURCES
   ${SOURCE_PATH}/utils.cpp)
 
 set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/firefly")
+set(BIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/bin")
 set(INCLUDE_INSTALL_DIR_2 "${CMAKE_INSTALL_PREFIX}/include")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
@@ -205,6 +206,11 @@ install(FILES
   "${INCLUDE_PATH}/utils.hpp"
   "${INCLUDE_PATH}/version.hpp"
   DESTINATION "${INCLUDE_INSTALL_DIR}")
+
+# install ibp insertion executable
+if(NOT "${CUSTOM}" STREQUAL "true")
+  install(TARGETS insert_ibps DESTINATION "${BIN_INSTALL_DIR}")
+endif()
 
 if("${WITH_MPI}" STREQUAL "true")
   install(FILES "${INCLUDE_PATH}/MPIWorker.hpp" DESTINATION "${INCLUDE_INSTALL_DIR}")
