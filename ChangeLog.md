@@ -1,3 +1,46 @@
+FireFly 2.0.0
+=============
+
+New features
+------------
+
+ * MPI
+
+ * Logger
+
+ * Interpolation over a fixed number of primes
+
+ * Factor scan
+
+ * Amplitude parser
+
+Changes
+-------
+
+ * CRTP + FFVec + dynamical bunches
+
+ * Parser can find same functions
+
+ * Writing of saved states improved (single threaded to be done)
+
+ * CMake searching for GMP, Flint, ...
+
+ * C++-14
+
+ * 300 primes
+
+ * O3 -> 02
+
+ * Improved scheduling in first prime
+
+ * Can handle empty bbs
+
+Bug fixes
+---------
+
+* None :)
+
+
 FireFly 1.3.5
 =============
 
