@@ -90,6 +90,8 @@ namespace firefly {
     std::string amplitude_c = amplitude;
     amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), ' '), amplitude_c.end());
     amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '\n'), amplitude_c.end());
+    amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '{'), amplitude_c.end());
+    amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '}'), amplitude_c.end());
     std::size_t amplitude_size = amplitude_c.size();
 
     if (amplitude_c.length() > 0) {

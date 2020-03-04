@@ -139,6 +139,7 @@ int main(int argc, char *argv[]) {
   std::ofstream file;
   file.open("amplitude_out.m");
   std::vector<RationalFunction> results = reconst.get_result();
+  file << "{\n";
 
   if (results.size() == 0) {
     file << "0\n";
@@ -148,6 +149,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  file << "}\n";
   file.close();
   INFO_MSG("Result has been written to 'amplitude_out.m'");
 
