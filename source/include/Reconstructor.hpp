@@ -300,6 +300,7 @@ namespace firefly {
     /**
      *  TODO
      */
+    void start_new_job(std::unique_lock<std::mutex>& lock_probe_queue);
     template<uint32_t N>
     void start_new_job(std::unique_lock<std::mutex>& lock_probe_queue);
     /**
@@ -3043,7 +3044,7 @@ namespace firefly {
     if (!requested_probes.empty()) {
       switch(compute_bunch_size(static_cast<uint32_t>(requested_probes.size()), thr_n, bunch_size)) {
         case 1:
-          start_new_job<1>(lock_probe_queue);
+          start_new_job(lock_probe_queue);
           break;
         case 2:
           start_new_job<2>(lock_probe_queue);
@@ -3080,6 +3081,58 @@ namespace firefly {
   }
 
   template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::start_new_job(std::unique_lock<std::mutex>& lock_probe_queue) {
+    std::vector<uint64_t> indices;
+    indices.reserve(1);
+
+    //std::cout << "start with " << N << " of " << requested_probes.size() << "\n";
+
+    indices.emplace_back(requested_probes.front().first);
+
+    std::vector<FFInt> values_vec(std::make_move_iterator(requested_probes.front().second.begin()), std::make_move_iterator(requested_probes.front().second.end()));
+
+    requested_probes.pop_front();
+
+    lock_probe_queue.unlock();
+
+    auto time0 = std::chrono::high_resolution_clock::now();
+
+    std::vector<FFInt> probe = bb.eval(values_vec);
+
+    auto time1 = std::chrono::high_resolution_clock::now();
+
+    auto time = std::chrono::duration<double>(time1 - time0).count();
+
+    std::vector<std::vector<FFInt>> tmp;
+    tmp.reserve(probe.size());
+
+    for (size_t i = 0; i != probe.size(); ++i) {
+      if (!factor_scan && parsed_factors.find(i) != parsed_factors.end()) {
+        auto res = parsed_factors[i].evaluate_pre(values_vec);
+        probe[i] /= res[0];
+      }
+
+      tmp.emplace_back(std::vector<FFInt> (1, probe[i]));
+    }
+
+    std::lock_guard<std::mutex> lock(future_control);
+
+    iteration += 1;
+#if !WITH_MPI
+    int tmp_iterations = total_iterations + iteration;
+    average_black_box_time = (average_black_box_time * (tmp_iterations - 1) + time) / tmp_iterations;
+#else
+    iterations_on_this_node += 1;
+    int tmp_iterations = total_iterations + iterations_on_this_node;
+    average_black_box_time = (average_black_box_time * (tmp_iterations - 1) + time) / tmp_iterations;
+#endif
+
+    computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
+
+    condition_future.notify_one();
+  }
+
+  template<typename BlackBoxTemp>
   template<uint32_t N>
   void Reconstructor<BlackBoxTemp>::start_new_job(std::unique_lock<std::mutex>& lock_probe_queue) {
     std::vector<uint64_t> indices;
@@ -3087,105 +3140,59 @@ namespace firefly {
 
     //std::cout << "start with " << N << " of " << requested_probes.size() << "\n";
 
-    if (N != 1) {
-      std::vector<FFIntVec<N>> values_vec(n);
+    std::vector<FFIntVec<N>> values_vec(n);
 
-      for (uint32_t i = 0; i != N; ++i) {
-        indices.emplace_back(requested_probes.front().first);
-
-        for (uint32_t j = 0; j != n; ++j) {
-          values_vec[j][i] = requested_probes.front().second[j];
-        }
-
-        requested_probes.pop_front();
-      }
-
-      lock_probe_queue.unlock();
-
-      auto time0 = std::chrono::high_resolution_clock::now();
-
-      std::vector<FFIntVec<N>> probe = bb.eval(values_vec);
-
-      auto time1 = std::chrono::high_resolution_clock::now();
-
-      auto time = std::chrono::duration<double>(time1 - time0).count();
-
-      std::vector<std::vector<FFInt>> tmp;
-      tmp.reserve(probe.size());
-
-      for (size_t i = 0; i != probe.size(); ++i) {
-        // Remove factor from bb result
-        if (!factor_scan && parsed_factors.find(i) != parsed_factors.end()) {
-          auto res = parsed_factors[i].evaluate_pre(values_vec);
-
-          for (size_t j = 0; j != N; ++j) {
-            probe[i][j] /= res[0][j];
-          }
-        }
-
-        tmp.emplace_back(std::vector<FFInt>(std::make_move_iterator(probe[i].begin()), std::make_move_iterator(probe[i].end())));
-      }
-
-      std::lock_guard<std::mutex> lock(future_control);
-
-      iteration += N;
-#if !WITH_MPI
-      int tmp_iterations = total_iterations + iteration;
-      average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
-#else
-      iterations_on_this_node += N;
-      int tmp_iterations = total_iterations + iterations_on_this_node;
-      average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
-#endif
-
-      computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
-
-      condition_future.notify_one();
-    } else {
+    for (uint32_t i = 0; i != N; ++i) {
       indices.emplace_back(requested_probes.front().first);
 
-      std::vector<FFInt> values_vec(std::make_move_iterator(requested_probes.front().second.begin()), std::make_move_iterator(requested_probes.front().second.end()));
-
-      requested_probes.pop_front();
-
-      lock_probe_queue.unlock();
-
-      auto time0 = std::chrono::high_resolution_clock::now();
-
-      std::vector<FFInt> probe = bb.eval(values_vec);
-
-      auto time1 = std::chrono::high_resolution_clock::now();
-
-      auto time = std::chrono::duration<double>(time1 - time0).count();
-
-      std::vector<std::vector<FFInt>> tmp;
-      tmp.reserve(probe.size());
-
-      for (size_t i = 0; i != probe.size(); ++i) {
-        if (!factor_scan && parsed_factors.find(i) != parsed_factors.end()) {
-          auto res = parsed_factors[i].evaluate_pre(values_vec);
-          probe[i] /= res[0];
-        }
-
-        tmp.emplace_back(std::vector<FFInt> (1, probe[i]));
+      for (uint32_t j = 0; j != n; ++j) {
+        values_vec[j][i] = requested_probes.front().second[j];
       }
 
-      std::lock_guard<std::mutex> lock(future_control);
+      requested_probes.pop_front();
+    }
 
-      iteration += N;
+    lock_probe_queue.unlock();
+
+    auto time0 = std::chrono::high_resolution_clock::now();
+
+    std::vector<FFIntVec<N>> probe = bb.eval(values_vec);
+
+    auto time1 = std::chrono::high_resolution_clock::now();
+
+    auto time = std::chrono::duration<double>(time1 - time0).count();
+
+    std::vector<std::vector<FFInt>> tmp;
+    tmp.reserve(probe.size());
+
+    for (size_t i = 0; i != probe.size(); ++i) {
+      // Remove factor from bb result
+      if (!factor_scan && parsed_factors.find(i) != parsed_factors.end()) {
+        auto res = parsed_factors[i].evaluate_pre(values_vec);
+
+        for (size_t j = 0; j != N; ++j) {
+          probe[i][j] /= res[0][j];
+        }
+      }
+
+      tmp.emplace_back(std::vector<FFInt>(std::make_move_iterator(probe[i].begin()), std::make_move_iterator(probe[i].end())));
+    }
+
+    std::lock_guard<std::mutex> lock(future_control);
+
+    iteration += N;
 #if !WITH_MPI
-      int tmp_iterations = total_iterations + iteration;
-      average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
+    int tmp_iterations = total_iterations + iteration;
+    average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
 #else
-      iterations_on_this_node += N;
-      int tmp_iterations = total_iterations + iterations_on_this_node;
-      average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
+    iterations_on_this_node += N;
+    int tmp_iterations = total_iterations + iterations_on_this_node;
+    average_black_box_time = (average_black_box_time * (tmp_iterations - N) + time) / tmp_iterations;
 #endif
 
-      computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
+    computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
 
-      condition_future.notify_one();
-    }
+    condition_future.notify_one();
   }
 
   template<typename BlackBoxTemp>
