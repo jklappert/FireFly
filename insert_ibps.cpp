@@ -144,9 +144,17 @@ int main(int argc, char *argv[]) {
   if (results.size() == 0) {
     file << "0\n";
   } else {
+    bool all_zero = true;
+
     for (uint32_t i = 0; i < results.size(); ++i) {
-      file <<  "+ " << ap.get_master(i) << "*" + results[i].to_string(vars) << "\n";
+      if (!results[i].zero()) {
+        file <<  "+ " << ap.get_master(i) << "*" + results[i].generate_horner(vars) << "\n";
+        all_zero = false;
+      }
     }
+
+    if (all_zero)
+      file << "0\n";
   }
 
   file << "}\n";
