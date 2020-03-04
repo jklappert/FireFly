@@ -119,8 +119,9 @@ namespace firefly {
               prefac = int_fam.substr(fo2 - 1, 1);
             }
 
-            if (prefac == "*")
-              coefficient = int_fam.substr(0, int_fam.size() - fo2 - 2);
+            if (prefac == "*") {
+              coefficient = int_fam.substr(0, int_fam.size() - fam.size() - 1);
+	    }
             else if (found + 1 < amplitude_size - 1 && amplitude_c.substr(found + 1, 1) == "*") {
               std::size_t coef_end_pos = 0;
 
