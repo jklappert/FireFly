@@ -66,6 +66,10 @@ namespace firefly {
     std::unordered_map<uint32_t, uint32_t> get_order_map() const;
     Polynomial numerator;  /**< The coefficients of the numerator */
     Polynomial denominator; /**< The coefficients of the denominator */
+    /**TODO
+     * 
+     */
+    bool zero() const;
   private:
     std::vector<RationalFunction> factors {};
     // TODO safe somewhere else?

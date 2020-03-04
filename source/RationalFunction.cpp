@@ -134,4 +134,8 @@ namespace firefly {
   std::unordered_map<uint32_t, uint32_t> RationalFunction::get_order_map() const {
     return order_map;
   }
+
+  bool RationalFunction::zero() const {
+    return numerator.zero();
+  }
 }

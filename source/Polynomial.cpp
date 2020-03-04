@@ -169,4 +169,11 @@ namespace firefly {
   int Polynomial::get_var_pos() const {
     return var_pos;
   }
+
+  bool Polynomial::zero() const {
+    if ((coefs.size() == 1 && coefs[0].coef.numerator == 0) || coefs.size() == 0)
+      return true;
+    else
+      return false;
+  }
 }
