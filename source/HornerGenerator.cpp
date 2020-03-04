@@ -188,7 +188,7 @@ namespace firefly {
 
           horner_coef += var;
 
-          horner_coef += monomials.at( {max_deg}).numerator != 1 ? "*" + monomials.at( {max_deg}).string() : "";
+          horner_coef += monomials.at( {max_deg}).numerator != 1 || monomials.at( {max_deg}).denominator != 1 ? "*" + monomials.at( {max_deg}).string() : "";
 
           for (uint32_t i = max_deg - 1; i > 0; i--) {
             if (monomials.find( {i}) != monomials.end())

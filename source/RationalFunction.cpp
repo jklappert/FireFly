@@ -76,6 +76,7 @@ namespace firefly {
   }
 
   std::string RationalFunction::generate_horner(const std::vector<std::string>& vars) const {
+    std::string str = "";
     std::vector<std::string> vars_ordered (vars.size());
 
     if (!order_map.empty()) {
@@ -105,10 +106,16 @@ namespace firefly {
       else
         den_str += "(1))";
 
-      return num_str + den_str;
+      str += num_str + den_str;
+    } else {
+      str += "(" + numerator.generate_horner(vars_ordered) + ")/(";
+      if(!denominator.coefs.empty())
+        str += denominator.generate_horner(vars_ordered) + ")";
+      else
+        str += "1)";
     }
 
-    return "(" + numerator.generate_horner(vars_ordered) + ")/(" + denominator.generate_horner(vars_ordered) + ")";
+    return str;
   }
 
   void RationalFunction::add_factor(const RationalFunction& factor) {
