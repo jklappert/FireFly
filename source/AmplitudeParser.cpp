@@ -60,7 +60,7 @@ namespace firefly {
   void AmplitudeParser::parse_amplitude_string(const std::string& amplitude_string) {
     auto time0 = std::chrono::high_resolution_clock::now();
     auto res = parse_string(amplitude_string);
-    functions.reserve(res.size());
+    functions.reserve(functions.size() + res.size());
 
     distinct_integral_counter = 0;
     parser_counter = 0;
@@ -323,7 +323,10 @@ namespace firefly {
       INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " distinct master integrals in total\n");
     }
 
-    return FFAmplitudeBlackBox(distinct_integral_counter, distinct_master_counter, vars, functions, amplitude_mapping);
+    auto bb = FFAmplitudeBlackBox(distinct_integral_counter, distinct_master_counter, vars, functions, amplitude_mapping);
+    functions.clear();
+    functions.shrink_to_fit();
+    return bb;
   }
 
   std::string AmplitudeParser::get_master(size_t i) {

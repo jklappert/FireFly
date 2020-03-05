@@ -2756,7 +2756,7 @@ namespace firefly {
             }
 
             if (interpolate_and_write.second) {
-              tp.run_priority_task([this, &rec]() {
+              tp.run_priority_task([&rec]() {
                 std::get<2>(rec)->write_food_to_file();
               });
             }

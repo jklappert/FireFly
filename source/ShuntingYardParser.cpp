@@ -299,6 +299,9 @@ namespace firefly {
               counter = 1;
 
             neg_pow = true;
+          } else if (*l_ptr == '^' && *(l_ptr + 1) == '-') {
+            ERROR_MSG("Please put negative exponents in parentheses");
+            std::exit(EXIT_FAILURE);
           }
 
           bool skip = false;
