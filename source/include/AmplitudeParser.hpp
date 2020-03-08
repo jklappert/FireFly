@@ -42,35 +42,15 @@ namespace firefly {
    */
   class FFAmplitudeBlackBox : public BlackBoxBase<FFAmplitudeBlackBox> {
   public:
-    FFAmplitudeBlackBox(const size_t integral_size_,
-                        const size_t mi_size_,
-                        const std::vector<std::string>& vars,
-                        const std::vector<std::string>& functions,
-                        const std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>>& amplitude_mapping_) {
-      integral_size = integral_size_;
-      mi_size = mi_size_ - coef_type::COEF_TYPE_SIZE;
-      par = ShuntingYardParser(functions, vars, true);
+    FFAmplitudeBlackBox(const std::vector<std::string>& vars,
+                        const std::vector<std::string>& functions) {
+      par = ShuntingYardParser(functions, vars);
       n = vars.size();
-      amplitude_mapping = amplitude_mapping_;
     };
 
     template<typename FFIntTemp>
     std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
-      auto res = par.evaluate_pre(values);
-
-      std::vector<FFIntTemp> result (mi_size, FFIntTemp(0));
-
-      for (size_t i = 0; i != integral_size; ++i) {
-        FFIntTemp prefactor(0);
-        for (const auto& mi_map : amplitude_mapping[i]) {
-          if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP)
-            prefactor += res[mi_map.first];
-          else
-            result[mi_map.second - coef_type::COEF_TYPE_SIZE] += prefactor*res[mi_map.first];
-        }
-      }
-
-      return result;
+      return par.evaluate_pre(values);
     }
 
     // the new prime field.
@@ -81,8 +61,8 @@ namespace firefly {
     size_t n = 0;
   private:
     ShuntingYardParser par;
-    size_t integral_size, mi_size;
-    std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> amplitude_mapping;
+    //size_t integral_size, mi_size;
+    //std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> amplitude_mapping;
   };
 
   /**
@@ -128,7 +108,11 @@ namespace firefly {
     /**
      * 
      */
-    FFAmplitudeBlackBox build_black_box();
+    size_t check_for_unreplaced_masters();
+    /**
+     * 
+     */
+    FFAmplitudeBlackBox build_black_box(size_t master) const;
     /**
      * 
      */

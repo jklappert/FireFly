@@ -18,9 +18,11 @@
 
 #include "Reconstructor.hpp"
 #include "AmplitudeParser.hpp"
+#include <sys/stat.h>
 
 using namespace firefly;
 int main(int argc, char *argv[]) {
+  auto time0 = std::chrono::high_resolution_clock::now();
   uint32_t n_threads = 1;
   uint32_t bs = 1;
   bool factor_scan = true;
@@ -126,8 +128,19 @@ int main(int argc, char *argv[]) {
     ap.parse_ibp_table_file("amplitude/ibps/" + file);
   }
 
-  // Build the black box
-  auto bb = ap.build_black_box();
+  // Build the black boxes and start reconstruction
+  size_t masters = ap.check_for_unreplaced_masters();
+
+  std::ofstream file;
+  file.open("amplitude_out.m");
+  file << "{\n";
+  file.close();
+
+  for (size_t i = 0; i != masters; ++i) {
+  if (i == 0)
+    INFO_MSG("Reconstructing coefficient of master integral: " + ap.get_master(i) + "\n");
+
+  auto bb = ap.build_black_box(i);
 
   // Construct the reconstructor
   Reconstructor<FFAmplitudeBlackBox> reconst(bb.n, n_threads, bs, bb);
@@ -138,35 +151,60 @@ int main(int argc, char *argv[]) {
 
   reconst.enable_scan();
 
-  if (save_mode)
+  bool renamed_ff_save = false;
+
+  if (save_mode) {
+    std::string tmp = "ff_save_" + ap.get_master(i);
+    struct stat buffer;
+
+    if (stat(tmp.c_str(), &buffer) == 0) {
+      struct stat buffer_2;
+
+      if (stat("ff_save", &buffer_2) == 0) {
+        std::rename("ff_save" , "ff_save_tmp");
+        renamed_ff_save = true; 
+      }
+
+      std::rename(tmp.c_str(), "ff_save");
+    }
+
+    reconst.set_tags({ap.get_master(i)});
     reconst.resume_from_saved_state();
+  }
 
   // Reconstruct
   reconst.reconstruct();
 
-  std::ofstream file;
-  file.open("amplitude_out.m");
   std::vector<RationalFunction> results = reconst.get_result();
-  file << "{\n";
+  file.open("amplitude_out.m",std::ios_base::app);
+  file <<  "+ " << ap.get_master(i) << "*" + results.back().generate_horner(vars) << "\n";
+  file.close();
 
-  if (results.size() == 0) {
-    file << "0\n";
-  } else {
-    bool all_zero = true;
-
-    for (uint32_t i = 0; i < results.size(); ++i) {
-      if (!results[i].zero()) {
-        file <<  "+ " << ap.get_master(i) << "*" + results[i].generate_horner(vars) << "\n";
-        all_zero = false;
-      }
-    }
-
-    if (all_zero)
-      file << "0\n";
+  if (save_mode) {
+    std::string tmp = "ff_save_" + ap.get_master(i);
+    std::rename("ff_save" , tmp.c_str());
+    
+    if (renamed_ff_save)
+        std::rename("ff_save_tmp", "ff_save");
   }
 
+  RatReconst::reset();
+
+  if (i + 1 != masters) {
+    std::cout << "\n";
+    INFO_MSG("Reconstructing coefficient of master integral: " + ap.get_master(i + 1) + "\n");
+  }
+
+  }
+
+  file.open("amplitude_out.m",std::ios_base::app);
   file << "}\n";
   file.close();
+
+  std::cout << "\n";
+  auto time1 = std::chrono::high_resolution_clock::now();
+  INFO_MSG("Reconstructed amplitude in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
+
   INFO_MSG("Result has been written to 'amplitude_out.m'");
 
   return 0;

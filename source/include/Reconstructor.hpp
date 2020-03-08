@@ -1477,7 +1477,7 @@ namespace firefly {
             }
           } else if (prime_it_fac == 0 && scan_n == 1) {
             total_number_of_factors += number_of_factors;
-            logger << "Identified actors in x" << std::to_string(i + 1) << ": "
+            logger << "Identified factors in x" << std::to_string(i + 1) << ": "
               << std::to_string(number_of_factors) << "\n";
 
             if (max_degs[i] != old_max_deg) {

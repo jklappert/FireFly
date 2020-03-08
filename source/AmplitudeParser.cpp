@@ -232,7 +232,7 @@ namespace firefly {
 
         if (integrals.find(repl_lhs[0].first) != integrals.end()) {
           if (repl_integrals.find(repl_lhs[0].first) != repl_integrals.end()) {
-            ERROR_MSG("Several replacement rules for integral " + repl_lhs[0].first);
+            ERROR_MSG("Multiple replacement rules for integral: " + repl_lhs[0].first);
             std::exit(EXIT_FAILURE);
           }
 
@@ -268,7 +268,7 @@ namespace firefly {
 
       if (integrals.find(repl_lhs[0].first) != integrals.end()) {
         if (repl_integrals.find(repl_lhs[0].first) != repl_integrals.end()) {
-          ERROR_MSG("Several replacement rules for integral " + repl_lhs[0].first);
+          ERROR_MSG("Multiple replacement rules for integral: " + repl_lhs[0].first);
           std::exit(EXIT_FAILURE);
         }
 
@@ -298,8 +298,8 @@ namespace firefly {
     INFO_MSG("Found " + std::to_string(required_repl_counter) + " required replacement rules");
     INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " distinct master integrals in total\n");
   }
-
-  FFAmplitudeBlackBox AmplitudeParser::build_black_box() {
+  
+  size_t AmplitudeParser::check_for_unreplaced_masters() {
     bool found_unreplaced_integral = false;
 
     for (const auto & integral : integrals) {
@@ -322,10 +322,36 @@ namespace firefly {
     if (found_unreplaced_integral) {
       INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " distinct master integrals in total\n");
     }
+    
+    return distinct_master_counter - coef_type::COEF_TYPE_SIZE;
+  }
 
-    auto bb = FFAmplitudeBlackBox(distinct_integral_counter, distinct_master_counter, vars, functions, amplitude_mapping);
-    functions.clear();
-    functions.shrink_to_fit();
+  FFAmplitudeBlackBox AmplitudeParser::build_black_box(size_t master) const {
+    std::string tmp_fun = "";
+    for (size_t i = 0; i != distinct_integral_counter; ++i) {
+      std::string tmp_coef = "+(";
+      bool got_master = false;
+      for (const auto& mi_map : amplitude_mapping.at(i)) {
+        bool pref_done = false;
+        if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP)
+          tmp_coef += "+(" + functions[mi_map.first] + ")";
+        else {
+          if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
+            if(!pref_done) {
+              pref_done = true;
+              tmp_coef += ")*(";
+            }
+            tmp_coef += "+(" + functions[mi_map.first] + ")";
+            got_master = true;
+          }
+        }
+      }
+      tmp_coef += ")";
+      if (got_master)
+        tmp_fun += tmp_coef;
+    }
+
+    auto bb = FFAmplitudeBlackBox(vars, {tmp_fun});
     return bb;
   }
 
