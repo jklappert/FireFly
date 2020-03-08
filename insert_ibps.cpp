@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
   uint32_t n_threads = 1;
   uint32_t bs = 1;
   bool factor_scan = true;
+  bool save_mode = false;
 
   for (int i = 0; i < argc; ++i) {
     std::string arg = argv[i];
@@ -38,11 +39,15 @@ int main(int argc, char *argv[]) {
     if (arg == "-nfs" || arg == "--nofactorscan")
       factor_scan = false;
 
+    if (arg == "-s" || arg == "--save")
+      save_mode = true;
+
     if (arg == "-h" || arg == "--help") {
       std::cerr << "Usage: " << argv[0] << "\n"
                 << "Options:\n  -p,--parallel Sets the number of used threads\n"
                 << "  -bs,--bunchsize         Sets the maximum bunch size\n"
-                << "  -nfs,--nofactorscan     Disables the factor scan\n";
+                << "  -nfs,--nofactorscan     Disables the factor scan\n"
+                << "  -s,--save     Enables the storage of intermediate results\n";
       return 1;
     }
   }
@@ -132,6 +137,9 @@ int main(int argc, char *argv[]) {
     reconst.enable_factor_scan();
 
   reconst.enable_scan();
+
+  if (save_mode)
+    reconst.resume_from_saved_state();
 
   // Reconstruct
   reconst.reconstruct();
