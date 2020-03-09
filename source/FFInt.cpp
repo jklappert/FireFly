@@ -17,12 +17,8 @@
 //==================================================================================
 
 #include "FFInt.hpp"
-#include "utils.hpp"
 
 #include <sstream>
-#ifdef FLINT
-#include <flint/ulong_extras.h>
-#endif
 
 namespace firefly {
 
@@ -349,6 +345,59 @@ namespace firefly {
 #else
   void FFInt::set_new_prime(uint64_t prime) {
     FFInt::p = prime;
+  }
+#endif
+
+#ifdef DEFAULT
+  uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m) {
+    long double x;
+    uint64_t c;
+    int64_t r;
+
+    if (a >= m) a %= m;
+
+    if (b >= m) b %= m;
+
+    x = a;
+    c = x * b / m;
+    r = (int64_t)(a * b - c * m) % (int64_t)m;
+    return r < 0 ? r + m : r;
+  }
+
+  uint64_t mod_pow(uint64_t base, uint64_t exp, uint64_t m) {
+    // m must be at most 63 bit
+    uint64_t res = 1;
+
+    while (exp) {
+      if (exp & 1) res = mod_mul(res, base, m);
+
+      base = mod_mul(base, base, m);
+      exp >>= 1;
+    }
+
+    return res;
+  }
+
+  uint64_t mod_inv(uint64_t a, uint64_t m) {
+    int64_t t {0};
+    int64_t newt {1};
+    int64_t tmpt;
+    uint64_t r {m};
+    uint64_t newr {a};
+    uint64_t tmpr;
+    uint64_t q;
+
+    while (newr) {
+      q = r / newr;
+      tmpt = t;
+      t = newt;
+      newt = tmpt - q * newt;
+      tmpr = r;
+      r = newr;
+      newr = tmpr - q * newr;
+    }
+
+    return t < 0 ? t + m : t;
   }
 #endif
 
