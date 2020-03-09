@@ -27,6 +27,7 @@ int main(int argc, char *argv[]) {
   uint32_t bs = 1;
   bool factor_scan = true;
   bool save_mode = false;
+  bool no_interpolation = false;
 
   for (int i = 0; i < argc; ++i) {
     std::string arg = argv[i];
@@ -41,6 +42,9 @@ int main(int argc, char *argv[]) {
     if (arg == "-nfs" || arg == "--nofactorscan")
       factor_scan = false;
 
+    if (arg == "-ni" || arg == "--nointerpolation")
+      no_interpolation = true;
+
     if (arg == "-s" || arg == "--save")
       save_mode = true;
 
@@ -49,7 +53,8 @@ int main(int argc, char *argv[]) {
                 << "Options:\n  -p,--parallel Sets the number of used threads\n"
                 << "  -bs,--bunchsize         Sets the maximum bunch size\n"
                 << "  -nfs,--nofactorscan     Disables the factor scan\n"
-                << "  -s,--save     Enables the storage of intermediate results\n";
+                << "  -ni,--nointerpolation   Disables the interpolation and writes coefficients to files\n"
+                << "  -s,--save               Enables the storage of intermediate results\n";
       return 1;
     }
   }
@@ -136,77 +141,93 @@ int main(int argc, char *argv[]) {
   file << "{\n";
   file.close();
 
-  for (size_t i = 0; i != masters; ++i) {
-  if (i == 0)
-    INFO_MSG("Reconstructing coefficient of master integral: " + ap.get_master(i) + "\n");
+  if (!no_interpolation) {
+    for (size_t i = 0; i != masters; ++i) {
+      if (i == 0)
+        INFO_MSG("Reconstructing coefficient of master integral: " + ap.get_master(i) + "\n");
 
-  auto bb = ap.build_black_box(i);
+      auto bb = ap.build_black_box(i);
 
-  // Construct the reconstructor
-  Reconstructor<FFAmplitudeBlackBox> reconst(bb.n, n_threads, bs, bb);
+      // Construct the reconstructor
+      Reconstructor<FFAmplitudeBlackBox> reconst(bb.n, n_threads, bs, bb);
 
-  // Settings
-  if (factor_scan)
-    reconst.enable_factor_scan();
+      // Settings
+      if (factor_scan)
+        reconst.enable_factor_scan();
 
-  reconst.enable_scan();
+      reconst.enable_scan();
 
-  bool renamed_ff_save = false;
+      bool renamed_ff_save = false;
 
-  if (save_mode) {
-    std::string tmp = "ff_save_" + ap.get_master(i);
-    struct stat buffer;
+      if (save_mode) {
+        std::string tmp = "ff_save_" + ap.get_master(i);
+        struct stat buffer;
 
-    if (stat(tmp.c_str(), &buffer) == 0) {
-      struct stat buffer_2;
+        if (stat(tmp.c_str(), &buffer) == 0) {
+          struct stat buffer_2;
 
-      if (stat("ff_save", &buffer_2) == 0) {
-        std::rename("ff_save" , "ff_save_tmp");
-        renamed_ff_save = true; 
+          if (stat("ff_save", &buffer_2) == 0) {
+            std::rename("ff_save", "ff_save_tmp");
+            renamed_ff_save = true;
+          }
+
+          std::rename(tmp.c_str(), "ff_save");
+        }
+
+        reconst.set_tags({ap.get_master(i)});
+        reconst.resume_from_saved_state();
       }
 
-      std::rename(tmp.c_str(), "ff_save");
+      // Reconstruct
+      reconst.reconstruct();
+
+      std::vector<RationalFunction> results = reconst.get_result();
+      file.open("amplitude_out.m", std::ios_base::app);
+
+      if (!results.back().zero())
+        file <<  "+ " << ap.get_master(i) << "*" + results.back().generate_horner(vars) << "\n";
+
+      file.close();
+
+      if (save_mode) {
+        std::string tmp = "ff_save_" + ap.get_master(i);
+        std::rename("ff_save", tmp.c_str());
+
+        if (renamed_ff_save)
+          std::rename("ff_save_tmp", "ff_save");
+      }
+
+      RatReconst::reset();
+
+      if (i + 1 != masters) {
+        std::cout << "\n";
+        INFO_MSG("Reconstructing coefficient of master integral: " + ap.get_master(i + 1) + "\n");
+      }
+
     }
 
-    reconst.set_tags({ap.get_master(i)});
-    reconst.resume_from_saved_state();
-  }
+    file.open("amplitude_out.m", std::ios_base::app);
+    file << "}\n";
+    file.close();
 
-  // Reconstruct
-  reconst.reconstruct();
-
-  std::vector<RationalFunction> results = reconst.get_result();
-  file.open("amplitude_out.m",std::ios_base::app);
-  if (!results.back().zero())
-    file <<  "+ " << ap.get_master(i) << "*" + results.back().generate_horner(vars) << "\n";
-  file.close();
-
-  if (save_mode) {
-    std::string tmp = "ff_save_" + ap.get_master(i);
-    std::rename("ff_save" , tmp.c_str());
-    
-    if (renamed_ff_save)
-        std::rename("ff_save_tmp", "ff_save");
-  }
-
-  RatReconst::reset();
-
-  if (i + 1 != masters) {
     std::cout << "\n";
-    INFO_MSG("Reconstructing coefficient of master integral: " + ap.get_master(i + 1) + "\n");
+    auto time1 = std::chrono::high_resolution_clock::now();
+    INFO_MSG("Reconstructed amplitude in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
+
+    INFO_MSG("Result has been written to 'amplitude_out.m'");
+  } else {
+    mkdir("coefficients", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+    for (size_t i = 0; i != masters; ++i) {
+      std::ofstream coef_file;
+      std::string file_name = "coefficients/" + ap.get_master(i) + ".m";
+      coef_file.open(file_name.c_str());
+      coef_file << "{\n" << ap.get_master(i) + "*(" << ap.get_unsimplified_coef(i) << ")\n}\n";
+      coef_file.close();
+    }
+
+    INFO_MSG("Unsimplified coefficients written to 'coefficients' directory");
   }
-
-  }
-
-  file.open("amplitude_out.m",std::ios_base::app);
-  file << "}\n";
-  file.close();
-
-  std::cout << "\n";
-  auto time1 = std::chrono::high_resolution_clock::now();
-  INFO_MSG("Reconstructed amplitude in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
-
-  INFO_MSG("Result has been written to 'amplitude_out.m'");
 
   return 0;
 }

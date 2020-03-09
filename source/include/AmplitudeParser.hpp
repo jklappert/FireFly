@@ -116,6 +116,10 @@ namespace firefly {
     /**
      * 
      */
+    std::string get_unsimplified_coef(size_t master) const;
+    /**
+     * 
+     */
     std::string get_master(size_t i);
   private:
     std::vector<std::string> vars;

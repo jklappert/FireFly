@@ -121,8 +121,7 @@ namespace firefly {
 
             if (prefac == "*") {
               coefficient = int_fam.substr(0, int_fam.size() - fam.size() - 1);
-	    }
-            else if (found + 1 < amplitude_size - 1 && amplitude_c.substr(found + 1, 1) == "*") {
+            } else if (found + 1 < amplitude_size - 1 && amplitude_c.substr(found + 1, 1) == "*") {
               std::size_t coef_end_pos = 0;
 
               for (const auto& tmp_fam : integral_families) {
@@ -174,7 +173,7 @@ namespace firefly {
     /*for (const auto& el : parsed_integrals) {
       std::cout << "Integral: " << el.first << "\n";
       std::cout << "Coefficient: " << el.second << "\n";
-    }*/
+      }*/
 
     return parsed_integrals;
   }
@@ -298,7 +297,7 @@ namespace firefly {
     INFO_MSG("Found " + std::to_string(required_repl_counter) + " required replacement rules");
     INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " distinct master integrals in total\n");
   }
-  
+
   size_t AmplitudeParser::check_for_unreplaced_masters() {
     bool found_unreplaced_integral = false;
 
@@ -306,6 +305,7 @@ namespace firefly {
       if (repl_integrals.find(integral.first) == repl_integrals.end()) {
         found_unreplaced_integral = true;
         INFO_MSG("No replacements found for integral: " + integral.first);
+
         if (masters.find(integral.first) == masters.end()) {
           masters.emplace(std::make_pair(integral.first, distinct_master_counter));
           masters_inv.emplace(std::make_pair(distinct_master_counter - coef_type::COEF_TYPE_SIZE, integral.first));
@@ -322,37 +322,76 @@ namespace firefly {
     if (found_unreplaced_integral) {
       INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " distinct master integrals in total\n");
     }
-    
+
     return distinct_master_counter - coef_type::COEF_TYPE_SIZE;
   }
 
-  FFAmplitudeBlackBox AmplitudeParser::build_black_box(size_t master) const {
+  std::string AmplitudeParser::get_unsimplified_coef(size_t master) const {
     std::string tmp_fun = "";
+
     for (size_t i = 0; i != distinct_integral_counter; ++i) {
       std::string tmp_coef = "+(";
       bool got_master = false;
+
       for (const auto& mi_map : amplitude_mapping.at(i)) {
         bool pref_done = false;
+
         if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP)
           tmp_coef += "+(" + functions[mi_map.first] + ")";
         else {
           if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
-            if(!pref_done) {
+            if (!pref_done) {
               pref_done = true;
               tmp_coef += ")*(";
             }
+
             tmp_coef += "+(" + functions[mi_map.first] + ")";
             got_master = true;
           }
         }
       }
+
       tmp_coef += ")";
+
       if (got_master)
         tmp_fun += tmp_coef;
     }
 
-    auto bb = FFAmplitudeBlackBox(vars, {tmp_fun});
-    return bb;
+    return tmp_fun;
+  }
+
+  FFAmplitudeBlackBox AmplitudeParser::build_black_box(size_t master) const {
+    std::string tmp_fun = "";
+
+    for (size_t i = 0; i != distinct_integral_counter; ++i) {
+      std::string tmp_coef = "+(";
+      bool got_master = false;
+
+      for (const auto& mi_map : amplitude_mapping.at(i)) {
+        bool pref_done = false;
+
+        if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP)
+          tmp_coef += "+(" + functions[mi_map.first] + ")";
+        else {
+          if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
+            if (!pref_done) {
+              pref_done = true;
+              tmp_coef += ")*(";
+            }
+
+            tmp_coef += "+(" + functions[mi_map.first] + ")";
+            got_master = true;
+          }
+        }
+      }
+
+      tmp_coef += ")";
+
+      if (got_master)
+        tmp_fun += tmp_coef;
+    }
+
+    return FFAmplitudeBlackBox(vars, {tmp_fun});
   }
 
   std::string AmplitudeParser::get_master(size_t i) {
