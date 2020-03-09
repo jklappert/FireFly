@@ -66,6 +66,7 @@ namespace firefly {
      *  @param in the mpz_class object which should be converted to an FFInt
      */
     FFInt(mpz_class in);
+    [[deprecated("Old and slow parser, which will be removed in the next release. Use the shunting-yard parser instead.")]]
     FFInt(const std::string& str, const std::vector<std::pair<std::string, uint64_t>>& replacements);
     /**
      *    Default constructor
