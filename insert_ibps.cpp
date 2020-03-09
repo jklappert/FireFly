@@ -177,7 +177,8 @@ int main(int argc, char *argv[]) {
 
   std::vector<RationalFunction> results = reconst.get_result();
   file.open("amplitude_out.m",std::ios_base::app);
-  file <<  "+ " << ap.get_master(i) << "*" + results.back().generate_horner(vars) << "\n";
+  if (!results.back().zero())
+    file <<  "+ " << ap.get_master(i) << "*" + results.back().generate_horner(vars) << "\n";
   file.close();
 
   if (save_mode) {
