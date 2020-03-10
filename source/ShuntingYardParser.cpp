@@ -112,6 +112,7 @@ namespace firefly {
 
       while (std::getline(istream, line, ';')) {
         line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+        line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
         line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
 
         if (line.length() > 0) {
