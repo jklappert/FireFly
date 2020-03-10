@@ -99,22 +99,4 @@ namespace firefly {
   // TODO
   uint32_t compute_bunch_size(const uint32_t queue_length, const uint32_t thr_n, const uint32_t bunch_size);
   uint32_t compute_job_number(const uint32_t queue_length, const uint32_t threads, const uint32_t total_threads, const uint32_t bunch_size);
-
-#ifdef DEFAULT
-  uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m);
-  /**
-   *  Performs a exponentiation modulo m
-   *  @param base the base
-   *  @param exp the exponent
-   *  @param m the modulus
-   *  @return (base^exp) mod m
-   */
-  uint64_t mod_pow(uint64_t base, uint64_t exp, uint64_t m);
-  /**
-   *  Calculates the multiplicative inverse using the Extended Euclidean Algorithm
-   *  @param a the integer of which the multiplicative inverse should be calculated
-   *  @param m the modulus
-   */
-  uint64_t mod_inv(uint64_t a, uint64_t m);
-#endif
 }
