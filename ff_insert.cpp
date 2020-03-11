@@ -136,12 +136,12 @@ int main(int argc, char *argv[]) {
   // Build the black boxes and start reconstruction
   size_t masters = ap.check_for_unreplaced_masters();
 
-  std::ofstream file;
-  file.open("out.m");
-  file << "{\n";
-  file.close();
-
   if (!no_interpolation) {
+    std::ofstream file;
+    file.open("out.m");
+    file << "{\n";
+    file.close();
+
     for (size_t i = 0; i != masters; ++i) {
       if (i == 0)
         INFO_MSG("Reconstructing coefficient of basis function: " + ap.get_master(i) + "\n");
