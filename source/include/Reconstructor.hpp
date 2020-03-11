@@ -893,6 +893,7 @@ namespace firefly {
       << " s | " << std::to_string(total_iterations) << " probes in total\n"
       << "Required prime fields: " << std::to_string(prime_it) << " + 1\n"
       << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n";
+    logger.close();
 
     if (verbosity > SILENT) {
       if (one_done || one_new_prime) {

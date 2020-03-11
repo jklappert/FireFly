@@ -136,6 +136,9 @@ int main(int argc, char *argv[]) {
   // Build the black boxes and start reconstruction
   size_t masters = ap.check_for_unreplaced_masters();
 
+  std::ofstream logger;
+  logger.open("ff_insert.log");
+  logger.close();
   if (!no_interpolation) {
     std::ofstream file;
     file.open("out.m");
@@ -143,8 +146,12 @@ int main(int argc, char *argv[]) {
     file.close();
 
     for (size_t i = 0; i != masters; ++i) {
-      if (i == 0)
+      if (i == 0) {
         INFO_MSG("Reconstructing coefficient of basis function: " + ap.get_master(i) + "\n");
+        logger.open("ff_insert.log", std::ios_base::app);
+        logger << "Reconstructing coefficient of basis function: " + ap.get_master(i) + "\n";
+        logger.close();
+      }
 
       auto bb = ap.build_black_box(i);
 
@@ -199,9 +206,26 @@ int main(int argc, char *argv[]) {
 
       RatReconst::reset();
 
+      std::ifstream in("firefly.log");
+
+      if (in.good()) {
+        std::string old_log ((std::istreambuf_iterator<char>(in)),
+                             (std::istreambuf_iterator<char>()));
+        logger.open("ff_insert.log", std::ios_base::app);
+        logger << old_log << "\n";
+        logger << "-------------------------------------------------------------\n\n";
+        logger.close();
+      }
+
       if (i + 1 != masters) {
         std::cout << "\n";
+        INFO_MSG("Coefficients done: " + std::to_string(i + 1) + " / " + std::to_string(masters) + "\n");
         INFO_MSG("Reconstructing coefficient of basis function: " + ap.get_master(i + 1) + "\n");
+        logger.open("ff_insert.log", std::ios_base::app);
+        logger << "Coefficients done: " + std::to_string(i + 1) + " / " + std::to_string(masters) + "\n\n";
+        logger << "-------------------------------------------------------------\n\n";
+        logger << "Reconstructing coefficient of basis function: " + ap.get_master(i + 1) + "\n";
+        logger.close();
       }
 
     }
@@ -211,10 +235,16 @@ int main(int argc, char *argv[]) {
     file.close();
 
     std::cout << "\n";
+
     auto time1 = std::chrono::high_resolution_clock::now();
     INFO_MSG("Reconstructed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
-
     INFO_MSG("Result has been written to 'out.m'");
+    logger.open("ff_insert.log", std::ios_base::app);
+    logger << "Coefficients done: " + std::to_string(masters) + " / " + std::to_string(masters) + "\n\n";
+    logger << "-------------------------------------------------------------\n\n";
+    logger << "Reconstructed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s\n";
+    logger << "Result has been written to 'out.m'\n";
+    logger.close();
   } else {
     mkdir("coefficients", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
@@ -227,6 +257,9 @@ int main(int argc, char *argv[]) {
     }
 
     INFO_MSG("Unsimplified coefficients written to 'coefficients' directory");
+    logger.open("ff_insert.log", std::ios_base::app);
+    logger << "Unsimplified coefficients written to 'coefficients' directory\n";
+    logger.close();
   }
 
   return 0;
