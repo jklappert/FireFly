@@ -778,7 +778,6 @@ namespace firefly {
         b[key].swap(b_temp);
       }
 
-      //TODO problem
       lambda[key].swap(lambda_temp);
 
       while (lambda[key].back() == 0) {
