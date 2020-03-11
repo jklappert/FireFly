@@ -28,7 +28,7 @@ namespace firefly {
   AmplitudeParser::AmplitudeParser(const std::vector<std::string>& vars_, const std::vector<std::string>& integral_families_) : vars(vars_), integral_families(integral_families_) {}
 
   void AmplitudeParser::parse_amplitude_file(const std::string& amplitude_file) {
-    INFO_MSG("Parsing amplitude of " + amplitude_file);
+    INFO_MSG("Parsing expression of " + amplitude_file);
     parse_file(amplitude_file);
   }
 
@@ -80,8 +80,8 @@ namespace firefly {
     }
 
     auto time1 = std::chrono::high_resolution_clock::now();
-    INFO_MSG("Parsed amplitude in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
-    INFO_MSG("Found " + std::to_string(distinct_integral_counter) + " distinct integrals\n");
+    INFO_MSG("Parsed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
+    INFO_MSG("Found " + std::to_string(distinct_integral_counter) + " distinct functions\n");
   }
 
   std::vector<std::pair<std::string, std::string>> AmplitudeParser::parse_string(const std::string& amplitude) {
@@ -156,7 +156,7 @@ namespace firefly {
         }
 
         if (!found_integral) {
-          ERROR_MSG("Unknown integral family: " + int_fam);
+          ERROR_MSG("Unknown function: " + int_fam);
           std::exit(EXIT_FAILURE);
         }
 
@@ -164,7 +164,7 @@ namespace firefly {
         found = amplitude_c.find(']', found + 1);
       }
     } else {
-      ERROR_MSG("Amplitude has no content");
+      ERROR_MSG("Expression has no content");
       std::exit(EXIT_FAILURE);
     }
 
@@ -188,7 +188,7 @@ namespace firefly {
       std::exit(EXIT_FAILURE);
     }
 
-    INFO_MSG("Parsing IBP table of " + ibp_table);
+    INFO_MSG("Parsing replacement table of " + ibp_table);
 
     infile.open(ibp_table);
 
@@ -231,7 +231,7 @@ namespace firefly {
 
         if (integrals.find(repl_lhs[0].first) != integrals.end()) {
           if (repl_integrals.find(repl_lhs[0].first) != repl_integrals.end()) {
-            ERROR_MSG("Multiple replacement rules for integral: " + repl_lhs[0].first);
+            ERROR_MSG("Multiple replacement rules for function: " + repl_lhs[0].first);
             std::exit(EXIT_FAILURE);
           }
 
@@ -267,7 +267,7 @@ namespace firefly {
 
       if (integrals.find(repl_lhs[0].first) != integrals.end()) {
         if (repl_integrals.find(repl_lhs[0].first) != repl_integrals.end()) {
-          ERROR_MSG("Multiple replacement rules for integral: " + repl_lhs[0].first);
+          ERROR_MSG("Multiple replacement rules for function: " + repl_lhs[0].first);
           std::exit(EXIT_FAILURE);
         }
 
@@ -293,9 +293,9 @@ namespace firefly {
 
     functions.shrink_to_fit();
     auto time1 = std::chrono::high_resolution_clock::now();
-    INFO_MSG("Parsed IBP table in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
+    INFO_MSG("Parsed replacement table in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
     INFO_MSG("Found " + std::to_string(required_repl_counter) + " required replacement rules");
-    INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " distinct master integrals in total\n");
+    INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " basis function(s) in total\n");
   }
 
   size_t AmplitudeParser::check_for_unreplaced_masters() {
@@ -304,7 +304,7 @@ namespace firefly {
     for (const auto & integral : integrals) {
       if (repl_integrals.find(integral.first) == repl_integrals.end()) {
         found_unreplaced_integral = true;
-        INFO_MSG("No replacements found for integral: " + integral.first);
+        INFO_MSG("No replacements found for function: " + integral.first);
 
         if (masters.find(integral.first) == masters.end()) {
           masters.emplace(std::make_pair(integral.first, distinct_master_counter));
@@ -320,7 +320,7 @@ namespace firefly {
     }
 
     if (found_unreplaced_integral) {
-      INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " distinct master integrals in total\n");
+      INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " basis function(s) in total\n");
     }
 
     return distinct_master_counter - coef_type::COEF_TYPE_SIZE;

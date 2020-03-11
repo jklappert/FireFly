@@ -60,18 +60,18 @@ int main(int argc, char *argv[]) {
   }
 
   // Parse integral families
-  std::ifstream fam_file_test("amplitude/families");
+  std::ifstream fam_file_test("config/functions");
   std::ifstream fam_file;
 
 
   if (!fam_file_test.good()) {
-    ERROR_MSG("Please add a file definining the occurring integral families in 'amplitude/families'");
+    ERROR_MSG("Please add a file definining the occurring functions in 'config/functions'");
     std::exit(EXIT_FAILURE);
   }
 
   std::vector<std::string> families{};
 
-  fam_file.open("amplitude/families");
+  fam_file.open("config/functions");
 
   std::string line;
 
@@ -85,17 +85,17 @@ int main(int argc, char *argv[]) {
   fam_file.close();
 
   // Parse variables
-  std::ifstream var_file_test("amplitude/vars");
+  std::ifstream var_file_test("config/vars");
   std::ifstream var_file;
 
   if (!var_file_test.good()) {
-    ERROR_MSG("Please add a file definining the occurring variables 'amplitude/vars'");
+    ERROR_MSG("Please add a file definining the occurring variables 'config/vars'");
     std::exit(EXIT_FAILURE);
   }
 
   std::vector<std::string> vars{};
 
-  var_file.open("amplitude/vars");
+  var_file.open("config/vars");
 
   while (std::getline(var_file, line, '\n')) {
     line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
@@ -110,11 +110,11 @@ int main(int argc, char *argv[]) {
   AmplitudeParser ap(vars, families);
 
   // Parse the amplitude
-  ap.parse_amplitude_file("amplitude/amplitude_in.m");
+  ap.parse_amplitude_file("config/in.m");
 
   // Parse IBP tables
   tinydir_dir dir;
-  tinydir_open_sorted(&dir, "amplitude/ibps");
+  tinydir_open_sorted(&dir, "replacements");
 
   std::vector<std::string> files;
 
@@ -130,21 +130,21 @@ int main(int argc, char *argv[]) {
   tinydir_close(&dir);
 
   for (const auto & file : files) {
-    ap.parse_ibp_table_file("amplitude/ibps/" + file);
+    ap.parse_ibp_table_file("replacements/" + file);
   }
 
   // Build the black boxes and start reconstruction
   size_t masters = ap.check_for_unreplaced_masters();
 
   std::ofstream file;
-  file.open("amplitude_out.m");
+  file.open("out.m");
   file << "{\n";
   file.close();
 
   if (!no_interpolation) {
     for (size_t i = 0; i != masters; ++i) {
       if (i == 0)
-        INFO_MSG("Reconstructing coefficient of master integral: " + ap.get_master(i) + "\n");
+        INFO_MSG("Reconstructing coefficient of basis function: " + ap.get_master(i) + "\n");
 
       auto bb = ap.build_black_box(i);
 
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
       reconst.reconstruct();
 
       std::vector<RationalFunction> results = reconst.get_result();
-      file.open("amplitude_out.m", std::ios_base::app);
+      file.open("out.m", std::ios_base::app);
 
       if (!results.back().zero())
         file <<  "+ " << ap.get_master(i) << "*" + results.back().generate_horner(vars) << "\n";
@@ -201,20 +201,20 @@ int main(int argc, char *argv[]) {
 
       if (i + 1 != masters) {
         std::cout << "\n";
-        INFO_MSG("Reconstructing coefficient of master integral: " + ap.get_master(i + 1) + "\n");
+        INFO_MSG("Reconstructing coefficient of basis function: " + ap.get_master(i + 1) + "\n");
       }
 
     }
 
-    file.open("amplitude_out.m", std::ios_base::app);
+    file.open("out.m", std::ios_base::app);
     file << "}\n";
     file.close();
 
     std::cout << "\n";
     auto time1 = std::chrono::high_resolution_clock::now();
-    INFO_MSG("Reconstructed amplitude in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
+    INFO_MSG("Reconstructed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
 
-    INFO_MSG("Result has been written to 'amplitude_out.m'");
+    INFO_MSG("Result has been written to 'out.m'");
   } else {
     mkdir("coefficients", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
