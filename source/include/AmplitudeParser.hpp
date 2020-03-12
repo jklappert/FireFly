@@ -25,6 +25,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <fstream>
 #include <list>
 
 namespace firefly {
@@ -134,5 +135,6 @@ namespace firefly {
     size_t distinct_integral_counter = 0;
     size_t distinct_master_counter = coef_type::COEF_TYPE_SIZE;
     size_t parser_counter = 0;
+    std::ofstream logger;
   };
 }

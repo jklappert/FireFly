@@ -28,7 +28,10 @@ namespace firefly {
   AmplitudeParser::AmplitudeParser(const std::vector<std::string>& vars_, const std::vector<std::string>& integral_families_) : vars(vars_), integral_families(integral_families_) {}
 
   void AmplitudeParser::parse_amplitude_file(const std::string& amplitude_file) {
+    logger.open("ff_insert.log", std::ios_base::app);
     INFO_MSG("Parsing expression of " + amplitude_file);
+    logger << "Parsing expression of " << amplitude_file << "\n";
+    logger.close();
     parse_file(amplitude_file);
   }
 
@@ -82,6 +85,10 @@ namespace firefly {
     auto time1 = std::chrono::high_resolution_clock::now();
     INFO_MSG("Parsed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
     INFO_MSG("Found " + std::to_string(distinct_integral_counter) + " distinct functions\n");
+    logger.open("ff_insert.log", std::ios_base::app);
+    logger << "Parsed expression in " << std::to_string(std::chrono::duration<double>(time1 - time0).count()) << " s\n";
+    logger << "Found " << std::to_string(distinct_integral_counter) << " distinct functions\n\n";
+    logger.close();
   }
 
   std::vector<std::pair<std::string, std::string>> AmplitudeParser::parse_string(const std::string& amplitude) {
@@ -157,6 +164,9 @@ namespace firefly {
 
         if (!found_integral) {
           ERROR_MSG("Unknown function: " + int_fam);
+          logger.open("ff_insert.log", std::ios_base::app);
+          logger << "Unknown function: " << int_fam << "\n";
+          logger.close();
           std::exit(EXIT_FAILURE);
         }
 
@@ -165,6 +175,9 @@ namespace firefly {
       }
     } else {
       ERROR_MSG("Expression has no content");
+      logger.open("ff_insert.log", std::ios_base::app);
+      logger << "Expression has no content\n";
+      logger.close();
       std::exit(EXIT_FAILURE);
     }
 
@@ -185,10 +198,16 @@ namespace firefly {
 
     if (!infile_test.good()) {
       ERROR_MSG("File '" + ibp_table + "' does not exist!");
+      logger.open("ff_insert.log", std::ios_base::app);
+      logger << "File '" << ibp_table << "' does not exist!\n";
+      logger.close();
       std::exit(EXIT_FAILURE);
     }
 
     INFO_MSG("Parsing replacement table of " + ibp_table);
+    logger.open("ff_insert.log", std::ios_base::app);
+    logger << "Parsing replacement table of " << ibp_table << "\n";
+    logger.close();
 
     infile.open(ibp_table);
 
@@ -232,6 +251,9 @@ namespace firefly {
         if (integrals.find(repl_lhs[0].first) != integrals.end()) {
           if (repl_integrals.find(repl_lhs[0].first) != repl_integrals.end()) {
             ERROR_MSG("Multiple replacement rules for function: " + repl_lhs[0].first);
+            logger.open("ff_insert.log", std::ios_base::app);
+            logger << "Multiple replacement rules for function: " << repl_lhs[0].first << "\n";
+            logger.close();
             std::exit(EXIT_FAILURE);
           }
 
@@ -268,6 +290,9 @@ namespace firefly {
       if (integrals.find(repl_lhs[0].first) != integrals.end()) {
         if (repl_integrals.find(repl_lhs[0].first) != repl_integrals.end()) {
           ERROR_MSG("Multiple replacement rules for function: " + repl_lhs[0].first);
+          logger.open("ff_insert.log", std::ios_base::app);
+          logger << "Multiple replacement rules for function: " << repl_lhs[0].first << "\n";
+          logger.close();
           std::exit(EXIT_FAILURE);
         }
 
@@ -296,6 +321,11 @@ namespace firefly {
     INFO_MSG("Parsed replacement table in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
     INFO_MSG("Found " + std::to_string(required_repl_counter) + " required replacement rules");
     INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " basis function(s) in total\n");
+    logger.open("ff_insert.log", std::ios_base::app);
+    logger << "Parsed replacement table in " << std::to_string(std::chrono::duration<double>(time1 - time0).count()) << " s\n";
+    logger << "Found " << std::to_string(required_repl_counter) << " required replacement rules\n";
+    logger << "Found " << std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) << " basis function(s) in total\n\n";
+    logger.close();
   }
 
   size_t AmplitudeParser::check_for_unreplaced_masters() {
@@ -305,6 +335,9 @@ namespace firefly {
       if (repl_integrals.find(integral.first) == repl_integrals.end()) {
         found_unreplaced_integral = true;
         INFO_MSG("No replacements found for function: " + integral.first);
+        logger.open("ff_insert.log", std::ios_base::app);
+        logger << "No replacements found for function: " << integral.first << "\n";
+        logger.close();
 
         if (masters.find(integral.first) == masters.end()) {
           masters.emplace(std::make_pair(integral.first, distinct_master_counter));
@@ -321,6 +354,9 @@ namespace firefly {
 
     if (found_unreplaced_integral) {
       INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " basis function(s) in total\n");
+      logger.open("ff_insert.log", std::ios_base::app);
+      logger << "Found " << std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) << " basis function(s) in total\n\n";
+      logger.close();
     }
 
     return distinct_master_counter - coef_type::COEF_TYPE_SIZE;

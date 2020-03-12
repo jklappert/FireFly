@@ -2212,6 +2212,8 @@ namespace firefly {
             << " s | " + std::to_string(total_iterations) << " probes in total\n"
             << "Average time of the black-box probe: " << std::to_string(average_black_box_time) + " s\n\n"
             << "Promote to new prime field: F(" << std::to_string(primes()[prime_it]) << ")\n";
+            logger.close();
+            logger.open("firefly.log", std::ios_base::app);
 
             if (verbosity > SILENT) {
               INFO_MSG("Completed current prime field in " +

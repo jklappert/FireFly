@@ -59,6 +59,9 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  std::ofstream logger;
+  logger.open("ff_insert.log");
+
   // Parse integral families
   std::ifstream fam_file_test("config/functions");
   std::ifstream fam_file;
@@ -66,6 +69,7 @@ int main(int argc, char *argv[]) {
 
   if (!fam_file_test.good()) {
     ERROR_MSG("Please add a file definining the occurring functions in 'config/functions'");
+    logger << "Please add a file definining the occurring functions in 'config/functions'\n";
     std::exit(EXIT_FAILURE);
   }
 
@@ -90,6 +94,7 @@ int main(int argc, char *argv[]) {
 
   if (!var_file_test.good()) {
     ERROR_MSG("Please add a file definining the occurring variables 'config/vars'");
+    logger << "Please add a file definining the occurring variables 'config/vars'\n";
     std::exit(EXIT_FAILURE);
   }
 
@@ -106,6 +111,7 @@ int main(int argc, char *argv[]) {
 
   var_file.close();
 
+  logger.close();
   // Construct the amplitude parser
   AmplitudeParser ap(vars, families);
 
@@ -136,9 +142,6 @@ int main(int argc, char *argv[]) {
   // Build the black boxes and start reconstruction
   size_t masters = ap.check_for_unreplaced_masters();
 
-  std::ofstream logger;
-  logger.open("ff_insert.log");
-  logger.close();
   if (!no_interpolation) {
     std::ofstream file;
     file.open("out.m");
