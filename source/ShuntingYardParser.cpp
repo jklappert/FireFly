@@ -45,7 +45,7 @@ namespace firefly {
   }
 
   ShuntingYardParser::ShuntingYardParser(const std::vector<std::string>& funs, const std::vector<std::string>& vars, bool check_is_equal_) {
-    INFO_MSG("Parsing collection of " + std::to_string(funs.size()) + " functions");
+    INFO_MSG("Parsing collection of " + std::to_string(funs.size()) + " function(s)");
     check_is_equal = check_is_equal_;
 
     for (uint32_t i = 0; i != vars.size(); ++i) {
