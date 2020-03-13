@@ -505,7 +505,7 @@ namespace firefly {
 
       order_file.close();
 
-      std::string var_order = "Using optimized variable order: {";
+      std::string var_order = "Using optimized variable order: (";
 
       for (size_t i = 0; i != n; ++i) {
         if (!change_var_order && optimal_var_order[i] != i) {
@@ -515,7 +515,7 @@ namespace firefly {
         if (i != n - 1) {
           var_order += "x" + std::to_string(optimal_var_order[i] + 1) + ", ";
         } else {
-          var_order += "x" + std::to_string(optimal_var_order[i] + 1) + "}";
+          var_order += "x" + std::to_string(optimal_var_order[i] + 1) + ")";
         }
       }
 
@@ -1547,7 +1547,7 @@ namespace firefly {
       vars[i] = "x" + std::to_string(i + 1);
     }
 
-    std::string var_order = "Using optimized variable order: {";
+    std::string var_order = "Using optimized variable order: (";
 
     for (size_t i = 0; i != n; ++i) {
       if (!change_var_order && optimal_var_order[i] != i) {
@@ -1557,7 +1557,7 @@ namespace firefly {
       if (i != n - 1) {
         var_order += "x" + std::to_string(optimal_var_order[i] + 1) + ", ";
       } else {
-        var_order += "x" + std::to_string(optimal_var_order[i] + 1) + "}";
+        var_order += "x" + std::to_string(optimal_var_order[i] + 1) + ")";
       }
     }
 
