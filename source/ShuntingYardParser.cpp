@@ -1,6 +1,6 @@
 //==================================================================================
 //    FireFly - Reconstructing rational functions and polynomial over finite fields.
-//    Copyright (C) 2019  Jonas Klappert and Fabian Lange
+//    Copyright (C) 2020  Jonas Klappert and Fabian Lange
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ namespace firefly {
   ShuntingYardParser::ShuntingYardParser() {}
 
   ShuntingYardParser::ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars, bool check_is_equal_) {
-    INFO_MSG("Parsing functions in '" + file + "'");
+    INFO_MSG("Parsing function(s) in '" + file + "'");
     check_is_equal = check_is_equal_;
 
     for (uint32_t i = 0; i != vars.size(); ++i) {
