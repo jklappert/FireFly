@@ -3064,13 +3064,13 @@ namespace firefly {
         case 32:
           start_new_job<32>(lock_probe_queue);
           break;
-/*        case 64:
+        case 64:
           start_new_job<64>(lock_probe_queue);
           break;
         case 128:
           start_new_job<128>(lock_probe_queue);
           break;
-        case 256:
+/*        case 256:
           start_new_job<256>(lock_probe_queue);
           break;*/
       }

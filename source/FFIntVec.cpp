@@ -457,7 +457,7 @@ namespace firefly {
   template FFIntVec<32> pow(const FFIntVec<32>&, const FFIntVec<32>&);
   template std::ostream& operator<<(std::ostream&, const FFIntVec<32>&);
   // 64
-  /*template class FFIntVec<64>;
+  template class FFIntVec<64>;
   template FFIntVec<64> operator-(const FFIntVec<64>&);
   template FFIntVec<64> operator+(const FFIntVec<64>&);
   template FFIntVec<64> operator-(const FFIntVec<64>&, const FFIntVec<64>&);
@@ -505,7 +505,7 @@ namespace firefly {
   template FFIntVec<128> pow(const FFIntVec<128>&, const FFIntVec<128>&);
   template std::ostream& operator<<(std::ostream&, const FFIntVec<128>&);
   // 256
-  template class FFIntVec<256>;
+  /*template class FFIntVec<256>;
   template FFIntVec<256> operator-(const FFIntVec<256>&);
   template FFIntVec<256> operator+(const FFIntVec<256>&);
   template FFIntVec<256> operator-(const FFIntVec<256>&, const FFIntVec<256>&);
