@@ -96,6 +96,7 @@ namespace firefly {
 
     std::string amplitude_c = amplitude;
     amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), ' '), amplitude_c.end());
+    amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '\t'), amplitude_c.end());
     amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '\n'), amplitude_c.end());
     amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '{'), amplitude_c.end());
     amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '}'), amplitude_c.end());
@@ -229,6 +230,7 @@ namespace firefly {
 
     std::string ibp_table_c = ibp_table;
     ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), ' '), ibp_table_c.end());
+    ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '\t'), ibp_table_c.end());
     ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '\n'), ibp_table_c.end());
     ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '{'), ibp_table_c.end());
     ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '}'), ibp_table_c.end());

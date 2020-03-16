@@ -45,8 +45,10 @@ int main(int argc, char *argv[]) {
 
     if (arg == "-p" || arg == "--parallel") {
       n_threads = std::stoi(argv[i + 1]);
+      ++i;
     } else if (arg == "-bs" || arg == "--bunchsize") {
       bs = std::stoi(argv[i + 1]);
+      ++i;
     } else if (arg == "-nfs" || arg == "--nofactorscan") {
       factor_scan = false;
     } else if (arg == "-ni" || arg == "--nointerpolation") {
