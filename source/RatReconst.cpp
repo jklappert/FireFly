@@ -3699,7 +3699,7 @@ namespace firefly {
 
       for (size_t i = 1; i != vandermonde_size; ++i) {
         for (uint32_t tmp_zi = 2; tmp_zi != zi; ++tmp_zi) {
-           tmp_zi_orders[i][tmp_zi - 2]++;
+           tmp_zi_orders[i][tmp_zi - 2] += i;
         }
       }
 
