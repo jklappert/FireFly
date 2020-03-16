@@ -59,7 +59,6 @@ namespace firefly {
     }
   }
 
-  //TODO work out cache misses
   void AmplitudeParser::parse_amplitude_string(const std::string& amplitude_string) {
     auto time0 = std::chrono::high_resolution_clock::now();
     auto res = parse_string(amplitude_string);
