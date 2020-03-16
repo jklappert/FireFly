@@ -48,7 +48,7 @@ namespace firefly {
 
   /**
    * @class Reconstructor
-   * @brief A class to reconstruct functions from its values
+   * @brief A class to reconstruct the functions in BlackBoxTemp from its values
    */
   template<typename BlackBoxTemp>
   class Reconstructor {
@@ -133,10 +133,12 @@ namespace firefly {
      */
     void resume_from_saved_state();
     /**
+     *  TODO remove?
      *  Allows to abort the current reconstruction, only valid after prime changes
      */
     void abort();
     /**
+     *  TODO remove?
      *  Allows to resume the current reconstruction, only valid after prime changes
      */
     void resume();
@@ -243,12 +245,12 @@ namespace firefly {
                              std::unordered_map<uint32_t, mpz_class>& combined_ci,
                              const mpz_class& combined_prime);
     /**
-     *  TODO
      *  Initializes vector of reconstruction objects and starts first probes
+     *  @param first bool to indicate whether this functions is called for the first time
      */
     void start_first_runs(bool first = true);
     /**
-     * TODO
+     *  Queue new probes with zi_order one
      */
     void queue_new_ones();
     /**
@@ -260,7 +262,7 @@ namespace firefly {
      *  Queues a number of probes for a given zi_order
      *  @param zi_order the order of which a given number of probes should be queued
      *  @param to_start the number of probes which should be queued
-     * TODO
+     *  @param first bool to indicate whether this functions is called for the first time
      */
 #if !WITH_MPI
     void queue_probes(const std::vector<uint32_t>& zi_order, const uint32_t to_start);
@@ -268,21 +270,16 @@ namespace firefly {
     void queue_probes(const std::vector<uint32_t>& zi_order, const uint32_t to_start, const bool first = false);
 #endif
     /**
-     * Gets a probe from probes, probes_bunch, or bunch
-     * @param t is set to the t of the returned probe
-     * @param zi_order is set to the zi_order of the returned probe
-     * @param probe is set to point to a probe from probes, probes_bunch, or bunch
-     * @param time is set to the time of the returned probe
+     *  Gets a vector of probes and corresponding indices
+     *  @param indices vector of indices corresponding to the probes
+     *  @param probes vector of probes
      */
-    // TODO
     void get_probe(std::vector<uint64_t>& indices, std::vector<std::vector<FFInt>>& probes);
     /**
-     *  Feeds the reconstruction objects
-     *  @param zi_order the order at which the black box was probed
-     *  @param t the value of the homogenization variable t
-     *  @param probe a vector of black box probes in an immutable order
+     *  Feeds the reconstruction objects with the probes
+     *  @param indices vector of indices corresponding to the probes
+     *  @param probes vector of probes to be fed
      */
-    // TODO
     void feed_job(const std::vector<uint64_t>& indices, const std::vector<std::vector<FFInt>>& probes);
     /**
      *  Interpolates a RatReconst and queues new jobs if required
@@ -294,17 +291,22 @@ namespace firefly {
      */
     void clean_reconst();
     /**
-     *  TODO
+     *  Checks whether there are probes requested and starts the calculation
      */
     void get_job();
     /**
-     *  TODO
+     *  Computes a probe
+     *  @param lock_probe_queue the locked mutex of the queue of probes
      */
-    void start_new_job(std::unique_lock<std::mutex>& lock_probe_queue);
-    template<uint32_t N>
-    void start_new_job(std::unique_lock<std::mutex>& lock_probe_queue);
+    void compute_probe(std::unique_lock<std::mutex>& lock_probe_queue);
     /**
-     *  TODO
+     *  Computes N probes
+     *  @param lock_probe_queue the locked mutex of the queue of probes
+     */
+    template<uint32_t N>
+    void compute_probe(std::unique_lock<std::mutex>& lock_probe_queue);
+    /**
+     *  Resets all variables when the prime changes
      */
     void reset_new_prime();
 #if WITH_MPI
@@ -318,10 +320,16 @@ namespace firefly {
     std::condition_variable cond_val;
     std::atomic<bool> new_jobs = {false};
     /**
-     *  TODO
+     *  Performs the setup for MPI
      */
     inline void mpi_setup();
+    /**
+     *  Send the first probes to the MPIWorker objects
+     */
     void send_first_jobs();
+    /**
+     *  Communicates with the MPIWorker objects
+     */
     void mpi_communicate();
 #endif
   };
@@ -976,7 +984,6 @@ namespace firefly {
 
         // TODO delete or clear memory?
         std::get<1>(rec) = DELETE;
-        //delete std::get<2>(rec);
       }
     }
 
@@ -1425,7 +1432,6 @@ namespace firefly {
             ++counter;
 
             std::get<1>(rec) = DELETE;
-            //delete std::get<2>(rec);
           }
 
           uint32_t old_max_deg = max_degs[i];
@@ -1608,8 +1614,6 @@ namespace firefly {
     }
 
 #if WITH_MPI
-    //std::cout << "send factors\n";
-
     MPI_Request* requests = new MPI_Request[world_size - 1];
 
     for (int i = 1; i != world_size; ++i) {
@@ -2646,11 +2650,9 @@ namespace firefly {
       }
 
       index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
-      //std::cout << "emplace " << ind << "\n";
       ++ind;
 
       ++probes_queued;
-      //std::cout << "start " << probes_queued << "\n";
     }
 
 #if WITH_MPI
@@ -2677,13 +2679,9 @@ namespace firefly {
 
       condition_future.wait(lock_future, [this](){return computed_probes.size() != 0;});
 
-      //std::cout << computed_probes.size() << "\n";
-
       indices = std::move(computed_probes.front().first);
       probes = std::move(computed_probes.front().second);
       computed_probes.pop();
-
-      //std::cout << "get " << indices.size() << "\n";
     }
 
     probes_fed += indices.size();
@@ -2691,9 +2689,6 @@ namespace firefly {
     std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
     probes_queued -= static_cast<uint32_t>(indices.size());
-
-    //std::cout << "got " << indices.size() << " " << probes_queued << "\n";
-    //std::cout << "np " << items_new_prime << "\n";
   }
 
   template<typename BlackBoxTemp>
@@ -2715,7 +2710,6 @@ namespace firefly {
       std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
 
       for (const auto& index : indices) {
-        //std::cout << "access index " << index << "\n";
         auto tmp = std::move(index_map[index]);
         index_map.erase(index);
         t_vec.emplace_back(tmp.first);
@@ -3047,31 +3041,31 @@ namespace firefly {
     if (!requested_probes.empty()) {
       switch(compute_bunch_size(static_cast<uint32_t>(requested_probes.size()), thr_n, bunch_size)) {
         case 1:
-          start_new_job(lock_probe_queue);
+          compute_probe(lock_probe_queue);
           break;
         case 2:
-          start_new_job<2>(lock_probe_queue);
+          compute_probe<2>(lock_probe_queue);
           break;
         case 4:
-          start_new_job<4>(lock_probe_queue);
+          compute_probe<4>(lock_probe_queue);
           break;
         case 8:
-          start_new_job<8>(lock_probe_queue);
+          compute_probe<8>(lock_probe_queue);
           break;
         case 16:
-          start_new_job<16>(lock_probe_queue);
+          compute_probe<16>(lock_probe_queue);
           break;
         case 32:
-          start_new_job<32>(lock_probe_queue);
+          compute_probe<32>(lock_probe_queue);
           break;
         case 64:
-          start_new_job<64>(lock_probe_queue);
+          compute_probe<64>(lock_probe_queue);
           break;
         case 128:
-          start_new_job<128>(lock_probe_queue);
+          compute_probe<128>(lock_probe_queue);
           break;
 /*        case 256:
-          start_new_job<256>(lock_probe_queue);
+          compute_probe<256>(lock_probe_queue);
           break;*/
       }
 
@@ -3084,11 +3078,9 @@ namespace firefly {
   }
 
   template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::start_new_job(std::unique_lock<std::mutex>& lock_probe_queue) {
+  void Reconstructor<BlackBoxTemp>::compute_probe(std::unique_lock<std::mutex>& lock_probe_queue) {
     std::vector<uint64_t> indices;
     indices.reserve(1);
-
-    //std::cout << "start with " << N << " of " << requested_probes.size() << "\n";
 
     indices.emplace_back(requested_probes.front().first);
 
@@ -3137,11 +3129,9 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   template<uint32_t N>
-  void Reconstructor<BlackBoxTemp>::start_new_job(std::unique_lock<std::mutex>& lock_probe_queue) {
+  void Reconstructor<BlackBoxTemp>::compute_probe(std::unique_lock<std::mutex>& lock_probe_queue) {
     std::vector<uint64_t> indices;
     indices.reserve(N);
-
-    //std::cout << "start with " << N << " of " << requested_probes.size() << "\n";
 
     std::vector<FFIntVec<N>> values_vec(n);
 
@@ -3268,15 +3258,11 @@ namespace firefly {
       uint64_t to_start;
       MPI_Recv(&to_start, 1, MPI_UINT64_T, i, RESULT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-      //std::cout << "starting " << to_start << " jobs on worker " << i << "\n";
-
       nodes.emplace(std::make_pair(i, to_start));
       worker_thread_count += static_cast<uint32_t>(to_start / buffer);
 
       probes_queued += to_start;
       started_probes[zi_order] += to_start;
-
-      //std::cout << "first send " << probes_queued << "\n";
 
       std::vector<uint64_t> values;
       values.reserve(static_cast<uint32_t>(to_start) * (n + 1));
@@ -3341,7 +3327,6 @@ namespace firefly {
         }
 
         index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
-        //std::cout << "mpi emplace " << ind << "\n";
         ++ind;
       }
 
@@ -3359,8 +3344,6 @@ namespace firefly {
 
       while (!flag_ext) {
         MPI_Iprobe(MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &flag_ext, &status);
-
-        //std::cout << "empty size: " << empty_nodes.size() << " " << new_jobs.load() << "\n";
 
         if (new_prime || done) {
           break;
@@ -3458,8 +3441,6 @@ namespace firefly {
       } else if (new_prime || (done && scan)) {
         MPI_Request* requests = new MPI_Request[world_size - 1];
 
-        //std::cout << "com np\n";
-
         // send the new-prime signal but not the actual prime
         uint64_t prime_tmp = 1;
 
@@ -3537,8 +3518,6 @@ namespace firefly {
           average_black_box_time += weights[i] / total_weight * timings[i];
         }
 
-        //std::cout << "com rec\n";
-
         std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
         proceed = true;
@@ -3560,8 +3539,6 @@ namespace firefly {
           prime_tmp = prime_it_fac;
         }
 
-        //std::cout << "c next prime " << prime_tmp << "\n";
-
         for (int i = 1; i != world_size; ++i) {
           MPI_Isend(&prime_tmp, 1, MPI_UINT64_T, i, NEW_PRIME, MPI_COMM_WORLD, &requests[i - 1]);
         }
@@ -3573,8 +3550,6 @@ namespace firefly {
         MPI_Barrier(MPI_COMM_WORLD);
 
         empty_nodes = std::queue<std::pair<int, uint64_t>>();
-
-        //std::cout << "com through\n";
 
         for (int k = 1; k != world_size; ++k) {
           uint64_t free_slots;
@@ -3602,11 +3577,8 @@ namespace firefly {
               new_jobs = false;
             }
 
-            //std::cout << "sending " << size << " jobs\n";
-
             MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, k, VALUES, MPI_COMM_WORLD);
           } else if (free_slots == nodes[k]) {
-            //std::cout << "com np empty nodes " << k << " " << free_slots << "\n";
             empty_nodes.emplace(std::make_pair(k, free_slots));
           }
         }
@@ -3634,8 +3606,6 @@ namespace firefly {
             requested_probes.pop_front();
           }
 
-          //std::cout << "restart: sending " << size << " jobs\n";
-
           MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, node.first, VALUES, MPI_COMM_WORLD);
         }
 
@@ -3654,8 +3624,6 @@ namespace firefly {
         }
 
         uint32_t new_results = (static_cast<uint32_t>(amount) - 1) / (items + 1);
-
-        //std::cout << "comm recieving " << new_results << " results \n";
 
         // TODO optimize the format
         std::vector<uint64_t> results_list;
@@ -3704,14 +3672,10 @@ namespace firefly {
             new_jobs = false;
           }
 
-          //std::cout << "sending " << size << " jobs\n";
-
           MPI_Send(&values[0], static_cast<int>(size * (n + 1)), MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
         } else if (free_slots == nodes[status.MPI_SOURCE]) {
-          //std::cout << "empty node " << status.MPI_SOURCE << " " << free_slots << "\n";
           empty_nodes.emplace(std::make_pair(status.MPI_SOURCE, free_slots));
         } else {
-          //std::cout << "sending NULL\n";
           MPI_Send(NULL, 0, MPI_UINT64_T, status.MPI_SOURCE, VALUES, MPI_COMM_WORLD);
         }
       }

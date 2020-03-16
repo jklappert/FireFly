@@ -96,7 +96,21 @@ namespace firefly {
    *  @return a pair where the first bool indicates if the second entry is a new permutation
    */
   std::pair<bool, std::vector<uint32_t>> generate_next_permutation(std::vector<uint32_t>& curr_per);
-  // TODO
+  /**
+   *  Compute the bunch size for the next probes
+   *  @param queue_length length of the probes queued
+   *  @param thr_n number of threads available
+   *  @param max_bunch_size the maximum bunch size allowed
+   *  @return bunch_size
+   */
   uint32_t compute_bunch_size(const uint32_t queue_length, const uint32_t thr_n, const uint32_t bunch_size);
+  /**
+   *  Distribute probes for a given number threads
+   *  @param queue_length length of the probes queued
+   *  @param thr_n number of threads
+   *  @param total_threads total number of threads available
+   *  @param max_bunch_size the maximum bunch size allowed
+   *  @return the number of probes which have been assigned
+   */
   uint32_t compute_job_number(const uint32_t queue_length, const uint32_t threads, const uint32_t total_threads, const uint32_t bunch_size);
 }

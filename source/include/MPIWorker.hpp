@@ -31,11 +31,29 @@ namespace firefly {
   constexpr uint64_t buffer = 2;
   enum MPI_tags {VALUES, RESULT, NEW_PRIME, TIMING, FACTORS, END};
 
+  /**
+   * @class MPIWorker
+   * @brief A class to compute probes of the black box BlackBoxTemp on worker processes with MPI
+   */
   template<typename BlackBoxTemp>
   class MPIWorker {
   public:
-    // TODO
+    /**
+     *  A constructor for the MPIWorker class
+     *  Automatically runs the worker
+     *  @param n_ the number of parameters
+     *  @param thr_n_ the number of threads
+     *  @param bb_ An instance of a BlackBoxBase class
+     */
     MPIWorker(uint32_t n_, uint32_t thr_n_, BlackBoxBase<BlackBoxTemp>& bb_);
+    /**
+     *  A constructor for the MPIWorker class
+     *  Automatically runs the worker
+     *  @param n_ the number of parameters
+     *  @param thr_n_ the number of threads
+     *  @param bunch_size_ the maximum bunch size to be used
+     *  @param bb_ An instance of a BlackBoxBase class
+     */
     MPIWorker(uint32_t n_, uint32_t thr_n_, uint32_t bunch_size_, BlackBoxBase<BlackBoxTemp>& bb_);
 
   private:
@@ -52,12 +70,33 @@ namespace firefly {
     std::mutex mut;
     std::condition_variable cond;
 
-    // TODO
+    /**
+     *  Runs the worker
+     */
     void run();
+    /**
+     *  Communicate with the Reconstructor class
+     */
     void communicate();
+    /**
+     *  Templated function to queue N new probes at the values in values_list
+     *  starting at position (n+1) * start
+     *  @param values_list the list of values
+     *  @param start the position where to start in values_list
+     */
     template<uint32_t N>
     void queue_new_job(const std::vector<uint64_t>& values_list, const uint32_t start);
+    /**
+     *  Computes the probe index at the values values_vec
+     *  @param index index of the probe
+     *  @param values_vec values at which the probe is evaluated
+     */
     void compute(const uint64_t index, const std::vector<FFInt>& values_vec);
+    /**
+     *  Computes the N probes in index_vec at the values values_vec as an FFIntVec of length N
+     *  @param index_vec indices of the probes
+     *  @param values_vec N sets of values at which the probes are evaluated
+     */
     template<uint32_t N>
     void compute(const std::vector<uint64_t>& index_vec, const std::vector<FFIntVec<N>>& values_vec);
   };
@@ -90,15 +129,12 @@ namespace firefly {
     FFInt::set_new_prime(primes()[prime]);
     bb.prime_changed_internal();
 
-    //std::cout << "worker " << FFInt::p << "\n";
-
     communicate();
   }
 
   template<typename BlackBoxTemp>
   void MPIWorker<BlackBoxTemp>::communicate() {
     while (true) {
-      //std::cout << "w loop\n";
       std::unique_lock<std::mutex> lock(mut);
       std::vector<uint64_t> tmp_results;
 
@@ -117,8 +153,6 @@ namespace firefly {
         results.clear();
 
         lock.unlock();
-
-        //std::cout << "worker sending " << tmp_results.size() - 1 << " items\n";
 
         MPI_Isend(&tmp_results[0], static_cast<int>(tmp_results.size()), MPI_UINT64_T, master, RESULT, MPI_COMM_WORLD, &request);
       }
@@ -141,20 +175,11 @@ namespace firefly {
 
         MPI_Recv(&values_list[0], amount, MPI_UINT64_T, master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-        //std::cout << "recieved:\n";
-        //for (int i = 0; i != amount; ++i) {
-        //  std::cout << values_list[i] << "\n";
-        //}
-
         uint32_t new_tasks = static_cast<uint32_t>(amount) / (n + 1);
         uint32_t started = 0;
 
-        //std::cout << "new tasks " << new_tasks << "\n";
-
         while (started != new_tasks) {
           uint32_t next_bunch = compute_bunch_size(new_tasks - started, thr_n, bunch_size);
-
-          //std::cout << next_bunch << "\n";
 
           switch(next_bunch) {
             case 1:
@@ -195,9 +220,6 @@ namespace firefly {
           lock.unlock();
         }
       } else if (status.MPI_TAG == NEW_PRIME) {
-        //MPI_Cancel(&request);
-        //std::cout << "\n\nworker new prime\n\n";
-
         tp.kill_all();
         results.clear();
         tasks = 0;
@@ -275,8 +297,6 @@ namespace firefly {
           }
 
           MPI_Barrier(MPI_COMM_WORLD);
-
-          //std::cout << "factors recieved\n";
         }
 
         // receive next prime
@@ -293,8 +313,6 @@ namespace firefly {
 
         MPI_Barrier(MPI_COMM_WORLD);
       } else if (status.MPI_TAG == END) {
-        //MPI_Cancel(&request);
-
         tp.kill_all();
         results.clear();
         tasks = 0;

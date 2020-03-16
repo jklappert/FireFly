@@ -309,17 +309,14 @@ namespace firefly {
     return PolynomialFF(n + 1, poly);
   }
 
-// TODO
-  uint32_t compute_bunch_size(const uint32_t queue_length, const uint32_t thr_n, const uint32_t bunch_size) {
-    if (bunch_size == 1) {
+  uint32_t compute_bunch_size(const uint32_t queue_length, const uint32_t thr_n, const uint32_t max_bunch_size) {
+    if (max_bunch_size == 1) {
       return 1;
     } else {
       uint32_t tmp = queue_length / thr_n;
 
-      //std::cout << "base " << queue_length << " " << thr_n << " " << tmp << "\n";
-
       if (tmp != 0) {
-        //uint32_t tmp2 = tmp;
+        // Compute the floor power of two
         tmp |= tmp >> 1;
         tmp |= tmp >> 2;
         tmp |= tmp >> 4;
@@ -328,30 +325,22 @@ namespace firefly {
 
         tmp = (tmp + 1) >> 1;
 
-        //std::cout << tmp << "\n";
-
-        //if (tmp2 != tmp) {
-        //  tmp <<= 1;
-        //}
-
         if ((tmp << 1) < queue_length && tmp * thr_n != queue_length) {
           tmp <<= 1;
         }
 
-        //std::cout << queue_length << " " << tmp << " " << std::min(bunch_size, tmp) << "\n";
-
-        return std::min(bunch_size, tmp);
+        return std::min(max_bunch_size, tmp);
       } else {
         return 1;
       }
     }
   }
 
-  uint32_t compute_job_number(const uint32_t queue_length, const uint32_t threads, const uint32_t total_threads, const uint32_t bunch_size) {
+  uint32_t compute_job_number(const uint32_t queue_length, const uint32_t threads, const uint32_t total_threads, const uint32_t max_bunch_size) {
     uint32_t tmp_queue_length = queue_length;
 
     for (uint32_t i = 0; i != threads; ++i) {
-      tmp_queue_length -= compute_bunch_size(tmp_queue_length, total_threads, bunch_size);
+      tmp_queue_length -= compute_bunch_size(tmp_queue_length, total_threads, max_bunch_size);
 
       if (tmp_queue_length == 0) {
         break;
