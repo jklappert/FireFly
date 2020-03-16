@@ -145,6 +145,18 @@ endif()
 
 if("${CUSTOM}" STREQUAL "true")
   message("-- ${Red}Using custom modular arithmetic. The example is thus not compiled.${ColourReset}")
+elseif("${WITH_MPI}" STREQUAL "true")
+  add_executable(example ${EXAMPLE_EXE})
+  if ("${WITH_JEMALLOC}" STREQUAL "true")
+    execute_process(COMMAND "jemalloc-config" "--libdir" OUTPUT_VARIABLE JEMALLOC_LIB_DIR)
+    execute_process(COMMAND "jemalloc-config" "--libs" OUTPUT_VARIABLE JEMALLOC_LIBS)
+    string(REGEX REPLACE "\n$" "" JEMALLOC_LIB_DIR "${JEMALLOC_LIB_DIR}")
+    string(REGEX REPLACE "\n$" "" JEMALLOC_LIBS "${JEMALLOC_LIBS}")
+    target_link_libraries(example ${LIBS} "-L${JEMALLOC_LIB_DIR} -Wl,-rpath,${JEMALLOC_LIB_DIR} -ljemalloc ${JEMALLOC_LIBS}")
+    set(LIBS ${LIBS} "-L${JEMALLOC_LIB_DIR} -Wl,-rpath,${JEMALLOC_LIB_DIR} -ljemalloc ${JEMALLOC_LIBS}")
+  else()
+    target_link_libraries(example ${LIBS})
+  endif()
 else()
   add_executable(example ${EXAMPLE_EXE})
   add_executable(ff_insert ${INSERT_IBPS_EXE})
@@ -218,7 +230,7 @@ install(FILES
   DESTINATION "${INCLUDE_INSTALL_DIR}")
 
 # install ibp insertion executable
-if(NOT "${CUSTOM}" STREQUAL "true")
+if(NOT "${CUSTOM}" STREQUAL "true" AND NOT "${WITH_MPI}" STREQUAL "true")
   install(TARGETS ff_insert DESTINATION "${BIN_INSTALL_DIR}")
 endif()
 
