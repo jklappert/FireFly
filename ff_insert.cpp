@@ -28,27 +28,32 @@ int main(int argc, char *argv[]) {
   bool factor_scan = true;
   bool save_mode = false;
   bool no_interpolation = false;
+  std::string input_file = "";
 
-  for (int i = 0; i < argc; ++i) {
+  std::ofstream logger;
+  logger.open("ff_insert.log");
+
+  if (argc == 1) {
+    ERROR_MSG("Please provide an input file");
+    logger << "Please provide an input file\n";
+    logger.close();
+    std::exit(EXIT_FAILURE);
+  }
+
+  for (int i = 1; i != argc; ++i) {
     std::string arg = argv[i];
 
     if (arg == "-p" || arg == "--parallel") {
       n_threads = std::stoi(argv[i + 1]);
-    }
-
-    if (arg == "-bs" || arg == "--bunchsize")
+    } else if (arg == "-bs" || arg == "--bunchsize") {
       bs = std::stoi(argv[i + 1]);
-
-    if (arg == "-nfs" || arg == "--nofactorscan")
+    } else if (arg == "-nfs" || arg == "--nofactorscan") {
       factor_scan = false;
-
-    if (arg == "-ni" || arg == "--nointerpolation")
+    } else if (arg == "-ni" || arg == "--nointerpolation") {
       no_interpolation = true;
-
-    if (arg == "-s" || arg == "--save")
+    } else if (arg == "-s" || arg == "--save") {
       save_mode = true;
-
-    if (arg == "-h" || arg == "--help") {
+    } else if (arg == "-h" || arg == "--help") {
       std::cerr << "Usage: " << argv[0] << "\n"
                 << "Options:\n  -p,--parallel Sets the number of used threads\n"
                 << "  -bs,--bunchsize         Sets the maximum bunch size\n"
@@ -56,11 +61,23 @@ int main(int argc, char *argv[]) {
                 << "  -ni,--nointerpolation   Disables the interpolation and writes coefficients to files\n"
                 << "  -s,--save               Enables the storage of intermediate results\n";
       return 1;
+    } else if (i == argc - 1) {
+      input_file = arg;
+      std::ifstream test_file(input_file);
+
+      if (!test_file.good()) {
+        ERROR_MSG("Input file '" + input_file + "' does not exist");
+        logger << "Input file '" + input_file + "' does not exist\n";
+        logger.close();
+        std::exit(EXIT_FAILURE);
+      }
+    } else {
+      ERROR_MSG("Unknown option '" + arg + "'");
+      logger << "Unknown option '" + arg + "'\n";
+      logger.close();
+      std::exit(EXIT_FAILURE);
     }
   }
-
-  std::ofstream logger;
-  logger.open("ff_insert.log");
 
   // Parse integral families
   std::ifstream fam_file_test("config/functions");
@@ -70,6 +87,7 @@ int main(int argc, char *argv[]) {
   if (!fam_file_test.good()) {
     ERROR_MSG("Please add a file definining the occurring functions in 'config/functions'");
     logger << "Please add a file definining the occurring functions in 'config/functions'\n";
+    logger.close();
     std::exit(EXIT_FAILURE);
   }
 
@@ -95,6 +113,7 @@ int main(int argc, char *argv[]) {
   if (!var_file_test.good()) {
     ERROR_MSG("Please add a file definining the occurring variables 'config/vars'");
     logger << "Please add a file definining the occurring variables 'config/vars'\n";
+    logger.close();
     std::exit(EXIT_FAILURE);
   }
 
@@ -116,7 +135,7 @@ int main(int argc, char *argv[]) {
   AmplitudeParser ap(vars, families);
 
   // Parse the amplitude
-  ap.parse_amplitude_file("config/in.m");
+  ap.parse_amplitude_file(input_file);
 
   // Parse IBP tables
   tinydir_dir dir;
@@ -212,8 +231,8 @@ int main(int argc, char *argv[]) {
       std::ifstream in("firefly.log");
 
       if (in.good()) {
-        std::string old_log ((std::istreambuf_iterator<char>(in)),
-                             (std::istreambuf_iterator<char>()));
+        std::string old_log((std::istreambuf_iterator<char>(in)),
+                            (std::istreambuf_iterator<char>()));
         logger.open("ff_insert.log", std::ios_base::app);
         logger << old_log << "\n";
         logger << "-------------------------------------------------------------\n\n";

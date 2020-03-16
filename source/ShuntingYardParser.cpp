@@ -138,7 +138,8 @@ namespace firefly {
           }
         }
 
-        std::cerr << "\033[1;34mFireFly info:\033[0m " << line_c + 1 << " / " << funs.size() << "\r";
+	if (line_c + 1 < funs.size() + 1)
+	  std::cerr << "\033[1;34mFireFly info:\033[0m " << line_c + 1 << " / " << funs.size() << "\r";
         line_c++;
       }
 
@@ -167,7 +168,8 @@ namespace firefly {
           }
         }
 
-        std::cerr << "\033[1;34mFireFly info:\033[0m " << i + 1 << " / " << funs.size() << "\r";
+	if (i + 1 < funs.size() + 1)
+	  std::cerr << "\033[1;34mFireFly info:\033[0m " << i + 1 << " / " << funs.size() << "\r";
       }
     }
 
