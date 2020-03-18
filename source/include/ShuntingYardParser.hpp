@@ -59,23 +59,16 @@ namespace firefly {
     void parse_function(const std::string& fun, const std::vector<std::string>& vars, bool validate_fun = false);
     /**
      *  Evaluates all functions for a given parameter point and returns their result.
-     *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
+     *  @param values A vector of FFIntTemp objects at which the parsed functions should be evaluated.
      *  @return The values of the parsed functions as a vector.
      */
-    // TODO
     template<typename FFIntTemp>
     std::vector<FFIntTemp> evaluate(const std::vector<FFIntTemp>& values) const;
     /**
-     *  Evaluates all functions for a given parameter point and returns their result using precomputed values. This is in general much faster than ShuntingYardParser::evaluate.
-     *  @param values A vector of FFInt objects at which the parsed functions should be evaluated.
-     *  @return The values of the parsed functions as a vector.
-     */
-    /**
      *  Evaluates all functions for a given parameter point and returs their result using precomputed values in bunches. This is in general much faster than ShuntingYardParser::evaluate.
-     *  @param values A vector of vectors of FFInt objects at which the parsed functions should be evaluated.
+     *  @param values A vector of vectors of FFIntTemp objects at which the parsed functions should be evaluated.
      *  @return The values of the parsed functions as a vector of vectors.
      */
-    // TODO
     template<typename FFIntTemp>
     std::vector<FFIntTemp> evaluate_pre(const std::vector<FFIntTemp>& values) const;
     /**

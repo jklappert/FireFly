@@ -66,8 +66,9 @@ namespace firefly {
     std::unordered_map<uint32_t, uint32_t> get_order_map() const;
     Polynomial numerator;  /**< The coefficients of the numerator */
     Polynomial denominator; /**< The coefficients of the denominator */
-    /**TODO
-     * 
+    /**
+     * Checks whether this is a null function
+     * @return true when this rational function is a null function
      */
     bool zero() const;
   private:

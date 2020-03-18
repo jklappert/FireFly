@@ -77,8 +77,9 @@ namespace firefly {
      *  @return variable position if multivariate conribution is mapped univariatly
      */
     int get_var_pos() const;
-    /**TODO
-     * 
+    /**
+     * Checks whether this is a null polynomial
+     * @return true when this polynomial is a null polynomial
      */
     bool zero() const;
   private:

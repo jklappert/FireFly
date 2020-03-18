@@ -28,7 +28,6 @@ namespace firefly {
   class BlackBoxBase {
   public:
     /**
-     * TODO templates
      *  The evaluation of the black box. This function is called from Reconstructor.
      *  @param values The values to be inserted for the variables
      *  @return The result vector
