@@ -6,39 +6,61 @@ New features
 
  * MPI
 
- * Logger
+ * A logger file labeled `firefly.log` is now written during the
+ interpolation which outputs the current progress and other
+ informational messages.
 
- * Interpolation over a fixed number of primes
+ * The interpolation can now be stopped after the first prime field
+ when the member function `reconstruct` of the `Reconstructor` object
+ is called with the argument `1`.
 
- * Factor scan
+ * When using the member function `enable_factor_scan` of the
+ `Reconstructor` class, FireFly does scan for univariate factors
+ before the actual interpolation, which are used for cancellation
+ and simplifications.
 
- * Amplitude parser
+ * FireFly compiles now an insertion tool for replacement tables in
+ Mathematica syntax labeled `ff_insert` by default. This executable
+ serves as an example how interpolation algorithms can be applied
+ and can be used to insert integration-by-parts tables into amplitudes,
+ for example.
+
+ * FireFly can be linked to the jemalloc library by setting the flag
+ `-DWITH_JEMALLOC=true` for CMake. The required paths and libraries
+ are then written to the pcconfig file and jemalloc is linked to the
+ example and insertion executable.
+
+ * The `ShuntingYardParser` can now find same functions. This feature
+ can be enabled when constructing a `ShuntingYardParser` with a third
+ argument that is set to `true`.
 
 Changes
 -------
 
- * CRTP + FFVec + dynamical bunches
+ * The member function `enable_scan` of the `Reconstructor` class is
+ deprecated. It is replaced by the member function `enable_shift_scan`.
 
- * Parser can find same functions
+ * CRTP + FFVec + dynamical bunches
 
  * Writing of saved states improved (single threaded to be done)
 
  * CMake searching for GMP, Flint, ...
 
- * C++-14
+ * The required C++ standard has been changed to C++-14.
 
- * 300 primes
+ * 200 additional prime numbers have been added to the `ReconstHelper` struct.
 
- * O3 -> 02
+ * The job scheduling for interpolations in first prime or the when using
+ the safe mode has been improved.
 
- * Improved scheduling in first prime
-
- * Can handle empty bbs
+ * The `Reconstructor` class can now handle empty black boxes.
 
 Bug fixes
 ---------
 
-* None :)
+ * When generating Horner forms for rational functions with coefficients over Q,
+ the coefficient of the maximum degree monomial was incorrect when the numerator
+ was 1 and the denominator was not 1. This has been fixed.
 
 
 FireFly 1.3.5
@@ -49,7 +71,7 @@ Bug fixes
 
  * Fixed FFInt::pow yielding a wrong result for powers close to the prime number
  in the default implementation of FFInt. We thank Herschel Chawdhry for the bug
- report.
+ report. IS THIS STILL TRUE???
 
 
 FireFly 1.3.4
