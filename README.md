@@ -4,8 +4,9 @@
 
 FireFly is a reconstruction library for rational functions written in C++.
 
-Please refer to this paper when using FireFly:
+Please refer to these papers when using FireFly:
 * J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[*Comput.Phys.Commun.* **247** (2020) 106951](https://doi.org/10.1016/j.cpc.2019.106951)], [[1904.00009](https://arxiv.org/abs/1904.00009)]
+* J. Klappert, S.Y. Klein, and F. Lange, *Reconstructing Rational Functions with FireFly*, [[1904.00009](https://arxiv.org/abs/1904.00009)]
 
 ## Table of contents
 * [Requirements](#requirements)
@@ -17,7 +18,7 @@ Please refer to this paper when using FireFly:
 
 ## Requirements
 FireFly requires:
-* C++ compiler supporting C++11
+* C++ compiler supporting C++14
 * [CMake](https://cmake.org/) >= 3.1
 * [FLINT](http://www.flintlib.org/) >= 2.5 (optional)
 * [GMP](https://gmplib.org/) >= 6.1.2 (compiled with --enable-cxx)
@@ -28,6 +29,15 @@ FireFly requires:
 FireFly uses the following third party code:
 * [tinydir](https://github.com/cxong/tinydir)
 * [gzstream](https://www.cs.unc.edu/Research/compgeom/gzstream/)
+
+#####  Implemented interpolation algorithms
+FireFly implements the following third party interpolation algorithms:
+* Ben-Or/Tiwari algorithm [10.1145/62212.62241](https://dx.doi.org/10.1145/62212.62241)
+* Newton interpolation algorithm
+* Racing algorithm [10.1145/62212.62241](https://dx.doi.org/10.1145/345542.345629) [10.1016/S0747-7171(03)00088-9](https://dx.doi.org/10.1016/S0747-7171(03)00088-9)
+* Sparse rational function interpolation algorithm [10.1016/j.tcs.2010.11.050](https://dx.doi.org/10.1016/j.tcs.2010.11.050)
+* Thiele interpolation algorithm
+* Zippel algorithm [10.1016/S0747-7171(08)80018-1](https://dx.doi.org/10.1016/S0747-7171(08)80018-1)
 
 ## Building FireFly
 FireFly uses CMake to generate files for build automation. To build FireFly one should first create a separate `build` directory inside FireFly's top directory. Afterwards, `cmake` should be called:
@@ -61,6 +71,12 @@ If the GMP version installed in the sytem directories does not match 6.1.2 or CM
 ```
 where `GMP_INC_DIR` is the absolute path to the directory of where the include files can be found (`gmpxx.h` is required) and `GMP_LIB_PATH` is the absolute path to the GMP library.
 
+One can include the support of the `jemalloc` memory allocation library by adding the flag
+```
+-DWITH_JEMALLOC=true
+```
+after the `jemalloc` library is installed and its executables can be found.
+
 If the MPI version found with CMake is not satisfactory, one can set custom paths to the include directory and library as:
 ```
 -DMPI_CXX_INCLUDE_PATH=$MPI_INC_PATH -DMPI_CXX_LIBRARIES=$MPI_LIB_PATH
@@ -70,15 +86,16 @@ where `MPI_INC_PATH` is the absolute path to the directory where the include fil
 ## Reconstructing functions
 To reconstruct functions with FireFly, it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
 
-The black box is implemented as functor. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor and the evaluation of the black box:
+The black box is implemented as functor following the curiously reurring template pattern. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor and the evaluation of the black box:
 
 ```cpp
-class BlackBoxUser : public BlackBoxBase {
+class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
 public:
   BlackBoxUser(...) {
     ...
   }
-  virtual std::vector<FFInt> operator()(const std::vector<FFInt>& values) {
+  template<typename FFIntTemp>
+  std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
     ...
   }
 }
@@ -90,7 +107,7 @@ The actual reconstruction is done by the `Reconstructor` object which is initial
 
 ```cpp
 BlackBoxUser bb(...);
-Reconstructor rec(n_var, n_thr, bb);
+Reconstructor<BlackBoxUser> rec(n_var, n_thr, bb);
 ```
 
 The reconstruction is then started by
