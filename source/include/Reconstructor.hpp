@@ -1,6 +1,6 @@
 //==================================================================================
 //    FireFly - Reconstructing rational functions and polynomial over finite fields.
-//    Copyright (C) 2019  Jonas Klappert and Fabian Lange
+//    Copyright (C) 2020  Jonas Klappert and Fabian Lange
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -97,9 +97,15 @@ namespace firefly {
      */
     std::vector<std::pair<std::string, RationalFunction>> get_early_results();
     /**
+     *  @deprecated
      *  Enables the scan for a sparse shift at the beginning of the reconstruction
      */
+    [[deprecated("Deprecated function. Use 'enable_shift_scan' instead.")]]
     void enable_scan();
+    /**
+     *  Enables the scan for a sparse shift at the beginning of the reconstruction
+     */
+    void enable_shift_scan();
     /**
      *  Enables the scan for factors
      */
@@ -421,6 +427,11 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::enable_scan() {
+    enable_shift_scan();
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::enable_shift_scan() {
     if (n == 1) {
       WARNING_MSG("Scan disabled for a univariate rational function.");
       logger << "Scan disabled for a univariate rational function.\n";

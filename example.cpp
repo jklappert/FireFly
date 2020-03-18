@@ -1,6 +1,6 @@
 //==================================================================================
 //    FireFly - Reconstructing rational functions and polynomial over finite fields.
-//    Copyright (C) 2019  Jonas Klappert and Fabian Lange
+//    Copyright (C) 2020  Jonas Klappert and Fabian Lange
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 
 #include "DenseSolver.hpp"
 #include "Reconstructor.hpp"
-#include "AmplitudeParser.hpp"
 
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
@@ -30,12 +29,10 @@ namespace firefly {
     BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
 
     // The evaluation of the black box
-    // Return a vector of FFInt objects, which are the results of the black-box evaluation
-    // with values inserted for the variables. The orderings of both vectors should
-    // be fixed for all evaluations.
+    // Return a vector of FFIntTemp objects, which are the results of the black-box evaluation
+    // with values inserted for the variables.
     // In this example we compute functions which are parsed from a file with a
     // ShuntingYardParser object and the determinant of a matrix.
-    // TODO
     template<typename FFIntTemp>
     std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
       //std::vector<FFInt> result;
@@ -94,9 +91,9 @@ int main() {
   reconst.enable_factor_scan();
 
   // Enables a scan for a sparse shift
-  reconst.enable_scan();
+  reconst.enable_shift_scan();
 
-  // Enables the safe mode
+  // Set flag for the safe mode
   //reconst.set_safe_interpolation();
 
   // Write the state of all reconstruction objects after each interpolation over a prime field

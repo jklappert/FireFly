@@ -1,6 +1,6 @@
 //==================================================================================
 //    FireFly - Reconstructing rational functions and polynomial over finite fields.
-//    Copyright (C) 2019  Jonas Klappert and Fabian Lange
+//    Copyright (C) 2020  Jonas Klappert and Fabian Lange
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -87,14 +87,14 @@ int main() {
   ShuntingYardParser p_0("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_0(p_0, 0);
   Reconstructor<BlackBoxUser> r_0(4, 4, b_0);
-  r_0.enable_scan();
+  r_0.enable_shift_scan();
   r_0.reconstruct();
   RatReconst::reset();
 
   ShuntingYardParser p_0_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_0_1(p_0, 2);
   Reconstructor<BlackBoxUser> r_0_1(4, 4, b_0_1);
-  r_0_1.enable_scan();
+  r_0_1.enable_shift_scan();
   r_0_1.reconstruct();
   INFO_MSG("Normal mode passed");
 #else
@@ -112,14 +112,14 @@ int main() {
     ShuntingYardParser p_0("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_0(p_0, 0);
     Reconstructor<BlackBoxUser> r_0(4, std::thread::hardware_concurrency(), b_0);
-    r_0.enable_scan();
+    r_0.enable_shift_scan();
     r_0.reconstruct();
     RatReconst::reset();
 
     ShuntingYardParser p_0_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_0_1(p_0, 2);
     Reconstructor<BlackBoxUser> r_0_1(4, std::thread::hardware_concurrency(), b_0_1);
-    r_0_1.enable_scan();
+    r_0_1.enable_shift_scan();
     r_0_1.reconstruct();
     INFO_MSG("Normal mode passed");
   } else {

@@ -1,7 +1,7 @@
 #!/bin/bash
 #==================================================================================
 #    FireFly - Reconstructing rational functions and polynomial over finite fields.
-#    Copyright (C) 2019  Jonas Klappert and Fabian Lange
+#    Copyright (C) 2020  Jonas Klappert and Fabian Lange
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by

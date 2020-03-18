@@ -83,58 +83,71 @@ namespace firefly {
      */
     AmplitudeParser(const std::vector<std::string>& vars_, const std::vector<std::string>& integral_families_);
     /**
-     * 
+     * Parses an expression from a file
+     * @param amplitude_file the path to a file
      */
     void parse_amplitude_file(const std::string& amplitude_file);
     /**
-     * 
+     * Parses an expression from a string
+     * @param amplitude_string an expression as a string
      */
     void parse_amplitude_string(const std::string& amplitude_string);
     /**
-     * 
+     * Parses an expression from a file
+     * @param amplitude_file the path to a file
      */
     void parse_file(const std::string& amplitude_file);
     /**
-     * 
+     * Parses an expression and splits it into factors and functions
+     * @param amplitude an expression as a string
+     * @return a vector of pairs of strings where the first entry is the function and the second the factor
      */
     std::vector<std::pair<std::string, std::string>> parse_string(const std::string& amplitude);
     /**
-     * 
+     * Parses a replacement list from a file
+     * @param ibp_table the path to a replacement list
      */
     void parse_ibp_table_file(const std::string& ibp_table);
     /**
-     * 
+     * Parses a replacement list from a string
+     * @param ibp_table a replacement list as a string
      */
     void parse_ibp_table_string(const std::string& ibp_table);
     /**
-     * 
+     * Checks for functions that do not have replacement rules
+     * @return the number of functions without replacement rules
      */
     size_t check_for_unreplaced_masters();
     /**
-     * 
+     * Builds a black box for a given basis function
+     * @param master the counter to indentify the basis function
+     * @return an FFAmplitudeBlackBox object
      */
     FFAmplitudeBlackBox build_black_box(size_t master) const;
     /**
-     * 
+     * Returns an unsimplified coefficient of a basis function
+     * @param master the counter to identify the basis function
+     * @return the unsimplified coefficient of a basis function
      */
     std::string get_unsimplified_coef(size_t master) const;
     /**
-     * 
+     * Returns the ith basis function
+     * @param i the counter to identify the basis function
+     * @return the ith basis function
      */
     std::string get_master(size_t i);
   private:
-    std::vector<std::string> vars;
-    std::vector<std::string> integral_families{};
-    std::unordered_map<std::string, size_t> integrals{};
-    std::unordered_set<std::string> repl_integrals{};
-    std::unordered_map<std::string, size_t> masters{};
-    std::unordered_map<size_t, std::string> masters_inv{};
-    std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> amplitude_mapping{};
-    std::vector<std::string> functions{};
-    ShuntingYardParser sy_parser;
-    size_t distinct_integral_counter = 0;
-    size_t distinct_master_counter = coef_type::COEF_TYPE_SIZE;
-    size_t parser_counter = 0;
-    std::ofstream logger;
+    std::vector<std::string> vars; /**< Vector of variables*/
+    std::vector<std::string> integral_families{}; /**< Vector of functions*/
+    std::unordered_map<std::string, size_t> integrals{}; /**< Map of identified functions*/
+    std::unordered_set<std::string> repl_integrals{}; /**< Map of functions that get replaced*/
+    std::unordered_map<std::string, size_t> masters{}; /**< Map of basis functions*/
+    std::unordered_map<size_t, std::string> masters_inv{}; /**< Inverse map of functions that get replaced*/
+    std::unordered_map<size_t, std::vector<std::pair<size_t, size_t>>> amplitude_mapping{}; /**< Map that specifies how an expression is mapped via the found replacements*/
+    std::vector<std::string> functions{}; /**< Vector of identified functions*/
+    size_t distinct_integral_counter = 0; /**< A counter for distinct functions*/
+    size_t distinct_master_counter = coef_type::COEF_TYPE_SIZE; /**< A counter for distinct basis functions*/
+    size_t parser_counter = 0; /**< A counter to identify factors*/
+    std::ofstream logger; /**< A logger file*/
   };
 }

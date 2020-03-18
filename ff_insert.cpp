@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
       if (factor_scan)
         reconst.enable_factor_scan();
 
-      reconst.enable_scan();
+      reconst.enable_shift_scan();
 
       bool renamed_ff_save = false;
 

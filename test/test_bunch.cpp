@@ -1,6 +1,6 @@
 //==================================================================================
 //    FireFly - Reconstructing rational functions and polynomial over finite fields.
-//    Copyright (C) 2019  Jonas Klappert and Fabian Lange
+//    Copyright (C) 2020  Jonas Klappert and Fabian Lange
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ int main() {
   ShuntingYardParser p_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_3(p_3);
   Reconstructor<BlackBoxUser> r_3(4, 4, 4, b_3);
-  r_3.enable_scan();
+  r_3.enable_shift_scan();
   r_3.reconstruct();
   RatReconst::reset();
 
@@ -92,7 +92,7 @@ int main() {
     ShuntingYardParser p_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_3(p_3);
     Reconstructor<BlackBoxUser> r_3(4, 4, 4, b_3);
-    r_3.enable_scan();
+    r_3.enable_shift_scan();
     r_3.reconstruct();
     RatReconst::reset();
 
