@@ -2904,19 +2904,21 @@ namespace firefly {
               }
             }
           } else {
-            std::pair<std::vector<std::vector<uint32_t>>, uint32_t> next_orders = std::get<2>(rec)->get_zi_orders();
+	    std::pair<std::vector<std::pair<std::vector<uint32_t>, uint32_t>>, uint32_t> next_orders_pair = std::get<2>(rec)->get_zi_orders();
+	    auto next_orders = next_orders_pair.first;
+	    uint32_t tmp_system_size = next_orders_pair.second;
 
-            if ((prime_it == 0 || safe_mode == true) && (factor_scan || (next_orders.first.size() == 1 && next_orders.first.front() == std::vector<uint32_t>(n - 1, 1)))) {
+            if ((prime_it == 0 || safe_mode == true) && (factor_scan || (next_orders.size() == 1 && next_orders.front().first == std::vector<uint32_t>(n - 1, 1)))) {
               std::unique_lock<std::mutex> lock(job_control);
 
 #if !WITH_MPI
-              if (started_probes[next_orders.first.front()] - thr_n /** bunch_size*/ <= fed_ones - 1) {
-                uint32_t to_start = fed_ones - started_probes[next_orders.first.front()] + thr_n /** bunch_size*/;
+              if (started_probes[next_orders.front().first] - thr_n /** bunch_size*/ <= fed_ones - 1) {
+                uint32_t to_start = fed_ones - started_probes[next_orders.front().first] + thr_n /** bunch_size*/;
 #else
-              if (started_probes[next_orders.first.front()] - buffer * worker_thread_count - thr_n <= fed_ones - 1) { // TODO static_cast<uint32_t>(buffer) * * bunch_size
-                uint32_t to_start = fed_ones - started_probes[next_orders.first.front()] + static_cast<uint32_t>(buffer) * worker_thread_count + thr_n; //TODO * bunch_size
+		if (started_probes[next_orders.front().first] - buffer * worker_thread_count - thr_n <= fed_ones - 1) { // TODO static_cast<uint32_t>(buffer) * * bunch_size
+		  uint32_t to_start = fed_ones - started_probes[next_orders.front().first] + static_cast<uint32_t>(buffer) * worker_thread_count + thr_n; //TODO * bunch_size
 #endif
-                started_probes[next_orders.first.front()] += to_start;
+		  started_probes[next_orders.front().first] += to_start;
 
                 lock.unlock();
 
@@ -2926,62 +2928,60 @@ namespace firefly {
                   INFO_MSG("Starting ones: " + std::to_string(to_start));
                 }
 
-                queue_probes(next_orders.first.front(), to_start);
+                queue_probes(next_orders.front().first, to_start);
               }
             } else {
-              for (size_t i = 0; i != next_orders.first.size(); ++i) {
+              for (size_t i = 0; i != next_orders.size(); ++i) {
                 std::unique_lock<std::mutex> lock(job_control);
 
-                auto it = started_probes.find(next_orders.first[i]);
+                auto it = started_probes.find(next_orders[i].first);
 
                 if (it != started_probes.end()) {
-                  if (next_orders.second > started_probes[next_orders.first[i]]) {
-                    uint32_t to_start = next_orders.second - started_probes[next_orders.first[i]];
+                  if (tmp_system_size > started_probes[next_orders[i].first]) {
+                    uint32_t to_start = std::min(tmp_system_size - started_probes[next_orders[i].first], next_orders[i].second);
 
-                    started_probes[next_orders.first[i]] = next_orders.second;
+                    started_probes[next_orders[i].first] += to_start;
 
                     lock.unlock();
 
                     if (verbosity == CHATTY) {
                       std::string msg = "Starting zi_order (";
 
-                      for (const auto & ele : next_orders.first[i]) {
+                      for (const auto & ele : next_orders[i].first) {
                         msg += std::to_string(ele) + ", ";
                       }
 
                       msg = msg.substr(0, msg.length() - 2);
-                      msg += ") " + std::to_string(to_start) + " time(s)";
-                      msg += " " + std::to_string(next_orders.first.size());
+                      msg += ") " + std::to_string(to_start) + " time(s) ";
 
                       std::lock_guard<std::mutex> lock_print(print_control);
 
                       INFO_MSG(msg);
                     }
 
-                    queue_probes(next_orders.first[i], to_start);
+                    queue_probes(next_orders[i].first, to_start);
                   }
                 } else {
-                  started_probes.emplace(next_orders.first[i], next_orders.second);
+                  started_probes.emplace(next_orders[i].first, next_orders[i].second);
 
                   lock.unlock();
 
                   if (verbosity == CHATTY) {
                     std::string msg = "Starting zi_order (";
 
-                    for (const auto & ele : next_orders.first[i]) {
+                    for (const auto & ele : next_orders[i].first) {
                       msg += std::to_string(ele) + ", ";
                     }
 
                     msg = msg.substr(0, msg.length() - 2);
-                    msg += ") " + std::to_string(next_orders.second) + " time(s)";
-                    msg += " " + std::to_string(next_orders.first.size());
+                    msg += ") " + std::to_string(next_orders[i].second) + " time(s)";
 
                     std::lock_guard<std::mutex> lock_print(print_control);
 
                     INFO_MSG(msg);
                   }
 
-                  queue_probes(next_orders.first[i], next_orders.second);
+                  queue_probes(next_orders[i].first, next_orders[i].second);
                 }
               }
             }

@@ -222,10 +222,10 @@ namespace firefly {
      */
     void set_prime_to_max();
     /**
-     *  Returns a pair of a vector of required zi_orders and multiplicities
-     *  @return a pair of a vector of required zi_orders and multiplicities
+     *  Returns a pair of a vector of pairs of a vector of required zi_orders and multiplicities and the maximum system size
+     *  @return a pair of a vector of pairs of a vector of required zi_orders and multiplicities and the maximum system size
      */
-    std::pair<std::vector<std::vector<uint32_t>>, uint32_t> get_zi_orders() const;
+    std::pair<std::vector<std::pair<std::vector<uint32_t>, uint32_t>>, uint32_t> get_zi_orders() const;
   private:
     /**
      *  Starts the real interpolation managed by the class itself

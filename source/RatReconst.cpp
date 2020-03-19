@@ -3689,18 +3689,29 @@ namespace firefly {
     prime_number = 299;
   }
 
-  std::pair<std::vector<std::vector<uint32_t>>, uint32_t> RatReconst::get_zi_orders() const {
+  std::pair<std::vector<std::pair<std::vector<uint32_t>, uint32_t>>, uint32_t> RatReconst::get_zi_orders() const {
     std::lock_guard<std::mutex> lock(mutex_status);
+    uint32_t sub_term = 0;
+    if (saved_ti.find(curr_zi_order) != saved_ti.end())
+      sub_term = saved_ti.at(curr_zi_order).size();
+    else if(coef_mat.size() != 0)
+      sub_term = coef_mat.size();
 
     if (zi < 3) {
-      return std::make_pair(std::vector<std::vector<uint32_t>> (1, curr_zi_order), num_eqn);
+      return std::make_pair(std::vector<std::pair<std::vector<uint32_t>, uint32_t>> (1, std::make_pair(curr_zi_order, num_eqn - sub_term)), num_eqn);
     } else {
-      std::vector<std::vector<uint32_t>> tmp_zi_orders(vandermonde_size, curr_zi_order);
-
+      std::vector<std::pair<std::vector<uint32_t>, uint32_t>> tmp_zi_orders (vandermonde_size, std::make_pair(curr_zi_order, num_eqn - sub_term));
       for (size_t i = 1; i != vandermonde_size; ++i) {
         for (uint32_t tmp_zi = 2; tmp_zi != zi; ++tmp_zi) {
-           tmp_zi_orders[i][tmp_zi - 2] += i;
+	  tmp_zi_orders[i].first[tmp_zi - 2] += i;
         }
+
+	uint32_t tmp_sub_term = 0;
+
+        if (saved_ti.find(tmp_zi_orders[i].first) != saved_ti.end())
+	  tmp_sub_term = saved_ti.at(tmp_zi_orders[i].first).size();
+
+	tmp_zi_orders[i].second = num_eqn - tmp_sub_term;
       }
 
       return std::make_pair(tmp_zi_orders, num_eqn);
