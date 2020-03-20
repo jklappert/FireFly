@@ -2940,7 +2940,7 @@ namespace firefly {
                   if (tmp_system_size > started_probes[next_orders[i].first]) {
                     uint32_t to_start = std::min(tmp_system_size - started_probes[next_orders[i].first], next_orders[i].second);
 
-                    started_probes[next_orders[i].first] += to_start;
+                    started_probes[next_orders[i].first] = tmp_system_size;//to_start;
 
                     lock.unlock();
 
