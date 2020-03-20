@@ -4,7 +4,10 @@ FireFly 2.0.0
 New features
 ------------
 
- * MPI
+ * Added support for MPI when compiled with the option `-DWITH_MPI=true`. The
+ `Reconstructor` class in the master process then requests the `MPIWorker` class
+ in the other processes to compute probes. We refer to `README.me` and the new
+ `example_mpi.cpp` for more details.
 
  * A logger file labeled `firefly.log` is now written during the
  interpolation which outputs the current progress and other
@@ -40,20 +43,30 @@ Changes
  * The member function `enable_scan` of the `Reconstructor` class is
  deprecated. It is replaced by the member function `enable_shift_scan`.
 
- * CRTP + FFVec + dynamical bunches
+ * Changed the `BlackBoxBase` to the curiously recurring template pattern
+ (CRTP). This enables FireFly to compute bunches of probes (s. version 1.3.0)
+ with a dynamic size depending on the current workload. The bunches are
+ implemented in the form of the `FFIntVec` classes, which are static arrays of
+ `FFInt` with sizes of powers of 2 up to 128. However, the user has to adopt the
+ black box to the CRTP. We refer to `README.me`, `example.cpp`, and the paper of
+ version 2.0 for more details.
 
  * Writing of saved states improved (single threaded to be done)
 
  * CMake searching for GMP, Flint, ...
 
- * The required C++ standard has been changed to C++-14.
+ * The required C++ standard changed to C++-14.
 
  * 200 additional prime numbers have been added to the `ReconstHelper` struct.
 
- * The job scheduling for interpolations in first prime or the when using
- the safe mode has been improved.
+ * The job scheduling for interpolations in the first prime field or the when
+ using the safe mode has been improved.
 
  * The `Reconstructor` class can now handle empty black boxes.
+
+ * Added pow functions for `FFInt` with a templated power argument. Hence,
+ negative integer powers can now be used. We thank Herschel Chawdhry and Philipp
+ Maierhoefer for this suggestion.
 
 Bug fixes
 ---------
@@ -62,16 +75,9 @@ Bug fixes
  the coefficient of the maximum degree monomial was incorrect when the numerator
  was 1 and the denominator was not 1. This has been fixed.
 
-
-FireFly 1.3.5
-=============
-
-Bug fixes
----------
-
- * Fixed FFInt::pow yielding a wrong result for powers close to the prime number
- in the default implementation of FFInt. We thank Herschel Chawdhry for the bug
- report. IS THIS STILL TRUE???
+ * Fixed `FFInt::pow` yielding a wrong result for powers larger than half of the
+ prime number in the default implementation of `FFInt`. We thank Herschel
+ Chawdhry for the bug report.
 
 
 FireFly 1.3.4
