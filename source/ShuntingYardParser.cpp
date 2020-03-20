@@ -197,7 +197,10 @@ namespace firefly {
 
     // Check for global signs
     if (fun.size() > 2 && (fun[0] == '+' || fun[0] == '-') && fun[1] == '(') {
-      fun.insert(fun.begin(), '0');
+      if (fun[0] == '+')
+	fun.erase(0, 1);
+      else
+	fun.insert(fun.begin(), '0');
     }
 
     char const* l_ptr = fun.c_str();
@@ -308,7 +311,7 @@ namespace firefly {
           } else if (*l_ptr == '^' && *(l_ptr + 1) == '-') {
             ERROR_MSG("Please put negative exponents in parentheses");
             std::exit(EXIT_FAILURE);
-          }
+	  }
 
           bool skip = false;
 
@@ -378,11 +381,11 @@ namespace firefly {
       op_stack.pop();
     }
 
-//      for (const auto & el : pf) {
-//        std::cout << el << " ";
-//      }
-//
-//      std::cout << "\n";
+    /*      for (const auto & el : pf) {
+        std::cout << el << " ";
+      }
+
+      std::cout << "\n";*/
     pf.shrink_to_fit();
     functions.emplace_back(pf);
   }
@@ -591,8 +594,12 @@ namespace firefly {
                 precomp_tokens[i].pop_back();
                 precomp_tokens[i].pop_back();
                 precomp_tokens[i][j] = {operands::NUMBER, quotient};
-              } else
-                precomp_tokens[i][j] = {operands::OPERATOR, operators::DIV};
+              } else if (precomp_tokens[i][j - 1].first == operands::NUMBER && (precomp_tokens[i][j - 2].first == operands::VARIABLE || precomp_tokens[i][j - 2].first == operands::NEG_VARIABLE)) {
+		  FFInt inverse = 1 / precomp_tokens[i][j - 1].second;
+		  precomp_tokens[i][j - 1].second = inverse;
+		  precomp_tokens[i][j] = {operands::OPERATOR, operators::MULT};
+		} else 
+                  precomp_tokens[i][j] = {operands::OPERATOR, operators::DIV};
 
               break;
             }
