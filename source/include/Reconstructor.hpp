@@ -669,6 +669,12 @@ namespace firefly {
         if (chosen_t.find(already_chosen_t.first) != chosen_t.end()) {
           auto set = chosen_t[already_chosen_t.first];
 
+          // Set the counter for the computed probes to the minimum of all RatReconst, i.e. the common ground
+          if (static_cast<uint32_t>(set.size()) < started_probes[already_chosen_t.first]) {
+            started_probes[already_chosen_t.first] = static_cast<uint32_t>(set.size());
+          }
+
+          // chosen_t shall contain the union of all t
           for (const auto & ts : already_chosen_t.second) {
             if (set.find(ts) == set.end()) {
               set.emplace(ts);
@@ -678,6 +684,7 @@ namespace firefly {
           chosen_t[already_chosen_t.first] = set;
         } else {
           chosen_t.emplace(std::make_pair(already_chosen_t.first, already_chosen_t.second));
+          started_probes.emplace(std::make_pair(already_chosen_t.first, static_cast<uint32_t>(already_chosen_t.second.size())));
         }
       }
 
@@ -2904,9 +2911,9 @@ namespace firefly {
               }
             }
           } else {
-	    std::pair<std::vector<std::pair<std::vector<uint32_t>, uint32_t>>, uint32_t> next_orders_pair = std::get<2>(rec)->get_zi_orders();
-	    auto next_orders = next_orders_pair.first;
-	    uint32_t tmp_system_size = next_orders_pair.second;
+            std::pair<std::vector<std::pair<std::vector<uint32_t>, uint32_t>>, uint32_t> next_orders_pair = std::get<2>(rec)->get_zi_orders();
+            auto next_orders = next_orders_pair.first;
+            uint32_t tmp_system_size = next_orders_pair.second;
 
             if ((prime_it == 0 || safe_mode == true) && (factor_scan || (next_orders.size() == 1 && next_orders.front().first == std::vector<uint32_t>(n - 1, 1)))) {
               std::unique_lock<std::mutex> lock(job_control);
@@ -2915,10 +2922,10 @@ namespace firefly {
               if (started_probes[next_orders.front().first] - thr_n /** bunch_size*/ <= fed_ones - 1) {
                 uint32_t to_start = fed_ones - started_probes[next_orders.front().first] + thr_n /** bunch_size*/;
 #else
-		if (started_probes[next_orders.front().first] - buffer * worker_thread_count - thr_n <= fed_ones - 1) { // TODO static_cast<uint32_t>(buffer) * * bunch_size
-		  uint32_t to_start = fed_ones - started_probes[next_orders.front().first] + static_cast<uint32_t>(buffer) * worker_thread_count + thr_n; //TODO * bunch_size
+              if (started_probes[next_orders.front().first] - buffer * worker_thread_count - thr_n <= fed_ones - 1) { // TODO static_cast<uint32_t>(buffer) * * bunch_size
+                uint32_t to_start = fed_ones - started_probes[next_orders.front().first] + static_cast<uint32_t>(buffer) * worker_thread_count + thr_n; //TODO * bunch_size
 #endif
-		  started_probes[next_orders.front().first] += to_start;
+                started_probes[next_orders.front().first] += to_start;
 
                 lock.unlock();
 
@@ -2940,7 +2947,7 @@ namespace firefly {
                   if (tmp_system_size > started_probes[next_orders[i].first]) {
                     uint32_t to_start = std::min(tmp_system_size - started_probes[next_orders[i].first], next_orders[i].second);
 
-                    started_probes[next_orders[i].first] = tmp_system_size;//to_start;
+                    started_probes[next_orders[i].first] += to_start;
 
                     lock.unlock();
 
