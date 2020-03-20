@@ -81,7 +81,11 @@ namespace firefly {
     FFIntVec& operator*=(const FFIntVec&);
     FFIntVec& operator/=(const FFIntVec&);
     FFIntVec pow(const FFIntVec& power) const;
+    template<class T, typename=typename std::enable_if<(std::is_enum<T>::value || std::is_integral<T>::value)>::type>
+    FFIntVec pow(const std::vector<T>& power) const;
     FFIntVec pow(const FFInt& power) const;
+    template<class T, typename=typename std::enable_if<(std::is_enum<T>::value || std::is_integral<T>::value)>::type>
+    FFIntVec pow(const T& power) const;
     FFInt& operator[](int i) {return vec[i];};
     FFInt operator[](int i) const {return vec[i];};
     bool operator!() const;
@@ -98,6 +102,32 @@ namespace firefly {
     }
     //static uint32_t size; /**< Sets the size of the vectors */
   };
+
+  template<int N>
+  template<class T, typename>
+  FFIntVec<N> FFIntVec<N>::pow(const std::vector<T>& power) const {
+    if (power.size() != N) {
+      throw std::out_of_range("Power of FFIntVec with vector of wrong length.");
+    }
+
+    FFIntVec<N> result(vec);
+    for (int i = 0; i != N; ++i) {
+      result.vec[i] = result.vec[i].pow(power[i]);
+    }
+
+    return result;
+  }
+
+  template<int N>
+  template<class T, typename>
+  FFIntVec<N> FFIntVec<N>::pow(const T& power) const {
+    FFIntVec<N> result(vec);
+    for (int i = 0; i != N; ++i) {
+      result.vec[i] = result.vec[i].pow(power);
+    }
+
+    return result;
+  }
 
   template<int N>
   inline bool FFIntVec<N>::operator!() const {
