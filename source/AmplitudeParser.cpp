@@ -129,26 +129,23 @@ namespace firefly {
             if (prefac == "*") {
               coefficient = int_fam.substr(0, int_fam.size() - fam.size() - 1);
             } else if (found + 1 < amplitude_size - 1 && amplitude_c.substr(found + 1, 1) == "*") {
-              std::size_t coef_end_pos = 0;
+              std::size_t fo_2 = amplitude_c.find('[', found + 1);
+	      if (fo_2 != std::string::npos) {
+                std::string seed_2 = amplitude_c.substr(found + 1, fo_2-(found+1));
+		for (const auto& tmp_fam : integral_families) {
+		  std::size_t tmp_found = seed_2.rfind(tmp_fam);
+		  if (tmp_found != std::string::npos) {
+		    if (seed_2[0] == '*')
+		      coefficient = seed_2.substr(1,tmp_found - 2);
+		    else
+		      coefficient = seed_2.substr(0,tmp_found - 2);
 
-              for (const auto& tmp_fam : integral_families) {
-                std::size_t tmp_found = amplitude_c.find(tmp_fam, found + 1);
-
-                if (tmp_found != std::string::npos) {
-                  if (coef_end_pos == 0)
-                    coef_end_pos = tmp_found - 2;
-                  else
-                    coef_end_pos = std::min(coef_end_pos, tmp_found - 2);
-                }
-              }
-
-              // If this happens, we are at the end of the amplitude
-              if (coef_end_pos == 0)
+		    found = fo_2 - tmp_fam.size() - 2;
+		  }
+		}
+              } else {
                 coefficient = amplitude_c.substr(found + 2);
-              else {
-                coefficient = amplitude_c.substr(found + 2, coef_end_pos - (found + 1));
-                found = coef_end_pos;
-              }
+	      }
             } else
               coefficient = "1";
 
