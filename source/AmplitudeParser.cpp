@@ -180,7 +180,7 @@ namespace firefly {
 
     parsed_integrals.shrink_to_fit();
 
-    /*for (const auto& el : parsed_integrals) {
+    /*    for (const auto& el : parsed_integrals) {
       std::cout << "Integral: " << el.first << "\n";
       std::cout << "Coefficient: " << el.second << "\n";
       }*/
@@ -369,9 +369,17 @@ namespace firefly {
 
       for (const auto& mi_map : amplitude_mapping.at(i)) {
         bool pref_done = false;
+	bool got_pref = false;
+	bool got_fun = false;
 
-        if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP)
-          tmp_coef += "+(" + functions[mi_map.first] + ")";
+        if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP) {
+	  if (got_pref)
+	    tmp_coef += "+(" + functions[mi_map.first] + ")";
+	  else {
+	    tmp_coef += "(" + functions[mi_map.first] + ")";
+	    got_pref = true;
+	  }
+	}
         else {
           if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
             if (!pref_done) {
@@ -379,7 +387,12 @@ namespace firefly {
               tmp_coef += ")*(";
             }
 
-            tmp_coef += "+(" + functions[mi_map.first] + ")";
+	    if (got_fun)
+	      tmp_coef += "+(" + functions[mi_map.first] + ")";
+	    else {
+	      tmp_coef += "(" + functions[mi_map.first] + ")";
+	      got_fun = true;
+	    }
             got_master = true;
           }
         }
@@ -403,9 +416,17 @@ namespace firefly {
 
       for (const auto& mi_map : amplitude_mapping.at(i)) {
         bool pref_done = false;
+	bool got_pref = false;
+	bool got_fun = false;
 
-        if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP)
-          tmp_coef += "+(" + functions[mi_map.first] + ")";
+        if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP) {
+	  if (got_pref)
+	    tmp_coef += "+(" + functions[mi_map.first] + ")";
+	  else {
+	    tmp_coef += "(" + functions[mi_map.first] + ")";
+	    got_pref = true;
+	  }
+	}
         else {
           if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
             if (!pref_done) {
@@ -413,7 +434,12 @@ namespace firefly {
               tmp_coef += ")*(";
             }
 
-            tmp_coef += "+(" + functions[mi_map.first] + ")";
+	    if (got_fun)
+	      tmp_coef += "+(" + functions[mi_map.first] + ")";
+	    else {
+              tmp_coef += "(" + functions[mi_map.first] + ")";
+	      got_fun = true;
+	    }
             got_master = true;
           }
         }
