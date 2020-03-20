@@ -159,6 +159,7 @@ namespace firefly {
       MULT,
       DIV,
       POW,
+      NEG_POW,
       POW_NEG
     }; /**< The allowed operators as an enum for fast identification. Note that ! means x ! 2 = -x^2 (! == POW_NEG) */
   }
@@ -217,6 +218,11 @@ namespace firefly {
 
             case '!': {
               nums.push(-b.pow(a));
+              break;
+            }
+
+            case '~': {
+              nums.push(b.pow(a.to_neg_int()));
               break;
             }
           }
@@ -335,6 +341,11 @@ namespace firefly {
 
               case operators::POW: {
                 nums.push(pow(b, a));
+                break;
+              }
+
+              case operators::NEG_POW: {
+                nums.push(b.pow(a.to_neg_int()));
                 break;
               }
 

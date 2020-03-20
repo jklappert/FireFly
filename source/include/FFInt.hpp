@@ -77,6 +77,10 @@ namespace firefly {
      *  @param prime the defining prime of the field
      */
     static void set_new_prime(uint64_t prime);
+    /**
+     *  Converts the uint64_t to a negative integer (only used for negative exponents)
+     */
+    int to_neg_int() const;
 
     // defining new operators for finite field arithmetic
     FFInt& operator=(const FFInt&) = default;

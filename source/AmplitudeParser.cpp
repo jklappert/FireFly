@@ -83,10 +83,10 @@ namespace firefly {
 
     auto time1 = std::chrono::high_resolution_clock::now();
     INFO_MSG("Parsed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
-    INFO_MSG("Found " + std::to_string(distinct_integral_counter) + " distinct functions\n");
+    INFO_MSG("Found " + std::to_string(distinct_integral_counter) + " distinct function(s)\n");
     logger.open("ff_insert.log", std::ios_base::app);
     logger << "Parsed expression in " << std::to_string(std::chrono::duration<double>(time1 - time0).count()) << " s\n";
-    logger << "Found " << std::to_string(distinct_integral_counter) << " distinct functions\n\n";
+    logger << "Found " << std::to_string(distinct_integral_counter) << " distinct function(s)\n\n";
     logger.close();
   }
 
@@ -130,22 +130,25 @@ namespace firefly {
               coefficient = int_fam.substr(0, int_fam.size() - fam.size() - 1);
             } else if (found + 1 < amplitude_size - 1 && amplitude_c.substr(found + 1, 1) == "*") {
               std::size_t fo_2 = amplitude_c.find('[', found + 1);
-	      if (fo_2 != std::string::npos) {
-                std::string seed_2 = amplitude_c.substr(found + 1, fo_2-(found+1));
-		for (const auto& tmp_fam : integral_families) {
-		  std::size_t tmp_found = seed_2.rfind(tmp_fam);
-		  if (tmp_found != std::string::npos) {
-		    if (seed_2[0] == '*')
-		      coefficient = seed_2.substr(1,tmp_found - 2);
-		    else
-		      coefficient = seed_2.substr(0,tmp_found - 2);
 
-		    found = fo_2 - tmp_fam.size() - 2;
-		  }
-		}
+              if (fo_2 != std::string::npos) {
+                std::string seed_2 = amplitude_c.substr(found + 1, fo_2 - (found + 1));
+
+                for (const auto& tmp_fam : integral_families) {
+                  std::size_t tmp_found = seed_2.rfind(tmp_fam);
+
+                  if (tmp_found != std::string::npos) {
+                    if (seed_2[0] == '*')
+                      coefficient = seed_2.substr(1, tmp_found - 2);
+                    else
+                      coefficient = seed_2.substr(0, tmp_found - 2);
+
+                    found = fo_2 - tmp_fam.size() - 2;
+                  }
+                }
               } else {
                 coefficient = amplitude_c.substr(found + 2);
-	      }
+              }
             } else
               coefficient = "1";
 
@@ -260,7 +263,7 @@ namespace firefly {
           ++required_repl_counter;
           auto repl_rhs = parse_string(rhs);
 
-          for (const auto & mi_coef : repl_rhs) {
+          for (const auto& mi_coef : repl_rhs) {
             if (masters.find(mi_coef.first) == masters.end()) {
               masters.emplace(std::make_pair(mi_coef.first, distinct_master_counter));
               masters_inv.emplace(std::make_pair(distinct_master_counter - coef_type::COEF_TYPE_SIZE, mi_coef.first));
@@ -299,7 +302,7 @@ namespace firefly {
         ++required_repl_counter;
         auto repl_rhs = parse_string(rhs);
 
-        for (const auto & mi_coef : repl_rhs) {
+        for (const auto& mi_coef : repl_rhs) {
           if (masters.find(mi_coef.first) == masters.end()) {
             masters.emplace(std::make_pair(mi_coef.first, distinct_master_counter));
             masters_inv.emplace(std::make_pair(distinct_master_counter - coef_type::COEF_TYPE_SIZE, mi_coef.first));
@@ -329,7 +332,7 @@ namespace firefly {
   size_t AmplitudeParser::check_for_unreplaced_masters() {
     bool found_unreplaced_integral = false;
 
-    for (const auto & integral : integrals) {
+    for (const auto& integral : integrals) {
       if (repl_integrals.find(integral.first) == repl_integrals.end()) {
         found_unreplaced_integral = true;
         INFO_MSG("No replacements found for function: " + integral.first);
@@ -369,30 +372,30 @@ namespace firefly {
 
       for (const auto& mi_map : amplitude_mapping.at(i)) {
         bool pref_done = false;
-	bool got_pref = false;
-	bool got_fun = false;
+        bool got_pref = false;
+        bool got_fun = false;
 
         if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP) {
-	  if (got_pref)
-	    tmp_coef += "+(" + functions[mi_map.first] + ")";
-	  else {
-	    tmp_coef += "(" + functions[mi_map.first] + ")";
-	    got_pref = true;
-	  }
-	}
-        else {
+          if (got_pref)
+            tmp_coef += "+(" + functions[mi_map.first] + ")";
+          else {
+            tmp_coef += "(" + functions[mi_map.first] + ")";
+            got_pref = true;
+          }
+        } else {
           if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
             if (!pref_done) {
               pref_done = true;
               tmp_coef += ")*(";
             }
 
-	    if (got_fun)
-	      tmp_coef += "+(" + functions[mi_map.first] + ")";
-	    else {
-	      tmp_coef += "(" + functions[mi_map.first] + ")";
-	      got_fun = true;
-	    }
+            if (got_fun)
+              tmp_coef += "+(" + functions[mi_map.first] + ")";
+            else {
+              tmp_coef += "(" + functions[mi_map.first] + ")";
+              got_fun = true;
+            }
+
             got_master = true;
           }
         }
@@ -416,30 +419,30 @@ namespace firefly {
 
       for (const auto& mi_map : amplitude_mapping.at(i)) {
         bool pref_done = false;
-	bool got_pref = false;
-	bool got_fun = false;
+        bool got_pref = false;
+        bool got_fun = false;
 
         if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP) {
-	  if (got_pref)
-	    tmp_coef += "+(" + functions[mi_map.first] + ")";
-	  else {
-	    tmp_coef += "(" + functions[mi_map.first] + ")";
-	    got_pref = true;
-	  }
-	}
-        else {
+          if (got_pref)
+            tmp_coef += "+(" + functions[mi_map.first] + ")";
+          else {
+            tmp_coef += "(" + functions[mi_map.first] + ")";
+            got_pref = true;
+          }
+        } else {
           if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
             if (!pref_done) {
               pref_done = true;
               tmp_coef += ")*(";
             }
 
-	    if (got_fun)
-	      tmp_coef += "+(" + functions[mi_map.first] + ")";
-	    else {
+            if (got_fun)
+              tmp_coef += "+(" + functions[mi_map.first] + ")";
+            else {
               tmp_coef += "(" + functions[mi_map.first] + ")";
-	      got_fun = true;
-	    }
+              got_fun = true;
+            }
+
             got_master = true;
           }
         }

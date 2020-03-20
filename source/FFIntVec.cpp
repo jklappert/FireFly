@@ -46,6 +46,11 @@ namespace firefly {
   }
 
   template<int N>
+  int FFIntVec<N>::to_neg_int() const noexcept {
+    return -static_cast<int>(vec[0].n);
+  }
+
+  template<int N>
   bool operator==(const FFIntVec<N>& a, const FFIntVec<N>& b) {
     return a.vec == b.vec;
   }

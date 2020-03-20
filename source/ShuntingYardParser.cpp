@@ -138,8 +138,9 @@ namespace firefly {
           }
         }
 
-	if (line_c + 1 < funs.size() + 1)
-	  std::cerr << "\033[1;34mFireFly info:\033[0m " << line_c + 1 << " / " << funs.size() << "\r";
+        if (line_c + 1 < funs.size() + 1)
+          std::cerr << "\033[1;34mFireFly info:\033[0m " << line_c + 1 << " / " << funs.size() << "\r";
+
         line_c++;
       }
 
@@ -168,8 +169,8 @@ namespace firefly {
           }
         }
 
-	if (i + 1 < funs.size() + 1)
-	  std::cerr << "\033[1;34mFireFly info:\033[0m " << i + 1 << " / " << funs.size() << "\r";
+        if (i + 1 < funs.size() + 1)
+          std::cerr << "\033[1;34mFireFly info:\033[0m " << i + 1 << " / " << funs.size() << "\r";
       }
     }
 
@@ -198,196 +199,107 @@ namespace firefly {
     // Check for global signs
     if (fun.size() > 2 && (fun[0] == '+' || fun[0] == '-') && fun[1] == '(') {
       if (fun[0] == '+')
-	fun.erase(0, 1);
+        fun.erase(0, 1);
       else
-	fun.insert(fun.begin(), '0');
+        fun.insert(fun.begin(), '0');
     }
 
-    char const* l_ptr = fun.c_str();
+    //char const* l_ptr = fun.c_str();
     std::string tmp = ""; // Used for numbers
-    std::vector<std::string> pf = {};
+    std::vector<std::string> tokens = {};
     std::stack<char> op_stack;
-    bool neg_pow = false;
     uint32_t counter = 0;
+    size_t c_counter = 0;
+    bool neg_exp = false;
 
     // Pick one character at a time until we reach the end of the line
-    while (*l_ptr != '\0') {
+    for (const char ex : fun) {
       // If operand, add it to postfix string
       // If operator pop operators off the stack until it is empty
-      if (is_operand(*l_ptr))
-        tmp += *l_ptr;
-      else if (is_variable(*l_ptr))
-        tmp += *l_ptr;
-      else if (is_operator(*l_ptr)) {
-        if (tmp.length() > 0) {
-          pf.emplace_back(tmp);
+      if (ex != '\0') {
+        if (is_operand(ex)) {
+          tmp.push_back(ex);
+        } else if (is_variable(ex)) {
+          tmp.push_back(ex);
+        } else if (is_operator(ex)) {
+          if (!neg_exp && tmp.length() > 0) {
+            tokens.emplace_back(tmp);
+            tmp = "";
+          }
+
+          // Check for cases like +(-(x+...))
+          if (!op_stack.empty() && fun[c_counter - 1] == '(') {
+            if (fun[c_counter + 1] == '(') {
+              tokens.emplace_back("0");
+              op_stack.push(ex);
+            } else if (!neg_exp) {
+              tmp.insert(tmp.begin(), ex);
+            } else if (neg_exp) {
+              neg_exp = false;
+            }
+          } else if (op_stack.empty() && tokens.empty())
+            tmp.insert(tmp.begin(), ex);
+          else {
+            while (!op_stack.empty() && op_stack.top() != '(' && get_weight(op_stack.top()) >= get_weight(ex)) {
+              tokens.emplace_back(std::string(1, op_stack.top()));
+              op_stack.pop();
+            }
+
+            if (ex == '^' && fun[c_counter + 1] == '(' && fun[c_counter + 2] == '-') {
+              neg_exp = true;
+              op_stack.push('~');
+            } else if (ex == '^' && tokens.back().size() > 1 && tokens.back().front() == '-') {
+              op_stack.push('!');
+              tokens.back().erase(tokens.back().begin());
+            } else {
+              op_stack.push(ex);
+            }
+          }
+        }
+        // Push all open parenthesis to the stack
+        else if (ex == '(')
+          op_stack.push(ex);
+        // When reaching a closing one, pop off operators from the stack until an opening one is found
+        else if (ex == ')') {
+          if (tmp.length() > 0) {
+            tokens.emplace_back(tmp);
+            tmp = "";
+          }
+
           tmp = "";
-        }
 
-        // Check for cases like +(-(x+...))
-        if (!op_stack.empty() && *(l_ptr - 1) == '(') {
-          if (*(l_ptr + 1) == '(') {
-            pf.emplace_back("0");
-            op_stack.push(*l_ptr);
-          } else
-            tmp.insert(tmp.begin(), *l_ptr);
-        } else if (op_stack.empty() && pf.empty())
-          tmp.insert(tmp.begin(), *l_ptr);
-        else {
+          while (!op_stack.empty()) {
+            if (op_stack.top() == '(') {
+              op_stack.pop();
+              break;
+            }
 
-          while (!op_stack.empty() && op_stack.top() != '(' && get_weight(op_stack.top()) >= get_weight(*l_ptr)) {
-            pf.emplace_back(std::string(1, op_stack.top()));
+            tokens.emplace_back(std::string(1, op_stack.top()));
             op_stack.pop();
           }
-
-          // Check for negative exponents
-          if (*l_ptr == '^' && *(l_ptr + 1) == '(' && *(l_ptr + 2) == '-') {
-            if (*(l_ptr - 1) == ')') {
-              char const* l_ptr_c = l_ptr;
-
-              --l_ptr_c;
-              uint32_t parenthesis_counter = 0;
-
-              while (*(l_ptr_c) != '(') {
-                if (*l_ptr_c != ')' && *l_ptr_c != '(')
-                  counter ++;
-                else if (*l_ptr_c == ')')
-                  parenthesis_counter++;
-
-                l_ptr_c --;
-
-                if ((is_operator(*l_ptr_c) || *l_ptr_c == '(') && is_operand(*(l_ptr_c + 1))) {
-                  uint32_t tmp_c = 0;
-
-                  while (is_operand(*(l_ptr_c + tmp_c + 2))) {
-                    tmp_c ++;
-                  }
-
-                  counter -= tmp_c;
-                } else if ((is_operator(*l_ptr_c) || *l_ptr_c == '(') && is_variable(*(l_ptr_c + 1))) {
-                  uint32_t tmp_c = 0;
-
-                  while (is_variable(*(l_ptr_c + tmp_c + 2)) || is_operand(*(l_ptr_c + tmp_c + 2))) {
-                    tmp_c ++;
-                  }
-
-                  counter -= tmp_c;
-                } else if (*l_ptr_c == '-' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
-                  counter += 1;
-                else if (*l_ptr_c == '+' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
-                  counter += 1;
-                else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(')
-                  counter -= 1;
-                else if (is_variable(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(')
-                  counter -= 1;
-                else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '-' && *(l_ptr_c - 2) == '(')
-                  counter -= 1;
-                else if (is_operand(*l_ptr_c) && *(l_ptr_c - 1) == '+' && *(l_ptr_c - 2) == '(')
-                  counter -= 1;
-
-                if (*l_ptr_c == '(' && parenthesis_counter != 0) {
-                  parenthesis_counter --;
-
-                  if (parenthesis_counter == 0)
-                    break;
-
-                  l_ptr_c --;
-
-                  if (*l_ptr_c == '^' && *(l_ptr_c + 1) == '(' && *(l_ptr_c + 2) == '-')
-                    counter += 2; // one for '/' and one for '1'
-                  else if (*l_ptr_c == '-' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
-                    counter += 1;
-                  else if (*l_ptr_c == '+' && *(l_ptr_c + 1) == '(' && *(l_ptr_c - 1) == '(')
-                    counter += 1;
-                }
-
-                if (parenthesis_counter == 0)
-                  break;
-              }
-            } else
-              counter = 1;
-
-            neg_pow = true;
-          } else if (*l_ptr == '^' && *(l_ptr + 1) == '-') {
-            ERROR_MSG("Please put negative exponents in parentheses");
-            std::exit(EXIT_FAILURE);
-	  }
-
-          bool skip = false;
-
-          if (neg_pow && *l_ptr == '^')
-            op_stack.push('/');
-          else if (!neg_pow && *l_ptr == '^' && pf.back().size() > 1 && pf.back()[0] == '-') {
-            op_stack.push('!');
-            pf.back().erase(pf.back().begin());
-            skip = true;
-          }
-
-          if (!skip)
-            op_stack.push(*l_ptr);
         }
+
+        ++c_counter;
       }
-      // Push all open parenthesis to the stack
-      else if (*l_ptr == '(')
-        op_stack.push(*l_ptr);
-      // When reaching a closing one, pop off operators from the stack until an opening one is found
-      else if (*l_ptr == ')') {
-        if (tmp.length() > 0) {
-          if (neg_pow) {
-            pf.insert(pf.end() - counter, "1");
-            tmp.erase(0, 1);
-            pf.emplace_back(tmp);
-            tmp = "";
-            counter = 0;
-            neg_pow = false;
-          } else {
-            pf.emplace_back(tmp);
-            tmp = "";
-          }
-        }
-
-        tmp = "";
-
-        while (!op_stack.empty()) {
-          if (op_stack.top() == '(') {
-            op_stack.pop();
-            break;
-          }
-
-          pf.emplace_back(std::string(1, op_stack.top()));
-          op_stack.pop();
-        }
-      }
-
-      // Proceed to the next character
-      l_ptr ++;
     }
 
     if (tmp.length() > 0) {
-      if (neg_pow) {
-        pf.insert(pf.end() - counter, "1");
-        tmp.erase(0, 1);
-        pf.emplace_back(tmp);
-        tmp = "";
-        counter = 0;
-        neg_pow = false;
-      } else {
-        pf.emplace_back(tmp);
-      }
+      tokens.emplace_back(tmp);
     }
 
     while (!op_stack.empty()) {
-      pf.emplace_back(std::string(1, op_stack.top()));
+      tokens.emplace_back(std::string(1, op_stack.top()));
       op_stack.pop();
     }
 
-    /*      for (const auto & el : pf) {
-        std::cout << el << " ";
-      }
+    /*for (const auto& el : tokens) {
+      std::cout << el << " ";
+    }
 
-      std::cout << "\n";*/
-    pf.shrink_to_fit();
-    functions.emplace_back(pf);
+    std::cout << "\n";*/
+
+    tokens.shrink_to_fit();
+    functions.emplace_back(tokens);
   }
 
   void ShuntingYardParser::parse_function(const std::string& fun, const std::vector<std::string>& vars, bool validate_fun) {
@@ -451,6 +363,11 @@ namespace firefly {
             nums.push(-b.pow(a));
             break;
           }
+
+          case '~': {
+            nums.push(b.pow(-static_cast<int>(a.n)));
+            break;
+          }
         }
       } else {
         // check then if number has more than 18 digits
@@ -508,6 +425,7 @@ namespace firefly {
     switch (c) {
       case '^':
       case '!':
+      case '~':
         return 3;
 
       case '/':
@@ -567,7 +485,7 @@ namespace firefly {
       for (uint64_t j = 0; j != t_size; ++j) {
         std::string token = tokens[j + offset];
 
-        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!") {
+        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!" || token == "~") {
           switch (token[0]) {
             case '+': {
               precomp_tokens[i][j] = {operands::OPERATOR, operators::PLUS};
@@ -595,17 +513,22 @@ namespace firefly {
                 precomp_tokens[i].pop_back();
                 precomp_tokens[i][j] = {operands::NUMBER, quotient};
               } else if (precomp_tokens[i][j - 1].first == operands::NUMBER && (precomp_tokens[i][j - 2].first == operands::VARIABLE || precomp_tokens[i][j - 2].first == operands::NEG_VARIABLE)) {
-		  FFInt inverse = 1 / precomp_tokens[i][j - 1].second;
-		  precomp_tokens[i][j - 1].second = inverse;
-		  precomp_tokens[i][j] = {operands::OPERATOR, operators::MULT};
-		} else 
-                  precomp_tokens[i][j] = {operands::OPERATOR, operators::DIV};
+                FFInt inverse = 1 / precomp_tokens[i][j - 1].second;
+                precomp_tokens[i][j - 1].second = inverse;
+                precomp_tokens[i][j] = {operands::OPERATOR, operators::MULT};
+              } else
+                precomp_tokens[i][j] = {operands::OPERATOR, operators::DIV};
 
               break;
             }
 
             case '^': {
               precomp_tokens[i][j] = {operands::OPERATOR, operators::POW};
+              break;
+            }
+
+            case '~': {
+              precomp_tokens[i][j] = {operands::OPERATOR, operators::NEG_POW};
               break;
             }
 
@@ -718,7 +641,7 @@ namespace firefly {
   }
 
   void ShuntingYardParser::throw_not_declared_var_err(const std::string& var) const {
-    ERROR_MSG("Variable " + var + " not declared!");
+    ERROR_MSG("Variable '" + var + "' not declared!");
     std::exit(EXIT_FAILURE);
   }
 }

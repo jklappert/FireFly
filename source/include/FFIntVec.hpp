@@ -71,6 +71,10 @@ namespace firefly {
     FFIntVec() {
       vec.fill(0);
     };
+    /**
+     *  Converts to a negative integer (only for negative exponents)
+     */
+    int to_neg_int() const noexcept;
 
     std::array<FFInt, N> vec; /**< The stored vector for arithmetic */
     // defining new operators for finite field arithmetic

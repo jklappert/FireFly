@@ -223,6 +223,10 @@ namespace firefly {
     return !n;
   }
 
+  int FFInt::to_neg_int() const {
+    return -static_cast<int>(n);
+  }
+
   /* This function is a part of the program Kira.
   * Copyright (C) Johann Usovitsch <jusovitsch@googlemail.com>
   * Philipp Maierhoefer <particle@maierhoefer.net>
