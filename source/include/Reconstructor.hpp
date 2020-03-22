@@ -611,7 +611,7 @@ namespace firefly {
     resume_from_state = true;
     file_paths = file_paths_;
     items = static_cast<uint32_t>(file_paths.size());
-    prime_it = 200; // increase so that the minimum is the mininmum of the files
+    prime_it = 400; // increase so that the minimum is the mininmum of the files
 
     for (uint32_t i = 0; i != items; ++i) {
       prime_it = std::min(prime_it, parse_prime_number(file_paths[i]));
