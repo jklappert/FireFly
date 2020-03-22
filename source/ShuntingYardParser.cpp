@@ -204,11 +204,9 @@ namespace firefly {
         fun.insert(fun.begin(), '0');
     }
 
-    //char const* l_ptr = fun.c_str();
     std::string tmp = ""; // Used for numbers
     std::vector<std::string> tokens = {};
     std::stack<char> op_stack;
-    uint32_t counter = 0;
     size_t c_counter = 0;
     bool neg_exp = false;
 
@@ -237,9 +235,9 @@ namespace firefly {
             } else if (neg_exp) {
               neg_exp = false;
             }
-          } else if (op_stack.empty() && tokens.empty())
+          } else if (op_stack.empty() && tokens.empty()) {
             tmp.insert(tmp.begin(), ex);
-          else {
+	  } else {
             while (!op_stack.empty() && op_stack.top() != '(' && get_weight(op_stack.top()) >= get_weight(ex)) {
               tokens.emplace_back(std::string(1, op_stack.top()));
               op_stack.pop();
@@ -256,6 +254,7 @@ namespace firefly {
             }
           }
         }
+
         // Push all open parenthesis to the stack
         else if (ex == '(')
           op_stack.push(ex);
