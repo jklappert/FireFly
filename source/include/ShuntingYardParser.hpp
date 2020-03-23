@@ -152,25 +152,20 @@ namespace firefly {
     void throw_not_declared_var_err(const std::string& var) const;
   };
 
-  namespace operators {
-    enum operators {
+  namespace tokens {
+    enum tokens {
       PLUS,
       MINUS,
       MULT,
       DIV,
       POW,
       NEG_POW,
-      POW_NEG
-    }; /**< The allowed operators as an enum for fast identification. Note that ! means x ! 2 = -x^2 (! == POW_NEG) */
-  }
-
-  namespace operands {
-    enum operands {
+      POW_NEG,
       OPERATOR,
       VARIABLE,
       NEG_VARIABLE,
       NUMBER
-    }; /**< The allowed operands as an enum for fast identification */
+    }; /**< The allowed operands as an enum for fast identification. Note that ! means x ! 2 = -x^2 (! == POW_NEG) and ~ identifies a negative exponent (~ == NEG_POW) */
   }
 
   template<typename FFIntTemp>
@@ -311,65 +306,86 @@ namespace firefly {
 
       for (const auto& token : tokens) {
         switch (token.first) {
-          case operands::OPERATOR : {
+          case tokens::PLUS: {
             // Pop two numbers
             FFIntTemp a = nums.top();
             nums.pop();
             FFIntTemp b = nums.top();
             nums.pop();
-
-            switch (token.second.n) {
-              case operators::PLUS: {
-                nums.push(a + b);
-                break;
-              }
-
-              case operators::MINUS: {
-                nums.push(b - a);
-                break;
-              }
-
-              case operators::MULT: {
-                nums.push(b * a);
-                break;
-              }
-
-              case operators::DIV: {
-                nums.push(b / a);
-                break;
-              }
-
-              case operators::POW: {
-                nums.push(pow(b, a));
-                break;
-              }
-
-              case operators::NEG_POW: {
-                nums.push(b.pow(a.to_neg_int()));
-                break;
-              }
-
-              case operators::POW_NEG: {
-                nums.push(-pow(b, a));
-                break;
-              }
-            }
-
+            nums.push(a + b);
             break;
           }
 
-          case operands::VARIABLE : {
+          case tokens::MINUS: {
+            // Pop two numbers
+            FFIntTemp a = nums.top();
+            nums.pop();
+            FFIntTemp b = nums.top();
+            nums.pop();
+            nums.push(b - a);
+            break;
+          }
+
+          case tokens::MULT: {
+            // Pop two numbers
+            FFIntTemp a = nums.top();
+            nums.pop();
+            FFIntTemp b = nums.top();
+            nums.pop();
+            nums.push(b * a);
+            break;
+          }
+
+          case tokens::DIV: {
+            // Pop two numbers
+            FFIntTemp a = nums.top();
+            nums.pop();
+            FFIntTemp b = nums.top();
+            nums.pop();
+            nums.push(b / a);
+            break;
+          }
+
+          case tokens::POW: {
+            // Pop two numbers
+            FFIntTemp a = nums.top();
+            nums.pop();
+            FFIntTemp b = nums.top();
+            nums.pop();
+            nums.push(pow(b, a));
+            break;
+          }
+
+          case tokens::NEG_POW: {
+            // Pop two numbers
+            FFIntTemp a = nums.top();
+            nums.pop();
+            FFIntTemp b = nums.top();
+            nums.pop();
+            nums.push(b.pow(a.to_neg_int()));
+            break;
+          }
+
+          case tokens::POW_NEG: {
+            FFIntTemp a = nums.top();
+            nums.pop();
+            FFIntTemp b = nums.top();
+            nums.pop();
+            nums.push(-pow(b, a));
+            break;
+          }
+
+          case tokens::VARIABLE : {
             nums.push(values[token.second.n]);
             break;
           }
 
-          case operands::NEG_VARIABLE : {
-            //nums.push(-values[token.second.n]);
+          case tokens::NEG_VARIABLE : {
             nums.push(neg_values[token.second.n]);
             break;
           }
 
-          case operands::NUMBER: {
+          case tokens::NUMBER: {
             nums.push(token.second);
           }
         }

@@ -487,52 +487,52 @@ namespace firefly {
         if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!" || token == "~") {
           switch (token[0]) {
             case '+': {
-              precomp_tokens[i][j] = {operands::OPERATOR, operators::PLUS};
+              precomp_tokens[i][j] = {tokens::PLUS, 0};
               break;
             }
 
             case '-': {
-              precomp_tokens[i][j] = {operands::OPERATOR, operators::MINUS};
+              precomp_tokens[i][j] = {tokens::MINUS, 0};
               break;
             }
 
             case '*': {
-              precomp_tokens[i][j] = {operands::OPERATOR, operators::MULT};
+              precomp_tokens[i][j] = {tokens::MULT, 0};
               break;
             }
 
             case '/': {
               // If the coefficient is a rational number, perform the division just once
-              if (precomp_tokens[i][j - 1].first == operands::NUMBER && precomp_tokens[i][j - 2].first == operands::NUMBER) {
+              if (precomp_tokens[i][j - 1].first == tokens::NUMBER && precomp_tokens[i][j - 2].first == tokens::NUMBER) {
                 FFInt quotient = precomp_tokens[i][j - 2].second / precomp_tokens[i][j - 1].second;
                 j -= 2;
                 t_size -= 2;
                 offset += 2;
                 precomp_tokens[i].pop_back();
                 precomp_tokens[i].pop_back();
-                precomp_tokens[i][j] = {operands::NUMBER, quotient};
-              } else if (precomp_tokens[i][j - 1].first == operands::NUMBER && (precomp_tokens[i][j - 2].first == operands::VARIABLE || precomp_tokens[i][j - 2].first == operands::NEG_VARIABLE)) {
+                precomp_tokens[i][j] = {tokens::NUMBER, quotient};
+              } else if (precomp_tokens[i][j - 1].first == tokens::NUMBER && (precomp_tokens[i][j - 2].first == tokens::VARIABLE || precomp_tokens[i][j - 2].first == tokens::NEG_VARIABLE)) {
                 FFInt inverse = 1 / precomp_tokens[i][j - 1].second;
                 precomp_tokens[i][j - 1].second = inverse;
-                precomp_tokens[i][j] = {operands::OPERATOR, operators::MULT};
+                precomp_tokens[i][j] = {tokens::MULT, 0};
               } else
-                precomp_tokens[i][j] = {operands::OPERATOR, operators::DIV};
+                precomp_tokens[i][j] = {tokens::DIV, 0};
 
               break;
             }
 
             case '^': {
-              precomp_tokens[i][j] = {operands::OPERATOR, operators::POW};
+              precomp_tokens[i][j] = {tokens::POW, 0};
               break;
             }
 
             case '~': {
-              precomp_tokens[i][j] = {operands::OPERATOR, operators::NEG_POW};
+              precomp_tokens[i][j] = {tokens::NEG_POW, 0};
               break;
             }
 
             case '!': {
-              precomp_tokens[i][j] = {operands::OPERATOR, operators::POW_NEG};
+              precomp_tokens[i][j] = {tokens::POW_NEG, 0};
               break;
             }
           }
@@ -544,16 +544,16 @@ namespace firefly {
             if (token[0] == '+')
               tmp.erase(0, 1);
 
-            precomp_tokens[i][j] = {operands::NUMBER, FFInt(mpz_class(tmp))};
+            precomp_tokens[i][j] = {tokens::NUMBER, FFInt(mpz_class(tmp))};
           } else {
             if (token[0] == '-') {
               std::string tmp = token;
               tmp.erase(0, 1);
 
               if (vars_map.find(tmp) != vars_map.end())
-                precomp_tokens[i][j] = {operands::NEG_VARIABLE, vars_map[tmp]};
+                precomp_tokens[i][j] = {tokens::NEG_VARIABLE, vars_map[tmp]};
               else if (std::isdigit(tmp[0]))
-                precomp_tokens[i][j] = {operands::NUMBER, (-FFInt(std::stoull(tmp)))};
+                precomp_tokens[i][j] = {tokens::NUMBER, (-FFInt(std::stoull(tmp)))};
               else
                 throw_not_declared_var_err(tmp);
             } else if (token[0] == '+') {
@@ -561,16 +561,16 @@ namespace firefly {
               tmp.erase(0, 1);
 
               if (vars_map.find(tmp) != vars_map.end())
-                precomp_tokens[i][j] = {operands::VARIABLE, vars_map[tmp]};
+                precomp_tokens[i][j] = {tokens::VARIABLE, vars_map[tmp]};
               else if (std::isdigit(tmp[0]))
-                precomp_tokens[i][j] = {operands::NUMBER, (FFInt(std::stoull(tmp)))};
+                precomp_tokens[i][j] = {tokens::NUMBER, (FFInt(std::stoull(tmp)))};
               else
                 throw_not_declared_var_err(tmp);
             } else {
               if (vars_map.find(token) != vars_map.end())
-                precomp_tokens[i][j] = {operands::VARIABLE, vars_map[token]};
+                precomp_tokens[i][j] = {tokens::VARIABLE, vars_map[token]};
               else if (std::isdigit(token[0]))
-                precomp_tokens[i][j] = {operands::NUMBER, (FFInt(std::stoull(token)))};
+                precomp_tokens[i][j] = {tokens::NUMBER, (FFInt(std::stoull(token)))};
               else
                 throw_not_declared_var_err(token);
             }
