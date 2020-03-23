@@ -558,10 +558,10 @@ namespace firefly {
     size_t tmp_size_factors = parsed_factors.size();
 
     if (verbosity > SILENT) {
-      INFO_MSG("Parsed " + std::to_string(tmp_size_factors) + " factors");
+      INFO_MSG("Parsed " + std::to_string(tmp_size_factors) + " factor(s)");
     }
 
-    logger << "Parsed " << tmp_size_factors << " factors\n";
+    logger << "Parsed " << tmp_size_factors << " factor(s)\n";
 
     factor_scan = false;
 

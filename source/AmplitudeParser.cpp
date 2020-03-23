@@ -320,11 +320,11 @@ namespace firefly {
     functions.shrink_to_fit();
     auto time1 = std::chrono::high_resolution_clock::now();
     INFO_MSG("Parsed replacement table in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
-    INFO_MSG("Found " + std::to_string(required_repl_counter) + " required replacement rules");
+    INFO_MSG("Found " + std::to_string(required_repl_counter) + " required replacement rule(s)");
     INFO_MSG("Found " + std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) + " basis function(s) in total\n");
     logger.open("ff_insert.log", std::ios_base::app);
     logger << "Parsed replacement table in " << std::to_string(std::chrono::duration<double>(time1 - time0).count()) << " s\n";
-    logger << "Found " << std::to_string(required_repl_counter) << " required replacement rules\n";
+    logger << "Found " << std::to_string(required_repl_counter) << " required replacement rule(s)\n";
     logger << "Found " << std::to_string(distinct_master_counter - coef_type::COEF_TYPE_SIZE) << " basis function(s) in total\n\n";
     logger.close();
   }
