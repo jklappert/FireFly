@@ -328,43 +328,41 @@ namespace firefly {
         // Pop two numbers
         FFInt a = nums.top();
         nums.pop();
-        FFInt b = nums.top();
-        nums.pop();
 
         // Evaluate and push the result back to the stack
         switch (token[0]) {
           case '+': {
-            nums.push(a + b);
+            nums.top() += a;
             break;
           }
 
           case '-': {
-            nums.push(b - a);
+	    nums.top() -= a;
             break;
           }
 
           case '*': {
-            nums.push(b * a);
+	    nums.top() *= a;
             break;
           }
 
           case '/': {
-            nums.push(b / a);
+	    nums.top() /= a;
             break;
           }
 
           case '^': {
-            nums.push(b.pow(a));
+	    nums.top() = std::move(nums.top().pow(a));
             break;
           }
 
           case '!': {
-            nums.push(-b.pow(a));
+	    nums.top() = std::move(-nums.top().pow(a));
             break;
           }
 
           case '~': {
-            nums.push(b.pow(-static_cast<int>(a.n)));
+	    nums.top() = std::move(nums.top().pow(a.to_neg_int()));
             break;
           }
         }

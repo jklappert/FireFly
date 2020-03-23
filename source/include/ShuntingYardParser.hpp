@@ -181,43 +181,41 @@ namespace firefly {
           // Pop two numbers
           FFIntTemp a = nums.top();
           nums.pop();
-          FFIntTemp b = nums.top();
-          nums.pop();
 
           // Evaluate and push the result back to the stack
           switch (token[0]) {
             case '+': {
-              nums.push(a + b);
+	      nums.top() += a;
               break;
             }
 
             case '-': {
-              nums.push(b - a);
+	      nums.top() -= a;
               break;
             }
 
             case '*': {
-              nums.push(b * a);
+	      nums.top() *= a;
               break;
             }
 
             case '/': {
-              nums.push(b / a);
+	      nums.top() /= a;
               break;
             }
 
             case '^': {
-              nums.push(b.pow(a));
+	      nums.top() = std::move(nums.top().pow(a));
               break;
             }
 
             case '!': {
-              nums.push(-b.pow(a));
+	      nums.top() = std::move(-nums.top().pow(a));
               break;
             }
 
             case '~': {
-              nums.push(b.pow(a.to_neg_int()));
+	      nums.top() = std::move(nums.top().pow(a.to_neg_int()));
               break;
             }
           }
@@ -307,71 +305,51 @@ namespace firefly {
       for (const auto& token : tokens) {
         switch (token.first) {
           case tokens::PLUS: {
-            // Pop two numbers
             FFIntTemp a = nums.top();
             nums.pop();
-            FFIntTemp b = nums.top();
-            nums.pop();
-            nums.push(a + b);
+            nums.top() += a;
             break;
           }
 
           case tokens::MINUS: {
-            // Pop two numbers
             FFIntTemp a = nums.top();
             nums.pop();
-            FFIntTemp b = nums.top();
-            nums.pop();
-            nums.push(b - a);
+	    nums.top() -= a;
             break;
           }
 
           case tokens::MULT: {
-            // Pop two numbers
             FFIntTemp a = nums.top();
             nums.pop();
-            FFIntTemp b = nums.top();
-            nums.pop();
-            nums.push(b * a);
+            nums.top() *= a;
             break;
           }
 
           case tokens::DIV: {
-            // Pop two numbers
             FFIntTemp a = nums.top();
             nums.pop();
-            FFIntTemp b = nums.top();
-            nums.pop();
-            nums.push(b / a);
+	    nums.top() /= a;
             break;
           }
 
           case tokens::POW: {
-            // Pop two numbers
             FFIntTemp a = nums.top();
             nums.pop();
-            FFIntTemp b = nums.top();
-            nums.pop();
-            nums.push(pow(b, a));
+	    nums.top() = std::move(pow(nums.top(), a));
             break;
           }
 
           case tokens::NEG_POW: {
-            // Pop two numbers
             FFIntTemp a = nums.top();
             nums.pop();
-            FFIntTemp b = nums.top();
-            nums.pop();
-            nums.push(b.pow(a.to_neg_int()));
+	    nums.top() = std::move(nums.top().pow(a.to_neg_int()));
             break;
           }
 
           case tokens::POW_NEG: {
             FFIntTemp a = nums.top();
             nums.pop();
-            FFIntTemp b = nums.top();
-            nums.pop();
-            nums.push(-pow(b, a));
+	    nums.top() = std::move(-pow(nums.top(), a));
             break;
           }
 
