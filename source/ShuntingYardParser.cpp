@@ -245,8 +245,13 @@ namespace firefly {
 
             if (ex == '^' && fun[c_counter + 1] == '(' && fun[c_counter + 2] == '-') {
               neg_exp = true;
-              op_stack.push('~');
-            } else if (ex == '^' && tokens.back().size() > 1 && tokens.back().front() == '-') {
+	      if (tokens.back().size() > 1 && tokens.back().front() == '-' && fun[c_counter - 1] != ')') {
+		tokens.back().erase(tokens.back().begin());
+		op_stack.push(';');
+	      } else {
+                op_stack.push('~');
+	      }
+            } else if (ex == '^' && tokens.back().size() > 1 && tokens.back().front() == '-' && fun[c_counter - 1] != ')') {
               op_stack.push('!');
               tokens.back().erase(tokens.back().begin());
             } else {
@@ -365,6 +370,11 @@ namespace firefly {
 	    nums.top() = std::move(nums.top().pow(a.to_neg_int()));
             break;
           }
+
+          case ';': {
+	    nums.top() = std::move(-nums.top().pow(a.to_neg_int()));
+            break;
+          }
         }
       } else {
         // check then if number has more than 18 digits
@@ -423,6 +433,7 @@ namespace firefly {
       case '^':
       case '!':
       case '~':
+      case ';':
         return 3;
 
       case '/':
@@ -482,7 +493,7 @@ namespace firefly {
       for (uint64_t j = 0; j != t_size; ++j) {
         std::string token = tokens[j + offset];
 
-        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!" || token == "~") {
+        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!" || token == "~" || token == ";") {
           switch (token[0]) {
             case '+': {
               precomp_tokens[i][j] = {tokens::PLUS, 0};
@@ -526,6 +537,11 @@ namespace firefly {
 
             case '~': {
               precomp_tokens[i][j] = {tokens::NEG_POW, 0};
+              break;
+            }
+
+            case ';': {
+              precomp_tokens[i][j] = {tokens::NEG_POW_NEG, 0};
               break;
             }
 

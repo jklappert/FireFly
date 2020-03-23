@@ -161,11 +161,12 @@ namespace firefly {
       POW,
       NEG_POW,
       POW_NEG,
+      NEG_POW_NEG,
       OPERATOR,
       VARIABLE,
       NEG_VARIABLE,
       NUMBER
-    }; /**< The allowed operands as an enum for fast identification. Note that ! means x ! 2 = -x^2 (! == POW_NEG) and ~ identifies a negative exponent (~ == NEG_POW) */
+    }; /**< The allowed operands as an enum for fast identification. Note that ! means x ! 2 = -x^2 (! == POW_NEG) and ~ identifies a negative exponent (~ == NEG_POW), x ; 2 = -x^(-2) (; == NEG_POW_NEG) */
   }
 
   template<typename FFIntTemp>
@@ -216,6 +217,11 @@ namespace firefly {
 
             case '~': {
 	      nums.top() = std::move(nums.top().pow(a.to_neg_int()));
+              break;
+            }
+
+            case ';': {
+	      nums.top() = std::move(-nums.top().pow(a.to_neg_int()));
               break;
             }
           }
@@ -350,6 +356,13 @@ namespace firefly {
             FFIntTemp a = nums.top();
             nums.pop();
 	    nums.top() = std::move(-pow(nums.top(), a));
+            break;
+          }
+
+          case tokens::NEG_POW_NEG: {
+            FFIntTemp a = nums.top();
+            nums.pop();
+	    nums.top() = std::move(-nums.top().pow( a.to_neg_int()));
             break;
           }
 
