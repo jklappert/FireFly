@@ -65,8 +65,8 @@ Changes
  * The `Reconstructor` class can now handle empty black boxes.
 
  * Added pow functions for `FFInt` with a templated power argument. Hence,
- negative integer powers can now be used. We thank Herschel Chawdhry and Philipp
- Maierhoefer for this suggestion.
+ negative integer powers can now be used. We thank Herschel Chawdhry for
+ this suggestion.
 
 Bug fixes
 ---------
