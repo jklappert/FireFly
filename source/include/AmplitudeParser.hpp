@@ -91,7 +91,7 @@ namespace firefly {
      * Parses an expression from a string
      * @param amplitude_string an expression as a string
      */
-    void parse_amplitude_string(const std::string& amplitude_string);
+    void parse_amplitude_string(std::string& amplitude_string);
     /**
      * Parses an expression from a file
      * @param amplitude_file the path to a file
@@ -102,7 +102,7 @@ namespace firefly {
      * @param amplitude an expression as a string
      * @return a vector of pairs of strings where the first entry is the function and the second the factor
      */
-    std::vector<std::pair<std::string, std::string>> parse_string(const std::string& amplitude);
+    std::vector<std::pair<std::string, std::string>> parse_string(std::string& amplitude, bool replacement = false);
     /**
      * Parses a replacement list from a file
      * @param ibp_table the path to a replacement list
@@ -112,7 +112,7 @@ namespace firefly {
      * Parses a replacement list from a string
      * @param ibp_table a replacement list as a string
      */
-    void parse_ibp_table_string(const std::string& ibp_table);
+    void parse_ibp_table_string(std::string& ibp_table);
     /**
      * Checks for functions that do not have replacement rules
      * @return the number of functions without replacement rules

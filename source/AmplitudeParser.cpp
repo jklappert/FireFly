@@ -59,7 +59,7 @@ namespace firefly {
     }
   }
 
-  void AmplitudeParser::parse_amplitude_string(const std::string& amplitude_string) {
+  void AmplitudeParser::parse_amplitude_string(std::string& amplitude_string) {
     auto time0 = std::chrono::high_resolution_clock::now();
     auto res = parse_string(amplitude_string);
     functions.reserve(functions.size() + res.size());
@@ -90,23 +90,27 @@ namespace firefly {
     logger.close();
   }
 
-  std::vector<std::pair<std::string, std::string>> AmplitudeParser::parse_string(const std::string& amplitude) {
+  std::vector<std::pair<std::string, std::string>> AmplitudeParser::parse_string(std::string& amplitude, bool replacement) {
     std::vector<std::pair<std::string, std::string>> parsed_integrals {};
 
-    std::string amplitude_c = amplitude;
-    amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), ' '), amplitude_c.end());
-    amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '\t'), amplitude_c.end());
-    amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '\n'), amplitude_c.end());
-    amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '{'), amplitude_c.end());
-    amplitude_c.erase(std::remove(amplitude_c.begin(), amplitude_c.end(), '}'), amplitude_c.end());
-    std::size_t amplitude_size = amplitude_c.size();
+    if (!replacement) {
+      amplitude.erase(std::remove(amplitude.begin(), amplitude.end(), ' '), amplitude.end());
+      amplitude.erase(std::remove(amplitude.begin(), amplitude.end(), '\t'), amplitude.end());
+      amplitude.erase(std::remove(amplitude.begin(), amplitude.end(), '\n'), amplitude.end());
+      if (amplitude[0] == '{')
+        amplitude.erase(0, 1);
+      if (amplitude[amplitude.size() - 1] == '}')
+        amplitude.erase(amplitude.size() - 1, 1);
+    }
+    
+    std::size_t amplitude_size = amplitude.size();
 
-    if (amplitude_c.length() > 0) {
+    if (amplitude.length() > 0) {
       std::size_t old_pos = 0;
-      std::size_t found = amplitude_c.find(']');
+      std::size_t found = amplitude.find(']');
 
       while (found != std::string::npos) {
-        std::string seed = amplitude_c.substr(old_pos, found + 1 - old_pos);
+        std::string seed = amplitude.substr(old_pos, found + 1 - old_pos);
         std::size_t fo = seed.find('[');
         std::string int_fam = seed.substr(0, fo);
 
@@ -128,11 +132,11 @@ namespace firefly {
 
             if (prefac == "*") {
               coefficient = int_fam.substr(0, int_fam.size() - fam.size() - 1);
-            } else if (found + 1 < amplitude_size - 1 && amplitude_c.substr(found + 1, 1) == "*") {
-              std::size_t fo_2 = amplitude_c.find('[', found + 1);
+            } else if (found + 1 < amplitude_size - 1 && amplitude.substr(found + 1, 1) == "*") {
+              std::size_t fo_2 = amplitude.find('[', found + 1);
 
               if (fo_2 != std::string::npos) {
-                std::string seed_2 = amplitude_c.substr(found + 1, fo_2 - (found + 1));
+                std::string seed_2 = amplitude.substr(found + 1, fo_2 - (found + 1));
 
                 for (const auto& tmp_fam : integral_families) {
                   std::size_t tmp_found = seed_2.rfind(tmp_fam);
@@ -147,7 +151,7 @@ namespace firefly {
                   }
                 }
               } else {
-                coefficient = amplitude_c.substr(found + 2);
+                coefficient = amplitude.substr(found + 2);
               }
             } else
               coefficient = "1";
@@ -171,7 +175,7 @@ namespace firefly {
         }
 
         old_pos = found + 1;
-        found = amplitude_c.find(']', found + 1);
+        found = amplitude.find(']', found + 1);
       }
     } else {
       ERROR_MSG("Expression has no content");
@@ -215,7 +219,7 @@ namespace firefly {
 
     size_t counter = 0;
 
-    while (std::getline(infile, line, '}')) {
+    while (std::getline(infile, line, '\0')) {
       if (counter == 1)
         break;
 
@@ -224,30 +228,31 @@ namespace firefly {
     }
   }
 
-  void AmplitudeParser::parse_ibp_table_string(const std::string& ibp_table) {
+  void AmplitudeParser::parse_ibp_table_string(std::string& ibp_table) {
     auto time0 = std::chrono::high_resolution_clock::now();
 
-    std::string ibp_table_c = ibp_table;
-    ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), ' '), ibp_table_c.end());
-    ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '\t'), ibp_table_c.end());
-    ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '\n'), ibp_table_c.end());
-    ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '{'), ibp_table_c.end());
-    ibp_table_c.erase(std::remove(ibp_table_c.begin(), ibp_table_c.end(), '}'), ibp_table_c.end());
+    ibp_table.erase(std::remove(ibp_table.begin(), ibp_table.end(), ' '), ibp_table.end());
+    ibp_table.erase(std::remove(ibp_table.begin(), ibp_table.end(), '\t'), ibp_table.end());
+    ibp_table.erase(std::remove(ibp_table.begin(), ibp_table.end(), '\n'), ibp_table.end());
+    if (ibp_table[0] == '{')
+      ibp_table.erase(0, 1);
+    if (ibp_table[ibp_table.size() - 1] == '}')
+      ibp_table.erase(ibp_table.size() - 1, 1);
 
-    size_t pos = ibp_table_c.find("->");
+    size_t pos = ibp_table.find("->");
     size_t old_pos = 0;
     size_t required_repl_counter = 0;
 
     while (pos != std::string::npos) {
-      std::string lhs = ibp_table_c.substr(old_pos, pos - old_pos);
+      std::string lhs = ibp_table.substr(old_pos, pos - old_pos);
       std::string rhs;
       old_pos = pos + 2;
-      size_t tmp_pos = ibp_table_c.find("->", old_pos);
+      size_t tmp_pos = ibp_table.find("->", old_pos);
 
       // reached end of table
       if (tmp_pos == std::string::npos) {
-        rhs = ibp_table_c.substr(old_pos);
-        auto repl_lhs = parse_string(lhs);
+        rhs = ibp_table.substr(old_pos);
+        auto repl_lhs = parse_string(lhs, true);
 
         if (integrals.find(repl_lhs[0].first) != integrals.end()) {
           if (repl_integrals.find(repl_lhs[0].first) != repl_integrals.end()) {
@@ -261,7 +266,7 @@ namespace firefly {
           repl_integrals.emplace(repl_lhs[0].first);
 
           ++required_repl_counter;
-          auto repl_rhs = parse_string(rhs);
+          auto repl_rhs = parse_string(rhs, true);
 
           for (const auto& mi_coef : repl_rhs) {
             if (masters.find(mi_coef.first) == masters.end()) {
@@ -279,14 +284,14 @@ namespace firefly {
 
         break;
       } else {
-        tmp_pos = ibp_table_c.rfind("[", tmp_pos);
-        tmp_pos = ibp_table_c.rfind(",", tmp_pos);
-        rhs = ibp_table_c.substr(old_pos, tmp_pos - old_pos);
+        tmp_pos = ibp_table.rfind("[", tmp_pos);
+        tmp_pos = ibp_table.rfind(",", tmp_pos);
+        rhs = ibp_table.substr(old_pos, tmp_pos - old_pos);
         old_pos = tmp_pos;
-        pos = ibp_table_c.find("->", old_pos);
+        pos = ibp_table.find("->", old_pos);
       }
 
-      auto repl_lhs = parse_string(lhs);
+      auto repl_lhs = parse_string(lhs, true);
 
       if (integrals.find(repl_lhs[0].first) != integrals.end()) {
         if (repl_integrals.find(repl_lhs[0].first) != repl_integrals.end()) {
@@ -300,7 +305,7 @@ namespace firefly {
         repl_integrals.emplace(repl_lhs[0].first);
 
         ++required_repl_counter;
-        auto repl_rhs = parse_string(rhs);
+        auto repl_rhs = parse_string(rhs, true);
 
         for (const auto& mi_coef : repl_rhs) {
           if (masters.find(mi_coef.first) == masters.end()) {
