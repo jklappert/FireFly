@@ -70,10 +70,10 @@ namespace firefly {
      *  @return The values of the parsed functions as a vector of vectors.
      */
     template<typename FFIntTemp>
-    std::vector<FFIntTemp> evaluate_pre(const std::vector<FFIntTemp>& values) const;
+    std::vector<FFIntTemp> evaluate_pre(const std::vector<FFIntTemp>& values) const noexcept;
     /**
      *  Returns the reverse polish notation of the parsed functions
-     *  @return A vector of all parsed functions in reverse polish notation with changed variable names according to int_var_map
+     *  @return A vector of all parsed functions in reverse polish notation. Note the additional operators '~', '!', and ';'.
      */
     std::vector<std::vector<std::string>> get_rp_functions() const;
     /**
@@ -295,7 +295,7 @@ namespace firefly {
   }
 
   template<typename FFIntTemp>
-  std::vector<FFIntTemp> ShuntingYardParser::evaluate_pre(const std::vector<FFIntTemp>& values) const {
+  std::vector<FFIntTemp> ShuntingYardParser::evaluate_pre(const std::vector<FFIntTemp>& values) const noexcept {
     std::vector<FFIntTemp> res;
     res.reserve(functions.size());
     std::vector<FFIntTemp> neg_values;
