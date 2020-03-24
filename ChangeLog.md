@@ -53,7 +53,7 @@ Changes
 
  * Writing of saved states improved (single threaded to be done)
 
- * CMake searching for GMP, Flint, ...
+ * Added more sophisticated CMake scripts that search for GMP and FLINT.
 
  * The required C++ standard changed to C++-14.
 
