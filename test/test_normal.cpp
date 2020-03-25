@@ -125,17 +125,17 @@ int main() {
   } else {
     ShuntingYardParser p_2("../../parser_test/s_y_1_v.m", {"x"});
     BlackBoxUser b_2(p_2, 2);
-    MPIWorker(1, std::thread::hardware_concurrency(), b_2);
+    MPIWorker<BlackBoxUser>(1, std::thread::hardware_concurrency(), b_2);
     RatReconst::reset();
 
     ShuntingYardParser p_0("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_0(p_0, 0);
-    MPIWorker(4, std::thread::hardware_concurrency(), b_0);
+    MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_0);
     RatReconst::reset();
 
     ShuntingYardParser p_0_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_0_1(p_0, 2);
-    MPIWorker(4, std::thread::hardware_concurrency(), b_0_1);
+    MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_0_1);
   }
 
   MPI_Finalize();

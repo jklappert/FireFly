@@ -19,7 +19,6 @@
 #include "DenseSolver.hpp"
 #include "Reconstructor.hpp"
 #include "ShuntingYardParser.hpp"
-#include "Tests.hpp"
 #include "tinydir.h"
 
 #ifdef WITH_MPI
@@ -48,14 +47,6 @@ namespace firefly {
       calc_lu_decomposition(mat, p, 2);
       // Compute determinant of mat
       result.emplace_back(calc_determinant_lu(mat, p, 2));
-
-      // Some functions from Test.cpp
-      result.emplace_back(singular_solver(values));
-      result.emplace_back(n_eq_1(values[0]));
-      result.emplace_back(n_eq_4(values));
-      result.emplace_back(gghh(values));
-      result.emplace_back(pol_n_eq_3(values));
-      result.emplace_back(ggh(values));
 
       return result;
     }
@@ -161,7 +152,7 @@ int main() {
   } else {
     ShuntingYardParser p_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1(p_1, 6);
-    MPIWorker(4, std::thread::hardware_concurrency(), b_1);
+    MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_1);
   }
 
   MPI_Finalize();

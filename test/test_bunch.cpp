@@ -105,12 +105,12 @@ int main() {
   } else {
     ShuntingYardParser p_2("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_2(p_2);
-    MPIWorker(4, std::thread::hardware_concurrency(), 4, b_2);
+    MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), 4, b_2);
     RatReconst::reset();
 
     ShuntingYardParser p_0("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_0(p_0);
-    MPIWorker(4, std::thread::hardware_concurrency(), 4, b_0);
+    MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), 4, b_0);
   }
 
   MPI_Finalize();

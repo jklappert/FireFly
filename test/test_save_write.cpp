@@ -206,14 +206,14 @@ int main() {
     INFO_MSG("Test saving states and starting from them in prime 1");
     ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_4(p_4, 4);
-    Reconstructor r_4(4, 4, b_4);
+    Reconstructor<BlackBoxUser> r_4(4, 4, b_4);
     r_4.enable_shift_scan();
     r_4.set_tags();
     r_4.reconstruct();
   } else {
     ShuntingYardParser p_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1(p_1, 4);
-    MPIWorker(4, std::thread::hardware_concurrency(), b_1);
+    MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_1);
   }
 
   MPI_Finalize();
