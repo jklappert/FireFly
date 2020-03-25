@@ -116,7 +116,7 @@ namespace firefly {
         line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
 
         if (line.length() > 0) {
-          line = validate(line, line_c);
+          validate(line, line_c);
           parse(line);
           ++parsed_fun_c;
 
@@ -148,7 +148,7 @@ namespace firefly {
     } else {
       for (size_t i = 0; i != funs.size(); ++i) {
         std::string fun = funs[i];
-        fun = validate(fun, i);
+        validate(fun, i);
         parse(fun);
         ++parsed_fun_c;
 
@@ -193,8 +193,8 @@ namespace firefly {
     }
   }
 
-  void ShuntingYardParser::parse(const std::string& fun_) {
-    std::string fun = fun_;
+  void ShuntingYardParser::parse(std::string& fun) {
+    //    std::string fun = fun_;
 
     // Check for global signs
     if (fun.size() > 2 && (fun[0] == '+' || fun[0] == '-') && fun[1] == '(') {
@@ -306,8 +306,8 @@ namespace firefly {
     functions.emplace_back(tokens);
   }
 
-  void ShuntingYardParser::parse_function(const std::string& fun, const std::vector<std::string>& vars, bool validate_fun) {
-    std::string fun_ = fun;
+  void ShuntingYardParser::parse_function(std::string& fun, const std::vector<std::string>& vars, bool validate_fun) {
+    //    std::string fun_ = fun;
 
     if (vars_map.empty()) {
       for (uint32_t i = 0; i != vars.size(); ++i) {
@@ -316,7 +316,7 @@ namespace firefly {
     }
 
     if (validate_fun)
-      fun_ = validate(fun_, 0);
+      validate(fun, 0);
 
     parse(fun);
 
@@ -594,9 +594,9 @@ namespace firefly {
     }
   }
 
-  std::string ShuntingYardParser::validate(const std::string& line, uint64_t exp_n) {
-    size_t size = line.size() + 1;
-    std::string r = line;
+  void ShuntingYardParser::validate(std::string& r, uint64_t exp_n) {
+    size_t size = r.size() + 1;
+    //std::string r = line;
     std::stack<int> st;
     int i = 0;
 
@@ -639,7 +639,8 @@ namespace firefly {
       std::exit(EXIT_FAILURE);
     }
 
-    std::string result = "";
+    r.erase(std::remove(r.begin(), r.end(), '$'), r.end());
+    /*std::string result = "";
 
     for (size_t tmp = 0; tmp != size; ++tmp) {
       if (r[tmp] == '$')
@@ -649,8 +650,9 @@ namespace firefly {
     }
 
     result.shrink_to_fit();
+    r = std::move(result);*/
     //std::cout << "validate\n" << line << "\n" << result << "\n";
-    return result;
+    //return result;
   }
 
   void ShuntingYardParser::throw_not_declared_var_err(const std::string& var) const {

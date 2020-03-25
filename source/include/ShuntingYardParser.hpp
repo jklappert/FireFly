@@ -52,11 +52,11 @@ namespace firefly {
     ShuntingYardParser();
     /**
      *  Parses a rational function given as a string and validates the function on request
-     *  @param fun The rational function to be parsed as a string
+     *  @param fun_ The rational function to be parsed as a string
      *  @param vars A vector which specifies the variables of the function
      *  @param validate_fun validates the function if set to true
      */
-    void parse_function(const std::string& fun, const std::vector<std::string>& vars, bool validate_fun = false);
+    void parse_function(std::string& fun_, const std::vector<std::string>& vars, bool validate_fun = false);
     /**
      *  Evaluates all functions for a given parameter point and returns their result.
      *  @param values A vector of FFIntTemp objects at which the parsed functions should be evaluated.
@@ -136,15 +136,15 @@ namespace firefly {
     bool is_variable(const char c) const;
     /**
      *  Converts a function in reverse polish notation
-     *  @param fun_ The function which should be converted
+     *  @param fun The function which should be converted
      */
-    void parse(const std::string& fun_);
+    void parse(std::string& fun);
     /**
      *  Checks expression for redundant parenthesis, removes them and throws an error if one encounters a mismatch of parenthesis
-     *  @param line the expression as a string
+     *  @param r the expression as a string
      *  @param exp_n the expression number
      */
-    std::string validate(const std::string& line, uint64_t exp_n);
+    void validate(std::string& r, uint64_t exp_n);
     /**
      *  Exits the program since a variable was not declared
      *  @param var the undeclared variable

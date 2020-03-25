@@ -460,7 +460,8 @@ namespace firefly {
       }
 
       s_y_fun = ShuntingYardParser();
-      s_y_fun.parse_function(generate_horner_coefs(0, coefs_n_m_1, vars), vars);
+      std::string tmp_ho = generate_horner_coefs(0, coefs_n_m_1, vars);
+      s_y_fun.parse_function(tmp_ho, vars);
       s_y_fun.precompute_tokens();
     }
   }
