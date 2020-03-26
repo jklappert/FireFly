@@ -184,6 +184,10 @@ int main(int argc, char* argv[]) {
   // Build the black boxes and start reconstruction
   size_t masters = ap.check_for_unreplaced_masters();
 
+  std::ofstream basis_f_file;
+  basis_f_file.open("basis_functions");
+  basis_f_file.close();
+
   if (!no_interpolation) {
     std::ofstream file;
     file.open("out.m");
@@ -191,6 +195,10 @@ int main(int argc, char* argv[]) {
     file.close();
 
     for (size_t i = 0; i != masters; ++i) {
+      basis_f_file.open("basis_functions", std::ios_base::app);
+      basis_f_file << ap.get_master(i) << "\n";
+      basis_f_file.close();
+
       if (skip_functions.find(ap.get_master(i)) != skip_functions.end()) {
         INFO_MSG("Skipping basis function: " + ap.get_master(i));
         logger.open("ff_insert.log", std::ios_base::app);
@@ -301,6 +309,9 @@ int main(int argc, char* argv[]) {
     mkdir("coefficients", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     for (size_t i = 0; i != masters; ++i) {
+      basis_f_file.open("basis_functions", std::ios_base::app);
+      basis_f_file << ap.get_master(i) << "\n";
+      basis_f_file.close();
       std::ofstream coef_file;
       std::string file_name = "coefficients/" + ap.get_master(i) + ".m";
       coef_file.open(file_name.c_str());
