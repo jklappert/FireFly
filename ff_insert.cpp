@@ -21,7 +21,7 @@
 #include <sys/stat.h>
 
 using namespace firefly;
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   auto time0 = std::chrono::high_resolution_clock::now();
   uint32_t n_threads = 1;
   uint32_t bs = 1;
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     std::exit(EXIT_FAILURE);
   }
 
-  std::vector<std::string> families{};
+  std::vector<std::string> families {};
 
   fam_file.open("config/functions");
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     std::exit(EXIT_FAILURE);
   }
 
-  std::vector<std::string> vars{};
+  std::vector<std::string> vars {};
 
   var_file.open("config/vars");
 
@@ -131,6 +131,27 @@ int main(int argc, char *argv[]) {
   }
 
   var_file.close();
+
+  // Check for a skip file
+  std::ifstream skip_file_test("config/skip_functions");
+  std::ifstream skip_file;
+  std::unordered_set<std::string> skip_functions {};
+
+  if (skip_file_test.good()) {
+    skip_file.open("config/skip_functions");
+
+    while (std::getline(skip_file, line, '\n')) {
+      line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+
+      if (line.size() != 0 && line[0] != '#')
+        skip_functions.emplace(line);
+    }
+
+    skip_file.close();
+
+    INFO_MSG("Skipping reconstruction of " + std::to_string(skip_functions.size()) + " basis function(s)\n");
+    logger << "Skipping reconstruction of " << std::to_string(skip_functions.size()) << " basis function(s)\n\n";
+  }
 
   logger.close();
   // Construct the amplitude parser
@@ -156,7 +177,7 @@ int main(int argc, char *argv[]) {
 
   tinydir_close(&dir);
 
-  for (const auto & file : files) {
+  for (const auto& file : files) {
     ap.parse_ibp_table_file("replacements/" + file);
   }
 
@@ -170,75 +191,82 @@ int main(int argc, char *argv[]) {
     file.close();
 
     for (size_t i = 0; i != masters; ++i) {
-      if (i == 0) {
-        INFO_MSG("Reconstructing coefficient of basis function: " + ap.get_master(i) + "\n");
+      if (skip_functions.find(ap.get_master(i)) != skip_functions.end()) {
+        INFO_MSG("Skipping basis function: " + ap.get_master(i));
         logger.open("ff_insert.log", std::ios_base::app);
-        logger << "Reconstructing coefficient of basis function: " + ap.get_master(i) + "\n";
+        logger << "Skipping basis function: " + ap.get_master(i) + "\n\n";
         logger.close();
-      }
-
-      auto bb = ap.build_black_box(i);
-
-      // Construct the reconstructor
-      Reconstructor<FFAmplitudeBlackBox> reconst(bb.n, n_threads, bs, bb);
-
-      // Settings
-      if (factor_scan)
-        reconst.enable_factor_scan();
-
-      reconst.enable_shift_scan();
-
-      bool renamed_ff_save = false;
-
-      if (save_mode) {
-        std::string tmp = "ff_save_" + ap.get_master(i);
-        struct stat buffer;
-
-        if (stat(tmp.c_str(), &buffer) == 0) {
-          struct stat buffer_2;
-
-          if (stat("ff_save", &buffer_2) == 0) {
-            std::rename("ff_save", "ff_save_tmp");
-            renamed_ff_save = true;
-          }
-
-          std::rename(tmp.c_str(), "ff_save");
+      } else {
+        if (i == 0) {
+          INFO_MSG("Reconstructing coefficient of basis function: " + ap.get_master(i) + "\n");
+          logger.open("ff_insert.log", std::ios_base::app);
+          logger << "Reconstructing coefficient of basis function: " + ap.get_master(i) + "\n";
+          logger.close();
         }
 
-        reconst.set_tags({ap.get_master(i)});
-        reconst.resume_from_saved_state();
-      }
+        auto bb = ap.build_black_box(i);
 
-      // Reconstruct
-      reconst.reconstruct();
+        // Construct the reconstructor
+        Reconstructor<FFAmplitudeBlackBox> reconst(bb.n, n_threads, bs, bb);
 
-      std::vector<RationalFunction> results = reconst.get_result();
-      file.open("out.m", std::ios_base::app);
+        // Settings
+        if (factor_scan)
+          reconst.enable_factor_scan();
 
-      if (!results.back().zero())
-        file <<  "+ " << ap.get_master(i) << "*" + results.back().generate_horner(vars) << "\n";
+        reconst.enable_shift_scan();
 
-      file.close();
+        bool renamed_ff_save = false;
 
-      if (save_mode) {
-        std::string tmp = "ff_save_" + ap.get_master(i);
-        std::rename("ff_save", tmp.c_str());
+        if (save_mode) {
+          std::string tmp = "ff_save_" + ap.get_master(i);
+          struct stat buffer;
 
-        if (renamed_ff_save)
-          std::rename("ff_save_tmp", "ff_save");
-      }
+          if (stat(tmp.c_str(), &buffer) == 0) {
+            struct stat buffer_2;
 
-      RatReconst::reset();
+            if (stat("ff_save", &buffer_2) == 0) {
+              std::rename("ff_save", "ff_save_tmp");
+              renamed_ff_save = true;
+            }
 
-      std::ifstream in("firefly.log");
+            std::rename(tmp.c_str(), "ff_save");
+          }
 
-      if (in.good()) {
-        std::string old_log((std::istreambuf_iterator<char>(in)),
-                            (std::istreambuf_iterator<char>()));
-        logger.open("ff_insert.log", std::ios_base::app);
-        logger << old_log << "\n";
-        logger << "-------------------------------------------------------------\n\n";
-        logger.close();
+          reconst.set_tags({ap.get_master(i)});
+          reconst.resume_from_saved_state();
+        }
+
+        // Reconstruct
+        reconst.reconstruct();
+
+        std::vector<RationalFunction> results = reconst.get_result();
+        file.open("out.m", std::ios_base::app);
+
+        if (!results.back().zero())
+          file <<  "+ " << ap.get_master(i) << "*" + results.back().generate_horner(vars) << "\n";
+
+        file.close();
+
+        if (save_mode) {
+          std::string tmp = "ff_save_" + ap.get_master(i);
+          std::rename("ff_save", tmp.c_str());
+
+          if (renamed_ff_save)
+            std::rename("ff_save_tmp", "ff_save");
+        }
+
+        RatReconst::reset();
+
+        std::ifstream in("firefly.log");
+
+        if (in.good()) {
+          std::string old_log((std::istreambuf_iterator<char>(in)),
+                              (std::istreambuf_iterator<char>()));
+          logger.open("ff_insert.log", std::ios_base::app);
+          logger << old_log << "\n";
+          logger << "-------------------------------------------------------------\n\n";
+          logger.close();
+        }
       }
 
       if (i + 1 != masters) {
