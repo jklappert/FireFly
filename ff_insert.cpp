@@ -355,14 +355,21 @@ int main(int argc, char* argv[]) {
       mkdir("coefficients", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
       for (size_t i = 0; i != masters; ++i) {
-        basis_f_file.open("basis_functions", std::ios_base::app);
-        basis_f_file << ap.get_master(i) << "\n";
-        basis_f_file.close();
-        std::ofstream coef_file;
-        std::string file_name = "coefficients/" + ap.get_master(i) + ".m";
-        coef_file.open(file_name.c_str());
-        coef_file << "{\n" << ap.get_master(i) + "*(" << ap.get_unsimplified_coef(i) << ")\n}\n";
-        coef_file.close();
+          basis_f_file.open("basis_functions", std::ios_base::app);
+          basis_f_file << ap.get_master(i) << "\n";
+          basis_f_file.close();
+        if (skip_functions.find(ap.get_master(i)) != skip_functions.end()) {
+          INFO_MSG("Skipping basis function: " + ap.get_master(i));
+          logger.open("ff_insert.log", std::ios_base::app);
+          logger << "Skipping basis function: " + ap.get_master(i) + "\n\n";
+          logger.close();
+        } else {
+          std::ofstream coef_file;
+          std::string file_name = "coefficients/" + ap.get_master(i) + ".m";
+          coef_file.open(file_name.c_str());
+          coef_file << "{\n" << ap.get_master(i) + "*(" << ap.get_unsimplified_coef(i) << ")\n}\n";
+          coef_file.close();
+	}
       }
 
       INFO_MSG("Unsimplified coefficients written to 'coefficients' directory");
