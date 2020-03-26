@@ -372,6 +372,8 @@ int main(int argc, char* argv[]) {
       logger.close();
       std::string new_log_name = "ff_insert_" + fn + ".log";
       std::rename("ff_insert.log", new_log_name.c_str());
+      std::string new_basis_functions_name = "basis_functions_" + fn;
+      std::rename("basis_functions", new_basis_functions_name.c_str());
     }
   }
 
