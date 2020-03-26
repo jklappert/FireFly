@@ -190,8 +190,7 @@ int main(int argc, char* argv[]) {
 
   tinydir_close(&expression_dir);
 
-  for (size_t j = 0; j != expression_paths.size(); ++j) {
-    std::cout << expression_paths.size() << " " << expression_files.size() << "\n";
+  for (size_t j = 0; j != expression_paths.size(); ++j)
     std::string expression = expression_paths[j];
     std::string fn = expression_files[j];
     // Construct the amplitude parser
