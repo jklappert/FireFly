@@ -97,12 +97,14 @@ namespace firefly {
       amplitude.erase(std::remove(amplitude.begin(), amplitude.end(), ' '), amplitude.end());
       amplitude.erase(std::remove(amplitude.begin(), amplitude.end(), '\t'), amplitude.end());
       amplitude.erase(std::remove(amplitude.begin(), amplitude.end(), '\n'), amplitude.end());
+
       if (amplitude[0] == '{')
         amplitude.erase(0, 1);
+
       if (amplitude[amplitude.size() - 1] == '}')
         amplitude.erase(amplitude.size() - 1, 1);
     }
-    
+
     std::size_t amplitude_size = amplitude.size();
 
     if (amplitude.length() > 0) {
@@ -234,8 +236,10 @@ namespace firefly {
     ibp_table.erase(std::remove(ibp_table.begin(), ibp_table.end(), ' '), ibp_table.end());
     ibp_table.erase(std::remove(ibp_table.begin(), ibp_table.end(), '\t'), ibp_table.end());
     ibp_table.erase(std::remove(ibp_table.begin(), ibp_table.end(), '\n'), ibp_table.end());
+
     if (ibp_table[0] == '{')
       ibp_table.erase(0, 1);
+
     if (ibp_table[ibp_table.size() - 1] == '}')
       ibp_table.erase(ibp_table.size() - 1, 1);
 
@@ -372,44 +376,52 @@ namespace firefly {
     std::string tmp_fun = "";
 
     for (size_t i = 0; i != distinct_integral_counter; ++i) {
-      std::string tmp_coef = "+(";
       bool got_master = false;
 
-      for (const auto& mi_map : amplitude_mapping.at(i)) {
-        bool pref_done = false;
-        bool got_pref = false;
-        bool got_fun = false;
+      const auto tmp_mi_map = amplitude_mapping.at(i);
 
-        if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP) {
-          if (got_pref)
-            tmp_coef += "+(" + functions[mi_map.first] + ")";
-          else {
-            tmp_coef += "(" + functions[mi_map.first] + ")";
-            got_pref = true;
-          }
-        } else {
-          if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
-            if (!pref_done) {
-              pref_done = true;
-              tmp_coef += ")*(";
-            }
-
-            if (got_fun)
-              tmp_coef += "+(" + functions[mi_map.first] + ")";
-            else {
-              tmp_coef += "(" + functions[mi_map.first] + ")";
-              got_fun = true;
-            }
-
-            got_master = true;
-          }
+      for (const auto& mi_map : tmp_mi_map) {
+        if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
+          got_master = true;
         }
       }
 
-      tmp_coef += ")";
+      if (got_master) {
+        std::string tmp_coef = "+(";
 
-      if (got_master)
+        for (const auto& mi_map : tmp_mi_map) {
+          bool pref_done = false;
+          bool got_pref = false;
+          bool got_fun = false;
+
+          if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP) {
+            if (got_pref)
+              tmp_coef += "+(" + functions[mi_map.first] + ")";
+            else {
+              tmp_coef += "(" + functions[mi_map.first] + ")";
+              got_pref = true;
+            }
+          } else {
+            if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
+              if (!pref_done) {
+                pref_done = true;
+                tmp_coef += ")*(";
+              }
+
+              if (got_fun)
+                tmp_coef += "+(" + functions[mi_map.first] + ")";
+              else {
+                tmp_coef += "(" + functions[mi_map.first] + ")";
+                got_fun = true;
+              }
+            }
+          }
+        }
+
+        tmp_coef += ")";
+
         tmp_fun += tmp_coef;
+      }
     }
 
     return tmp_fun;
@@ -419,44 +431,52 @@ namespace firefly {
     std::string tmp_fun = "";
 
     for (size_t i = 0; i != distinct_integral_counter; ++i) {
-      std::string tmp_coef = "+(";
       bool got_master = false;
 
-      for (const auto& mi_map : amplitude_mapping.at(i)) {
-        bool pref_done = false;
-        bool got_pref = false;
-        bool got_fun = false;
+      const auto tmp_mi_map = amplitude_mapping.at(i);
 
-        if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP) {
-          if (got_pref)
-            tmp_coef += "+(" + functions[mi_map.first] + ")";
-          else {
-            tmp_coef += "(" + functions[mi_map.first] + ")";
-            got_pref = true;
-          }
-        } else {
-          if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
-            if (!pref_done) {
-              pref_done = true;
-              tmp_coef += ")*(";
-            }
-
-            if (got_fun)
-              tmp_coef += "+(" + functions[mi_map.first] + ")";
-            else {
-              tmp_coef += "(" + functions[mi_map.first] + ")";
-              got_fun = true;
-            }
-
-            got_master = true;
-          }
+      for (const auto& mi_map : tmp_mi_map) {
+        if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
+          got_master = true;
         }
       }
 
-      tmp_coef += ")";
+      if (got_master) {
+        std::string tmp_coef = "+(";
 
-      if (got_master)
+        for (const auto& mi_map : tmp_mi_map) {
+          bool pref_done = false;
+          bool got_pref = false;
+          bool got_fun = false;
+
+          if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP) {
+            if (got_pref)
+              tmp_coef += "+(" + functions[mi_map.first] + ")";
+            else {
+              tmp_coef += "(" + functions[mi_map.first] + ")";
+              got_pref = true;
+            }
+          } else {
+            if (mi_map.second - coef_type::COEF_TYPE_SIZE == master) {
+              if (!pref_done) {
+                pref_done = true;
+                tmp_coef += ")*(";
+              }
+
+              if (got_fun)
+                tmp_coef += "+(" + functions[mi_map.first] + ")";
+              else {
+                tmp_coef += "(" + functions[mi_map.first] + ")";
+                got_fun = true;
+              }
+            }
+          }
+        }
+
+        tmp_coef += ")";
+
         tmp_fun += tmp_coef;
+      }
     }
 
     return FFAmplitudeBlackBox(vars, {tmp_fun});
