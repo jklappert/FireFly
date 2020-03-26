@@ -384,7 +384,7 @@ int main(int argc, char* argv[]) {
             std::ofstream coef_file;
             std::string file_name = "coefficients/" + ap.get_master(i) + ".m";
             coef_file.open(file_name.c_str());
-            coef_file << "{\n" << ap.get_master(i) + "*(" << ap.get_unsimplified_coef(i) << ")\n}\n";
+            coef_file << "{\n + " << ap.get_master(i) + "*(" << ap.get_unsimplified_coef(i) << ")\n}\n";
             coef_file.close();
           }
         }
