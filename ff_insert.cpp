@@ -318,7 +318,7 @@ int main(int argc, char* argv[]) {
             logger << "-------------------------------------------------------------\n\n";
             logger.close();
           }
-        }
+	}
 
         if (i + 1 != masters) {
           std::cout << "\n";
@@ -343,6 +343,7 @@ int main(int argc, char* argv[]) {
 	std::remove("ff_insert.log");
         std::remove("basis_functions");
         std::remove("firefly.log");
+	std::remove(file_name.c_str());
       } else {
         auto time1 = std::chrono::high_resolution_clock::now();
         INFO_MSG("Reconstructed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
