@@ -227,6 +227,8 @@ int main(int argc, char* argv[]) {
     basis_f_file.open("basis_functions");
     basis_f_file.close();
 
+    bool skipped = false;
+
     if (!no_interpolation) {
       std::ofstream file;
       std::string file_name = "out_" + fn;
@@ -244,6 +246,7 @@ int main(int argc, char* argv[]) {
           logger.open("ff_insert.log", std::ios_base::app);
           logger << "Skipping basis function: " + ap.get_master(i) + "\n\n";
           logger.close();
+	  skipped = true;
         } else {
           if (i == 0) {
             INFO_MSG("Reconstructing coefficient of basis function: " + ap.get_master(i) + "\n");
@@ -336,33 +339,41 @@ int main(int argc, char* argv[]) {
 
       std::cout << "\n";
 
-      auto time1 = std::chrono::high_resolution_clock::now();
-      INFO_MSG("Reconstructed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
-      INFO_MSG("Result has been written to '" + file_name + "'");
-      logger.open("ff_insert.log", std::ios_base::app);
-      logger << "Coefficients done: " + std::to_string(masters) + " / " + std::to_string(masters) + "\n\n";
-      logger << "-------------------------------------------------------------\n\n";
-      logger << "Reconstructed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s\n";
-      logger << "Result has been written to '" << file_name << "'\n";
-      logger.close();
-      std::string new_log_name = "ff_insert_" + fn + ".log";
-      std::rename("ff_insert.log", new_log_name.c_str());
-      std::string new_basis_functions_name = "basis_functions_" + fn;
-      std::rename("basis_functions", new_basis_functions_name.c_str());
-      std::rename("ff_insert.log", new_log_name.c_str());
-      std::remove("firefly.log");
+      if (masters == 1 && skipped) {
+	std::remove("ff_insert.log");
+        std::remove("basis_functions");
+        std::remove("firefly.log");
+      } else {
+        auto time1 = std::chrono::high_resolution_clock::now();
+        INFO_MSG("Reconstructed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
+        INFO_MSG("Result has been written to '" + file_name + "'");
+        logger.open("ff_insert.log", std::ios_base::app);
+        logger << "Coefficients done: " + std::to_string(masters) + " / " + std::to_string(masters) + "\n\n";
+        logger << "-------------------------------------------------------------\n\n";
+        logger << "Reconstructed expression in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s\n";
+        logger << "Result has been written to '" << file_name << "'\n";
+        logger.close();
+        std::string new_log_name = "ff_insert_" + fn + ".log";
+        std::rename("ff_insert.log", new_log_name.c_str());
+        std::string new_basis_functions_name = "basis_functions_" + fn;
+        std::rename("basis_functions", new_basis_functions_name.c_str());
+        std::rename("ff_insert.log", new_log_name.c_str());
+        std::remove("firefly.log");
+      }
     } else {
       mkdir("coefficients", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
       for (size_t i = 0; i != masters; ++i) {
-          basis_f_file.open("basis_functions", std::ios_base::app);
-          basis_f_file << ap.get_master(i) << "\n";
-          basis_f_file.close();
+        basis_f_file.open("basis_functions", std::ios_base::app);
+        basis_f_file << ap.get_master(i) << "\n";
+        basis_f_file.close();
+
         if (skip_functions.find(ap.get_master(i)) != skip_functions.end()) {
           INFO_MSG("Skipping basis function: " + ap.get_master(i));
           logger.open("ff_insert.log", std::ios_base::app);
           logger << "Skipping basis function: " + ap.get_master(i) + "\n\n";
           logger.close();
+	  skipped = true;
         } else {
           std::ofstream coef_file;
           std::string file_name = "coefficients/" + ap.get_master(i) + ".m";
@@ -372,14 +383,20 @@ int main(int argc, char* argv[]) {
 	}
       }
 
-      INFO_MSG("Unsimplified coefficients written to 'coefficients' directory");
-      logger.open("ff_insert.log", std::ios_base::app);
-      logger << "Unsimplified coefficients written to 'coefficients' directory\n";
-      logger.close();
-      std::string new_log_name = "ff_insert_" + fn + ".log";
-      std::rename("ff_insert.log", new_log_name.c_str());
-      std::string new_basis_functions_name = "basis_functions_" + fn;
-      std::rename("basis_functions", new_basis_functions_name.c_str());
+      if (masters == 1 && skipped) {
+	std::remove("ff_insert.log");
+        std::remove("basis_functions");
+        std::remove("firefly.log");
+      } else {
+        INFO_MSG("Unsimplified coefficients written to 'coefficients' directory");
+        logger.open("ff_insert.log", std::ios_base::app);
+        logger << "Unsimplified coefficients written to 'coefficients' directory\n";
+        logger.close();
+        std::string new_log_name = "ff_insert_" + fn + ".log";
+        std::rename("ff_insert.log", new_log_name.c_str());
+        std::string new_basis_functions_name = "basis_functions_" + fn;
+        std::rename("basis_functions", new_basis_functions_name.c_str());
+      }
     }
   }
 
