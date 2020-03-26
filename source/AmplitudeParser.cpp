@@ -57,6 +57,8 @@ namespace firefly {
       parse_amplitude_string(line);
       ++counter;
     }
+
+    infile.close();
   }
 
   void AmplitudeParser::parse_amplitude_string(std::string& amplitude_string) {
@@ -228,6 +230,8 @@ namespace firefly {
       parse_ibp_table_string(line);
       ++counter;
     }
+
+    infile.close();
   }
 
   void AmplitudeParser::parse_ibp_table_string(std::string& ibp_table) {
