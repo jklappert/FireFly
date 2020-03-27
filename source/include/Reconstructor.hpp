@@ -2271,6 +2271,8 @@ namespace firefly {
         if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && !tmp_rec.need_shift(prime_it)) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             logger << "Disable shift\n";
+	    logger.close();
+	    logger.open("firefly.log", std::ios_base::app);
 
             if (verbosity > SILENT)
               INFO_MSG("Disable shift");
