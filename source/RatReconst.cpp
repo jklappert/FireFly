@@ -1848,7 +1848,7 @@ namespace firefly {
     return factors;
   }
 
-  // TODO Don't call from main thread!
+  // TODO Workaround to be not called from main thread
   std::pair<std::unordered_map<uint32_t, uint64_t>, std::unordered_map<uint32_t, uint64_t>> RatReconst::get_canonical_factors(const std::pair<std::unordered_set<uint32_t>, std::unordered_set<uint32_t>>& factors_pos) {
     nmod_poly_t c_numerator, c_denominator;
     nmod_poly_init(c_numerator, FFInt::p);

@@ -73,7 +73,6 @@ namespace firefly {
     bool zero() const;
   private:
     std::vector<RationalFunction> factors {};
-    // TODO safe somewhere else?
     std::unordered_map<uint32_t, uint32_t> order_map {};
   };
 

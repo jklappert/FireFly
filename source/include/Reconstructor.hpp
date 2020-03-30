@@ -138,16 +138,6 @@ namespace firefly {
      *  run, thus requiring the black box to be probed in the same order.
      */
     void resume_from_saved_state();
-    /**
-     *  TODO remove?
-     *  Allows to abort the current reconstruction, only valid after prime changes
-     */
-    void abort();
-    /**
-     *  TODO remove?
-     *  Allows to resume the current reconstruction, only valid after prime changes
-     */
-    void resume();
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     enum RatReconst_status {RECONSTRUCTING, DONE, DELETE};
@@ -2112,8 +2102,8 @@ namespace firefly {
 
 #if !WITH_MPI
         // TODO don't start as much ones
-        queue_probes(zi_order, thr_n );//* bunch_size);
-        started_probes.emplace(zi_order, thr_n );//* bunch_size);
+        queue_probes(zi_order, thr_n);//* bunch_size);
+        started_probes.emplace(zi_order, thr_n);//* bunch_size);
         /*shift = tmp_rec.get_zi_shift_vec();
 
         uint32_t to_start = thr_n * bunch_size;
@@ -3032,25 +3022,6 @@ namespace firefly {
       } else {
         ++it;
       }
-    }
-  }
-
-  template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::abort() {
-    logger << "Run aborted\n";
-    INFO_MSG("Run aborted");
-    done = true;
-    aborted = true;
-  }
-
-  template<typename BlackBoxTemp>
-  void Reconstructor<BlackBoxTemp>::resume() {
-    logger << "Run resumed\n";
-    INFO_MSG("Run resumed");
-    if(aborted) {
-      done = false;
-      aborted = false;
-      resumed = true;
     }
   }
 
