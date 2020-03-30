@@ -82,7 +82,7 @@ int main() {
 
   // Initialize the Reconstructor
   Reconstructor<BlackBoxUser> reconst(4 /*n_vars*/,
-                                      8 /*n_threads*/,
+                                      std::thread::hardware_concurrency() /*n_threads*/,
                                       1 /*bunch size*/,
                                       bb /*black box*//*,
                                       Reconstructor<BlackBoxUser>::CHATTY*/ /* verbosity mode*/);

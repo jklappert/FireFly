@@ -18,7 +18,6 @@
 
 #include "DenseSolver.hpp"
 #include "Reconstructor.hpp"
-//#include "Tests.hpp"
 
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
@@ -30,15 +29,13 @@ namespace firefly {
     BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
 
     // The evaluation of the black box
-    // Return a vector of FFInt objects, which are the results of the black-box evaluation
-    // with values inserted for the variables. The orderings of both vectors should
-    // be fixed for all evaluations.
+    // Return a vector of FFIntTemp objects, which are the results of the black-box evaluation
+    // with values inserted for the variables.
     // In this example we compute functions which are parsed from a file with a
     // ShuntingYardParser object and the determinant of a matrix.
-    // TODO
     template<typename FFIntTemp>
     std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
-      //std::vector<FFIntTemp> result(1, FFIntTemp(42));
+      //std::vector<FFInt> result;
 
       // Get results from parsed expressions
       std::vector<FFIntTemp> result = par.evaluate_pre(values);
@@ -47,36 +44,15 @@ namespace firefly {
 
       // Build the matrix mat
       mat_ff<FFIntTemp> mat = {{result[0], result[1]}, {result[2], result[3]}};
+
+      // Permutation vector
       std::vector<int> p {};
+
       // Compute LU decomposition of mat
       calc_lu_decomposition(mat, p, 2);
+
       // Compute determinant of mat
       result.emplace_back(calc_determinant_lu(mat, p, 2));
-
-      //std::vector<FFIntTemp> b(1);
-      //solve_lu(mat, p, b, 2);
-
-      //mat = {{result[0], result[1]}, {result[2], result[3]}};
-      //calc_inverse(mat, 2);
-      //mat = {{result[0], result[1]}, {result[2], result[3]}};
-      //solve_gauss_system(mat, 2);
-      //mat = {{result[0], result[1]}, {result[2], result[3]}};
-      //p = {};
-      //mat_ff<FFIntTemp> mat2;
-      //calc_inverse_lu(mat, mat2, p, 2);
-      //mat = {{result[0], result[1]}, {result[2], result[3]}};
-      //p = {};
-      //calc_determinant_lu(mat, p, 2);
-
-      // Some functions from Test.cpp
-      //result.emplace_back(singular_solver(values));
-      //result.emplace_back(n_eq_1(values[0]));
-      //result.emplace_back(n_eq_4(values));
-      //result.emplace_back(gghh(values));
-      //result.emplace_back(pol_n_eq_3(values));
-      //result.emplace_back(ggh(values));
-
-      //std::cout << "bb size " << result.size() << "\n";
 
       return result;
     }
@@ -112,54 +88,29 @@ int main() {
   MPI_Get_processor_name(processor_name, &name_len);
   // ---------------------------------------------------------------------------
 
-  // Use user defined black box. Interpolate only on master and calculate probes on slaves.
-
   // Parse the functions from "../s_y_4_v.m" with the variables x1, y, zZ, W
   ShuntingYardParser par("../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
 
   // Create the user defined black box
   BlackBoxUser bb(par);
 
-  uint32_t bunch_size = 1;
-
-  //std::this_thread::sleep_for(std::chrono::seconds(15));
-
+  // Interpolate on master and calculate probes on workers
   if (process == master) {
     Reconstructor<BlackBoxUser> reconst(4 /*n_vars*/,
-                          std::thread::hardware_concurrency() /*n_threads*/,
-                          bunch_size /*bunch size*/,
-                          bb /*black box*//*, Reconstructor::CHATTY*/);
+                                        std::thread::hardware_concurrency() /*n_threads*/,
+                                        1 /*bunch size*/,
+                                        bb /*black box*//*,
+                                        Reconstructor<BlackBoxUser>::CHATTY*/ /* verbosity mode*/);
 
     reconst.enable_factor_scan();
     reconst.enable_shift_scan();
 
     reconst.reconstruct();
-
-    // Get results
-    /*std::vector<RationalFunction> results = reconst.get_result();
-
-    //std::ofstream file;
-    //file.open("test.m");
-    //file << "{";
-    //std::string str = "";
-
-    // Print all reconstruced functions
-    for (uint32_t i = 0; i < results.size(); ++i) {
-      std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
-
-      //file << str << "\n";
-      //str = results[i].to_string( {"x", "y", "z", "w"}) + "\n,";
-    }
-
-    //str.pop_back();
-    //file << str << "}\n";
-    //file.close();
-    */
   } else {
     MPIWorker<BlackBoxUser>(4 /*n_vars*/,
-              std::thread::hardware_concurrency() /*n_threads*/,
-              bunch_size,
-              bb /*black box*/);
+                            std::thread::hardware_concurrency() /*n_threads*/,
+                            1 /*bunch size*/,
+                            bb /*black box*/);
   }
 
   // Finish MPI environment
