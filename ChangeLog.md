@@ -4,44 +4,39 @@ FireFly 2.0.0
 New features
 ------------
 
- * Added support for MPI when compiled with the option `-DWITH_MPI=true`. The
- `Reconstructor` class in the master process then requests the `MPIWorker` class
- in the other processes to compute probes. We refer to `README.md` and the new
- `example_mpi.cpp` for more details.
+ * Added support for MPI. It can be enabled with the option `-DWITH_MPI=true`.
+ The `Reconstructor` class in the master process then requests the `MPIWorker`
+ class in the other processes to compute probes. We refer to `README.md` and the
+ new `example_mpi.cpp` for more details.
 
- * A logger file labeled `firefly.log` is now written during the
- interpolation which outputs the current progress and other
- informational messages.
+ * Added a scan for univariate factors before the actual interpolation. When
+ using the member function `enable_factor_scan` of the `Reconstructor` class,
+ FireFly performs the scan and uses the factors for cancellations and
+ simplifications.
 
- * The interpolation can now be stopped after the first prime field
- when the member function `reconstruct` of the `Reconstructor` object
- is called with the argument `1`.
-
- * When using the member function `enable_factor_scan` of the
- `Reconstructor` class, FireFly does scan for univariate factors
- before the actual interpolation, which are used for cancellations
- and simplifications.
-
- * FireFly compiles now an insertion tool for replacement tables in
- Mathematica syntax labeled `ff_insert` by default. This executable
- serves as an example how interpolation algorithms can be applied
- and can be used to insert integration-by-parts tables into amplitudes,
- for example.
+ * FireFly now compiles an insertion tool for replacement tables in Mathematica
+ syntax labeled `ff_insert` by default. This executable serves as an example how
+ interpolation algorithms can be applied and can be used to insert integration-
+ by-parts tables into amplitudes, for example.
 
  * FireFly can be linked to the jemalloc library by setting the flag
- `-DWITH_JEMALLOC=true` for CMake. The required paths and libraries
- are then written to the pcconfig file and jemalloc is linked to the
- example and insertion executable.
+ `-DWITH_JEMALLOC=true` for CMake. The required paths and libraries are then
+ written to firefly.pc and jemalloc is linked to the example and `ff_insert`.
 
- * The `ShuntingYardParser` can now find same functions. This feature
- can be enabled when constructing a `ShuntingYardParser` with a third
- argument that is set to `true`.
+ * The `ShuntingYardParser` can now find same functions. This feature can be
+ enabled when constructing a `ShuntingYardParser` with a third argument that is
+ set to `true`.
+
+ * The interpolation can now be stopped after the first prime field when the
+ member function `reconstruct` of the `Reconstructor` object is called with the
+ argument `1`. The intermediate results can be obtained by calling
+ `get_result_ff`.
+
+ * A logger file labeled `firefly.log` is now written during the interpolation
+ which outputs the current progress and other informational messages.
 
 Changes
 -------
-
- * The member function `enable_scan` of the `Reconstructor` class is
- deprecated. It is replaced by the member function `enable_shift_scan`.
 
  * Changed the `BlackBoxBase` to the curiously recurring template pattern
  (CRTP). This enables FireFly to compute bunches of probes (s. version 1.3.0)
@@ -51,20 +46,23 @@ Changes
  black box to the CRTP. We refer to `README.me`, `example.cpp`, and the paper of
  version 2.0 for more details.
 
- * Added more sophisticated CMake scripts that search for GMP and FLINT.
-
  * The required C++ standard changed to C++-14.
 
- * 200 additional prime numbers have been added to the `ReconstHelper` struct.
+ * The member function `enable_scan` of the `Reconstructor` class is deprecated.
+ It is replaced by the member function `enable_shift_scan`.
+
+ * Added more sophisticated CMake scripts that search for GMP and FLINT.
 
  * The job scheduling for interpolations in the first prime field or the when
  using the safe mode has been improved.
 
+ * 200 additional prime numbers have been added to the `ReconstHelper` struct.
+
  * The `Reconstructor` class can now handle empty black boxes.
 
  * Added pow functions for `FFInt` with a templated power argument. Hence,
- negative integer powers can now be used. We thank Herschel Chawdhry for
- this suggestion.
+ negative integer powers can now be used. We thank Herschel Chawdhry for this
+ suggestion.
 
 Bug fixes
 ---------
