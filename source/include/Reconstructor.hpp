@@ -442,11 +442,11 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::enable_factor_scan() {
-#ifndef FLINT
-    ERROR_MSG("FireFly is not compiled with FLINT. No polynomial factoring possible!");
-    std::exit(EXIT_FAILURE);
-#endif
     factor_scan = true;
+#ifndef FLINT
+    WARNING_MSG("FireFly is not compiled with FLINT. No polynomial factoring possible!");
+    factor_scan = false;
+#endif
   }
 
   template<typename BlackBoxTemp>
