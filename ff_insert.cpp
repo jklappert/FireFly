@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
     while (std::getline(fam_file, line, '\n')) {
       line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
 
-      if (line.size() != 0)
+      if (line.size() != 0 && line[0] != '#')
         families.emplace_back(line);
     }
 
@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
     while (std::getline(var_file, line, '\n')) {
       line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
 
-      if (line.size() != 0)
+      if (line.size() != 0 && line[0] != '#')
         vars.emplace_back(line);
     }
 
