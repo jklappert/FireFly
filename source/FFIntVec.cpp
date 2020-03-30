@@ -60,25 +60,21 @@ namespace firefly {
     return a.vec != b.vec;
   }
 
-  // TODO
   template<int N>
   bool operator>(const FFIntVec<N>& a, const FFIntVec<N>& b) {
     return a.vec[0] > b.vec[0];
   }
 
-  // TODO
   template<int N>
   bool operator>=(const FFIntVec<N>& a, const FFIntVec<N>& b) {
     return a.vec[0] >= b.vec[0];
   }
 
-  // TODO
   template<int N>
   bool operator<(const FFIntVec<N>& a, const FFIntVec<N>& b) {
     return a.vec[0] < b.vec[0];
   }
 
-  // TODO
   template<int N>
   bool operator<=(const FFIntVec<N>& a, const FFIntVec<N>& b) {
     return a.vec[0] <= b.vec[0];
