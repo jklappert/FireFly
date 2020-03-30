@@ -1,12 +1,12 @@
 # FireFly
 
-[![Build Status](https://travis-ci.org/jklappert/FireFly.svg?branch=master)](https://travis-ci.org/jklappert/FireFly) [![](https://img.shields.io/github/tag/jklappert/firefly)](https://gitlab.com/firefly-library/firefly/-/tags/1.3.4)
+[![Build Status](https://travis-ci.org/jklappert/FireFly.svg?branch=master)](https://travis-ci.org/jklappert/FireFly) [![](https://img.shields.io/github/tag/jklappert/firefly)](https://gitlab.com/firefly-library/firefly/-/tags/2.0.0)
 
 FireFly is a reconstruction library for rational functions written in C++.
 
 Please refer to these papers when using FireFly:
 * J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[*Comput.Phys.Commun.* **247** (2020) 106951](https://doi.org/10.1016/j.cpc.2019.106951)], [[1904.00009](https://arxiv.org/abs/1904.00009)]
-* J. Klappert, S.Y. Klein, and F. Lange, *Reconstructing Rational Functions with FireFly*, [[1904.00009](https://arxiv.org/abs/1904.00009)]
+* J. Klappert, S.Y. Klein, and F. Lange, *Interpolation of Dense and Sparse Rational Functions and other Improvements in FireFly*, [[1904.00009](https://arxiv.org/abs/1904.00009)]
 
 ## Table of contents
 * [Requirements](#requirements)
@@ -32,12 +32,12 @@ FireFly uses the following third party code:
 
 #####  Implemented interpolation algorithms
 FireFly implements the following third party interpolation algorithms:
-* Ben-Or/Tiwari algorithm [10.1145/62212.62241](https://dx.doi.org/10.1145/62212.62241)
+* Ben-Or/Tiwari algorithm [[10.1145/62212.62241](https://dx.doi.org/10.1145/62212.62241)]
 * Newton interpolation algorithm
-* Racing algorithm [10.1145/62212.62241](https://dx.doi.org/10.1145/345542.345629) [10.1016/S0747-7171(03)00088-9](https://dx.doi.org/10.1016/S0747-7171(03)00088-9)
-* Sparse rational function interpolation algorithm [10.1016/j.tcs.2010.11.050](https://dx.doi.org/10.1016/j.tcs.2010.11.050)
+* Racing algorithm [[10.1145/62212.62241](https://dx.doi.org/10.1145/345542.345629)], [[10.1016/S0747-7171(03)00088-9](https://dx.doi.org/10.1016/S0747-7171(03)00088-9)]
+* Sparse rational function interpolation algorithm [[10.1016/j.tcs.2010.11.050](https://dx.doi.org/10.1016/j.tcs.2010.11.050)]
 * Thiele interpolation algorithm
-* Zippel algorithm [10.1016/S0747-7171(08)80018-1](https://dx.doi.org/10.1016/S0747-7171(08)80018-1)
+* Zippel algorithm [[10.1016/S0747-7171(08)80018-1](https://dx.doi.org/10.1016/S0747-7171(08)80018-1)]
 
 ## Building FireFly
 FireFly uses CMake to generate files for build automation. To build FireFly one should first create a separate `build` directory inside FireFly's top directory. Afterwards, `cmake` should be called:
@@ -77,11 +77,15 @@ One can include the support of the `jemalloc` memory allocation library by addin
 ```
 after the `jemalloc` library is installed and its executables can be found.
 
+The MPI version of FireFly can be built by adding the flag
+```
+-DWITH_MPI=true
+```
 If the MPI version found with CMake is not satisfactory, one can set custom paths to the include directory and library as:
 ```
 -DMPI_CXX_INCLUDE_PATH=$MPI_INC_PATH -DMPI_CXX_LIBRARIES=$MPI_LIB_PATH
 ```
-where `MPI_INC_PATH` is the absolute path to the directory where the include files can be found and `MPI_LIB_PATH` is the absolute path to the shared library (`libmpi.so`, `libmpich.so`,...) of your favored MPI implementation.
+where `MPI_INC_PATH` is the absolute path to the directory where the include files can be found and `MPI_LIB_PATH` is the absolute path to the shared library (`libmpi.so`, `libmpich.so`, ...) of your favored MPI implementation.
 
 ## Reconstructing functions
 To reconstruct functions with FireFly, it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
@@ -156,7 +160,7 @@ parser.evaluate(values);
 //parser.evaluate_pre(values);
 ```
 
-where `values` is a vector which contains the parameter point at which the functions should be evaluated. The function `evaluate` returns a vector of `FFInt` objects which is filled with the values of the evaluated functions in the same order as the functions are defined in the input file. Thus, it can be directly used in the `BlackBox` functor of FireFly. An example file is given in `parser_test/s_y_4_v.m`. Note that only the operators
+where `values` is a vector which contains the parameter point at which the functions should be evaluated. The function `evaluate` returns a vector of `FFIntTemp` objects, i.e. `FFInt` or `FFIntVec`, which is filled with the values of the evaluated functions in the same order as the functions are defined in the input file. Thus, it can be directly used in the `BlackBox` functor of FireFly. An example file is given in `parser_test/s_y_4_v.m`. Note that only the operators
 
 ```
 +, -, *, /, ^
