@@ -6,7 +6,7 @@ New features
 
  * Added support for MPI when compiled with the option `-DWITH_MPI=true`. The
  `Reconstructor` class in the master process then requests the `MPIWorker` class
- in the other processes to compute probes. We refer to `README.me` and the new
+ in the other processes to compute probes. We refer to `README.md` and the new
  `example_mpi.cpp` for more details.
 
  * A logger file labeled `firefly.log` is now written during the
@@ -19,7 +19,7 @@ New features
 
  * When using the member function `enable_factor_scan` of the
  `Reconstructor` class, FireFly does scan for univariate factors
- before the actual interpolation, which are used for cancellation
+ before the actual interpolation, which are used for cancellations
  and simplifications.
 
  * FireFly compiles now an insertion tool for replacement tables in
@@ -50,8 +50,6 @@ Changes
  `FFInt` with sizes of powers of 2 up to 128. However, the user has to adopt the
  black box to the CRTP. We refer to `README.me`, `example.cpp`, and the paper of
  version 2.0 for more details.
-
- * Writing of saved states improved (single threaded to be done)
 
  * Added more sophisticated CMake scripts that search for GMP and FLINT.
 
