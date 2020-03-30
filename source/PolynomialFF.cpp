@@ -197,6 +197,11 @@ namespace firefly {
       el.second *= ffint;
     }
 
+    if(coefs.size() > 50)
+      generate_new_horner = true;
+
+    eval_horner = false;
+
     return *this;
   }
 
