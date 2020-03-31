@@ -2104,11 +2104,6 @@ namespace firefly {
         // TODO don't start as much ones
         queue_probes(zi_order, thr_n);//* bunch_size);
         started_probes.emplace(zi_order, thr_n);//* bunch_size);
-        /*shift = tmp_rec.get_zi_shift_vec();
-
-        uint32_t to_start = thr_n * bunch_size;
-        queue_probes(std::vector<uint32_t>(n - 1, 1), to_start);
-        started_probes.emplace(std::vector<uint32_t>(n - 1, 1), to_start);*/
 #else
         // TODO optimize
         send_first_jobs();
@@ -2146,7 +2141,6 @@ namespace firefly {
           break;
         }
 
-        //if (prime_it == 1) exit(-1);
 #if WITH_MPI
         {
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
@@ -2261,8 +2255,8 @@ namespace firefly {
         if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && !tmp_rec.need_shift(prime_it)) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             logger << "Disable shift\n";
-	    logger.close();
-	    logger.open("firefly.log", std::ios_base::app);
+            logger.close();
+            logger.open("firefly.log", std::ios_base::app);
 
             if (verbosity > SILENT)
               INFO_MSG("Disable shift");
@@ -2425,8 +2419,6 @@ namespace firefly {
 
         probes_for_next_prime = 0;
       }
-
-      //if (probes_fed == 1000) exit(-1);
 
       std::vector<uint64_t> indices;
       std::vector<std::vector<FFInt>> probes;
@@ -2594,7 +2586,7 @@ namespace firefly {
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
     } else {
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
-    }//TODO elseif for factor
+    }
 
     for (uint32_t j = 0; j != to_start; ++j) {
       std::vector<FFInt> values(n);
@@ -2611,11 +2603,6 @@ namespace firefly {
 
           if (itt != it->second.end()) {
             --j;
-
-            //std::unique_lock<std::mutex> lock_print(print_control);
-
-            //WARNING_MSG("Found a duplicate of t, choosing a new one");
-
             continue;
           } else {
             it->second.emplace(t.n);
@@ -2987,7 +2974,6 @@ namespace firefly {
           }
         } else {
           // to be sure that no other thread does the same
-          // TODO: Why is this necessary?
           std::lock_guard<std::mutex> lock_status(status_control);
 
           if (std::get<1>(rec) == RECONSTRUCTING) {
@@ -3205,7 +3191,6 @@ namespace firefly {
       chosen_t.clear();
     }
 
-    // TODO mutex required here?
     requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
     computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
   }
@@ -3243,7 +3228,7 @@ namespace firefly {
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
     }
 
-    std::lock_guard<std::mutex> chosen_lock(chosen_mutex); // TODO is this really required?
+    std::lock_guard<std::mutex> chosen_lock(chosen_mutex);
 
     for (int i = 1; i != world_size; ++i) {
       uint64_t to_start;
@@ -3272,11 +3257,6 @@ namespace firefly {
 
           if (itt != it->second.end()) {
             --ii;
-
-            //std::unique_lock<std::mutex> lock_print(print_control);
-
-            //WARNING_MSG("Found a duplicate of t, choosing a new one");
-
             continue;
           } else {
             it->second.emplace(t.n);
