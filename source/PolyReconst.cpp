@@ -418,10 +418,6 @@ namespace firefly {
             if (zi != n) {
               std::lock_guard<std::mutex> lock(mutex_status);
               zi ++;
-              // The monomials which have to be reconstructed have to
-              // ordered in a monotonical way to utilize the Vandermonde
-              // system solver
-              std::sort(rec_degs.begin(), rec_degs.end(), std::greater<std::vector<uint32_t>>());
 
               nums.reserve(rec_degs.size());
               ais.clear();
@@ -655,6 +651,7 @@ namespace firefly {
 
     // Bring result in canonical form
     ff_map poly;
+    poly.reserve(num_eqn);
 
     for (uint32_t i = 0; i != num_eqn; ++i) {
       poly.emplace(std::make_pair(rec_degs[i], result[i]));

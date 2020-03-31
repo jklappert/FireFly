@@ -243,13 +243,13 @@ namespace firefly {
                                         const std::vector<FFInt>& nums,
   const std::vector<FFInt>& val) {
     uint32_t num_eqn = degs.size();
-    std::vector<FFInt> result(num_eqn);
     uint32_t n = val.size();
+    ff_map poly;
+    poly.reserve(num_eqn);
 
     // calculate base entries of Vandermonde matrix
     std::vector<FFInt> vis;
     vis.reserve(num_eqn);
-    std::sort(degs.begin(), degs.end(), std::greater<std::vector<uint32_t>>());
 
     for (const auto & el : degs) {
       FFInt vi = 1;
@@ -296,14 +296,7 @@ namespace firefly {
         t = vis[i] * t + b;
       }
 
-      result[i] = s / t / vis[i];
-    }
-
-    // Bring result in canonical form
-    ff_map poly;
-
-    for (uint32_t i = 0; i < num_eqn; ++i) {
-      poly.emplace(std::make_pair(degs[i], result[i]));
+      poly.emplace(std::make_pair(degs[i], s / t / vis[i]));
     }
 
     return PolynomialFF(n + 1, poly);
