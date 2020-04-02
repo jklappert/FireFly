@@ -370,9 +370,9 @@ namespace firefly {
 #else
                                BlackBoxBase<BlackBoxTemp>& bb_, int verbosity_): n(n_), thr_n(thr_n_ - 1), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n) {
 #endif
-    if (bunch_size != 1 && bunch_size != 2 && bunch_size != 4 && bunch_size != 8 && bunch_size != 16 && bunch_size != 32 && bunch_size != 64 && bunch_size != 128 && bunch_size != 256) {
-      ERROR_MSG("Maximum bunch size " + std::to_string(bunch_size) + " is no supported power of 2!\nChoose among 1, 2, 4, 8, 16, 32, 64, 128, 256");
-      logger << "Maximum bunch size " << std::to_string(bunch_size) << " is no supported power of 2!\nChoose among 1, 2, 4, 8, 16, 32, 64, 128, 256\n";
+    if (bunch_size != 1 && bunch_size != 2 && bunch_size != 4 && bunch_size != 8 && bunch_size != 16 && bunch_size != 32 && bunch_size != 64 && bunch_size != 128) {
+      ERROR_MSG("Maximum bunch size " + std::to_string(bunch_size) + " is no supported power of 2!\nChoose among 1, 2, 4, 8, 16, 32, 64, 128");
+      logger << "Maximum bunch size " << std::to_string(bunch_size) << " is no supported power of 2!\nChoose among 1, 2, 4, 8, 16, 32, 64, 128\n";
       std::exit(EXIT_FAILURE);
     }
 
