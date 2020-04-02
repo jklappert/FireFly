@@ -168,7 +168,7 @@ namespace firefly {
           }
         }
 
-        if (i + 1 < funs.size() + 1 && i + 1 > curr_percentage*fun.size()/10) {
+        if (i + 1 < funs.size() + 1 && i + 1 > curr_percentage*funs.size()/10) {
 	  ++curr_percentage;
           std::cerr << "\033[1;34mFireFly info:\033[0m " << i + 1 << " / " << funs.size() << "\r";
 	}
