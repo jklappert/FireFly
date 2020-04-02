@@ -138,14 +138,13 @@ namespace firefly {
           }
         }
 
-        if (line_c + 1 < funs.size() + 1)
-          std::cerr << "\033[1;34mFireFly info:\033[0m " << line_c + 1 << " / " << funs.size() << "\r";
-
         line_c++;
       }
 
       istream.close();
     } else {
+      size_t curr_percentage = 1;
+
       for (size_t i = 0; i != funs.size(); ++i) {
         std::string fun = funs[i];
         validate(fun, i);
@@ -169,8 +168,10 @@ namespace firefly {
           }
         }
 
-        if (i + 1 < funs.size() + 1)
+        if (i + 1 < funs.size() + 1 && i + 1 > curr_percentage*fun.size()/10) {
+	  ++curr_percentage;
           std::cerr << "\033[1;34mFireFly info:\033[0m " << i + 1 << " / " << funs.size() << "\r";
+	}
       }
     }
 
