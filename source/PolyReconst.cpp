@@ -61,6 +61,8 @@ namespace firefly {
       for (uint32_t i = 0; i != n; ++i) {
 	global_anchor_points[i] = anchor_points[i];
       }
+
+      private_anchor_points = global_anchor_points;
     }
   }
 
@@ -635,6 +637,8 @@ namespace firefly {
     for (uint32_t i = 0; i != n; ++i) {
       global_anchor_points[i] = FFInt(get_rand_64());
     }
+
+    private_anchor_points = global_anchor_points;
   }
 
   FFInt PolyReconst::get_rand_zi(uint32_t zi, uint32_t order) const {
