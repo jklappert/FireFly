@@ -1250,9 +1250,9 @@ namespace firefly {
           else
             sub = sub_den[curr_deg].calc_n_m_1(yis);
 
-          rec.feed(yis, food - sub);
+          rec.feed(food - sub);
         } else
-          rec.feed(yis, food);
+          rec.feed(food);
 
         tmp_zi = rec.get_zi() + 1;
         tmp_zi_ord = rec.get_zi_order();

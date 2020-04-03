@@ -23,16 +23,10 @@
 #include "utils.hpp"
 
 namespace firefly {
-  // TODO check if this interpolates in combination with RatReconst to use the
-  // static rand_zi of RatReconst to save additional memory -> note that
-  // zi order in RatReconst and PolyReconst is not the same!
   // TODO for new prime just use Vandermonde matrices to solve interpolation problem
 
-  ff_pair_map PolyReconst::rand_zi;
-  std::mutex PolyReconst::mutex_statics;
-  size_t PolyReconst::bt_threshold = 1;
-  bool PolyReconst::use_newton = true;
-  bool PolyReconst::use_bt = true;
+  std::mutex PolyReconst::mutex_anchor;
+  std::vector<FFInt> PolyReconst::global_anchor_points;
 
   PolyReconst::PolyReconst(uint32_t n_, const int deg_inp, const bool with_rat_reconst_inp) {
     std::lock_guard<std::mutex> lock_status(mutex_status);
@@ -50,19 +44,22 @@ namespace firefly {
       ais.emplace(std::make_pair(std::vector<uint32_t> (n), std::vector<FFInt> ()));
       max_deg.emplace(std::make_pair(i, -1));
     }
+
+    if (!is_rand_zi_empty()) {
+      private_anchor_points = global_anchor_points;
+    }
   }
 
   PolyReconst::PolyReconst() {}
 
   void PolyReconst::set_anchor_points(const std::vector<FFInt>& anchor_points, bool force) {
-    std::lock_guard<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock_statics(mutex_anchor);
 
-    if (rand_zi.empty() || force) {
-      rand_zi.clear();
+    if (global_anchor_points.empty() || force) {
+      global_anchor_points = std::vector<FFInt> (n, 0);
 
-      for (uint32_t i = 1; i <= n; ++i) {
-        rand_zi.emplace(std::make_pair(std::make_pair(i, 0), 1));
-        rand_zi.emplace(std::make_pair(std::make_pair(i, 1), anchor_points[i - 1]));
+      for (uint32_t i = 0; i != n; ++i) {
+	global_anchor_points[i] = anchor_points[i];
       }
     }
   }
@@ -74,16 +71,8 @@ namespace firefly {
       queue.emplace_back(std::make_tuple(num, feed_zi_ord));
   }
 
-  // this function is not thread-safe; therefore, it should only be called from RatReconst
-  void PolyReconst::feed(const std::vector<FFInt>& new_yis, const FFInt& num) {
-    {
-      std::lock_guard<std::mutex> lock_statics(mutex_statics);
-
-      for (uint32_t j = 0; j < n; ++j) {
-        rand_zi.emplace(std::make_pair(j + 1, curr_zi_order[j]), new_yis[j]);
-      }
-    }
-
+  // Only use together with RatReconst, please.
+  void PolyReconst::feed(const FFInt& num) {
     interpolate(num, curr_zi_order);
   }
 
@@ -190,12 +179,6 @@ namespace firefly {
 
           if (use_bt && !finished) {
             if (nums_for_bt[zero_element].size() == 0 || i == 0) {
-              /*bt_terminator.erase(zero_element);
-              b.erase(zero_element);
-              l.erase(zero_element);
-              delta.erase(zero_element);
-              bm_iteration.erase(zero_element);
-              lambda.erase(zero_element);*/
               nums_for_bt.erase(zero_element);
               lambda[zero_element] = {1};
               bt_terminator[zero_element] = 1;
@@ -329,12 +312,6 @@ namespace firefly {
                 nums_for_bt[key].emplace_back(el.second);
 
                 if (nums_for_bt[key].size() == 1) {
-                  /*bt_terminator.erase(key);
-                  b.erase(key);
-                  l.erase(key);
-                  delta.erase(key);
-                  bm_iteration.erase(key);
-                  lambda.erase(key);*/
                   lambda[key] = {1};
                   bt_terminator[key] = 1;
                   b[key] = {0};
@@ -545,16 +522,6 @@ namespace firefly {
         }
       }
     }
-
-    if (!with_rat_reconst) {
-      for (uint32_t tmp_zi = 1; tmp_zi <= n; ++tmp_zi) {
-        auto key = std::make_pair(tmp_zi, curr_zi_order[tmp_zi - 1]);
-        std::lock_guard<std::mutex> lock_statics(mutex_statics);
-
-        if (rand_zi.find(key) == rand_zi.end())
-          rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
-      }
-    }
   }
 
   Polynomial PolyReconst::get_result() {
@@ -662,40 +629,36 @@ namespace firefly {
   }
 
   void PolyReconst::generate_anchor_points() {
-    std::lock_guard<std::mutex> lock_statics(mutex_statics);
+    std::lock_guard<std::mutex> lock(mutex_anchor);
+    global_anchor_points = std::vector<FFInt> (n, 0);
 
-    rand_zi.clear();
-
-    for (uint32_t tmp_zi = 1; tmp_zi <= n; ++tmp_zi) {
-      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
-      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), FFInt(get_rand_64())));
+    for (uint32_t i = 0; i != n; ++i) {
+      global_anchor_points[i] = FFInt(get_rand_64());
     }
   }
 
   FFInt PolyReconst::get_rand_zi(uint32_t zi, uint32_t order) const {
-    std::lock_guard<std::mutex> lock_statics(mutex_statics);
-    return rand_zi.at(std::make_pair(zi, order));
+    return private_anchor_points[zi - 1].pow(order);
   }
 
   std::vector<FFInt> PolyReconst::get_rand_zi_vec(const std::vector<uint32_t>& orders) const {
-    std::lock_guard<std::mutex> lock_statics(mutex_statics);
     std::vector<FFInt> yis {};
 
     for (uint32_t i = 0; i < n; ++i) {
-      yis.emplace_back(rand_zi.at(std::make_pair(i + 1, orders[i])));
+      yis.emplace_back(private_anchor_points[i].pow(orders[i]));
     }
 
     return yis;
   }
 
   bool PolyReconst::is_rand_zi_empty() const {
-    std::lock_guard<std::mutex> lock_statics(mutex_statics);
-    return rand_zi.empty();
+    std::lock_guard<std::mutex> lock(mutex_anchor);
+    return global_anchor_points.empty();
   }
 
   void PolyReconst::reset() {
-    std::lock_guard<std::mutex> lock_statics(mutex_statics);
-    rand_zi = ff_pair_map();
+    std::lock_guard<std::mutex> lock(mutex_anchor);
+    global_anchor_points.clear();
   }
 
   ff_map PolyReconst::construct_tmp_canonical(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) const {
@@ -816,10 +779,6 @@ namespace firefly {
       if (result == 0) {
         roots.first.emplace_back(a);
         roots.second.emplace_back(count);
-        {
-          std::lock_guard<std::mutex> lock_statics(mutex_statics);
-          rand_zi.emplace(std::make_pair(std::make_pair(zi, count), a));
-        }
       }
 
       a *= base;

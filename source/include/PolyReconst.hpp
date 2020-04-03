@@ -26,7 +26,7 @@
 namespace firefly {
   /**
    *  @class PolyReconst
-   *  @brief A class to reconstruct a polynomial from its values
+   *  @brief A class to reconstruct a polynomial from its values. Note that this class only works as shown in RatReconst, i.e. set anchor points on a dummy instance before using this class for interpolation
    */
   class PolyReconst : public BaseReconst {
   public:
@@ -41,11 +41,10 @@ namespace firefly {
      */
     PolyReconst();
     /**
-     *    Feeds a new numerical value to the reconstruction algorithm
-     *    @param yis the corresponding yi values to the feed
+     *    Feeds a new numerical value to the reconstruction algorithm. Only useful in combination with RatRconst
      *    @param num the numerical value of the black box
      */
-    void feed(const std::vector<FFInt>& yis, const FFInt& num);
+    void feed(const FFInt& num);
     /**
      *    Feeds a new numerical value to the reconstruction algorithm
      *    @param num the numerical value of the black box
@@ -97,17 +96,17 @@ namespace firefly {
      *  Sets the threshold for the Ben-Or and Tiwari univariate interpolations
      *  @param threshold the value of the threshold
      */
-    static void set_bt_threshold(size_t threshold);
+    void set_bt_threshold(size_t threshold);
     /**
      *  Turns the Newton Interpolation on/off. Default is on.
      *  @param use_newton_new if true Newton Interpolation is used, if false it is not used
      */
-    static void set_newton(bool use_newton_new);
+    void set_newton(bool use_newton_new);
     /**
      *  Turns the Ben-Or and Tiwari Interpolation on/off. Default is on.
      *  @param use_bt_new if true Newton Interpolation is used, if false it is not used
      */
-    static void set_bt(bool use_bt_new);
+    void set_bt(bool use_bt_new);
     /**
      *  Returns how many additional equations are required to solve the Vandermonde system
      *  @return the required number of equations
@@ -197,10 +196,11 @@ namespace firefly {
     rn_map gi {}; /**< The guesses of the rational coefficients */
     std::unordered_map<std::vector<uint32_t>, std::vector<FFInt>, UintHasher> ais {}; /**<< Coefficients used for Newton interpolation */
     std::unordered_map<uint32_t, int> max_deg {};
-    static std::mutex mutex_statics; /**< A mutex for all static member variables */
-    static ff_pair_map rand_zi; /**< A static map holding all used potencies of the anchor points */
+    static std::mutex mutex_anchor; /**< A mutex for writing to global_anchor_points */
+    static std::vector<FFInt> global_anchor_points;
+    std::vector<FFInt> private_anchor_points;
     std::vector<uint32_t> zero_element {};
-    static size_t bt_threshold; // the amount of times the generator polynomial has to remain unchanged when the berlekamp_massey_step function gets called to terminate the Berlekamp/Massey algorithm, default is 1
+    size_t bt_threshold = 1; // the amount of times the generator polynomial has to remain unchanged when the berlekamp_massey_step function gets called to terminate the Berlekamp/Massey algorithm, default is 1
     std::unordered_map<std::vector<uint32_t>, size_t, UintHasher> bt_terminator; // the amount of times the generator polynomial has not changed though the berlekamp_massey_step function got called
     std::unordered_map<std::vector<uint32_t>, std::vector<FFInt>, UintHasher>  b; // the generator polynomial before it changed its degree the last time
     std::unordered_map<std::vector<uint32_t>, size_t, UintHasher>  l; // the amount of times the berlekamp_massey_step method got called ince the generator polynomial changed its degree the last time
@@ -211,7 +211,7 @@ namespace firefly {
     int deg = -1; /**< The maximal degree of the to be interpolated polynomial */
     bool with_rat_reconst = false; /**< A variable indicating whether this object is called from a RatReconst object */
     bool combine_res = false; /**< A bool indicating whether the result should be combined using the Chinese Remainder Theorem */
-    static bool use_bt; // determines, if Ben-Or and Tiwari is used for univariate interpolation, default is true
-    static bool use_newton; // determines, if Newton is used for univariate interpolation, default is true, if rational reconstruction is used this has always to be true
+    bool use_bt = true; // determines, if Ben-Or and Tiwari is used for univariate interpolation, default is true
+    bool use_newton = true; // determines, if Newton is used for univariate interpolation, default is true, if rational reconstruction is used this has always to be true
   };
 }
