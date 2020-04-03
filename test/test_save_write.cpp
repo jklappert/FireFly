@@ -56,7 +56,7 @@ namespace firefly {
       c++;
 #ifndef WITH_MPI
 
-      if ((mode == 4 && c == 1) || (mode == 5 && c == 2)) {
+      if ((mode == 4 && c == 2) || (mode == 5 && c == 3)) {
         throw std::runtime_error("Abort for save test.");
       }
 
@@ -184,6 +184,33 @@ int main() {
     std::remove("ff_save/scan");
     std::remove("ff_save/shift");
     std::remove("ff_save/anchor_points");
+  }
+
+  // Remove files
+  remove_sates();
+  remove_probes();
+  RatReconst::reset();
+
+  try {
+    INFO_MSG("Test saving states and starting from them in prime 1 for 1 variable");
+    ShuntingYardParser p_6("../../parser_test/s_y_1_v.m", {"x"});
+    BlackBoxUser b_6(p_6, 4);
+    Reconstructor<BlackBoxUser> r_6(1, 4, b_6);
+    r_6.enable_shift_scan();
+    r_6.set_tags();
+    r_6.reconstruct();
+  } catch (std::exception& e) {
+    RatReconst::reset();
+    ShuntingYardParser p_7("../../parser_test/s_y_1_v.m", {"x"});
+    BlackBoxUser b_7(p_7, 6);
+    Reconstructor<BlackBoxUser> r_7(1, 4, b_7);
+    r_7.set_tags();
+    r_7.resume_from_saved_state();
+    r_7.reconstruct();
+    std::remove("ff_save/validation.gz");
+    std::remove("ff_save/scan");
+    std::remove("ff_save/shift");
+    std::remove("ff_save/anchor_points");
     INFO_MSG("Starting from saved states passed");
     std::cout << "\n";
   }
@@ -191,6 +218,7 @@ int main() {
   // Remove files
   remove_sates();
   remove_probes();
+  RatReconst::reset();
 #else
   int provided;
   MPI_Init_thread(NULL, NULL, MPI_THREAD_SERIALIZED, &provided);

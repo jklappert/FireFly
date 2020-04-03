@@ -70,6 +70,13 @@ int main() {
   r_3.reconstruct();
   RatReconst::reset();
 
+  ShuntingYardParser p_3_1("../../parser_test/s_y_1_v.m", {"x"});
+  BlackBoxUser b_3_1(p_3_1);
+  Reconstructor<BlackBoxUser> r_3_1(1, 4, 4, b_3_1);
+  r_3_1.enable_shift_scan();
+  r_3_1.reconstruct();
+  RatReconst::reset();
+
   ShuntingYardParser p_3_2("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_3_2(p_3_2);
   Reconstructor<BlackBoxUser> r_3_2(4, 4, 4, b_3_2);
