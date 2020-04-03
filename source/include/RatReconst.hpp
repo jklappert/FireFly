@@ -396,7 +396,8 @@ namespace firefly {
     std::string tag_name = ""; /**< The tag name of this interpolation class for state saving */
     std::string var = ""; /**< The variable that is replaced when calculating factors */
     static std::vector<FFInt> shift; /**< The static shift used to obtain a unique normalization */
-    static ff_pair_map rand_zi; /**< A static map storing potencies of the anchor points */
+    static std::vector<FFInt> global_anchor_points;
+    std::vector<FFInt> private_anchor_points;
     static std::unordered_set<uint32_t> singular_system_set; /**< A static set which indicates if a shift is needed for a given prime field */
     static std::mutex mutex_statics;
     std::vector<bool> parsed_variables {std::vector<bool>(22, false)};  /**< A vector in which each entry indicates one variable which has to be parsed */

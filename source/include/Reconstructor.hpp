@@ -709,6 +709,12 @@ namespace firefly {
       if (anchor_point_file.is_open()) {
         std::getline(anchor_point_file, line);
         tmp_rec.set_anchor_points(parse_vector_FFInt(line, static_cast<int>(n)));
+
+        const auto tmp_an_vec = tmp_rec.get_anchor_points();
+
+	for (auto & rec : reconst) {
+          std::get<2>(rec)->set_anchor_points(tmp_an_vec);
+	}
       } else {
         ERROR_MSG("Anchor point file not found!");
         logger << "Anchor point file not found!\n";
@@ -2275,6 +2281,11 @@ namespace firefly {
           if (anchor_point_file.is_open()) {
             std::getline(anchor_point_file, line);
             tmp_rec.set_anchor_points(parse_vector_FFInt(line, static_cast<int>(n)));
+            const auto tmp_an_vec = tmp_rec.get_anchor_points();
+
+	    for (auto & rec : reconst) {
+              std::get<2>(rec)->set_anchor_points(tmp_an_vec);
+	    }
           } else {
             logger << "Anchor point file not found!\n";
             ERROR_MSG("Anchor point file not found!");
@@ -2304,6 +2315,11 @@ namespace firefly {
           }
         } else {
           tmp_rec.generate_anchor_points();
+	  const auto tmp_an_vec = tmp_rec.get_anchor_points();
+
+	  for (auto & rec : reconst) {
+            std::get<2>(rec)->set_anchor_points(tmp_an_vec);
+          }
         }
 
         shift = tmp_rec.get_zi_shift_vec();

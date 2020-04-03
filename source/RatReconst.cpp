@@ -30,7 +30,7 @@
 namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
   std::unordered_set<uint32_t> RatReconst::singular_system_set {};
-  ff_pair_map RatReconst::rand_zi {};
+  std::vector<FFInt> RatReconst::global_anchor_points {};
   std::mutex RatReconst::mutex_statics;
   std::vector<uint32_t> RatReconst::curr_shift {};
 
@@ -70,9 +70,11 @@ namespace firefly {
       // fill in the rand_vars for zi_order = 1
       std::unique_lock<std::mutex> lock_statics(mutex_statics);
 
-      if (rand_zi.empty()) {
+      if (global_anchor_points.empty()) {
         lock_statics.unlock();
         generate_anchor_points();
+      } else {
+	private_anchor_points = global_anchor_points;
       }
     }
   }
@@ -836,22 +838,6 @@ namespace firefly {
               std::lock_guard<std::mutex> lock(mutex_status);
               std::fill(curr_zi_order.begin(), curr_zi_order.end(), 1);
               zi = 2;
-            } else if (zi > 0) {
-              // set new random
-              std::vector<uint32_t> tmp_zi_order = curr_zi_order;
-              for (size_t vandermonde_multi = 0; vandermonde_multi != vandermonde_size; ++vandermonde_multi) {
-                for (uint32_t tmp_zi = 2; tmp_zi != n + 1; ++tmp_zi) {
-                  auto key = std::make_pair(tmp_zi, tmp_zi_order[tmp_zi - 2]);
-                  std::lock_guard<std::mutex> lock_statics(mutex_statics);
-
-                  if (rand_zi.find(key) == rand_zi.end())
-                    rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
-                }
-
-                for (uint32_t tmp_zi = 2; tmp_zi != zi; ++tmp_zi) {
-                  tmp_zi_order[tmp_zi - 2]++;
-                }
-              }
             }
 
             return;
@@ -2042,7 +2028,7 @@ namespace firefly {
       yis[0] = ti + shift[0];
 
       for (uint32_t i = 1; i != n; ++i) {
-        yis[i] = ti * rand_zi[std::make_pair(i + 1, 1)].pow(curr_zi_order[i - 1]) + shift[i];
+        yis[i] = ti * get_rand_zi(i + 1, curr_zi_order[i - 1]) + shift[i];
       }
     }
 
@@ -2250,21 +2236,16 @@ namespace firefly {
   void RatReconst::generate_anchor_points() {
     std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
-    rand_zi.clear();
+    global_anchor_points = std::vector<FFInt> (n - 1, 0);
 
-    for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
-      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
-      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), FFInt(get_rand_64())));
+    for (uint32_t tmp_zi = 0; tmp_zi != n - 1; ++tmp_zi) {
+      global_anchor_points[tmp_zi] = FFInt(get_rand_64());
     }
+
+    private_anchor_points = global_anchor_points;
 
     PolyReconst rec(n - 1, 0, true);
-    std::vector<FFInt> anchor_points {};
-
-    for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
-      anchor_points.emplace_back(rand_zi[std::make_pair(tmp_zi, 1)]);
-    }
-
-    rec.set_anchor_points(anchor_points, true);
+    rec.set_anchor_points(private_anchor_points, true);
 
     if (!shift.empty() && n > 1) {
       for (auto & el : shift) el = FFInt(el.n);
@@ -2274,15 +2255,10 @@ namespace firefly {
   void RatReconst::set_anchor_points(const std::vector<FFInt>& anchor_points) {
     std::lock_guard<std::mutex> lock_statics(mutex_statics);
 
-    rand_zi.clear();
-
-    for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
-      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 0), 1));
-      rand_zi.emplace(std::make_pair(std::make_pair(tmp_zi, 1), FFInt(anchor_points[tmp_zi - 2])));
-    }
+    global_anchor_points = anchor_points;
+    private_anchor_points = anchor_points;
 
     PolyReconst rec(n - 1, 0, true);
-
     rec.set_anchor_points(anchor_points, true);
   }
 
@@ -2326,28 +2302,14 @@ namespace firefly {
   }
 
   FFInt RatReconst::get_rand_zi(uint32_t zi, uint32_t order) const {
-    std::lock_guard<std::mutex> lock_statics(mutex_statics);
-    return rand_zi.at(std::make_pair(zi, order));
+    return private_anchor_points[zi - 2].pow(order);
   }
 
   std::vector<FFInt> RatReconst::get_rand_zi_vec(const std::vector<uint32_t>& order, bool generate) {
-    if (generate) {
-      for (uint32_t tmp_zi = 2; tmp_zi <= n; ++tmp_zi) {
-        auto key = std::make_pair(tmp_zi, order[tmp_zi - 2]);
-
-        std::lock_guard<std::mutex> lock_statics(mutex_statics);
-
-        if (rand_zi.find(key) == rand_zi.end())
-          rand_zi.emplace(std::make_pair(key, rand_zi[std::make_pair(tmp_zi, 1)].pow(key.second)));
-      }
-    }
-
     std::vector<FFInt> res {};
 
-    std::lock_guard<std::mutex> lock_statics(mutex_statics);
-
-    for (uint32_t i = 2; i <= n; ++i) {
-      res.emplace_back(rand_zi.at(std::make_pair(i, order[i - 2])));
+    for (size_t i = 0; i != n - 1; ++i) {
+      res.emplace_back(private_anchor_points[i].pow(order[i]));
     }
 
     return res;
@@ -3207,7 +3169,7 @@ namespace firefly {
     std::lock_guard<std::mutex> lock(mutex_statics);
     shift = std::vector<FFInt> ();
     singular_system_set = std::unordered_set<uint32_t>();
-    rand_zi = ff_pair_map();
+    global_anchor_points.clear();
     curr_shift = std::vector<uint32_t>();
     PolyReconst::reset();
   }
@@ -3593,14 +3555,7 @@ namespace firefly {
   }
 
   std::vector<FFInt> RatReconst::get_anchor_points() {
-    std::vector<FFInt> res(n - 1);
-
-    for (uint32_t i = 2; i <= n; ++i) {
-      std::lock_guard<std::mutex> lock_statics(mutex_statics);
-      res[i - 2] = rand_zi[std::make_pair(i, 1)];
-    }
-
-    return res;
+    return private_anchor_points;
   }
 
   std::pair<uint32_t, uint32_t> RatReconst::get_max_deg() {
