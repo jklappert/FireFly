@@ -112,7 +112,6 @@ namespace firefly {
       std::string fac_path = "ff_save/factors_rf/" + file;
       fac_file.open(fac_path.c_str());
       bool is_num = false;
-      bool is_den = false;
       bool is_var = true;
       int var_pos = -1;
 
@@ -120,7 +119,6 @@ namespace firefly {
         if (line == "var") {
           is_var = true;
           is_num = false;
-          is_den = false;
 
           if (!tmp_numerator.empty() || !tmp_denominator.empty()) {
             Polynomial tmp_num(tmp_numerator);
@@ -134,9 +132,7 @@ namespace firefly {
           tmp_denominator.clear();
         } else if (line == "numerator") {
           is_num = true;
-          is_den = false;
         } else if (line == "denominator") {
-          is_den = true;
           is_num = false;
         } else if(is_var) {
           is_var = false;
