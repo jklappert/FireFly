@@ -220,6 +220,7 @@ namespace firefly {
     std::unordered_map<std::vector<uint32_t>, std::unordered_set<uint64_t>, UintHasher> chosen_t;
     std::unordered_map<uint32_t, uint32_t> optimal_var_order {}; /**< first is old position, second is new position */
     std::unordered_map<uint32_t, ShuntingYardParser> parsed_factors {};
+    std::unordered_map<uint32_t, std::vector<std::pair<uint32_t, uint32_t>>> max_deg_map_complete {};
     RatReconst tmp_rec;
     std::vector<FFInt> shift;
     /**
@@ -1174,6 +1175,7 @@ namespace firefly {
     shift = std::vector<FFInt> (n, 0);
     rand_zi_fac = std::vector<FFInt> (n, 0);
     std::unordered_map<uint32_t, std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>> factors_str {};
+    std::unordered_map<uint32_t, std::vector<std::pair<uint32_t, uint32_t>>> max_deg_map_complete_tmp {};
 
     // Scan in all variables
     for (size_t i = 0; i != n; ++i) {
@@ -1247,6 +1249,7 @@ namespace firefly {
                 // Get maximum degrees
                 auto tmp_max_degs = std::get<2>(rec)->get_max_deg();
                 max_deg_map.emplace(std::make_pair(counter, tmp_max_degs));
+		max_deg_map_complete_tmp[counter].emplace_back(tmp_max_degs);
 
                 uint32_t max_val = std::max(tmp_max_degs.first, tmp_max_degs.second);
                 if (max_val > max_degs[i]) {
@@ -1327,6 +1330,8 @@ namespace firefly {
 
                   max_deg_map[counter].first -= fac_max_deg_num;
                   max_deg_map[counter].second -= fac_max_deg_den;
+		  max_deg_map_complete_tmp[counter].back().first = max_deg_map[counter].first;
+		  max_deg_map_complete_tmp[counter].back().second = max_deg_map[counter].second;
 
                   combined_ni[counter] = tmp_combined_ni;
                   combined_di[counter] = tmp_combined_di;
@@ -1565,6 +1570,14 @@ namespace firefly {
     for (size_t i = 0; i != n; ++i) {
       optimal_var_order.emplace(std::make_pair(i, indices[i]));
       vars[i] = "x" + std::to_string(i + 1);
+    }
+
+    for (const auto& el : max_deg_map_complete_tmp) {
+      max_deg_map_complete[el.first] = std::vector<std::pair<uint32_t, uint32_t>> (n);
+
+      for (size_t i = 0; i != n; ++i) {
+	max_deg_map_complete[el.first][optimal_var_order[i]] = el.second[i];
+      }
     }
 
     std::string var_order = "Using optimized variable order: (";
@@ -1957,6 +1970,10 @@ namespace firefly {
         if (scan) {
           rec->scan_for_sparsest_shift();
         }
+
+	if (!parsed_factors.empty()) {
+	  rec->set_individual_degree_bounds(max_deg_map_complete[i]);
+	}
 
         if (save_states) {
           rec->set_tag(std::to_string(i));

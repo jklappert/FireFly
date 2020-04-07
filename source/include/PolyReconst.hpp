@@ -112,6 +112,11 @@ namespace firefly {
      *  @return the required number of equations
      */
     uint32_t get_vandermonde_num_eqn() const;
+    /**
+     *  Sets individual degree bounds on each variable
+     *  @param individual_degree_bounds_ the degree bounds 
+     */
+    void set_individual_degree_bounds(const std::vector<uint32_t>& individual_degree_bounds_);
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -213,5 +218,7 @@ namespace firefly {
     bool combine_res = false; /**< A bool indicating whether the result should be combined using the Chinese Remainder Theorem */
     bool use_bt = true; // determines, if Ben-Or and Tiwari is used for univariate interpolation, default is true
     bool use_newton = true; // determines, if Newton is used for univariate interpolation, default is true, if rational reconstruction is used this has always to be true
+    bool is_set_individual_degree_bounds = false; /**< If true individual degree bounds are set */
+    std::vector<uint32_t> individual_degree_bounds {}; /**< Stores individual degree bounds */
   };
 }

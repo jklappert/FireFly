@@ -176,7 +176,10 @@ namespace firefly {
             } else if (deg != -1 && static_cast<uint32_t>(deg) == i) {
               combine_res = true;
               finished = true;
-            }
+            } else if (is_set_individual_degree_bounds == true && individual_degree_bounds[zi - 1] == i) {
+	      combine_res = true;
+	      finished = true;
+	    }
           }
 
           if (use_bt && !finished) {
@@ -291,7 +294,9 @@ namespace firefly {
                   finished = true;
                 } else if (deg != -1 && i == tmp_deg) {
                   finished = true;
-                } else
+                }  else if (is_set_individual_degree_bounds == true && individual_degree_bounds[zi - 1] == i) {
+		  finished = true;
+		} else
                   ++not_done_counter_newton;
 
                 if (finished) {
@@ -948,5 +953,10 @@ namespace firefly {
       return 1;
     else
       return rec_degs.size() - nums.size();
+  }
+
+  void PolyReconst::set_individual_degree_bounds(const std::vector<uint32_t>& individual_degree_bounds_) {
+    is_set_individual_degree_bounds = true;
+    individual_degree_bounds = individual_degree_bounds_;
   }
 }

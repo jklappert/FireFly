@@ -226,6 +226,11 @@ namespace firefly {
      *  @return a pair of a vector of pairs of a vector of required zi_orders and multiplicities and the maximum system size
      */
     std::pair<std::vector<std::pair<std::vector<uint32_t>, uint32_t>>, uint32_t> get_zi_orders() const;
+    /**
+     *  Sets individual degree bounds on each variable
+     *  @param individual_degree_bounds_ the degree bounds
+     */
+    void set_individual_degree_bounds(const std::vector<std::pair<uint32_t, uint32_t>>& individual_degree_bounds_);
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -362,6 +367,11 @@ namespace firefly {
      *  @return A map with a degree as the key and the polynomial emerging from the shift as its value
      */
     polff_map calculate_shift_polynomials(const PolynomialFF& poly, uint32_t deg);
+    /**
+     *  Calculates the individual degree bounds for numerator or denominator when set
+     *  @param is_den indicates whether this is a denominator
+     */
+    std::vector<uint32_t> get_individual_degree_bounds(bool is_den);
     std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> queue; /**< A queue for all feeds */
     std::vector<std::vector<FFInt>> coef_mat {}; /**< A matrix that holds the system of equations for the homogenized system */
     std::unordered_map<uint32_t, std::vector<FFInt>> coef_mat_num {}; /**< A matrix that holds systems of equations for the Vandermonde systems of the numerator */
@@ -445,6 +455,8 @@ namespace firefly {
     bool restart_sparse_interpolation_den = false; /**< Indicates whether one should proceed with a sparse interpolation instead of a dense one */
     bool normalizer_den_num = false; /**< If true the real normalization degree is the denominator else the numerator */
     bool skip_thiele = false; /**< If true Thiele is skipped and replaced by system of equations during factor scan */
+    bool is_set_individual_degree_bounds = false; /**< If true individual degree bounds are set */
+    std::vector<std::pair<uint32_t, uint32_t>> individual_degree_bounds {}; /**< Stores individual degree bounds of numerator and denominator */
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,

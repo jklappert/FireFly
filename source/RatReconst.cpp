@@ -536,6 +536,9 @@ namespace firefly {
 
               for (const auto & deg : degs) {
                 coef_n.emplace_back(std::make_pair(deg, PolyReconst(n - 1, deg, true)));
+		if (is_set_individual_degree_bounds) {
+		  coef_n.back().second.set_individual_degree_bounds(get_individual_degree_bounds(false));
+		}
               }
 
               degs.clear();
@@ -555,6 +558,9 @@ namespace firefly {
 
               for (const auto & deg : degs) {
                 coef_d.emplace_back(std::make_pair(deg, PolyReconst(n - 1, deg, true)));
+		if (is_set_individual_degree_bounds) {
+		  coef_d.back().second.set_individual_degree_bounds(get_individual_degree_bounds(true));
+		}
               }
 
               std::lock_guard<std::mutex> lock(mutex_status);
@@ -590,6 +596,9 @@ namespace firefly {
 
                 if (restart_sparse_interpolation_num) {
                   it -> second = PolyReconst(n - 1, it->first, true);
+		  if (is_set_individual_degree_bounds) {
+		    it->second.set_individual_degree_bounds(get_individual_degree_bounds(false));
+		  }
                   restart_sparse_interpolation_num = false;
                 }
 
@@ -611,6 +620,9 @@ namespace firefly {
 
                 if (restart_sparse_interpolation_den) {
                   it -> second = PolyReconst(n - 1, it->first, true);
+		  if (is_set_individual_degree_bounds) {
+		    it->second.set_individual_degree_bounds(get_individual_degree_bounds(true));
+		  }
                   restart_sparse_interpolation_den = false;
                 }
 
@@ -3671,5 +3683,24 @@ namespace firefly {
 
       return std::make_pair(tmp_zi_orders, num_eqn);
     }
+  }
+
+  void RatReconst::set_individual_degree_bounds(const std::vector<std::pair<uint32_t, uint32_t>>& individual_degree_bounds_) {
+    is_set_individual_degree_bounds = true;
+    individual_degree_bounds = individual_degree_bounds_;
+  }
+
+  std::vector<uint32_t> RatReconst::get_individual_degree_bounds(bool is_den) {
+    std::vector<uint32_t> res (n - 1);
+
+    for (size_t i = 1; i != n; ++i) {
+      if (is_den) {
+	res[i - 1] = individual_degree_bounds[i].second;
+      } else {
+	res[i - 1] = individual_degree_bounds[i].first;
+      }
+    }
+
+    return res;
   }
 }
