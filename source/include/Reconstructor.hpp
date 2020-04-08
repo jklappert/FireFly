@@ -1576,7 +1576,8 @@ namespace firefly {
       max_deg_map_complete[el.first] = std::vector<std::pair<uint32_t, uint32_t>> (n);
 
       for (size_t i = 0; i != n; ++i) {
-	max_deg_map_complete[el.first][optimal_var_order[i]] = el.second[i];
+	//std::cout << "put " << i << " " << optimal_var_order[i] << " " << el.second[optimal_var_order[i]].first << " " << el.second[optimal_var_order[i]].second << "\n";
+	max_deg_map_complete[el.first][i] = el.second[optimal_var_order[i]];
       }
     }
 

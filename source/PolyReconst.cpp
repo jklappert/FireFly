@@ -174,11 +174,12 @@ namespace firefly {
               ais[zero_element].pop_back();
               finished = true;
             } else if (deg != -1 && static_cast<uint32_t>(deg) == i) {
+
               combine_res = true;
               finished = true;
             } else if (is_set_individual_degree_bounds == true && individual_degree_bounds[zi - 1] == i) {
-	      combine_res = true;
-	      finished = true;
+              combine_res = true;
+              finished = true;
 	    }
           }
 
