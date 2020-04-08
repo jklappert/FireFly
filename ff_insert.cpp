@@ -21,6 +21,11 @@
 #include "tinydir.h"
 #include <sys/stat.h>
 
+bool is_number(const std::string& s){
+  return !s.empty() && std::find_if(s.begin(),
+    s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+}
+
 using namespace firefly;
 int main(int argc, char* argv[]) {
   auto time0 = std::chrono::high_resolution_clock::now();
@@ -36,8 +41,8 @@ int main(int argc, char* argv[]) {
   logger.open("ff_insert.log");
 
   if (argc == 1) {
-    ERROR_MSG("Please provide an input file");
-    logger << "Please provide an input file\n";
+    ERROR_MSG("Please provide an input file as last argument");
+    logger << "Please provide an input file as last argument\n";
     logger.close();
     std::exit(EXIT_FAILURE);
   }
@@ -46,10 +51,40 @@ int main(int argc, char* argv[]) {
     std::string arg = argv[i];
 
     if (arg == "-p" || arg == "--parallel") {
-      n_threads = std::stoi(argv[i + 1]);
+      if (i + 1 != argc) {
+	if (is_number(argv[i + 1]))
+	  n_threads = std::stoi(argv[i + 1]);
+	else {
+	  ERROR_MSG("The argument of -p needs to be a number");
+	  logger << "The argument of -p needs to be a number\n";
+	  logger.close();
+	  std::exit(EXIT_FAILURE);
+	}
+      } else {
+        ERROR_MSG("-p needs an argument");
+        logger << "-p needs an argument\n";
+        logger.close();
+        std::exit(EXIT_FAILURE);
+      }
+
       ++i;
     } else if (arg == "-bs" || arg == "--bunchsize") {
-      bs = std::stoi(argv[i + 1]);
+      if (i + 1 != argc) {
+	if (is_number(argv[i + 1]))
+	  bs = std::stoi(argv[i + 1]);
+	else {
+	  ERROR_MSG("The argument of -bs needs to be a number");
+	  logger << "The argument of -bs needs to be a number\n";
+	  logger.close();
+	  std::exit(EXIT_FAILURE);
+	}
+      }  else {
+        ERROR_MSG("-bs needs an argument");
+        logger << "-bs needs an argument\n";
+        logger.close();
+        std::exit(EXIT_FAILURE);
+      }
+
       ++i;
     } else if (arg == "-m" || arg == "--merge") {
       merge = true;
@@ -73,9 +108,9 @@ int main(int argc, char* argv[]) {
       std::ifstream test_file(input_file);
 
       if (!test_file.good()) {
-        ERROR_MSG("Input file '" + input_file + "' does not exist");
-        logger << "Input file '" + input_file + "' does not exist\n";
-        logger.close();
+	ERROR_MSG("Input file '" + input_file + "' does not exist");
+	logger << "Input file '" + input_file + "' does not exist\n";
+	logger.close();
         std::exit(EXIT_FAILURE);
       }
     } else {
@@ -86,6 +121,12 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  if (input_file.size() == 0) {
+    ERROR_MSG("Please provide an input file as last argument");
+    logger << "Please provide an input file as last argument\n";
+    logger.close();
+    std::exit(EXIT_FAILURE);
+  }
 
   if (!merge) {
     // Parse integral families
