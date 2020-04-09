@@ -278,8 +278,8 @@ namespace firefly {
 
   std::vector<uint32_t> PolynomialFF::max_deg() {
     if (max_degree.empty()) {
-      int tmp_max;
-      int tmp_min;
+      int tmp_max = 0;
+      int tmp_min = 0;
 
       for (const auto c : coefs) {
         int tmp_deg = 0;
