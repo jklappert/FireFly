@@ -2616,8 +2616,6 @@ namespace firefly {
 
     if (factor_scan) {
       rand_zi = rand_zi_fac;
-    } else if (!ones && (prime_it != 0 && safe_mode == false)) {
-      rand_zi = tmp_rec.get_rand_zi_vec(zi_order);
     } else {
       rand_zi = tmp_rec.get_rand_zi_vec(zi_order);
     }
