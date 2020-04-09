@@ -2317,7 +2317,7 @@ namespace firefly {
     return private_anchor_points[zi - 2].pow(order);
   }
 
-  std::vector<FFInt> RatReconst::get_rand_zi_vec(const std::vector<uint32_t>& order, bool generate) {
+  std::vector<FFInt> RatReconst::get_rand_zi_vec(const std::vector<uint32_t>& order) {
     std::vector<FFInt> res {};
 
     for (size_t i = 0; i != n - 1; ++i) {
@@ -3565,7 +3565,7 @@ namespace firefly {
 
             for (const auto & el2 : el.second) {
               queue.emplace(std::make_tuple(el2.first, el2.second, el.first));
-              get_rand_zi_vec(el.first, true);
+              get_rand_zi_vec(el.first);
             }
           }
 

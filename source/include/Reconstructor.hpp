@@ -1933,7 +1933,7 @@ namespace firefly {
 
       file.open("ff_save/validation.gz");
 
-      std::vector<FFInt> rand_zi= tmp_rec.get_rand_zi_vec(zi_order, false);
+      std::vector<FFInt> rand_zi= tmp_rec.get_rand_zi_vec(zi_order);
 
       if (change_var_order) {
         std::vector<uint64_t> tmp_val (n);
@@ -2617,9 +2617,9 @@ namespace firefly {
     if (factor_scan) {
       rand_zi = rand_zi_fac;
     } else if (!ones && (prime_it != 0 && safe_mode == false)) {
-      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+      rand_zi = tmp_rec.get_rand_zi_vec(zi_order);
     } else {
-      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, false);
+      rand_zi = tmp_rec.get_rand_zi_vec(zi_order);
     }
 
     for (uint32_t j = 0; j != to_start; ++j) {
@@ -3259,7 +3259,7 @@ namespace firefly {
     if (factor_scan) {
       rand_zi = rand_zi_fac;
     } else {
-      rand_zi = tmp_rec.get_rand_zi_vec(zi_order, true);
+      rand_zi = tmp_rec.get_rand_zi_vec(zi_order);
     }
 
     std::lock_guard<std::mutex> chosen_lock(chosen_mutex);

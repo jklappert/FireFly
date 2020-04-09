@@ -108,10 +108,9 @@ namespace firefly {
     FFInt get_rand_zi(uint32_t zi, uint32_t order) const;
     /**
      *  @param order a vector of all zi orders
-     *  @param generate generates the random values if they are not already generated
      *  @return a vector of all random numbers of the given orders
      */
-    std::vector<FFInt> get_rand_zi_vec(const std::vector<uint32_t>& order, bool generate = false);
+    std::vector<FFInt> get_rand_zi_vec(const std::vector<uint32_t>& order);
     /**
      *  @param zi the zi of which one wants to get the shift
      *  @return the corresponding shift as an FFInt
