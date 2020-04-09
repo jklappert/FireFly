@@ -30,91 +30,74 @@
 # GMP_FOUND - System has GMP lib
 # GMP_INCLUDE_DIR - The GMP include directory
 # GMP_LIBRARIES - Libraries needed to use GMP
+#
+# Reads the following variables:
+#
+# - GMP_INCLUDE_DIR : include directory to search in
+# - GMP_LIBRARY     : library directory to search in
+#
+# Sets the following variables:
+#
+# - GMP_FOUND       : System has GMP library
+# - GMP_INCLUDE_DIR : The GMP include directory
+# - GMP_LIBRARIES   : Libraries needed to use GMP
 
-include(LibFindMacros)
+# macro to extract the GMP version from a header file
+macro(_FF_extract_GMP_version header_file)
+  file(READ "${header_file}" _gmp_version_header)
 
-# Force search at every time, in case configuration changes
-libfind_include(gmpxx.h gmp)
+  string(REGEX MATCH "define[ \t]+__GNU_MP_VERSION[ \t]+([0-9]+)" _gmp_version_major_match "${_gmp_version_header}")
+  set(GMP_VERSION_MAJOR "${CMAKE_MATCH_1}")
+  string(REGEX MATCH "define[ \t]+__GNU_MP_VERSION_MINOR[ \t]+([0-9]+)" _gmp_version_minor_match "${_gmp_version_header}")
+  set(GMP_VERSION_MINOR "${CMAKE_MATCH_1}")
+  string(REGEX MATCH "define[ \t]+__GNU_MP_VERSION_PATCHLEVEL[ \t]+([0-9]+)" _gmp_version_patch_match "${_gmp_version_header}")
+  set(GMP_VERSION_RELEASE "${CMAKE_MATCH_1}")
 
-set(GMP_FIND_VERSION_MAJOR 6)
-set(GMP_FIND_VERSION_MINOR 1)
-set(GMP_FIND_VERSION_PATCH 2)
-set(GMP_FIND_VERSION
-    "${GMP_FIND_VERSION_MAJOR}.${GMP_FIND_VERSION_MINOR}.${GMP_FIND_VERSION_PATCH}")
+  set(GMP_VERSION ${GMP_VERSION_MAJOR}.${GMP_VERSION_MINOR}.${GMP_VERSION_RELEASE})
 
-if(NOT DEFINED ${GMP_INCLUDE_DIR})
-  # Since the GMP version macros may be in a file included by gmp.h of the form
-  # gmp-.*[_]?.*.h (e.g., gmp-x86_64.h), we search each of them.
-  file(GLOB GMP_HEADERS "${GMP_INCLUDE_DIR}/gmp.h" "${GMP_INCLUDE_DIR}/gmp-*.h")
-  foreach(gmp_header_filename ${GMP_HEADERS})
-    file(READ "${gmp_header_filename}" _gmp_version_header)
-    string(REGEX MATCH
-      "define[ \t]+__GNU_MP_VERSION[ \t]+([0-9]+)" _gmp_major_version_match
-      "${_gmp_version_header}")
-    if(_gmp_major_version_match)
-      set(GMP_MAJOR_VERSION "${CMAKE_MATCH_1}")
-      string(REGEX MATCH "define[ \t]+__GNU_MP_VERSION_MINOR[ \t]+([0-9]+)"
-        _gmp_minor_version_match "${_gmp_version_header}")
-      set(GMP_MINOR_VERSION "${CMAKE_MATCH_1}")
-      string(REGEX MATCH "define[ \t]+__GNU_MP_VERSION_PATCHLEVEL[ \t]+([0-9]+)"
-        _gmp_patchlevel_version_match "${_gmp_version_header}")
-      set(GMP_PATCHLEVEL_VERSION "${CMAKE_MATCH_1}")
-      set(GMP_VERSION
-        ${GMP_MAJOR_VERSION}.${GMP_MINOR_VERSION}.${GMP_PATCHLEVEL_VERSION})
-    endif()
-  endforeach()
-
-  #hack for travis
-  if(DO_NOT_CHECK_GMP_VERSION)
-    set(GMP_VERSION "6.1.2")
-  endif()
-  # Check whether found version exists and exceeds the minimum requirement
-  if("${GMP_VERSION}" STREQUAL "")
-    set(GMP_VERSION_OK "FALSE")
-    message(STATUS "GMP version was not detected")
+  if(GMP_FIND_VERSION_EXACT AND NOT ${GMP_VERSION} VERSION_EQUAL ${GMP_FIND_VERSION})
+    message(FATAL_ERROR "GMP version ${GMP_VERSION} found in ${GMP_H_INCLUDE_DIRS}, "
+      "but exact version ${GMP_FIND_VERSION} is required.")
   elseif(${GMP_VERSION} VERSION_LESS ${GMP_FIND_VERSION})
-    set(GMP_VERSION_OK "FALSE")
+    message(FATAL_ERROR "GMP version ${GMP_VERSION} found in ${GMP_H_INCLUDE_DIRS}, "
+      "but at least version ${GMP_FIND_VERSION} is required.")
+  endif()
+endmacro()
+
+find_path(GMP_INCLUDE_DIRS
+  NAMES gmpxx.h
+  PATHS ${GMP_INCLUDE_DIR}
+  PATH_SUFFIXES include
+)
+
+find_library(GMP_LIBRARIES
+  NAMES gmp
+  PATHS ${GMP_LIBRARY}
+)
+
+# find version if asked for
+if(GMP_FIND_VERSION AND GMP_INCLUDE_DIRS)
+  # search for gmp.h
+  find_path(GMP_H_INCLUDE_DIRS
+    NAMES gmp.h
+    PATHS ${GMP_INCLUDE_DIR}
+    PATH_SUFFIXES include
+  )
+  if(GMP_H_INCLUDE_DIRS)
+    _FF_extract_GMP_version("${GMP_H_INCLUDE_DIRS}/gmp.h")
   else()
-    set(GMP_VERSION_OK "TRUE")
+    message(FATAL_ERROR "GMP version header gmp.h not found.")
   endif()
 endif()
 
-libfind_library(gmp gmp)
+include(FindPackageHandleStandardArgs)
 
-set(GMP_LIBRARIES ${GMP_LIBRARY})
+find_package_handle_standard_args(GMP
+  FOUND_VAR GMP_FOUND
+  REQUIRED_VARS
+    GMP_LIBRARIES
+    GMP_INCLUDE_DIRS
+)
 
-if(NOT "${GMP_INCLUDE_DIR}" STREQUAL "" AND NOT "${GMP_LIBRARIES}" STREQUAL "")
-  set(GMP_FOUND "TRUE")
-  else()
-  set(GMP_FOUND "FALSE")
-endif()
+mark_as_advanced(GMP_INCLUDE_DIRS GMP_LIBRARIES)
 
-if(GMP_FOUND STREQUAL "TRUE" AND GMP_VERSION_OK STREQUAL "TRUE")
-  message(STATUS "Found GMP ${GMP_VERSION} headers: ${GMP_INCLUDE_DIR}")
-  message(STATUS "GMP library: ${GMP_LIBRARIES}")
-elseif(GMP_FOUND STREQUAL "FALSE")
-  # Force search at every time, in case configuration changes
-  if("${GMP_INCLUDE_DIR}" STREQUAL "")
-    set(DUMMY "GMP_INCLUDE_DIR")
-  endif()
-  if("${GMP_INCLUDE_DIR}" STREQUAL "")
-    set(DUMMY "${DUMMY}, ${GMP_LIBRARIES}")
-  endif()
-
-  unset(GMP_INCLUDE_DIR CACHE)
-  unset(GMP_LIBRARY CACHE)
-  unset(GMP_LIBRARIES CACHE)
-
-  message(FATAL_ERROR "GMP not found (missing: ${DUMMY})")
-else()
-  # Force search at every time, in case configuration changes
-  set(DUMMY ${GMP_INCLUDE_DIR})
-  unset(GMP_INCLUDE_DIR CACHE)
-  unset(GMP_LIBRARY CACHE)
-  unset(GMP_LIBRARIES CACHE)
-
-  message(FATAL_ERROR "GMP version ${GMP_VERSION} found in ${DUMMY}, "
-    "but at least version ${GMP_FIND_VERSION} is required")
-endif()
-
-mark_as_advanced(GMP_INCLUDE_DIR GMP_LIBRARIES)

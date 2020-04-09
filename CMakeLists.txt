@@ -24,7 +24,7 @@ if(NOT WIN32)
   set(BoldWhite   "${Esc}[1;37m")
 endif()
 
-find_package(GMP REQUIRED)
+find_package(GMP 6.1.2 REQUIRED)
 find_package(ZLIB REQUIRED)
 
 # set the build type to release. If one needs debugging symbols, compile
@@ -53,9 +53,9 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 
 # include headers
 include_directories(${INCLUDE_PATH})
-include_directories(${GMP_INCLUDE_DIR})
+include_directories(${GMP_INCLUDE_DIRS})
 include_directories(${ZLIB_INCLUDE_DIRS})
-set(PKG_INCLUDE -I${GMP_INCLUDE_DIR} -I${ZLIB_INCLUDE_DIRS})
+set(PKG_INCLUDE -I${GMP_INCLUDE_DIRS} -I${ZLIB_INCLUDE_DIRS})
 
 # Check for FLINT
 # if you want to use FLINT instead of our default implementation, call cmake with
