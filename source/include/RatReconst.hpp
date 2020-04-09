@@ -410,7 +410,7 @@ namespace firefly {
     std::vector<FFInt> private_anchor_points;
     static std::unordered_set<uint32_t> singular_system_set; /**< A static set which indicates if a shift is needed for a given prime field */
     static std::mutex mutex_statics;
-    std::vector<bool> parsed_variables {std::vector<bool>(22, false)};  /**< A vector in which each entry indicates one variable which has to be parsed */
+    std::vector<bool> parsed_variables {std::vector<bool>(24, false)};  /**< A vector in which each entry indicates one variable which has to be parsed */
     std::vector<uint32_t> all_shift_max_degs {}; /**< Stores the maximal degree of numerator and denominator when shifting all variables */
     static std::vector<uint32_t> curr_shift; /**< Stores the current tested shift during a scan */
     std::pair<uint32_t, uint32_t> max_num_coef_num = std::make_pair(0, 0); // deg and number of terms
@@ -460,7 +460,8 @@ namespace firefly {
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
-                         COMBINED_NI, COMBINED_DI, COMBINED_PRIMES_NI, COMBINED_PRIMES_DI, INTERPOLATIONS
+                         COMBINED_NI, COMBINED_DI, COMBINED_PRIMES_NI, COMBINED_PRIMES_DI, INTERPOLATIONS,
+			 INDIVIDUAL_DEGREES_NUM, INDIVIDUAL_DEGREES_DEN
                         };
   };
 }

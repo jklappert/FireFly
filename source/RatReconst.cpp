@@ -2348,6 +2348,26 @@ namespace firefly {
       file.open(file_name.c_str());
       file << "tag_name\n" << tag_name << "\n";
       file << "normalize_to_den\n" << std::to_string(normalize_to_den) << "\n";
+      file << "individual_degrees_num\n";
+
+      if (!individual_degree_bounds.empty()) {
+	for (const auto & el : individual_degree_bounds) {
+	  file << el.first << " ";
+	}
+
+	file << "\n";
+      }
+
+      file << "individual_degrees_den\n";
+
+      if (!individual_degree_bounds.empty()) {
+	for (const auto & el : individual_degree_bounds) {
+	  file << el.second << " ";
+	}
+
+	file << "\n";
+      }
+
       file.close();
     }
 
@@ -2427,6 +2447,26 @@ namespace firefly {
       file.open(file_name.c_str());
       file << "tag_name\n" << tag_name << "\n";
       file << "normalize_to_den\n1\n";
+      file << "individual_degrees_num\n";
+
+      if (!individual_degree_bounds.empty()) {
+	for (const auto & el : individual_degree_bounds) {
+	  file << el.first << " ";
+	}
+
+	file << "\n";
+      }
+
+      file << "individual_degrees_den\n";
+
+      if (!individual_degree_bounds.empty()) {
+	for (const auto & el : individual_degree_bounds) {
+	  file << el.second << " ";
+	}
+
+	file << "\n";
+      }
+
       file.close();
       ogzstream file_2;
       file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
@@ -2463,6 +2503,25 @@ namespace firefly {
     file << "is_done\n" << is_done() << "\n";
     file << "max_deg_num\n" << max_deg_num << "\n";
     file << "max_deg_den\n" << max_deg_den << "\n";
+    file << "individual_degrees_num\n";
+
+    if (!individual_degree_bounds.empty()) {
+      for (const auto & el : individual_degree_bounds) {
+	file << el.first << " ";
+      }
+
+      file << "\n";
+    }
+
+    file << "individual_degrees_den\n";
+
+    if (!individual_degree_bounds.empty()) {
+      for (const auto & el : individual_degree_bounds) {
+	file << el.second << " ";
+      }
+
+      file << "\n";
+    }
 
     if (interpolations != 1)
       file << "need_prime_shift\n" << "1" << "\n";
@@ -2637,6 +2696,9 @@ namespace firefly {
 
     bool is_zero = false;
 
+    std::vector<uint32_t> individual_degrees_num {};
+    std::vector<uint32_t> individual_degrees_den {};
+
     if (ifile.is_open()) {
       ifile.close();
 
@@ -2652,10 +2714,28 @@ namespace firefly {
             std::getline(file, line);
             std::getline(file, line);
             normalize_to_den = std::stoi(line);
+	    std::getline(file, line);
+	    std::getline(file, line);
+
+	    if (line != "individual_degrees_den") {
+	      individual_degrees_num = parse_vector_32(line);
+	      std::getline(file, line);
+	      std::getline(file, line);
+	      individual_degrees_den = parse_vector_32(line);
+
+	      is_set_individual_degree_bounds = true;
+	      individual_degree_bounds = std::vector<std::pair<uint32_t, uint32_t>> (n);
+
+	      for (size_t i = 0; i != n; ++i) {
+		individual_degree_bounds[i] = std::make_pair(individual_degrees_num[i], individual_degrees_den[i]);
+	      }
+	    }
+
             file.close();
             std::lock_guard<std::mutex> lock_status(mutex_status);
             prime_number = 0;
             check_interpolation = false;
+
             return std::make_pair(true, 0);
           } else if (line != "combined_prime") {
             ERROR_MSG("Wrong input format! Has to start with 'combined_prime'!");
@@ -2754,7 +2834,13 @@ namespace firefly {
           } else if (line == "interpolations") {
             curr_parsed_variable = INTERPOLATIONS;
             parsed_variables[INTERPOLATIONS] = true;
-          } else {
+          } else if (line == "individual_degrees_num") {
+	    curr_parsed_variable = INDIVIDUAL_DEGREES_NUM;
+	    parsed_variables [INDIVIDUAL_DEGREES_NUM] = true;
+	  } else if (line == "individual_degrees_den") {
+	    curr_parsed_variable = INDIVIDUAL_DEGREES_DEN;
+	    parsed_variables [INDIVIDUAL_DEGREES_DEN] = true;
+	  } else {
             switch (curr_parsed_variable) {
               case COMBINED_PRIME: {
                 std::lock_guard<std::mutex> lock_status(mutex_status);
@@ -2780,6 +2866,16 @@ namespace firefly {
 
               case MAX_DEG_DEN: {
                 max_deg_den = std::stoi(line);
+                break;
+              }
+
+              case INDIVIDUAL_DEGREES_NUM: {
+                individual_degrees_num = parse_vector_32(line);
+                break;
+              }
+
+              case INDIVIDUAL_DEGREES_DEN: {
+                individual_degrees_den = parse_vector_32(line);
                 break;
               }
 
@@ -2981,6 +3077,15 @@ namespace firefly {
       }
 
       file.close();
+
+      if (individual_degrees_num.size() != 0) {
+	is_set_individual_degree_bounds = true;
+	individual_degree_bounds = std::vector<std::pair<uint32_t, uint32_t>> (n);
+
+        for (size_t i = 0; i != n; ++i) {
+	  individual_degree_bounds[i] = std::make_pair(individual_degrees_num[i], individual_degrees_den[i]);
+        }
+      }
 
       for (const auto & el : combined_ni) add_non_solved_num(el.first);
 
