@@ -669,6 +669,7 @@ namespace firefly {
   void PolyReconst::reset() {
     std::lock_guard<std::mutex> lock(mutex_anchor);
     global_anchor_points.clear();
+    BaseReconst::reset();
   }
 
   ff_map PolyReconst::construct_tmp_canonical(const std::vector<uint32_t>& deg_vec, const std::vector<FFInt>& ai) const {
