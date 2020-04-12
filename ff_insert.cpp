@@ -406,6 +406,7 @@ int main(int argc, char* argv[]) {
           std::rename("basis_functions", new_basis_functions_name.c_str());
           std::rename("ff_insert.log", new_log_name.c_str());
           std::remove("firefly.log");
+	  time0 = std::chrono::high_resolution_clock::now();
         }
       } else {
         mkdir("coefficients", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
