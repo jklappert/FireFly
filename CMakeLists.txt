@@ -39,13 +39,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # enable all warnings in Debug mode
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pthread -pedantic -g")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -pthread -g")
 endif()
 
-# enable optimization
 if(CMAKE_BUILD_TYPE STREQUAL Release)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -pthread -g")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -g")
 endif()
+
+set(CMAKE_SHARED_LINKER_FLAGS "-pthread")
 
 # set paths
 set(SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/source)
@@ -156,6 +157,7 @@ elseif("${WITH_MPI}" STREQUAL "true")
     set(LIBS ${JEMALLOC_LIB} ${LIBS})
   endif()
   target_link_libraries(example FireFly_static ${LIBS})
+  target_link_libraries(FireFly_shared ${LIBS})
 else()
   add_executable(example ${EXAMPLE_EXE})
   add_executable(ff_insert ${INSERT_IBPS_EXE})
@@ -169,6 +171,7 @@ else()
   endif()
   target_link_libraries(ff_insert FireFly_static ${LIBS})
   target_link_libraries(example FireFly_static ${LIBS})
+  target_link_libraries(FireFly_shared ${LIBS})
 endif()
 
 # install libraries
