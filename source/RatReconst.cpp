@@ -2836,10 +2836,8 @@ namespace firefly {
             parsed_variables[INTERPOLATIONS] = true;
           } else if (line == "individual_degrees_num") {
 	    curr_parsed_variable = INDIVIDUAL_DEGREES_NUM;
-	    parsed_variables [INDIVIDUAL_DEGREES_NUM] = true;
 	  } else if (line == "individual_degrees_den") {
 	    curr_parsed_variable = INDIVIDUAL_DEGREES_DEN;
-	    parsed_variables [INDIVIDUAL_DEGREES_DEN] = true;
 	  } else {
             switch (curr_parsed_variable) {
               case COMBINED_PRIME: {
@@ -3069,11 +3067,13 @@ namespace firefly {
         }
       }
 
+      size_t counter = 0;
       for (const auto & el : parsed_variables) {
         if (!el) {
-          ERROR_MSG("Incomplete input file! It cannot be used to resume a run.");
+          ERROR_MSG("Incomplete input file '" + file_name + "'! It cannot be used to resume a run. Entry '" + save_variables_string[counter] + "' is missing.");
           std::exit(EXIT_FAILURE);
         }
+	++counter;
       }
 
       file.close();

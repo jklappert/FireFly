@@ -409,7 +409,7 @@ namespace firefly {
     std::vector<FFInt> private_anchor_points;
     static std::unordered_set<uint32_t> singular_system_set; /**< A static set which indicates if a shift is needed for a given prime field */
     static std::mutex mutex_statics;
-    std::vector<bool> parsed_variables {std::vector<bool>(24, false)};  /**< A vector in which each entry indicates one variable which has to be parsed */
+    std::vector<bool> parsed_variables {std::vector<bool>(22, false)};  /**< A vector in which each entry indicates one variable which has to be parsed */
     std::vector<uint32_t> all_shift_max_degs {}; /**< Stores the maximal degree of numerator and denominator when shifting all variables */
     static std::vector<uint32_t> curr_shift; /**< Stores the current tested shift during a scan */
     std::pair<uint32_t, uint32_t> max_num_coef_num = std::make_pair(0, 0); // deg and number of terms
@@ -456,6 +456,12 @@ namespace firefly {
     bool skip_thiele = false; /**< If true Thiele is skipped and replaced by system of equations during factor scan */
     bool is_set_individual_degree_bounds = false; /**< If true individual degree bounds are set */
     std::vector<std::pair<uint32_t, uint32_t>> individual_degree_bounds {}; /**< Stores individual degree bounds of numerator and denominator */
+    std::vector<std::string> save_variables_string = {"combined_prime", "tag_name", "is_done", "max_deg_num",
+						      "max_deg_den", "need_prime_shift", "normalizer_deg",
+                                                      "normalize_to_den", "normalizer_den_num", "shifted_max_num_eqn",
+                                                      "shift", "sub_num", "sub_den", "zero_degs_num", "zero_degs_den",
+                                                      "g_ni", "g_di", "combined_ni", "combined_di", "combined_primes_ni",
+                                                      "combined_primes_di", "interpolations"};
     enum save_variables {COMBINED_PRIME, TAG_NAME, IS_DONE, MAX_DEG_NUM, MAX_DEG_DEN, NEED_PRIME_SHIFT,
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
