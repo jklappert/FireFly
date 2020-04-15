@@ -174,82 +174,82 @@ else()
   target_link_libraries(FireFly_shared ${LIBS})
 endif()
 
-# install libraries
-install(
-  TARGETS FireFly_static FireFly_shared
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
+if("${DISABLE_INSTALL}" STREQUAL "")
+  # install libraries
+  install(
+    TARGETS FireFly_static FireFly_shared
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib)
 
-set(PKG_LIBS ${LIBS})
-list(REMOVE_DUPLICATES PKG_LIBS)
-string(REPLACE ";" " " PKG_LIBS "${PKG_LIBS}")
+  set(PKG_LIBS ${LIBS})
+  list(REMOVE_DUPLICATES PKG_LIBS)
+  string(REPLACE ";" " " PKG_LIBS "${PKG_LIBS}")
 
-list(REMOVE_DUPLICATES PKG_INCLUDE)
-string(REPLACE ";" " " PKG_INCLUDE "${PKG_INCLUDE}")
+  list(REMOVE_DUPLICATES PKG_INCLUDE)
+  string(REPLACE ";" " " PKG_INCLUDE "${PKG_INCLUDE}")
 
-configure_file("cmake/pc.in" "firefly.pc" @ONLY)
+  configure_file("cmake/pc.in" "firefly.pc" @ONLY)
 
-# install pkgconfig file
-install(FILES
-  "${CMAKE_BINARY_DIR}/firefly.pc"
+  # install pkgconfig file
+  install(FILES
+    "${CMAKE_BINARY_DIR}/firefly.pc"
+    DESTINATION "${LIB_INSTALL_DIR}/pkgconfig")
 
-DESTINATION "${LIB_INSTALL_DIR}/pkgconfig")
+  # install public headers
+  install(FILES
+    "${INCLUDE_PATH}/AmplitudeParser.hpp"
+    "${INCLUDE_PATH}/BaseReconst.hpp"
+    "${INCLUDE_PATH}/BlackBoxBase.hpp"
+    "${INCLUDE_PATH}/DenseSolver.hpp"
+    "${INCLUDE_PATH}/FFInt.hpp"
+    "${INCLUDE_PATH}/FFIntVec.hpp"
+    "${INCLUDE_PATH}/FFThieleInterpolator.hpp"
+    "${INCLUDE_PATH}/gzstream.hpp"
+    "${INCLUDE_PATH}/HornerGenerator.hpp"
+    "${INCLUDE_PATH}/Logger.hpp"
+    "${INCLUDE_PATH}/Monomial.hpp"
+    "${INCLUDE_PATH}/ParserUtils.hpp"
+    "${INCLUDE_PATH}/Poly.hpp"
+    "${INCLUDE_PATH}/Polynomial.hpp"
+    "${INCLUDE_PATH}/PolynomialFF.hpp"
+    "${INCLUDE_PATH}/PolyReconst.hpp"
+    "${INCLUDE_PATH}/RationalFunction.hpp"
+    "${INCLUDE_PATH}/RationalFunctionFF.hpp"
+    "${INCLUDE_PATH}/RationalNumber.hpp"
+    "${INCLUDE_PATH}/RatReconst.hpp"
+    "${INCLUDE_PATH}/ReconstHelper.hpp"
+    "${INCLUDE_PATH}/Reconstructor.hpp"
+    "${INCLUDE_PATH}/ShuntingYardParser.hpp"
+    "${INCLUDE_PATH}/ThreadPool.hpp"
+    "${INCLUDE_PATH}/tinydir.h"
+    "${INCLUDE_PATH}/UintHasher.hpp"
+    "${INCLUDE_PATH}/utils.hpp"
+    "${INCLUDE_PATH}/version.hpp"
+    DESTINATION "${INCLUDE_INSTALL_DIR}")
 
-# install public headers
-install(FILES
-  "${INCLUDE_PATH}/AmplitudeParser.hpp"
-  "${INCLUDE_PATH}/BaseReconst.hpp"
-  "${INCLUDE_PATH}/BlackBoxBase.hpp"
-  "${INCLUDE_PATH}/DenseSolver.hpp"
-  "${INCLUDE_PATH}/FFInt.hpp"
-  "${INCLUDE_PATH}/FFIntVec.hpp"
-  "${INCLUDE_PATH}/FFThieleInterpolator.hpp"
-  "${INCLUDE_PATH}/gzstream.hpp"
-  "${INCLUDE_PATH}/HornerGenerator.hpp"
-  "${INCLUDE_PATH}/Logger.hpp"
-  "${INCLUDE_PATH}/Monomial.hpp"
-  "${INCLUDE_PATH}/ParserUtils.hpp"
-  "${INCLUDE_PATH}/Poly.hpp"
-  "${INCLUDE_PATH}/Polynomial.hpp"
-  "${INCLUDE_PATH}/PolynomialFF.hpp"
-  "${INCLUDE_PATH}/PolyReconst.hpp"
-  "${INCLUDE_PATH}/RationalFunction.hpp"
-  "${INCLUDE_PATH}/RationalFunctionFF.hpp"
-  "${INCLUDE_PATH}/RationalNumber.hpp"
-  "${INCLUDE_PATH}/RatReconst.hpp"
-  "${INCLUDE_PATH}/ReconstHelper.hpp"
-  "${INCLUDE_PATH}/Reconstructor.hpp"
-  "${INCLUDE_PATH}/ShuntingYardParser.hpp"
-  "${INCLUDE_PATH}/ThreadPool.hpp"
-  "${INCLUDE_PATH}/tinydir.h"
-  "${INCLUDE_PATH}/UintHasher.hpp"
-  "${INCLUDE_PATH}/utils.hpp"
-  "${INCLUDE_PATH}/version.hpp"
-  DESTINATION "${INCLUDE_INSTALL_DIR}")
+  # install ibp insertion executable
+  if(NOT "${CUSTOM}" STREQUAL "true" AND NOT "${WITH_MPI}" STREQUAL "true")
+    install(TARGETS ff_insert DESTINATION "${BIN_INSTALL_DIR}")
+  endif()
 
-# install ibp insertion executable
-if(NOT "${CUSTOM}" STREQUAL "true" AND NOT "${WITH_MPI}" STREQUAL "true")
-  install(TARGETS ff_insert DESTINATION "${BIN_INSTALL_DIR}")
+  if("${WITH_MPI}" STREQUAL "true")
+    install(FILES "${INCLUDE_PATH}/MPIWorker.hpp" DESTINATION "${INCLUDE_INSTALL_DIR}")
+  endif()
+
+  # adding documentation
+  add_subdirectory(doc)
+
+  # test
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
+    enable_testing()
+    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+    add_subdirectory(test)
+  endif()
+
+  add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold --no-newline "FireFly info: ")
+  add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo "To run the example type: ./example")
+  add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold --no-newline "FireFly info: ")
+  add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo "To run the inserter type: ./ff_insert")
+  add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold --no-newline "FireFly info: ")
+  add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo "To compile and run tests type: make check")
 endif()
-
-if("${WITH_MPI}" STREQUAL "true")
-  install(FILES "${INCLUDE_PATH}/MPIWorker.hpp" DESTINATION "${INCLUDE_INSTALL_DIR}")
-endif()
-
-# adding documentation
-add_subdirectory(doc)
-
-# test
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
-  enable_testing()
-  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-  add_subdirectory(test)
-endif()
-
-add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold --no-newline "FireFly info: ")
-add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo "To run the example type: ./example")
-add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold --no-newline "FireFly info: ")
-add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo "To run the inserter type: ./ff_insert")
-add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold --no-newline "FireFly info: ")
-add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo "To compile and run tests type: make check")
