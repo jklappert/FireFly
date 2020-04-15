@@ -436,9 +436,9 @@ int main(int argc, char* argv[]) {
           std::remove("basis_functions");
           std::remove("firefly.log");
         } else {
-          INFO_MSG("Unsimplified coefficients written to 'coefficients' directory");
+          INFO_MSG("Unsimplified coefficients have been written to 'coefficients' directory");
           logger.open("ff_insert.log", std::ios_base::app);
-          logger << "Unsimplified coefficients written to 'coefficients' directory\n";
+          logger << "Unsimplified coefficients have been written to 'coefficients' directory\n";
           logger.close();
           std::string new_log_name = "ff_insert_" + fn + ".log";
           std::rename("ff_insert.log", new_log_name.c_str());
@@ -520,10 +520,10 @@ int main(int argc, char* argv[]) {
 
     auto time1 = std::chrono::high_resolution_clock::now();
     INFO_MSG("Merged files in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
-    INFO_MSG("Results written to 'merged.out'");
+    INFO_MSG("Result has been written to 'merged.out'");
     logger.open("ff_insert.log", std::ios_base::app);
     logger << "Merged files in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s\n";
-    logger << "Results written to 'merged.out'\n";
+    logger << "Result has been written to 'merged.out'\n";
     logger.close();
   }
 
