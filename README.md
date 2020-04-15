@@ -13,7 +13,6 @@ Please refer to these papers when using FireFly:
 * [Building FireFly](#building-firefly)
 * [Reconstructing funtions](#reconstructing-functions)
 * [Directly parse collections of rational functions](#directly-parse-collections-of-rational-functions)
-* [Converting Mathematica expressions to compilable code](#converting-mathematica-expressions-to-compilable-code)
 * [Code Documentation](#code-documentation)
 
 ## Requirements
@@ -182,53 +181,6 @@ where `$FILE` contains the list of rational functions.
 * Negative exponents without parentheses like `x^-5`. This should read `x^(-5)` instead.
 * Unevaluated exponents like `x^(3+7)`. This should read `x^10` instead.
 * Operators followed by operators should be separated, i.e., for example, `3*-x` should read `3*(-x)` or `-3*x`. Only `+-` or `-+` will be interpreted as `-`.
-
-
-## Converting Mathematica expressions to compilable code
-<details>
-  <summary>Note that this conversion might not reach an optimal performance and you want to use the parser instead</summary>
-
-  Sometimes the black box is not provided by a code but some Mathematica expressions. For this purpose FireFly provides a script to convert Mathematica functions to compilable C++ code. The functions have to be provided as a file in which a list of functions (expression or string) is stored, e.g.,
-
-  ```
-  {x+y,2*x+z,...}
-  ```
-
-  Additionally, a file is needed in which the occurring variables are stored as a Mathematica list, e.g.,
-
-  ```
-  {x,y,z,...}
-  ```
-
-  Note that both lists are allowed to contain expressions and/or strings. The scripts are located in the `mma_2_ff` directory. One can than generate C++ code by calling
-
-  ```
-  cd mma_2_ff
-  ./convert_to_ff.sh $PATH_TO_FUNCTION_FILE $PATH_TO_VARIABLES_FILE <number_of_threads>
-  ```
-
-  Here, `$PATH_TO_FUNCTION_FILE` defines the path to the file in which the list of functions is stored, `$PATH_TO_VARIABLES_FILE` defines the path to the file in which the list of variables is stored, and `<number_of_threads>` defines the number of threads you want to use for the reconstruction process. The latter is given as an integer. During the conversion process a directory `ff_conv` is created in which the C++ files are written. It contains an executable `exec.cpp` which has to be modified to your needs (filling the black box, doing something with the result,...) and all functions which are splitted to numerator and denominator and to subfunctions if they exceed a length of 500 terms. The functions are numbered according to their ordering in the list and can be evaluated in C++ by calling, e.g.,
-
-  ```cpp
-  std::vector<FFInt> values = {1, 5, 7};
-  FFInt res = fun1(values) + fun2(values) + ...;
-  ```
-
-  When using the `black_box` functor in `exec.cpp`, the vector `values` will be filled by FireFly. After a specification what the black box should be, the generated makefile will compile your program by calling
-
-  ```
-  make
-  ```
-
-  A build directory will be created (`/build`) in which the executable and the object files can be found. To execute the reconstruction one just has to call
-
-  ```
-  ./build/exec
-  ```
-
-  which will be performed using the number of threads defined in the conversion process.
-</details>
-
 
 ## Code Documentation
 Doxygen can be used to generate code documentation. To generate the documentation, run
