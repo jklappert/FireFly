@@ -50,7 +50,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "-pthread")
 
 # set paths
 set(SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/source)
-set(INCLUDE_PATH ${SOURCE_PATH}/include)
+set(INCLUDE_PATH ${SOURCE_PATH}/include/firefly)
 
 # include headers
 include_directories(${INCLUDE_PATH})
