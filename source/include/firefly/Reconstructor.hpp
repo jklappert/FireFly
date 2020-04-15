@@ -1810,6 +1810,8 @@ namespace firefly {
     }
 
 #if !WITH_MPI
+    (void) first; // void cast to silence unused parameter warning
+
     uint32_t to_start = thr_n;//* bunch_size;
     queue_probes(zi_order, to_start);
     started_probes.emplace(zi_order, to_start);
