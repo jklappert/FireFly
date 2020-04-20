@@ -29,7 +29,7 @@ namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
   class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
   public:
-    BlackBoxUser(const ShuntingYardParser& par_, int mode_) : par(par_), mode(mode_) {};
+    BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
 
     template<typename FFIntTemp>
     std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
@@ -51,7 +51,7 @@ namespace firefly {
       return result;
     }
 
-    virtual void prime_changed() {
+    inline void prime_changed() {
       par.precompute_tokens();
       c++;
     }
@@ -60,7 +60,6 @@ namespace firefly {
     // Internal variables for the black box
     // In this example a ShuntingYardParser
     ShuntingYardParser par;
-    int mode = 0;
     int c = 0;
   };
 }
@@ -136,7 +135,7 @@ int main() {
   if (process == master) {
     INFO_MSG("Test saving states and starting from them in prime 1");
     ShuntingYardParser p_4(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-    BlackBoxUser b_4(p_4, 4);
+    BlackBoxUser b_4(p_4);
     Reconstructor<BlackBoxUser> r_4(4, 4, b_4);
     r_4.enable_shift_scan();
     r_4.set_tags();
@@ -152,7 +151,7 @@ int main() {
     remove_probes();
   } else {
     ShuntingYardParser p_1(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-    BlackBoxUser b_1(p_1, 6);
+    BlackBoxUser b_1(p_1);
     MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_1);
   }
 

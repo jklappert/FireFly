@@ -27,7 +27,7 @@
 namespace firefly {
   class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
   public:
-    BlackBoxUser(const ShuntingYardParser& par_, int mode_) : par(par_), mode(mode_) {};
+    BlackBoxUser(const ShuntingYardParser& par_) : par(par_) {};
 
     template<typename FFIntTemp>
     std::vector<FFIntTemp> operator()(const std::vector<FFIntTemp>& values) {
@@ -49,7 +49,7 @@ namespace firefly {
       return result;
     }
 
-    virtual void prime_changed() {
+    inline void prime_changed() {
       par.precompute_tokens();
     }
 
@@ -57,7 +57,6 @@ namespace firefly {
     // Internal variables for the black box
     // In this example a ShuntingYardParser
     ShuntingYardParser par;
-    int mode = 0;
   };
 }
 
@@ -78,7 +77,7 @@ int main() {
 #ifndef WITH_MPI
   INFO_MSG("Test 1 variable");
   ShuntingYardParser p_2(root_dir + "/parser_test/s_y_1_v.m", {"x"});
-  BlackBoxUser b_2(p_2, 2);
+  BlackBoxUser b_2(p_2);
   Reconstructor<BlackBoxUser> r_2(1, 4, b_2);
   r_2.reconstruct();
   RatReconst::reset();
@@ -86,14 +85,14 @@ int main() {
 
   INFO_MSG("Test normal mode");
   ShuntingYardParser p_0(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-  BlackBoxUser b_0(p_0, 0);
+  BlackBoxUser b_0(p_0);
   Reconstructor<BlackBoxUser> r_0(4, 4, b_0);
   r_0.enable_shift_scan();
   r_0.reconstruct();
   RatReconst::reset();
 
   ShuntingYardParser p_0_1(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-  BlackBoxUser b_0_1(p_0, 2);
+  BlackBoxUser b_0_1(p_0);
   Reconstructor<BlackBoxUser> r_0_1(4, 4, b_0_1);
   r_0_1.enable_shift_scan();
   r_0_1.reconstruct();
@@ -103,7 +102,7 @@ int main() {
   if (process == master) {
     INFO_MSG("Test 1 variable");
     ShuntingYardParser p_2(root_dir + "/parser_test/s_y_1_v.m", {"x"});
-    BlackBoxUser b_2(p_2, 2);
+    BlackBoxUser b_2(p_2);
     Reconstructor<BlackBoxUser> r_2(1, std::thread::hardware_concurrency(), b_2);
     r_2.reconstruct();
     RatReconst::reset();
@@ -118,24 +117,24 @@ int main() {
     RatReconst::reset();
 
     ShuntingYardParser p_0_1(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-    BlackBoxUser b_0_1(p_0, 2);
+    BlackBoxUser b_0_1(p_0);
     Reconstructor<BlackBoxUser> r_0_1(4, std::thread::hardware_concurrency(), b_0_1);
     r_0_1.enable_shift_scan();
     r_0_1.reconstruct();
     INFO_MSG("Normal mode passed");
   } else {
     ShuntingYardParser p_2(root_dir + "/parser_test/s_y_1_v.m", {"x"});
-    BlackBoxUser b_2(p_2, 2);
+    BlackBoxUser b_2(p_2);
     MPIWorker<BlackBoxUser>(1, std::thread::hardware_concurrency(), b_2);
     RatReconst::reset();
 
     ShuntingYardParser p_0(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-    BlackBoxUser b_0(p_0, 0);
+    BlackBoxUser b_0(p_0);
     MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_0);
     RatReconst::reset();
 
     ShuntingYardParser p_0_1(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-    BlackBoxUser b_0_1(p_0, 2);
+    BlackBoxUser b_0_1(p_0);
     MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_0_1);
   }
 

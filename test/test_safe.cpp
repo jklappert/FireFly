@@ -49,7 +49,7 @@ namespace firefly {
       return result;
     }
 
-    virtual void prime_changed() {
+    inline void prime_changed() {
       par.precompute_tokens();
     }
 
