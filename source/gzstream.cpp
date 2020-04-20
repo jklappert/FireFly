@@ -28,7 +28,7 @@
 
 //   modified by Johann Usovitsch April, 2017
 //   modified by Jonas Klappert, Fabian Lange September, 2019
-#include "gzstream.hpp"
+#include "firefly/gzstream.hpp"
 #include <iostream>
 #include <string.h>  // for memcpy
 

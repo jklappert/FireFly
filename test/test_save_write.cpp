@@ -16,13 +16,13 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "DenseSolver.hpp"
-#include "Reconstructor.hpp"
-#include "ShuntingYardParser.hpp"
-#include "tinydir.h"
+#include "firefly/DenseSolver.hpp"
+#include "firefly/Reconstructor.hpp"
+#include "firefly/ShuntingYardParser.hpp"
+#include "firefly/tinydir.h"
 
 #ifdef WITH_MPI
-#include "MPIWorker.hpp"
+#include "firefly/MPIWorker.hpp"
 #endif
 
 namespace firefly {
@@ -134,11 +134,12 @@ void remove_probes() {
 
 using namespace firefly;
 int main() {
+  std::string root_dir = FIREFLY_ROOT_DIR;
 #ifndef WITH_MPI
 
   try {
     INFO_MSG("Test saving states and starting from them in prime 1");
-    ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_4(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_4(p_4, 4);
     Reconstructor<BlackBoxUser> r_4(4, 4, b_4);
     r_4.enable_shift_scan();
@@ -146,7 +147,7 @@ int main() {
     r_4.reconstruct();
   } catch (std::exception& e) {
     RatReconst::reset();
-    ShuntingYardParser p_5("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_5(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_5(p_5, 6);
     Reconstructor<BlackBoxUser> r_5(4, 4, b_5);
     r_5.set_tags();
@@ -166,7 +167,7 @@ int main() {
 
   try {
     INFO_MSG("Test saving states and starting from them in prime 2");
-    ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_4(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_4(p_4, 5);
     Reconstructor<BlackBoxUser> r_4(4, 4, b_4);
     r_4.enable_shift_scan();
@@ -174,7 +175,7 @@ int main() {
     r_4.reconstruct();
   } catch (std::exception& e) {
     RatReconst::reset();
-    ShuntingYardParser p_5("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_5(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_5(p_5, 6);
     Reconstructor<BlackBoxUser> r_5(4, 4, b_5);
     r_5.set_tags();
@@ -193,7 +194,7 @@ int main() {
 
   try {
     INFO_MSG("Test saving states and starting from them in prime 1 for 1 variable");
-    ShuntingYardParser p_6("../../parser_test/s_y_1_v.m", {"x"});
+    ShuntingYardParser p_6(root_dir + "/parser_test/s_y_1_v.m", {"x"});
     BlackBoxUser b_6(p_6, 4);
     Reconstructor<BlackBoxUser> r_6(1, 4, b_6);
     r_6.enable_shift_scan();
@@ -201,7 +202,7 @@ int main() {
     r_6.reconstruct();
   } catch (std::exception& e) {
     RatReconst::reset();
-    ShuntingYardParser p_7("../../parser_test/s_y_1_v.m", {"x"});
+    ShuntingYardParser p_7(root_dir + "/parser_test/s_y_1_v.m", {"x"});
     BlackBoxUser b_7(p_7, 6);
     Reconstructor<BlackBoxUser> r_7(1, 4, b_7);
     r_7.set_tags();
@@ -232,14 +233,14 @@ int main() {
 
   if (process == master) {
     INFO_MSG("Test saving states and starting from them in prime 1");
-    ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_4(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_4(p_4, 4);
     Reconstructor<BlackBoxUser> r_4(4, 4, b_4);
     r_4.enable_shift_scan();
     r_4.set_tags();
     r_4.reconstruct();
   } else {
-    ShuntingYardParser p_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_1(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1(p_1, 4);
     MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_1);
   }

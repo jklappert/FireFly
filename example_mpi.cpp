@@ -16,8 +16,8 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "DenseSolver.hpp"
-#include "Reconstructor.hpp"
+#include "firefly/DenseSolver.hpp"
+#include "firefly/Reconstructor.hpp"
 
 namespace firefly {
   // Example of how one can use the black-box functor for the automatic interface
@@ -88,8 +88,9 @@ int main() {
   MPI_Get_processor_name(processor_name, &name_len);
   // ---------------------------------------------------------------------------
 
+  std::string root_dir = FIREFLY_ROOT_DIR;
   // Parse the functions from "../s_y_4_v.m" with the variables x1, y, zZ, W
-  ShuntingYardParser par("../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+  ShuntingYardParser par(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
 
   // Create the user defined black box
   BlackBoxUser bb(par);

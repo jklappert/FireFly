@@ -16,7 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "AmplitudeParser.hpp"
+#include "firefly/AmplitudeParser.hpp"
 
 #include <chrono>
 #include <fstream>

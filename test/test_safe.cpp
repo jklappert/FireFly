@@ -16,11 +16,12 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "DenseSolver.hpp"
-#include "Reconstructor.hpp"
-#include "ShuntingYardParser.hpp"
+#include "firefly/DenseSolver.hpp"
+#include "firefly/Reconstructor.hpp"
+#include "firefly/ShuntingYardParser.hpp"
+
 #ifdef WITH_MPI
-#include "MPIWorker.hpp"
+#include "firefly/MPIWorker.hpp"
 #endif
 
 namespace firefly {
@@ -59,6 +60,7 @@ namespace firefly {
 
 using namespace firefly;
 int main() {
+  std::string root_dir = FIREFLY_ROOT_DIR;
 #ifdef WITH_MPI
   int provided;
   MPI_Init_thread(NULL, NULL, MPI_THREAD_SERIALIZED, &provided);
@@ -72,21 +74,21 @@ int main() {
 #endif
 #ifndef WITH_MPI
   INFO_MSG("Test safe mode");
-  ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
+  ShuntingYardParser p_1(root_dir + "/parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_1(p_1);
   Reconstructor<BlackBoxUser> r_1(4, 4, b_1);
   r_1.set_safe_interpolation();
   r_1.reconstruct();
   RatReconst::reset();
 
-  ShuntingYardParser p_1_2("../../parser_test/s_y_1_v.m", {"x"});
+  ShuntingYardParser p_1_2(root_dir + "/parser_test/s_y_1_v.m", {"x"});
   BlackBoxUser b_1_2(p_1_2);
   Reconstructor<BlackBoxUser> r_1_2(1, 4, b_1_2);
   r_1_2.set_safe_interpolation();
   r_1_2.reconstruct();
   RatReconst::reset();
 
-  ShuntingYardParser p_1_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+  ShuntingYardParser p_1_3(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
   BlackBoxUser b_1_3(p_1_3);
   Reconstructor<BlackBoxUser> r_1_3(4, 4, b_1_3);
   r_1_3.set_safe_interpolation();
@@ -96,38 +98,38 @@ int main() {
 
   if (process == master) {
     INFO_MSG("Test safe mode");
-    ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_1(root_dir + "/parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1(p_1);
     Reconstructor<BlackBoxUser> r_1(4, std::thread::hardware_concurrency(), b_1);
     r_1.set_safe_interpolation();
     r_1.reconstruct();
     RatReconst::reset();
 
-    ShuntingYardParser p_1_2("../../parser_test/s_y_1_v.m", {"x"});
+    ShuntingYardParser p_1_2(root_dir + "/parser_test/s_y_1_v.m", {"x"});
     BlackBoxUser b_1_2(p_1_2);
     Reconstructor<BlackBoxUser> r_1_2(1, std::thread::hardware_concurrency(), b_1_2);
     r_1_2.set_safe_interpolation();
     r_1_2.reconstruct();
     RatReconst::reset();
 
-    ShuntingYardParser p_1_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_1_3(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1_3(p_1_3);
     Reconstructor<BlackBoxUser> r_1_3(4, std::thread::hardware_concurrency(), b_1_3);
     r_1_3.set_safe_interpolation();
     r_1_3.reconstruct();
     INFO_MSG("Safe mode passed");
   } else {
-    ShuntingYardParser p_1("../../parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_1(root_dir + "/parser_test/s_y_safe.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1(p_1);
     MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_1);
     RatReconst::reset();
 
-    ShuntingYardParser p_1_2("../../parser_test/s_y_1_v.m", {"x"});
+    ShuntingYardParser p_1_2(root_dir + "/parser_test/s_y_1_v.m", {"x"});
     BlackBoxUser b_1_2(p_1_2);
     MPIWorker<BlackBoxUser>(1, std::thread::hardware_concurrency(), b_1_2);
     RatReconst::reset();
 
-    ShuntingYardParser p_1_3("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_1_3(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1_3(p_1_3);
     MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_1_3);
   }

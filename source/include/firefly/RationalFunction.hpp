@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "Polynomial.hpp"
+#include "firefly/Polynomial.hpp"
 
 namespace firefly {
   /**

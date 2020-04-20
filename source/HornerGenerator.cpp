@@ -16,8 +16,8 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "HornerGenerator.hpp"
-#include "Logger.hpp"
+#include "firefly/HornerGenerator.hpp"
+#include "firefly/Logger.hpp"
 
 #include <map>
 

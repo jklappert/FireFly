@@ -16,7 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //====================================================================================
 
-#include "FFIntVec.hpp"
+#include "firefly/FFIntVec.hpp"
 
 namespace firefly {
 

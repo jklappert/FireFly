@@ -18,11 +18,11 @@
 
 #pragma once
 
-#include "BlackBoxBase.hpp"
-#include "FFIntVec.hpp"
-#include "ReconstHelper.hpp"
-#include "ThreadPool.hpp"
-#include "utils.hpp"
+#include "firefly/BlackBoxBase.hpp"
+#include "firefly/FFIntVec.hpp"
+#include "firefly/ReconstHelper.hpp"
+#include "firefly/ThreadPool.hpp"
+#include "firefly/utils.hpp"
 
 #include <mpi.h>
 

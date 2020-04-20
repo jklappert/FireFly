@@ -16,11 +16,11 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "PolyReconst.hpp"
-#include "Logger.hpp"
-#include "Poly.hpp"
-#include "ReconstHelper.hpp"
-#include "utils.hpp"
+#include "firefly/PolyReconst.hpp"
+#include "firefly/Logger.hpp"
+#include "firefly/Poly.hpp"
+#include "firefly/ReconstHelper.hpp"
+#include "firefly/utils.hpp"
 
 namespace firefly {
   // TODO for new prime just use Vandermonde matrices to solve interpolation problem

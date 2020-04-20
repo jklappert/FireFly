@@ -16,8 +16,8 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "RationalFunction.hpp"
-#include "HornerGenerator.hpp"
+#include "firefly/RationalFunction.hpp"
+#include "firefly/HornerGenerator.hpp"
 
 namespace firefly {
 

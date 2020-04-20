@@ -16,10 +16,10 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "Polynomial.hpp"
-#include "HornerGenerator.hpp"
-#include "Logger.hpp"
-#include "utils.hpp"
+#include "firefly/Polynomial.hpp"
+#include "firefly/HornerGenerator.hpp"
+#include "firefly/Logger.hpp"
+#include "firefly/utils.hpp"
 
 namespace firefly {
 

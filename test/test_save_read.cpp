@@ -16,13 +16,13 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "DenseSolver.hpp"
-#include "Reconstructor.hpp"
-#include "ShuntingYardParser.hpp"
-#include "tinydir.h"
+#include "firefly/DenseSolver.hpp"
+#include "firefly/Reconstructor.hpp"
+#include "firefly/ShuntingYardParser.hpp"
+#include "firefly/tinydir.h"
 
 #ifdef WITH_MPI
-#include "MPIWorker.hpp"
+#include "firefly/MPIWorker.hpp"
 #endif
 
 namespace firefly {
@@ -121,6 +121,7 @@ void remove_probes() {
 
 using namespace firefly;
 int main() {
+  std::string root_dir = FIREFLY_ROOT_DIR;
 #ifdef WITH_MPI
   int provided;
   MPI_Init_thread(NULL, NULL, MPI_THREAD_SERIALIZED, &provided);
@@ -134,7 +135,7 @@ int main() {
 
   if (process == master) {
     INFO_MSG("Test saving states and starting from them in prime 1");
-    ShuntingYardParser p_4("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_4(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_4(p_4, 4);
     Reconstructor<BlackBoxUser> r_4(4, 4, b_4);
     r_4.enable_shift_scan();
@@ -150,7 +151,7 @@ int main() {
     remove_sates();
     remove_probes();
   } else {
-    ShuntingYardParser p_1("../../parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
+    ShuntingYardParser p_1(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1(p_1, 6);
     MPIWorker<BlackBoxUser>(4, std::thread::hardware_concurrency(), b_1);
   }

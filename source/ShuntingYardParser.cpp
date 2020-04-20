@@ -16,9 +16,9 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "ShuntingYardParser.hpp"
-#include "BaseReconst.hpp"
-#include "ReconstHelper.hpp"
+#include "firefly/ShuntingYardParser.hpp"
+#include "firefly/BaseReconst.hpp"
+#include "firefly/ReconstHelper.hpp"
 
 #include <chrono>
 #include <fstream>

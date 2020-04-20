@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "FFInt.hpp"
+#include "firefly/FFInt.hpp"
 
 namespace firefly {
 

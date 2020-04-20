@@ -19,7 +19,7 @@
 #pragma once
 
 //#include "FFInt.hpp" // for examples
-#include "Logger.hpp"
+#include "firefly/Logger.hpp"
 
 #include <vector>
 

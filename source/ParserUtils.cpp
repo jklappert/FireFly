@@ -16,9 +16,9 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "gzstream.hpp"
-#include "ParserUtils.hpp"
-#include "tinydir.h"
+#include "firefly/gzstream.hpp"
+#include "firefly/ParserUtils.hpp"
+#include "firefly/tinydir.h"
 
 namespace firefly {
   std::vector<uint32_t> parse_vector_32(std::string& line, int number_of_parameters) {

@@ -18,10 +18,10 @@
 
 #pragma once
 
-#include "BlackBoxBase.hpp"
-#include "FFInt.hpp"
-#include "Logger.hpp"
-#include "ShuntingYardParser.hpp"
+#include "firefly/BlackBoxBase.hpp"
+#include "firefly/FFInt.hpp"
+#include "firefly/Logger.hpp"
+#include "firefly/ShuntingYardParser.hpp"
 
 #include <unordered_map>
 #include <unordered_set>

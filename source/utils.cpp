@@ -16,9 +16,9 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "utils.hpp"
-#include "RatReconst.hpp"
-#include "ReconstHelper.hpp"
+#include "firefly/utils.hpp"
+#include "firefly/RatReconst.hpp"
+#include "firefly/ReconstHelper.hpp"
 
 namespace firefly {
   std::pair<mpz_class, mpz_class> run_chinese_remainder(

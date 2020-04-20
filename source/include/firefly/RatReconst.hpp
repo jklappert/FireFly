@@ -18,10 +18,10 @@
 
 #pragma once
 
-#include "FFThieleInterpolator.hpp"
-#include "PolyReconst.hpp"
-#include "RationalFunction.hpp"
-#include "RationalFunctionFF.hpp"
+#include "firefly/FFThieleInterpolator.hpp"
+#include "firefly/PolyReconst.hpp"
+#include "firefly/RationalFunction.hpp"
+#include "firefly/RationalFunctionFF.hpp"
 
 #ifdef FLINT
 #include <flint/nmod_poly.h>

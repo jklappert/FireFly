@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "PolynomialFF.hpp"
-#include "UintHasher.hpp"
+#include "firefly/PolynomialFF.hpp"
+#include "firefly/UintHasher.hpp"
 
 #include <mutex>
 #include <queue>

@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "FFInt.hpp"
-#include "Logger.hpp"
+#include "firefly/FFInt.hpp"
+#include "firefly/Logger.hpp"
 
 #include <unordered_map>
 #include <unordered_set>

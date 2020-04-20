@@ -50,7 +50,9 @@ set(CMAKE_SHARED_LINKER_FLAGS "-pthread")
 
 # set paths
 set(SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/source)
-set(INCLUDE_PATH ${SOURCE_PATH}/include/firefly)
+add_definitions("-DFIREFLY_ROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
+set(INCLUDE_PATH ${SOURCE_PATH}/include)
+set(INCLUDE_PATH_SRC ${SOURCE_PATH}/include/firefly)
 
 # include headers
 include_directories(${INCLUDE_PATH})
@@ -121,8 +123,8 @@ set(INCLUDE_INSTALL_DIR_2 "${CMAKE_INSTALL_PREFIX}/include")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
 configure_file (
-  "${INCLUDE_PATH}/version.hpp.in"
-  "${INCLUDE_PATH}/version.hpp")
+  "${INCLUDE_PATH_SRC}/version.hpp.in"
+  "${INCLUDE_PATH_SRC}/version.hpp")
 
 add_library(FireFly_static STATIC ${LIBSOURCES})
 set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
@@ -197,34 +199,34 @@ if("${DISABLE_INSTALL}" STREQUAL "")
 
   # install public headers
   install(FILES
-    "${INCLUDE_PATH}/AmplitudeParser.hpp"
-    "${INCLUDE_PATH}/BaseReconst.hpp"
-    "${INCLUDE_PATH}/BlackBoxBase.hpp"
-    "${INCLUDE_PATH}/DenseSolver.hpp"
-    "${INCLUDE_PATH}/FFInt.hpp"
-    "${INCLUDE_PATH}/FFIntVec.hpp"
-    "${INCLUDE_PATH}/FFThieleInterpolator.hpp"
-    "${INCLUDE_PATH}/gzstream.hpp"
-    "${INCLUDE_PATH}/HornerGenerator.hpp"
-    "${INCLUDE_PATH}/Logger.hpp"
-    "${INCLUDE_PATH}/Monomial.hpp"
-    "${INCLUDE_PATH}/ParserUtils.hpp"
-    "${INCLUDE_PATH}/Poly.hpp"
-    "${INCLUDE_PATH}/Polynomial.hpp"
-    "${INCLUDE_PATH}/PolynomialFF.hpp"
-    "${INCLUDE_PATH}/PolyReconst.hpp"
-    "${INCLUDE_PATH}/RationalFunction.hpp"
-    "${INCLUDE_PATH}/RationalFunctionFF.hpp"
-    "${INCLUDE_PATH}/RationalNumber.hpp"
-    "${INCLUDE_PATH}/RatReconst.hpp"
-    "${INCLUDE_PATH}/ReconstHelper.hpp"
-    "${INCLUDE_PATH}/Reconstructor.hpp"
-    "${INCLUDE_PATH}/ShuntingYardParser.hpp"
-    "${INCLUDE_PATH}/ThreadPool.hpp"
-    "${INCLUDE_PATH}/tinydir.h"
-    "${INCLUDE_PATH}/UintHasher.hpp"
-    "${INCLUDE_PATH}/utils.hpp"
-    "${INCLUDE_PATH}/version.hpp"
+    "${INCLUDE_PATH_SRC}/AmplitudeParser.hpp"
+    "${INCLUDE_PATH_SRC}/BaseReconst.hpp"
+    "${INCLUDE_PATH_SRC}/BlackBoxBase.hpp"
+    "${INCLUDE_PATH_SRC}/DenseSolver.hpp"
+    "${INCLUDE_PATH_SRC}/FFInt.hpp"
+    "${INCLUDE_PATH_SRC}/FFIntVec.hpp"
+    "${INCLUDE_PATH_SRC}/FFThieleInterpolator.hpp"
+    "${INCLUDE_PATH_SRC}/gzstream.hpp"
+    "${INCLUDE_PATH_SRC}/HornerGenerator.hpp"
+    "${INCLUDE_PATH_SRC}/Logger.hpp"
+    "${INCLUDE_PATH_SRC}/Monomial.hpp"
+    "${INCLUDE_PATH_SRC}/ParserUtils.hpp"
+    "${INCLUDE_PATH_SRC}/Poly.hpp"
+    "${INCLUDE_PATH_SRC}/Polynomial.hpp"
+    "${INCLUDE_PATH_SRC}/PolynomialFF.hpp"
+    "${INCLUDE_PATH_SRC}/PolyReconst.hpp"
+    "${INCLUDE_PATH_SRC}/RationalFunction.hpp"
+    "${INCLUDE_PATH_SRC}/RationalFunctionFF.hpp"
+    "${INCLUDE_PATH_SRC}/RationalNumber.hpp"
+    "${INCLUDE_PATH_SRC}/RatReconst.hpp"
+    "${INCLUDE_PATH_SRC}/ReconstHelper.hpp"
+    "${INCLUDE_PATH_SRC}/Reconstructor.hpp"
+    "${INCLUDE_PATH_SRC}/ShuntingYardParser.hpp"
+    "${INCLUDE_PATH_SRC}/ThreadPool.hpp"
+    "${INCLUDE_PATH_SRC}/tinydir.h"
+    "${INCLUDE_PATH_SRC}/UintHasher.hpp"
+    "${INCLUDE_PATH_SRC}/utils.hpp"
+    "${INCLUDE_PATH_SRC}/version.hpp"
     DESTINATION "${INCLUDE_INSTALL_DIR}")
 
   # install ibp insertion executable
@@ -233,7 +235,7 @@ if("${DISABLE_INSTALL}" STREQUAL "")
   endif()
 
   if("${WITH_MPI}" STREQUAL "true")
-    install(FILES "${INCLUDE_PATH}/MPIWorker.hpp" DESTINATION "${INCLUDE_INSTALL_DIR}")
+    install(FILES "${INCLUDE_PATH_SRC}/MPIWorker.hpp" DESTINATION "${INCLUDE_INSTALL_DIR}")
   endif()
 
   # adding documentation

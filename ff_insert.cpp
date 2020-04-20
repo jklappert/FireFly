@@ -16,9 +16,9 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "Reconstructor.hpp"
-#include "AmplitudeParser.hpp"
-#include "tinydir.h"
+#include "firefly/Reconstructor.hpp"
+#include "firefly/AmplitudeParser.hpp"
+#include "firefly/tinydir.h"
 #include <sys/stat.h>
 
 bool is_number(const std::string& s){

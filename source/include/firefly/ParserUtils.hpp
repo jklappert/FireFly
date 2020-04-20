@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "FFInt.hpp"
-#include "RationalFunction.hpp"
+#include "firefly/FFInt.hpp"
+#include "firefly/RationalFunction.hpp"
 
 #include <list>
 #include <unordered_map>

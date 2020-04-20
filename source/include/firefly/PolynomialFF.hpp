@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include "RationalNumber.hpp"
-#include "UintHasher.hpp"
-#include "ShuntingYardParser.hpp"
+#include "firefly/RationalNumber.hpp"
+#include "firefly/UintHasher.hpp"
+#include "firefly/ShuntingYardParser.hpp"
 
 namespace firefly {
 

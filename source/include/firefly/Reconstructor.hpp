@@ -18,16 +18,16 @@
 
 #pragma once
 
-#include "BlackBoxBase.hpp"
-#include "FFIntVec.hpp"
-#include "gzstream.hpp"
-#include "ParserUtils.hpp"
-#include "RatReconst.hpp"
-#include "ReconstHelper.hpp"
-#include "ThreadPool.hpp"
-#include "tinydir.h"
-#include "utils.hpp"
-#include "version.hpp"
+#include "firefly/BlackBoxBase.hpp"
+#include "firefly/FFIntVec.hpp"
+#include "firefly/gzstream.hpp"
+#include "firefly/ParserUtils.hpp"
+#include "firefly/RatReconst.hpp"
+#include "firefly/ReconstHelper.hpp"
+#include "firefly/ThreadPool.hpp"
+#include "firefly/tinydir.h"
+#include "firefly/utils.hpp"
+#include "firefly/version.hpp"
 
 #if WITH_MPI
 #include "MPIWorker.hpp"

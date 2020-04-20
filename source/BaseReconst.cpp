@@ -16,8 +16,8 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "BaseReconst.hpp"
-#include "utils.hpp"
+#include "firefly/BaseReconst.hpp"
+#include "firefly/utils.hpp"
 
 namespace firefly {
   uint64_t const BaseReconst::multiplier = 6364136223846793005u;

@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "BaseReconst.hpp"
-#include "Polynomial.hpp"
+#include "firefly/BaseReconst.hpp"
+#include "firefly/Polynomial.hpp"
 
 #include <list>
 

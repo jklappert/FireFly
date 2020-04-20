@@ -16,13 +16,13 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#include "RatReconst.hpp"
-#include "DenseSolver.hpp"
-#include "gzstream.hpp"
-#include "Logger.hpp"
-#include "ParserUtils.hpp"
-#include "ReconstHelper.hpp"
-#include "utils.hpp"
+#include "firefly/RatReconst.hpp"
+#include "firefly/DenseSolver.hpp"
+#include "firefly/gzstream.hpp"
+#include "firefly/Logger.hpp"
+#include "firefly/ParserUtils.hpp"
+#include "firefly/ReconstHelper.hpp"
+#include "firefly/utils.hpp"
 
 #include <algorithm>
 #include <sys/stat.h>

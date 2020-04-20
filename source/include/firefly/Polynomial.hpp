@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "PolynomialFF.hpp"
-#include "Monomial.hpp"
+#include "firefly/PolynomialFF.hpp"
+#include "firefly/Monomial.hpp"
 
 namespace firefly {
   typedef std::unordered_map<std::vector<uint32_t>, RationalNumber, UintHasher> rn_map;
