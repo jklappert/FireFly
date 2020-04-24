@@ -1,0 +1,14 @@
+
+option('arch', type: 'string', value: '', yield : true,
+       description: 'Set compiler option -march=<value>.')
+
+option('flint', type: 'boolean', value: false, yield : true,
+       description: 'Build FireFly with FLINT.')
+
+option('mpi', type: 'boolean', value: false, yield : true,
+       description: 'Build FireFly with MPI.')
+
+option('jemalloc', type: 'boolean', value: false, yield : true,
+       description: 'Link executables with jemalloc.')
+
+# Custom modular arithmetic is not (yet) supported.

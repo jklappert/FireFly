@@ -1,0 +1,5 @@
+
+[wrap-git]
+
+url = git@github.com:maiphi/flint2.git
+revision = head
