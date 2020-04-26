@@ -141,7 +141,6 @@ namespace firefly {
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     enum RatReconst_status {RECONSTRUCTING, DONE, DELETE};
-
   private:
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     std::chrono::high_resolution_clock::time_point prime_start = std::chrono::high_resolution_clock::now();
@@ -502,7 +501,6 @@ namespace firefly {
     std::ifstream v_file;
     std::string line;
     v_file.open("ff_save/var_order.gz");
-
     // Variable order
     if (v_file.is_open()) {
       igzstream order_file;
@@ -705,6 +703,8 @@ namespace firefly {
 	std::cerr << "\033[1;34mFireFly info:\033[0m " << i << " / " << items << "\r";
       }
     }
+
+    fed_ones = started_probes[std::vector<uint32_t> (n - 1, 1)];
 
     if (prime_it == 0 && items != items_new_prime + items_done) {
       set_anchor_points = false;
@@ -2954,7 +2954,7 @@ namespace firefly {
 
                 queue_probes(next_orders.front().first, to_start);
               }
-            } else {
+	      } else {
               for (size_t i = 0; i != next_orders.size(); ++i) {
                 std::unique_lock<std::mutex> lock(job_control);
 
@@ -3010,7 +3010,7 @@ namespace firefly {
               }
             }
           }
-        } else {
+	  } else {
           // to be sure that no other thread does the same
           std::lock_guard<std::mutex> lock_status(status_control);
 
