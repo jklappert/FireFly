@@ -700,6 +700,10 @@ namespace firefly {
 
         reconst.emplace_back(std::make_tuple(i, RECONSTRUCTING, rec));
       }
+
+      if (verbosity > SILENT) {
+	std::cerr << "\033[1;34mFireFly info:\033[0m " << i " / " << items << "\r";
+      }
     }
 
     if (prime_it == 0 && items != items_new_prime + items_done) {
