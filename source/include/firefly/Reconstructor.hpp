@@ -702,7 +702,7 @@ namespace firefly {
       }
 
       if (verbosity > SILENT) {
-	std::cerr << "\033[1;34mFireFly info:\033[0m " << i " / " << items << "\r";
+	std::cerr << "\033[1;34mFireFly info:\033[0m " << i << " / " << items << "\r";
       }
     }
 
