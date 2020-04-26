@@ -3532,16 +3532,10 @@ namespace firefly {
     if (from_save_state) {
       from_save_state = false;
 
-      std::vector<uint32_t> largest_key(n - 1);
-
       if (prime_number < interpolations) {
         if (parsed_probes.size() > 0) {
 
           for (const auto & el : parsed_probes) {
-
-            if (a_grt_b(el.first, largest_key))
-              largest_key = el.first;
-
             for (const auto & el2 : el.second) {
               queue.emplace(std::make_tuple(el2.first, el2.second, el.first));
             }
@@ -3554,14 +3548,10 @@ namespace firefly {
         // Calculate the difference of already calculated probes and remaining ones
         if (parsed_probes.size() != 0) {
           for (const auto & el : parsed_probes) {
-
             if (r_map.find(el.second.size()) == r_map.end())
               r_map[el.second.size()] = 1;
             else
               r_map[el.second.size()] += 1;
-
-            if (a_grt_b(el.first, largest_key))
-              largest_key = el.first;
 
             for (const auto & el2 : el.second) {
               queue.emplace(std::make_tuple(el2.first, el2.second, el.first));
@@ -3605,18 +3595,18 @@ namespace firefly {
 
               break;
             } else if (req_mult == got_mult && got_num >= req_num) {
-	      positions_done ++;
-	    } else if (req_mult == got_mult && req_num != got_num) {
+              positions_done ++;
+            } else if (req_mult == got_mult && req_num != got_num) {
               unfinished_pos = i;
               partial_done_num = got_num;
             } else {
               positions_done ++;
-	    }
+            }
           }
 
           needed_feed_vec_sub.clear();
 
-          // Rewrite the new needed feed vector by subtraction already calculated probes
+          // Rewrite the new needed feed vector by subtracting already calculated probes
           if (positions_done != static_cast<int>(needed_feed_vec.size() - 1)) {
             // set the correct offset for appending unfinished jobs
             uint32_t offset = 2;
@@ -3639,7 +3629,7 @@ namespace firefly {
               }
 
               uint32_t diff = tmp_req_mult - partial_done_mult;
-	      //std::cout << "diff " << diff << " " << tmp_req_num - partial_done_num <<"\n";
+              //std::cout << "diff " << diff << " " << tmp_req_num - partial_done_num <<"\n";
 
               if (diff != 0) {
                 needed_feed_vec_sub.emplace_back(std::make_pair(1, tmp_req_num - partial_done_num));
@@ -3783,15 +3773,15 @@ namespace firefly {
       std::vector<std::pair<std::vector<uint32_t>, uint32_t>> tmp_zi_orders (vandermonde_size, std::make_pair(curr_zi_order, num_eqn - sub_term));
       for (size_t i = 1; i != vandermonde_size; ++i) {
         for (uint32_t tmp_zi = 2; tmp_zi != zi; ++tmp_zi) {
-	  tmp_zi_orders[i].first[tmp_zi - 2] += i;
+          tmp_zi_orders[i].first[tmp_zi - 2] += i;
         }
 
-	uint32_t tmp_sub_term = 0;
+        uint32_t tmp_sub_term = 0;
 
         if (saved_ti.find(tmp_zi_orders[i].first) != saved_ti.end())
-	  tmp_sub_term = saved_ti.at(tmp_zi_orders[i].first).size();
+          tmp_sub_term = saved_ti.at(tmp_zi_orders[i].first).size();
 
-	  tmp_zi_orders[i].second = num_eqn - tmp_sub_term;
+        tmp_zi_orders[i].second = num_eqn - tmp_sub_term;
       }
 
       return std::make_pair(tmp_zi_orders, num_eqn);
