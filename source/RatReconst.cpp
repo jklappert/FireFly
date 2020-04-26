@@ -194,7 +194,7 @@ namespace firefly {
         interpolate = true;
       }
 
-      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 1800.) {
+      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 0.00001) {
         write_to_file = true;
       }
     }
@@ -276,7 +276,7 @@ namespace firefly {
         interpolate = true;
       }
 
-      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 1800.) {
+      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 0.00001) {
         write_to_file = true;
       }
     }
@@ -3604,11 +3604,14 @@ namespace firefly {
                 partial_done_num = got_num;
 
               break;
-            } else if (req_mult == got_mult && req_num != got_num) {
+            } else if (req_mult == got_mult && got_num >= req_num) {
+	      positions_done ++;
+	    } else if (req_mult == got_mult && req_num != got_num) {
               unfinished_pos = i;
               partial_done_num = got_num;
-            } else
+            } else {
               positions_done ++;
+	    }
           }
 
           needed_feed_vec_sub.clear();
@@ -3636,6 +3639,7 @@ namespace firefly {
               }
 
               uint32_t diff = tmp_req_mult - partial_done_mult;
+	      //std::cout << "diff " << diff << " " << tmp_req_num - partial_done_num <<"\n";
 
               if (diff != 0) {
                 needed_feed_vec_sub.emplace_back(std::make_pair(1, tmp_req_num - partial_done_num));
@@ -3667,6 +3671,10 @@ namespace firefly {
   std::vector<std::pair<uint32_t, uint32_t>> RatReconst::get_needed_feed_vec() {
     std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_tmp = std::move(needed_feed_vec);
     needed_feed_vec.clear();
+
+    /*for (const auto& el : needed_feed_vec_tmp) {
+      std::cout << "tag " << tag << " " << el.first << " " << el.second << "\n";
+      }*/
 
     return needed_feed_vec_tmp;
   }
@@ -3783,7 +3791,7 @@ namespace firefly {
         if (saved_ti.find(tmp_zi_orders[i].first) != saved_ti.end())
 	  tmp_sub_term = saved_ti.at(tmp_zi_orders[i].first).size();
 
-	tmp_zi_orders[i].second = num_eqn - tmp_sub_term;
+	  tmp_zi_orders[i].second = num_eqn - tmp_sub_term;
       }
 
       return std::make_pair(tmp_zi_orders, num_eqn);
