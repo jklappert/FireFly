@@ -179,7 +179,7 @@ namespace firefly {
     bool safe_mode = false;
     bool one_done = false;
     bool one_new_prime = false;
-    bool set_anchor_points = false;
+    bool load_anchor_points = false;
     bool scanned_factors = false;
     bool first_print = true;
     RatReconst_list reconst;
@@ -499,7 +499,7 @@ namespace firefly {
       logger << "Loading saved states\n";
     }
 
-    set_anchor_points = false;
+    load_anchor_points = false;
 
     std::ifstream v_file;
     std::string line;
@@ -696,7 +696,7 @@ namespace firefly {
           ++items_new_prime;
 
           if (rec->get_prime() == prime_it + 1) {
-            set_anchor_points = true;
+            load_anchor_points = true;
           }
         }
 
@@ -711,7 +711,7 @@ namespace firefly {
     fed_ones = started_probes[std::vector<uint32_t> (n - 1, 1)];
 
     if (prime_it == 0 && items != items_new_prime + items_done) {
-      set_anchor_points = false;
+      load_anchor_points = false;
       std::ifstream anchor_point_file;
       anchor_point_file.open("ff_save/anchor_points");
 
@@ -879,7 +879,7 @@ namespace firefly {
     }
 
     if (!done) {
-      if (save_states && !set_anchor_points) {
+      if (save_states && !load_anchor_points) {
         std::string tmp_str = "";
         std::ofstream file;
         file.open("ff_save/shift");
@@ -2288,7 +2288,7 @@ namespace firefly {
 #endif
         }
 
-        if (!safe_mode && (!save_states || (save_states && !set_anchor_points)) && !tmp_rec.need_shift(prime_it)) {
+        if (!safe_mode && (!save_states || (save_states && !load_anchor_points)) && !tmp_rec.need_shift(prime_it)) {
           if (tmp_rec.get_zi_shift_vec() != std::vector<FFInt> (n, 0)) {
             logger << "Disable shift\n";
             logger.close();
@@ -2302,8 +2302,8 @@ namespace firefly {
         }
 
         // Set anchor points and the shift to resume from saved probes
-        if (save_states && set_anchor_points) {
-          set_anchor_points = false;
+        if (save_states && load_anchor_points) {
+          load_anchor_points = false;
           std::string line;
           std::ifstream anchor_point_file;
           anchor_point_file.open("ff_save/anchor_points");
@@ -3225,7 +3225,7 @@ namespace firefly {
     one_new_prime = false;
 
     // Only reset chosen_t when not resuming from a saved state
-    if (!set_anchor_points) {
+    if (!load_anchor_points) {
       chosen_t.clear();
     }
 
