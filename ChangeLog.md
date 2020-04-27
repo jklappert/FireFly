@@ -1,3 +1,39 @@
+FireFly 2.0.1
+=============
+
+Changes
+-------
+
+ * The degree bounds obtained by the shift scan are now used to terminate the
+ actual interpolation earlier when possible.
+
+ * Moved the header files to include/firefly.
+
+ * Removed the support for compilable math expressions. The shunting-yard parser
+ should be used instead.
+
+ * The paths for the tests are now set by a precompiler variable. Hence, they
+ should work for every directory structure. Thanks to Philipp Maierhoefer for
+ this suggestion.
+
+ * Disable installation?
+
+ * INFO_MSG changes?
+
+Bug fixes
+---------
+
+ * Fixed several bugs when loading saved states with saved probes.
+
+ * Improved the CMake script searching for GMP to find installations via the
+ distribution. All thanks to Alexander Voigt for solving this issue.
+
+ * Fixed several compiler warnings. Most of them have been reported by
+ Philipp Maierhoefer.
+
+ * ff_insert: Timing fix?
+
+
 FireFly 2.0.0
 =============
 
