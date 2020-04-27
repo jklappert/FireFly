@@ -3543,7 +3543,7 @@ namespace firefly {
     // Rewrite needed_feed_vec in terms of zi_orders. Note that only one entry is necessary here
     std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_tmp {};
     size_t counter = 1;
-    
+
     for (const auto& el : needed_feed_vec) {
       uint32_t tmp_mult = el.first;
       for (uint32_t i = 0; i != tmp_mult; ++i) {
@@ -3582,7 +3582,7 @@ namespace firefly {
 	    if (n > 1) {
 	      std::cout << "got " << el.first[0] << " | " << tmp_size << " | " << needed_feed_vec[el.first[0] - 1].second << " | "  << size << "\n";
 	      if (el.first[0] <= size) {
-		if (tmp_size >= needed_feed_vec[el.first[0]].second) {
+		if (tmp_size >= needed_feed_vec[el.first[0] - 1].second) {
 		  needed_feed_vec[el.first[0] - 1].second = 0;
 		} else {
 		  needed_feed_vec[el.first[0] - 1].second -= tmp_size;
