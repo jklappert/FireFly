@@ -74,7 +74,7 @@ namespace firefly {
         lock_statics.unlock();
         generate_anchor_points();
       } else {
-	private_anchor_points = global_anchor_points;
+        private_anchor_points = global_anchor_points;
       }
     }
   }
@@ -177,20 +177,14 @@ namespace firefly {
 
           first_feed = false;
 
-          if (tag.size() != 0)//ssss
+          if (tag.size() != 0)
             saved_food.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
-	if (tag == "19") {
-	  //std::cout << new_ti << " " << num << " " << fed_zi_ord[0] << " " << fed_zi_ord[1] << " " << fed_zi_ord[2] << "\n";
-	}
+
           queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
         }
       } else {
         if (!scan && tag.size() != 0)
           saved_food.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
-
-	if (tag == "19") {
-	  //std::cout << new_ti << " " << num << " " << fed_zi_ord[0] << " " << fed_zi_ord[1] << " " << fed_zi_ord[2] << "\n";
-	}
 
         queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
       }
@@ -200,7 +194,7 @@ namespace firefly {
         interpolate = true;
       }
 
-      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 0.00001) {
+      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 1800.) {
         write_to_file = true;
       }
     }
@@ -264,9 +258,7 @@ namespace firefly {
           for (size_t i = 0; i != new_ti.size(); ++i) {
             if (tag.size() != 0)
               saved_food.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
-	if (tag == "19") {
-	  //std::cout << new_ti[i] << " " << num[i] << " " << fed_zi_ord[i][0] << " " << fed_zi_ord[i][1] << " " << fed_zi_ord[i][2] << "\n";
-	}
+
             queue.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
           }
         }
@@ -274,9 +266,6 @@ namespace firefly {
         for (size_t i = 0; i != new_ti.size(); ++i) {
           if (!scan && tag.size() != 0)
             saved_food.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
-	if (tag == "19") {
-	  //std::cout << new_ti[i] << " " << num[i] << " " << fed_zi_ord[i][0] << " " << fed_zi_ord[i][1] << " " << fed_zi_ord[i][2] << "\n";
-	}
 
           queue.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
         }
@@ -287,7 +276,7 @@ namespace firefly {
         interpolate = true;
       }
 
-      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 0.00001) {
+      if (tag.size() != 0 && !scan && std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count() > 1800.) {
         write_to_file = true;
       }
     }
@@ -547,9 +536,10 @@ namespace firefly {
 
               for (const auto & deg : degs) {
                 coef_n.emplace_back(std::make_pair(deg, PolyReconst(n - 1, deg, true)));
-		if (is_set_individual_degree_bounds) {
-		  coef_n.back().second.set_individual_degree_bounds(get_individual_degree_bounds(false));
-		}
+
+                if (is_set_individual_degree_bounds) {
+                  coef_n.back().second.set_individual_degree_bounds(get_individual_degree_bounds(false));
+                }
               }
 
               degs.clear();
@@ -569,9 +559,10 @@ namespace firefly {
 
               for (const auto & deg : degs) {
                 coef_d.emplace_back(std::make_pair(deg, PolyReconst(n - 1, deg, true)));
-		if (is_set_individual_degree_bounds) {
-		  coef_d.back().second.set_individual_degree_bounds(get_individual_degree_bounds(true));
-		}
+
+                if (is_set_individual_degree_bounds) {
+                  coef_d.back().second.set_individual_degree_bounds(get_individual_degree_bounds(true));
+                }
               }
 
               std::lock_guard<std::mutex> lock(mutex_status);
@@ -607,9 +598,10 @@ namespace firefly {
 
                 if (restart_sparse_interpolation_num) {
                   it -> second = PolyReconst(n - 1, it->first, true);
-		  if (is_set_individual_degree_bounds) {
-		    it->second.set_individual_degree_bounds(get_individual_degree_bounds(false));
-		  }
+
+                  if (is_set_individual_degree_bounds) {
+                    it->second.set_individual_degree_bounds(get_individual_degree_bounds(false));
+                  }
                   restart_sparse_interpolation_num = false;
                 }
 
@@ -631,9 +623,10 @@ namespace firefly {
 
                 if (restart_sparse_interpolation_den) {
                   it -> second = PolyReconst(n - 1, it->first, true);
-		  if (is_set_individual_degree_bounds) {
-		    it->second.set_individual_degree_bounds(get_individual_degree_bounds(true));
-		  }
+
+                  if (is_set_individual_degree_bounds) {
+                    it->second.set_individual_degree_bounds(get_individual_degree_bounds(true));
+                  }
                   restart_sparse_interpolation_den = false;
                 }
 
@@ -2362,21 +2355,21 @@ namespace firefly {
       file << "individual_degrees_num\n";
 
       if (!individual_degree_bounds.empty()) {
-	for (const auto & el : individual_degree_bounds) {
-	  file << el.first << " ";
-	}
+        for (const auto & el : individual_degree_bounds) {
+          file << el.first << " ";
+        }
 
-	file << "\n";
+        file << "\n";
       }
 
       file << "individual_degrees_den\n";
 
       if (!individual_degree_bounds.empty()) {
-	for (const auto & el : individual_degree_bounds) {
-	  file << el.second << " ";
-	}
+        for (const auto & el : individual_degree_bounds) {
+          file << el.second << " ";
+        }
 
-	file << "\n";
+        file << "\n";
       }
 
       file.close();
@@ -2461,21 +2454,21 @@ namespace firefly {
       file << "individual_degrees_num\n";
 
       if (!individual_degree_bounds.empty()) {
-	for (const auto & el : individual_degree_bounds) {
-	  file << el.first << " ";
-	}
+        for (const auto & el : individual_degree_bounds) {
+          file << el.first << " ";
+        }
 
-	file << "\n";
+        file << "\n";
       }
 
       file << "individual_degrees_den\n";
 
       if (!individual_degree_bounds.empty()) {
-	for (const auto & el : individual_degree_bounds) {
-	  file << el.second << " ";
-	}
+        for (const auto & el : individual_degree_bounds) {
+          file << el.second << " ";
+        }
 
-	file << "\n";
+        file << "\n";
       }
 
       file.close();
@@ -2518,7 +2511,7 @@ namespace firefly {
 
     if (!individual_degree_bounds.empty()) {
       for (const auto & el : individual_degree_bounds) {
-	file << el.first << " ";
+        file << el.first << " ";
       }
 
       file << "\n";
@@ -2528,7 +2521,7 @@ namespace firefly {
 
     if (!individual_degree_bounds.empty()) {
       for (const auto & el : individual_degree_bounds) {
-	file << el.second << " ";
+        file << el.second << " ";
       }
 
       file << "\n";
@@ -2725,22 +2718,22 @@ namespace firefly {
             std::getline(file, line);
             std::getline(file, line);
             normalize_to_den = std::stoi(line);
-	    std::getline(file, line);
-	    std::getline(file, line);
+            std::getline(file, line);
+            std::getline(file, line);
 
-	    if (line != "individual_degrees_den") {
-	      individual_degrees_num = parse_vector_32(line);
-	      std::getline(file, line);
-	      std::getline(file, line);
-	      individual_degrees_den = parse_vector_32(line);
+            if (line != "individual_degrees_den") {
+              individual_degrees_num = parse_vector_32(line);
+              std::getline(file, line);
+              std::getline(file, line);
+              individual_degrees_den = parse_vector_32(line);
 
-	      is_set_individual_degree_bounds = true;
-	      individual_degree_bounds = std::vector<std::pair<uint32_t, uint32_t>> (n);
+              is_set_individual_degree_bounds = true;
+              individual_degree_bounds = std::vector<std::pair<uint32_t, uint32_t>> (n);
 
-	      for (size_t i = 0; i != n; ++i) {
-		individual_degree_bounds[i] = std::make_pair(individual_degrees_num[i], individual_degrees_den[i]);
-	      }
-	    }
+              for (size_t i = 0; i != n; ++i) {
+                individual_degree_bounds[i] = std::make_pair(individual_degrees_num[i], individual_degrees_den[i]);
+              }
+            }
 
             file.close();
             std::lock_guard<std::mutex> lock_status(mutex_status);
@@ -2846,10 +2839,10 @@ namespace firefly {
             curr_parsed_variable = INTERPOLATIONS;
             parsed_variables[INTERPOLATIONS] = true;
           } else if (line == "individual_degrees_num") {
-	    curr_parsed_variable = INDIVIDUAL_DEGREES_NUM;
-	  } else if (line == "individual_degrees_den") {
-	    curr_parsed_variable = INDIVIDUAL_DEGREES_DEN;
-	  } else {
+            curr_parsed_variable = INDIVIDUAL_DEGREES_NUM;
+          } else if (line == "individual_degrees_den") {
+            curr_parsed_variable = INDIVIDUAL_DEGREES_DEN;
+          } else {
             switch (curr_parsed_variable) {
               case COMBINED_PRIME: {
                 std::lock_guard<std::mutex> lock_status(mutex_status);
@@ -3084,17 +3077,17 @@ namespace firefly {
           ERROR_MSG("Incomplete input file '" + file_name + "'! It cannot be used to resume a run. Entry '" + save_variables_string[counter] + "' is missing.");
           std::exit(EXIT_FAILURE);
         }
-	++counter;
+        ++counter;
       }
 
       file.close();
 
       if (individual_degrees_num.size() != 0) {
-	is_set_individual_degree_bounds = true;
-	individual_degree_bounds = std::vector<std::pair<uint32_t, uint32_t>> (n);
+        is_set_individual_degree_bounds = true;
+        individual_degree_bounds = std::vector<std::pair<uint32_t, uint32_t>> (n);
 
         for (size_t i = 0; i != n; ++i) {
-	  individual_degree_bounds[i] = std::make_pair(individual_degrees_num[i], individual_degrees_den[i]);
+          individual_degree_bounds[i] = std::make_pair(individual_degrees_num[i], individual_degrees_den[i]);
         }
       }
 
@@ -3547,8 +3540,8 @@ namespace firefly {
     for (const auto& el : needed_feed_vec) {
       uint32_t tmp_mult = el.first;
       for (uint32_t i = 0; i != tmp_mult; ++i) {
-	needed_feed_vec_tmp.emplace_back(std::make_pair(counter, el.second));
-	++counter;
+        needed_feed_vec_tmp.emplace_back(std::make_pair(counter, el.second));
+        ++counter;
       }
     }
 
@@ -3570,38 +3563,36 @@ namespace firefly {
       } else {
         // Calculate the difference of already calculated probes and remaining ones
         if (parsed_probes.size() != 0) {
-	  size_t size = needed_feed_vec.size();
+          size_t size = needed_feed_vec.size();
 
           for (const auto & el : parsed_probes) {
-	    if (size == 0) {
-	      break;
-	    }
+            if (size == 0) {
+              break;
+            }
 
-	    size_t tmp_size = el.second.size();
+            size_t tmp_size = el.second.size();
 
-	    if (n > 1) {
-	      std::cout << "got " << el.first[0] << " | " << tmp_size << " | " << needed_feed_vec[el.first[0] - 1].second << " | "  << size << "\n";
-	      if (el.first[0] <= size) {
-		if (tmp_size >= needed_feed_vec[el.first[0] - 1].second) {
-		  needed_feed_vec[el.first[0] - 1].second = 0;
-		} else {
-		  needed_feed_vec[el.first[0] - 1].second -= tmp_size;
-		}
-	      }
-	    } else {
-	      if (tmp_size >= needed_feed_vec[0].second) {
-		needed_feed_vec.clear();
-	      } else {
-		needed_feed_vec[0].second -= tmp_size;
-	      }
-	    }
+            if (n > 1) {
+              if (el.first[0] <= size) {
+                if (tmp_size >= needed_feed_vec[el.first[0] - 1].second) {
+                  needed_feed_vec[el.first[0] - 1].second = 0;
+                } else {
+                  needed_feed_vec[el.first[0] - 1].second -= tmp_size;
+                }
+              }
+            } else {
+              if (tmp_size >= needed_feed_vec[0].second) {
+                needed_feed_vec.clear();
+              } else {
+                needed_feed_vec[0].second -= tmp_size;
+              }
+            }
 
             for (const auto & el2 : el.second) {
               queue.emplace(std::make_tuple(el2.first, el2.second, el.first));
-	      std::cout << "queue emplace " << el2.first << " " << el2.second << " " << el.first[0] << " " << el.first[1] << " " << el.first[2] << "\n";
             }
           }
-	}
+        }
       }
 
       parsed_probes.clear();
@@ -3613,10 +3604,6 @@ namespace firefly {
   std::vector<std::pair<uint32_t, uint32_t>> RatReconst::get_needed_feed_vec() {
     std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_tmp = std::move(needed_feed_vec);
     needed_feed_vec.clear();
-
-    for (const auto& el : needed_feed_vec_tmp) {
-      std::cout << "tag " << tag << " " << el.first << " " << el.second << "\n";
-    }
 
     return needed_feed_vec_tmp;
   }
@@ -3750,9 +3737,9 @@ namespace firefly {
 
     for (size_t i = 1; i != n; ++i) {
       if (is_den) {
-	res[i - 1] = individual_degree_bounds[i].second;
+        res[i - 1] = individual_degree_bounds[i].second;
       } else {
-	res[i - 1] = individual_degree_bounds[i].first;
+        res[i - 1] = individual_degree_bounds[i].first;
       }
     }
 

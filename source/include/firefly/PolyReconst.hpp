@@ -114,7 +114,7 @@ namespace firefly {
     uint32_t get_vandermonde_num_eqn() const;
     /**
      *  Sets individual degree bounds on each variable
-     *  @param individual_degree_bounds_ the degree bounds 
+     *  @param individual_degree_bounds_ the degree bounds
      */
     void set_individual_degree_bounds(const std::vector<uint32_t>& individual_degree_bounds_);
   private:

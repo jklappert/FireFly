@@ -141,7 +141,6 @@ namespace firefly {
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     enum RatReconst_status {RECONSTRUCTING, DONE, DELETE};
-    static bool teeeeeeeeeeeeeest;
   private:
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     std::chrono::high_resolution_clock::time_point prime_start = std::chrono::high_resolution_clock::now();
@@ -333,8 +332,6 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   bool Reconstructor<BlackBoxTemp>::printed_logo = false;
-  template<typename BlackBoxTemp>
-  bool Reconstructor<BlackBoxTemp>::teeeeeeeeeeeeeest = false;
 
   template<typename BlackBoxTemp>
   Reconstructor<BlackBoxTemp>::Reconstructor(const uint32_t n_, const uint32_t thr_n_, BlackBoxBase<BlackBoxTemp>& bb_,
@@ -504,7 +501,7 @@ namespace firefly {
     std::ifstream v_file;
     std::string line;
     v_file.open("ff_save/var_order.gz");
-    teeeeeeeeeeeeeest = true;
+
     // Variable order
     if (v_file.is_open()) {
       igzstream order_file;
@@ -704,7 +701,7 @@ namespace firefly {
       }
 
       if (verbosity > SILENT) {
-	std::cerr << "\033[1;34mFireFly info:\033[0m " << i << " / " << items << "\r";
+        std::cerr << "\033[1;34mFireFly info:\033[0m " << i << " / " << items << "\r";
       }
     }
 
@@ -721,9 +718,9 @@ namespace firefly {
 
         const auto tmp_an_vec = tmp_rec.get_anchor_points();
 
-	for (auto & rec : reconst) {
+        for (auto & rec : reconst) {
           std::get<2>(rec)->set_anchor_points(tmp_an_vec);
-	}
+        }
       } else {
         ERROR_MSG("Anchor point file not found!");
         logger << "Anchor point file not found!\n";
@@ -862,7 +859,6 @@ namespace firefly {
         if (scanned_factors && items == 0) {
           done = true;
         } else {
-	  teeeeeeeeeeeeeest = true;
           start_first_runs(!scanned_factors);
         }
 
@@ -1157,7 +1153,6 @@ namespace firefly {
     }
 
     prime_start = std::chrono::high_resolution_clock::now();
-	  teeeeeeeeeeeeeest = true;
   }
 
   template<typename BlackBoxTemp>
@@ -1259,7 +1254,7 @@ namespace firefly {
                 // Get maximum degrees
                 auto tmp_max_degs = std::get<2>(rec)->get_max_deg();
                 max_deg_map.emplace(std::make_pair(counter, tmp_max_degs));
-		max_deg_map_complete_tmp[counter].emplace_back(tmp_max_degs);
+                max_deg_map_complete_tmp[counter].emplace_back(tmp_max_degs);
 
                 uint32_t max_val = std::max(tmp_max_degs.first, tmp_max_degs.second);
                 if (max_val > max_degs[i]) {
@@ -1340,8 +1335,8 @@ namespace firefly {
 
                   max_deg_map[counter].first -= fac_max_deg_num;
                   max_deg_map[counter].second -= fac_max_deg_den;
-		  max_deg_map_complete_tmp[counter].back().first = max_deg_map[counter].first;
-		  max_deg_map_complete_tmp[counter].back().second = max_deg_map[counter].second;
+                  max_deg_map_complete_tmp[counter].back().first = max_deg_map[counter].first;
+                  max_deg_map_complete_tmp[counter].back().second = max_deg_map[counter].second;
 
                   combined_ni[counter] = tmp_combined_ni;
                   combined_di[counter] = tmp_combined_di;
@@ -1586,8 +1581,7 @@ namespace firefly {
       max_deg_map_complete[el.first] = std::vector<std::pair<uint32_t, uint32_t>> (n);
 
       for (size_t i = 0; i != n; ++i) {
-	//std::cout << "put " << i << " " << optimal_var_order[i] << " " << el.second[optimal_var_order[i]].first << " " << el.second[optimal_var_order[i]].second << "\n";
-	max_deg_map_complete[el.first][i] = el.second[optimal_var_order[i]];
+        max_deg_map_complete[el.first][i] = el.second[optimal_var_order[i]];
       }
     }
 
@@ -1984,9 +1978,9 @@ namespace firefly {
           rec->scan_for_sparsest_shift();
         }
 
-	if (!parsed_factors.empty()) {
-	  rec->set_individual_degree_bounds(max_deg_map_complete[i]);
-	}
+        if (!parsed_factors.empty()) {
+          rec->set_individual_degree_bounds(max_deg_map_complete[i]);
+        }
 
         if (save_states) {
           rec->set_tag(std::to_string(i));
@@ -2301,7 +2295,7 @@ namespace firefly {
           }
         }
 
-        // Set anchor points and the shift to resume from saved probes
+        // Load anchor points and the shift to resume from saved probes
         if (save_states && load_anchor_points) {
           load_anchor_points = false;
           std::string line;
@@ -2313,9 +2307,9 @@ namespace firefly {
             tmp_rec.set_anchor_points(parse_vector_FFInt(line, static_cast<int>(n)));
             const auto tmp_an_vec = tmp_rec.get_anchor_points();
 
-	    for (auto & rec : reconst) {
+            for (auto & rec : reconst) {
               std::get<2>(rec)->set_anchor_points(tmp_an_vec);
-	    }
+            }
           } else {
             logger << "Anchor point file not found!\n";
             ERROR_MSG("Anchor point file not found!");
@@ -2345,9 +2339,9 @@ namespace firefly {
           }
         } else {
           tmp_rec.generate_anchor_points();
-	  const auto tmp_an_vec = tmp_rec.get_anchor_points();
+          const auto tmp_an_vec = tmp_rec.get_anchor_points();
 
-	  for (auto & rec : reconst) {
+          for (auto & rec : reconst) {
             std::get<2>(rec)->set_anchor_points(tmp_an_vec);
           }
         }
@@ -2861,49 +2855,26 @@ namespace firefly {
               for (const auto & some_probes : all_required_probes) {
                 if (some_probes.second == 0) {
                   continue;
-		}
+                }
 
                 uint32_t required_probes = some_probes.second;
 
-                //for (uint32_t i = 0; i != some_probes.first; ++i) {
-		std::vector<uint32_t> zi_order;
-                  if (!factor_scan) {
-                    zi_order = std::vector<uint32_t>(n - 1, some_probes.first);
-                  } else {
-                    zi_order = std::vector<uint32_t>(0, some_probes.first);
-                  }
+                std::vector<uint32_t> zi_order;
+                if (!factor_scan) {
+                  zi_order = std::vector<uint32_t>(n - 1, some_probes.first);
+                } else {
+                  zi_order = std::vector<uint32_t>(0, some_probes.first);
+                }
 
-                  std::unique_lock<std::mutex> lock(job_control);
+                std::unique_lock<std::mutex> lock(job_control);
 
-                  auto it = started_probes.find(zi_order);
+                auto it = started_probes.find(zi_order);
 
-                  if (it != started_probes.end()) {
-                    if (required_probes > started_probes[zi_order]) {
-                      uint32_t to_start = required_probes - started_probes[zi_order];
+                if (it != started_probes.end()) {
+                  if (required_probes > started_probes[zi_order]) {
+                    uint32_t to_start = required_probes - started_probes[zi_order];
 
-                      started_probes[zi_order] = required_probes;
-
-                      lock.unlock();
-
-                      if (verbosity == CHATTY) {
-                        std::string msg = "Starting zi_order (";
-
-                        for (const auto & ele : zi_order) {
-                          msg += std::to_string(ele) + ", ";
-                        }
-
-                        msg = msg.substr(0, msg.length() - 2);
-                        msg += ") " + std::to_string(to_start) + " time(s)";
-
-                        std::lock_guard<std::mutex> lock_print(print_control);
-
-                        INFO_MSG(msg);
-                      }
-
-                      queue_probes(zi_order, to_start);
-                    }
-                  } else {
-                    started_probes.emplace(zi_order, required_probes);
+                    started_probes[zi_order] = required_probes;
 
                     lock.unlock();
 
@@ -2915,18 +2886,39 @@ namespace firefly {
                       }
 
                       msg = msg.substr(0, msg.length() - 2);
-                      msg += ") " + std::to_string(required_probes) + " time(s)";
+                      msg += ") " + std::to_string(to_start) + " time(s)";
 
                       std::lock_guard<std::mutex> lock_print(print_control);
 
                       INFO_MSG(msg);
                     }
 
-                    queue_probes(zi_order, required_probes);
+                    queue_probes(zi_order, to_start);
                   }
-		  //}
-	      }
-	    }
+                } else {
+                  started_probes.emplace(zi_order, required_probes);
+
+                  lock.unlock();
+
+                  if (verbosity == CHATTY) {
+                    std::string msg = "Starting zi_order (";
+
+                    for (const auto & ele : zi_order) {
+                      msg += std::to_string(ele) + ", ";
+                    }
+
+                    msg = msg.substr(0, msg.length() - 2);
+                    msg += ") " + std::to_string(required_probes) + " time(s)";
+
+                    std::lock_guard<std::mutex> lock_print(print_control);
+
+                    INFO_MSG(msg);
+                  }
+
+                  queue_probes(zi_order, required_probes);
+                }
+              }
+            }
           } else {
             std::pair<std::vector<std::pair<std::vector<uint32_t>, uint32_t>>, uint32_t> next_orders_pair = std::get<2>(rec)->get_zi_orders();
             auto next_orders = next_orders_pair.first;
@@ -2954,7 +2946,7 @@ namespace firefly {
 
                 queue_probes(next_orders.front().first, to_start);
               }
-	      } else {
+            } else {
               for (size_t i = 0; i != next_orders.size(); ++i) {
                 std::unique_lock<std::mutex> lock(job_control);
 
@@ -3010,7 +3002,7 @@ namespace firefly {
               }
             }
           }
-	  } else {
+        } else {
           // to be sure that no other thread does the same
           std::lock_guard<std::mutex> lock_status(status_control);
 

@@ -59,7 +59,7 @@ namespace firefly {
       global_anchor_points = std::vector<FFInt> (n, 0);
 
       for (uint32_t i = 0; i != n; ++i) {
-	global_anchor_points[i] = anchor_points[i];
+        global_anchor_points[i] = anchor_points[i];
       }
 
       private_anchor_points = global_anchor_points;
@@ -180,7 +180,7 @@ namespace firefly {
             } else if (is_set_individual_degree_bounds == true && individual_degree_bounds[zi - 1] == i) {
               combine_res = true;
               finished = true;
-	    }
+            }
           }
 
           if (use_bt && !finished) {
@@ -296,8 +296,8 @@ namespace firefly {
                 } else if (deg != -1 && i == tmp_deg) {
                   finished = true;
                 }  else if (is_set_individual_degree_bounds == true && individual_degree_bounds[zi - 1] == i) {
-		  finished = true;
-		} else
+                  finished = true;
+                } else
                   ++not_done_counter_newton;
 
                 if (finished) {

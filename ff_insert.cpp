@@ -52,14 +52,14 @@ int main(int argc, char* argv[]) {
 
     if (arg == "-p" || arg == "--parallel") {
       if (i + 1 != argc) {
-	if (is_number(argv[i + 1]))
-	  n_threads = std::stoi(argv[i + 1]);
-	else {
-	  ERROR_MSG("The argument of -p needs to be a number");
-	  logger << "The argument of -p needs to be a number\n";
-	  logger.close();
-	  std::exit(EXIT_FAILURE);
-	}
+        if (is_number(argv[i + 1]))
+        n_threads = std::stoi(argv[i + 1]);
+        else {
+          ERROR_MSG("The argument of -p needs to be a number");
+          logger << "The argument of -p needs to be a number\n";
+          logger.close();
+          std::exit(EXIT_FAILURE);
+        }
       } else {
         ERROR_MSG("-p needs an argument");
         logger << "-p needs an argument\n";
@@ -70,14 +70,14 @@ int main(int argc, char* argv[]) {
       ++i;
     } else if (arg == "-bs" || arg == "--bunchsize") {
       if (i + 1 != argc) {
-	if (is_number(argv[i + 1]))
-	  bs = std::stoi(argv[i + 1]);
-	else {
-	  ERROR_MSG("The argument of -bs needs to be a number");
-	  logger << "The argument of -bs needs to be a number\n";
-	  logger.close();
-	  std::exit(EXIT_FAILURE);
-	}
+        if (is_number(argv[i + 1]))
+        bs = std::stoi(argv[i + 1]);
+        else {
+          ERROR_MSG("The argument of -bs needs to be a number");
+          logger << "The argument of -bs needs to be a number\n";
+          logger.close();
+          std::exit(EXIT_FAILURE);
+        }
       }  else {
         ERROR_MSG("-bs needs an argument");
         logger << "-bs needs an argument\n";
@@ -108,9 +108,9 @@ int main(int argc, char* argv[]) {
       std::ifstream test_file(input_file);
 
       if (!test_file.good()) {
-	ERROR_MSG("Input file '" + input_file + "' does not exist");
-	logger << "Input file '" + input_file + "' does not exist\n";
-	logger.close();
+        ERROR_MSG("Input file '" + input_file + "' does not exist");
+        logger << "Input file '" + input_file + "' does not exist\n";
+        logger.close();
         std::exit(EXIT_FAILURE);
       }
     } else {
@@ -406,7 +406,7 @@ int main(int argc, char* argv[]) {
           std::rename("basis_functions", new_basis_functions_name.c_str());
           std::rename("ff_insert.log", new_log_name.c_str());
           std::remove("firefly.log");
-	  time0 = std::chrono::high_resolution_clock::now();
+          time0 = std::chrono::high_resolution_clock::now();
         }
       } else {
         mkdir("coefficients", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);

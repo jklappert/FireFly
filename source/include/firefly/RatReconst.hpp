@@ -457,7 +457,7 @@ namespace firefly {
     bool is_set_individual_degree_bounds = false; /**< If true individual degree bounds are set */
     std::vector<std::pair<uint32_t, uint32_t>> individual_degree_bounds {}; /**< Stores individual degree bounds of numerator and denominator */
     std::vector<std::string> save_variables_string = {"combined_prime", "tag_name", "is_done", "max_deg_num",
-						      "max_deg_den", "need_prime_shift", "normalizer_deg",
+                                                      "max_deg_den", "need_prime_shift", "normalizer_deg",
                                                       "normalize_to_den", "normalizer_den_num", "shifted_max_num_eqn",
                                                       "shift", "sub_num", "sub_den", "zero_degs_num", "zero_degs_den",
                                                       "g_ni", "g_di", "combined_ni", "combined_di", "combined_primes_ni",
@@ -466,7 +466,7 @@ namespace firefly {
                          NORMALIZER_DEG, NORMALIZE_TO_DEN, NORMALIZER_DEN_NUM, SHIFTED_MAX_NUM_EQN, SHIFT,
                          SUB_NUM, SUB_DEN, ZERO_DEGS_NUM, ZERO_DEGS_DEN, G_NI, G_DI,
                          COMBINED_NI, COMBINED_DI, COMBINED_PRIMES_NI, COMBINED_PRIMES_DI, INTERPOLATIONS,
-			 INDIVIDUAL_DEGREES_NUM, INDIVIDUAL_DEGREES_DEN
+                         INDIVIDUAL_DEGREES_NUM, INDIVIDUAL_DEGREES_DEN
                         };
   };
 }
