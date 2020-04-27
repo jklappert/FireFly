@@ -12,13 +12,7 @@ Changes
  * Removed the support for compilable math expressions. The shunting-yard parser
  should be used instead.
 
- * The paths for the tests are now set by a precompiler variable. Hence, they
- should work for every directory structure. Thanks to Philipp Maierhoefer for
- this suggestion.
-
- * Disable installation?
-
- * INFO_MSG changes?
+ * INFO_MSG changes? ??
 
 Bug fixes
 ---------
@@ -28,10 +22,7 @@ Bug fixes
  * Improved the CMake script searching for GMP to find installations via the
  distribution. All thanks to Alexander Voigt for solving this issue.
 
- * Fixed several compiler warnings. Most of them have been reported by
- Philipp Maierhoefer.
-
- * ff_insert: Timing fix?
+ * The log of the runtime when using the  `ff_insert` executable has been fixed.
 
 
 FireFly 2.0.0
