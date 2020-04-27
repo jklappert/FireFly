@@ -141,6 +141,7 @@ namespace firefly {
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     enum RatReconst_status {RECONSTRUCTING, DONE, DELETE};
+    static bool teeeeeeeeeeeeeest;
   private:
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     std::chrono::high_resolution_clock::time_point prime_start = std::chrono::high_resolution_clock::now();
@@ -332,6 +333,8 @@ namespace firefly {
 
   template<typename BlackBoxTemp>
   bool Reconstructor<BlackBoxTemp>::printed_logo = false;
+  template<typename BlackBoxTemp>
+  bool Reconstructor<BlackBoxTemp>::teeeeeeeeeeeeeest = false;
 
   template<typename BlackBoxTemp>
   Reconstructor<BlackBoxTemp>::Reconstructor(const uint32_t n_, const uint32_t thr_n_, BlackBoxBase<BlackBoxTemp>& bb_,
@@ -501,6 +504,7 @@ namespace firefly {
     std::ifstream v_file;
     std::string line;
     v_file.open("ff_save/var_order.gz");
+    teeeeeeeeeeeeeest = true;
     // Variable order
     if (v_file.is_open()) {
       igzstream order_file;
@@ -687,7 +691,7 @@ namespace firefly {
 
         reconst.emplace_back(std::make_tuple(i, DONE, rec));
       } else {
-        if (rec->is_new_prime()) {
+        if (rec->get_prime() == prime_it + 1/*rec->is_new_prime()*/) {
           probes_for_next_prime = std::max(probes_for_next_prime, rec->get_num_eqn());
           ++items_new_prime;
 
@@ -858,6 +862,7 @@ namespace firefly {
         if (scanned_factors && items == 0) {
           done = true;
         } else {
+	  teeeeeeeeeeeeeest = true;
           start_first_runs(!scanned_factors);
         }
 
@@ -1152,6 +1157,7 @@ namespace firefly {
     }
 
     prime_start = std::chrono::high_resolution_clock::now();
+	  teeeeeeeeeeeeeest = true;
   }
 
   template<typename BlackBoxTemp>
@@ -2852,26 +2858,20 @@ namespace firefly {
             std::vector<std::pair<uint32_t, uint32_t>> all_required_probes = std::get<2>(rec)->get_needed_feed_vec();
 
             if (!all_required_probes.empty()) {
-              uint32_t counter = 1;
-
               for (const auto & some_probes : all_required_probes) {
-                if (some_probes.first == 0) {
-                  ++counter;
+                if (some_probes.second == 0) {
                   continue;
-                }
+		}
 
                 uint32_t required_probes = some_probes.second;
 
-                for (uint32_t i = 0; i != some_probes.first; ++i) {
-                  std::vector<uint32_t> zi_order;
-
+                //for (uint32_t i = 0; i != some_probes.first; ++i) {
+		std::vector<uint32_t> zi_order;
                   if (!factor_scan) {
-                    zi_order = std::vector<uint32_t>(n - 1, counter);
+                    zi_order = std::vector<uint32_t>(n - 1, some_probes.first);
                   } else {
-                    zi_order = std::vector<uint32_t>(0, counter);
+                    zi_order = std::vector<uint32_t>(0, some_probes.first);
                   }
-
-                  ++counter;
 
                   std::unique_lock<std::mutex> lock(job_control);
 
@@ -2924,9 +2924,9 @@ namespace firefly {
 
                     queue_probes(zi_order, required_probes);
                   }
-                }
-              }
-            }
+		  //}
+	      }
+	    }
           } else {
             std::pair<std::vector<std::pair<std::vector<uint32_t>, uint32_t>>, uint32_t> next_orders_pair = std::get<2>(rec)->get_zi_orders();
             auto next_orders = next_orders_pair.first;

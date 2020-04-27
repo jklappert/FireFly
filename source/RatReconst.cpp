@@ -177,14 +177,20 @@ namespace firefly {
 
           first_feed = false;
 
-          if (tag.size() != 0)
+          if (tag.size() != 0)//ssss
             saved_food.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
-
+	if (tag == "19") {
+	  //std::cout << new_ti << " " << num << " " << fed_zi_ord[0] << " " << fed_zi_ord[1] << " " << fed_zi_ord[2] << "\n";
+	}
           queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
         }
       } else {
         if (!scan && tag.size() != 0)
           saved_food.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
+
+	if (tag == "19") {
+	  //std::cout << new_ti << " " << num << " " << fed_zi_ord[0] << " " << fed_zi_ord[1] << " " << fed_zi_ord[2] << "\n";
+	}
 
         queue.emplace(std::make_tuple(new_ti, num, fed_zi_ord));
       }
@@ -258,7 +264,9 @@ namespace firefly {
           for (size_t i = 0; i != new_ti.size(); ++i) {
             if (tag.size() != 0)
               saved_food.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
-
+	if (tag == "19") {
+	  //std::cout << new_ti[i] << " " << num[i] << " " << fed_zi_ord[i][0] << " " << fed_zi_ord[i][1] << " " << fed_zi_ord[i][2] << "\n";
+	}
             queue.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
           }
         }
@@ -266,6 +274,9 @@ namespace firefly {
         for (size_t i = 0; i != new_ti.size(); ++i) {
           if (!scan && tag.size() != 0)
             saved_food.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
+	if (tag == "19") {
+	  //std::cout << new_ti[i] << " " << num[i] << " " << fed_zi_ord[i][0] << " " << fed_zi_ord[i][1] << " " << fed_zi_ord[i][2] << "\n";
+	}
 
           queue.emplace(std::make_tuple(new_ti[i], num[i], fed_zi_ord[i]));
         }
@@ -3529,6 +3540,21 @@ namespace firefly {
       }
     }
 
+    // Rewrite needed_feed_vec in terms of zi_orders. Note that only one entry is necessary here
+    std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_tmp {};
+    size_t counter = 1;
+    
+    for (const auto& el : needed_feed_vec) {
+      uint32_t tmp_mult = el.first;
+      for (uint32_t i = 0; i != tmp_mult; ++i) {
+	needed_feed_vec_tmp.emplace_back(std::make_pair(counter, el.second));
+	++counter;
+      }
+    }
+
+    needed_feed_vec_tmp.shrink_to_fit();
+    needed_feed_vec.swap(needed_feed_vec_tmp);
+
     if (from_save_state) {
       from_save_state = false;
 
@@ -3542,114 +3568,40 @@ namespace firefly {
           }
         }
       } else {
-        std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_sub;
-        std::map<uint32_t, uint32_t> r_map {};
-
         // Calculate the difference of already calculated probes and remaining ones
         if (parsed_probes.size() != 0) {
+	  size_t size = needed_feed_vec.size();
+
           for (const auto & el : parsed_probes) {
-            if (r_map.find(el.second.size()) == r_map.end())
-              r_map[el.second.size()] = 1;
-            else
-              r_map[el.second.size()] += 1;
+	    if (size == 0) {
+	      break;
+	    }
+
+	    size_t tmp_size = el.second.size();
+
+	    if (n > 1) {
+	      std::cout << "got " << el.first[0] << " | " << tmp_size << " | " << needed_feed_vec[el.first[0] - 1].second << " | "  << size << "\n";
+	      if (el.first[0] <= size) {
+		if (tmp_size >= needed_feed_vec[el.first[0]].second) {
+		  needed_feed_vec[el.first[0] - 1].second = 0;
+		} else {
+		  needed_feed_vec[el.first[0] - 1].second -= tmp_size;
+		}
+	      }
+	    } else {
+	      if (tmp_size >= needed_feed_vec[0].second) {
+		needed_feed_vec.clear();
+	      } else {
+		needed_feed_vec[0].second -= tmp_size;
+	      }
+	    }
 
             for (const auto & el2 : el.second) {
               queue.emplace(std::make_tuple(el2.first, el2.second, el.first));
-              get_rand_zi_vec(el.first);
+	      std::cout << "queue emplace " << el2.first << " " << el2.second << " " << el.first[0] << " " << el.first[1] << " " << el.first[2] << "\n";
             }
           }
-
-          for (const auto & el : r_map) {
-            needed_feed_vec_sub.emplace_back(std::make_pair(el.second, el.first));
-          }
-
-          std::sort(needed_feed_vec_sub.begin(), needed_feed_vec_sub.end(),
-          [](const std::pair<uint32_t, uint32_t>& l, const std::pair<uint32_t, uint32_t>& r) {
-            return l.second > r.second;
-          });
-
-          int positions_done = -1;
-          uint32_t unfinished_pos = 0;
-          uint32_t partial_done_mult = 0;
-          uint32_t partial_done_num = 0;
-          uint32_t size = needed_feed_vec_sub.size();
-
-          // Check which feeds are already done and mark the position of the remaining ones
-          for (uint32_t i = 0; i != size; ++i) {
-            uint32_t req_mult = needed_feed_vec[i].first;
-            uint32_t req_num = needed_feed_vec[i].second;
-
-            uint32_t got_mult = needed_feed_vec_sub[i].first;
-            uint32_t got_num = needed_feed_vec_sub[i].second;
-
-            if (req_mult > got_mult) {
-              unfinished_pos = i;
-
-              if (got_num == req_num) {
-                partial_done_mult = got_mult;
-
-                if (i != size - 1)
-                  partial_done_num = needed_feed_vec_sub[i + 1].second;
-              } else
-                partial_done_num = got_num;
-
-              break;
-            } else if (req_mult == got_mult && got_num >= req_num) {
-              positions_done ++;
-            } else if (req_mult == got_mult && req_num != got_num) {
-              unfinished_pos = i;
-              partial_done_num = got_num;
-            } else {
-              positions_done ++;
-            }
-          }
-
-          needed_feed_vec_sub.clear();
-
-          // Rewrite the new needed feed vector by subtracting already calculated probes
-          if (positions_done != static_cast<int>(needed_feed_vec.size() - 1)) {
-            // set the correct offset for appending unfinished jobs
-            uint32_t offset = 2;
-
-            for (int i = 0; i <= positions_done; ++i) {
-              uint32_t req_mult = needed_feed_vec[i].first;
-              uint32_t req_num = needed_feed_vec[i].second;
-
-              for (uint32_t j = 0; j != req_mult; ++j) {
-                needed_feed_vec_sub.emplace_back(std::make_pair(0, req_num));
-              }
-            }
-
-            if (positions_done != static_cast<int>(size - 1)) {
-              uint32_t tmp_req_mult = needed_feed_vec[unfinished_pos].first;
-              uint32_t tmp_req_num = needed_feed_vec[unfinished_pos].second;
-
-              for (uint32_t i = 0; i != partial_done_mult; ++i) {
-                needed_feed_vec_sub.emplace_back(std::make_pair(0, tmp_req_num));
-              }
-
-              uint32_t diff = tmp_req_mult - partial_done_mult;
-              //std::cout << "diff " << diff << " " << tmp_req_num - partial_done_num <<"\n";
-
-              if (diff != 0) {
-                needed_feed_vec_sub.emplace_back(std::make_pair(1, tmp_req_num - partial_done_num));
-                ++partial_done_num;
-              }
-
-              if (diff != 0 && diff - 1 != 0)
-                needed_feed_vec_sub.emplace_back(std::make_pair(diff - 1, tmp_req_num));
-            } else
-              offset = 1;
-
-            // Append all required probes
-            for (uint32_t i = positions_done + offset; i < needed_feed_vec.size(); ++i) {
-              needed_feed_vec_sub.emplace_back(needed_feed_vec[i]);
-            }
-
-            needed_feed_vec = needed_feed_vec_sub;
-          } else
-            needed_feed_vec.clear();
-        }
+	}
       }
 
       parsed_probes.clear();
@@ -3662,9 +3614,9 @@ namespace firefly {
     std::vector<std::pair<uint32_t, uint32_t>> needed_feed_vec_tmp = std::move(needed_feed_vec);
     needed_feed_vec.clear();
 
-    /*for (const auto& el : needed_feed_vec_tmp) {
+    for (const auto& el : needed_feed_vec_tmp) {
       std::cout << "tag " << tag << " " << el.first << " " << el.second << "\n";
-      }*/
+    }
 
     return needed_feed_vec_tmp;
   }

@@ -53,7 +53,11 @@ namespace firefly {
 
       // Compute determinant of mat
       result.emplace_back(calc_determinant_lu(mat, p, 2));
-
+      if (Reconstructor<BlackBoxUser>::teeeeeeeeeeeeeest) {
+	++c;
+	if (c == 100)
+	  std::exit(-1);
+      }
       return result;
     }
 
@@ -69,6 +73,7 @@ namespace firefly {
     // Internal variables for the black box
     // In this example a ShuntingYardParser
     ShuntingYardParser par;
+    int c = 0;
   };
 }
 
@@ -83,10 +88,10 @@ int main() {
 
   // Initialize the Reconstructor
   Reconstructor<BlackBoxUser> reconst(4 /*n_vars*/,
-                                      std::thread::hardware_concurrency() /*n_threads*/,
+                                      1,//std::thread::hardware_concurrency() /*n_threads*/,
                                       1 /*bunch size*/,
-                                      bb /*black box*//*,
-                                      Reconstructor<BlackBoxUser>::CHATTY*/ /* verbosity mode*/);
+                                      bb /*black box*/,
+                                      Reconstructor<BlackBoxUser>::CHATTY /* verbosity mode*/);
 
   // Enables scan for factors
   reconst.enable_factor_scan();
@@ -102,7 +107,7 @@ int main() {
   //reconst.set_tags();
 
   // Read in all saved states from the directory ./ff_save
-  //reconst.resume_from_saved_state();
+  reconst.resume_from_saved_state();
 
   // Reconstruct the black box
   reconst.reconstruct();
