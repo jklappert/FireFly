@@ -691,11 +691,11 @@ namespace firefly {
 
         reconst.emplace_back(std::make_tuple(i, DONE, rec));
       } else {
-        if (rec->get_prime() == prime_it + 1/*rec->is_new_prime()*/) {
+        if (rec->is_new_prime()) {
           probes_for_next_prime = std::max(probes_for_next_prime, rec->get_num_eqn());
           ++items_new_prime;
 
-          if (rec->get_prime() != prime_it + 1) {
+          if (rec->get_prime() == prime_it + 1) {
             set_anchor_points = true;
           }
         }
