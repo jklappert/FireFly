@@ -30,7 +30,7 @@
 #include "firefly/version.hpp"
 
 #if WITH_MPI
-#include "MPIWorker.hpp"
+#include "firefly/MPIWorker.hpp"
 #endif
 
 #ifdef FLINT
