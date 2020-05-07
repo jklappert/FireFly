@@ -656,22 +656,20 @@ namespace firefly {
       auto tmp = rec->read_in_probes(probe_files[i]);
 
       for (const auto & already_chosen_t : tmp) {
-        if (chosen_t.find(already_chosen_t.first) != chosen_t.end()) {
-          auto set = chosen_t[already_chosen_t.first];
+        auto it = chosen_t.find(already_chosen_t.first);
 
+        if (it != chosen_t.end()) {
           // Set the counter for the computed probes to the minimum of all RatReconst, i.e. the common ground
-          if (static_cast<uint32_t>(set.size()) < started_probes[already_chosen_t.first]) {
-            started_probes[already_chosen_t.first] = static_cast<uint32_t>(set.size());
+          if (static_cast<uint32_t>(already_chosen_t.second.size()) < started_probes[already_chosen_t.first]) {
+            started_probes[already_chosen_t.first] = static_cast<uint32_t>(already_chosen_t.second.size());
           }
 
           // chosen_t shall contain the union of all t
-          for (const auto & ts : already_chosen_t.second) {
-            if (set.find(ts) == set.end()) {
-              set.emplace(ts);
+          for (const auto & t : already_chosen_t.second) {
+            if (it->second.find(t) == it->second.end()) {
+              it->second.emplace(t);
             }
           }
-
-          chosen_t[already_chosen_t.first] = set;
         } else {
           chosen_t.emplace(std::make_pair(already_chosen_t.first, already_chosen_t.second));
           started_probes.emplace(std::make_pair(already_chosen_t.first, static_cast<uint32_t>(already_chosen_t.second.size())));
@@ -705,7 +703,14 @@ namespace firefly {
       }
     }
 
-    fed_ones = started_probes[std::vector<uint32_t> (n - 1, 1)];
+    auto it = started_probes.find(std::vector<uint32_t> (n - 1, 1));
+
+    if (it != started_probes.end()) {
+      fed_ones = it->second;
+    } else {
+      started_probes.emplace(std::vector<uint32_t> (n - 1, 1), 0);
+      fed_ones = 0;
+    }
 
     if (prime_it == 0 && items != items_new_prime + items_done) {
       load_anchor_points = false;
@@ -2133,7 +2138,7 @@ namespace firefly {
 #if !WITH_MPI
         // TODO don't start as much ones
         queue_probes(zi_order, thr_n);//* bunch_size);
-        started_probes.emplace(zi_order, thr_n);//* bunch_size);
+        started_probes.at(zi_order) += thr_n;//* bunch_size);
 #else
         // TODO optimize
         send_first_jobs();
