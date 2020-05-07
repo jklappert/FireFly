@@ -705,7 +705,14 @@ namespace firefly {
       }
     }
 
-    fed_ones = started_probes[std::vector<uint32_t> (n - 1, 1)];
+    auto it = started_probes.find(std::vector<uint32_t> (n - 1, 1));
+
+    if (it != started_probes.end()) {
+      fed_ones = it->second;
+    } else {
+      started_probes.emplace(std::vector<uint32_t> (n - 1, 1), 0);
+      fed_ones = 0;
+    }
 
     if (prime_it == 0 && items != items_new_prime + items_done) {
       load_anchor_points = false;
@@ -2133,7 +2140,7 @@ namespace firefly {
 #if !WITH_MPI
         // TODO don't start as much ones
         queue_probes(zi_order, thr_n);//* bunch_size);
-        started_probes.emplace(zi_order, thr_n);//* bunch_size);
+        started_probes.at(zi_order) += thr_n;//* bunch_size);
 #else
         // TODO optimize
         send_first_jobs();
