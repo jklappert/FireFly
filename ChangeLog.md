@@ -12,17 +12,18 @@ Changes
  * Removed the support for compilable math expressions. The shunting-yard parser
  should be used instead.
 
- * INFO_MSG changes? ??
-
 Bug fixes
 ---------
 
- * Fixed several bugs when loading saved states with saved probes.
+ * Fixed several bugs when restarting from saved states with probes.
 
  * Improved the CMake script searching for GMP to find installations via the
  distribution. All thanks to Alexander Voigt for solving this issue.
 
- * The log of the runtime when using the  `ff_insert` executable has been fixed.
+ * Removed trailing whitespaces when building with jemalloc which could lead to
+ errors with CMake.
+
+ * The log of the runtime when using the `ff_insert` executable has been fixed.
 
 
 FireFly 2.0.0
