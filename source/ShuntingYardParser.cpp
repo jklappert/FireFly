@@ -56,10 +56,10 @@ namespace firefly {
   }
 
   void ShuntingYardParser::parse_collection(const std::vector<std::string>& funs, bool is_file) {
-    size_t prime_counter = 0;
-    std::vector<FFInt> check_vars_1;
-    std::vector<FFInt> check_vars_2;
-    std::unordered_map<std::pair<uint64_t, uint64_t>, uint64_t, UintPairHasher> check_map;
+    //size_t prime_counter = 0;
+    //std::vector<FFInt> check_vars_1;
+    //std::vector<FFInt> check_vars_2;
+    //std::unordered_map<std::pair<uint64_t, uint64_t>, uint64_t, UintPairHasher> check_map;
 
     for (const auto& p : primes()) {
       if (FFInt::p == p)
@@ -117,7 +117,7 @@ namespace firefly {
 
         if (line.length() > 0) {
           validate(line, line_c);
-          parse(line);
+          functions.emplace_back(parse(line));
           ++parsed_fun_c;
 
           if (check_is_equal) {
@@ -148,7 +148,7 @@ namespace firefly {
       for (size_t i = 0; i != funs.size(); ++i) {
         std::string fun = funs[i];
         validate(fun, i);
-        parse(fun);
+        functions.emplace_back(parse(fun));
         ++parsed_fun_c;
 
         if (check_is_equal) {
@@ -194,7 +194,7 @@ namespace firefly {
     }
   }
 
-  void ShuntingYardParser::parse(std::string& fun) {
+  std::vector<std::string> ShuntingYardParser::parse(std::string& fun) {
     //    std::string fun = fun_;
 
     // Check for global signs
@@ -304,7 +304,7 @@ namespace firefly {
     std::cout << "\n";*/
 
     tokens.shrink_to_fit();
-    functions.emplace_back(tokens);
+    return tokens;
   }
 
   void ShuntingYardParser::parse_function(std::string& fun, const std::vector<std::string>& vars, bool validate_fun) {
@@ -319,9 +319,42 @@ namespace firefly {
     if (validate_fun)
       validate(fun, 0);
 
-    parse(fun);
-
+    functions.emplace_back(parse(fun));
     functions.shrink_to_fit();
+  }
+
+  size_t ShuntingYardParser::add_otf(const std::string & fun_, const bool no_duplicates) {
+    // TODO avoid copy?
+    std::string fun = fun_;
+    validate(fun, 0);
+
+    std::vector<std::string> tokens = parse(fun);
+
+    if (!check_is_equal) {
+      functions.emplace_back(tokens);
+      return functions.size();
+    } else {
+      FFInt::set_new_prime(primes()[prime_counter != 299 ? prime_counter + 1 : prime_counter - 1]);
+      FFInt v1 = evaluate(tokens, check_vars_1);
+      FFInt::set_new_prime(primes()[prime_counter]);
+      FFInt v2 = evaluate(tokens, check_vars_2);
+
+      if (check_map.find(std::make_pair(v1.n, v2.n)) != check_map.end()) {
+        if (!no_duplicates) {
+          evaluation_positions.emplace_back(check_map[std::make_pair(v1.n, v2.n)]);
+        }
+
+        return static_cast<size_t>(check_map[std::make_pair(v1.n, v2.n)]);
+      } else {
+        functions.emplace_back(tokens);
+
+        uint64_t s = static_cast<uint64_t>(functions.size() - 1);
+        check_map.emplace(std::make_pair(std::make_pair(v1.n, v2.n), s));
+        evaluation_positions.emplace_back(s);
+
+        return static_cast<size_t>(s);
+      }
+    }
   }
 
   FFInt ShuntingYardParser::evaluate(const std::vector<std::string>& fun, const std::vector<FFInt>& values) const {
@@ -480,6 +513,11 @@ namespace firefly {
   }
 
   void ShuntingYardParser::precompute_tokens() {
+    // TODO really clear here?
+    check_vars_1.clear();
+    check_vars_2.clear();
+    check_map.clear();
+
     precomp_tokens.clear();
     uint64_t size = functions.size();
     precomp_tokens = std::vector<std::vector<std::pair<uint8_t, FFInt>>> (size);

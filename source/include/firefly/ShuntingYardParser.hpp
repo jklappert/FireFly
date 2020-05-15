@@ -20,6 +20,7 @@
 
 #include "firefly/FFInt.hpp"
 #include "firefly/Logger.hpp"
+#include "firefly/UintHasher.hpp"
 
 #include <unordered_map>
 #include <unordered_set>
@@ -58,6 +59,13 @@ namespace firefly {
      */
     void parse_function(std::string& fun_, const std::vector<std::string>& vars, bool validate_fun = false);
     /**
+     *  TODO
+     *  @param fun The rational function to be parsed as a string
+     *  @param no_duplicates If true, do not add the function if it is already in the list, requires check_is_equal = true
+     *  @return The position of the function in the list
+     */
+    size_t add_otf(const std::string & fun, const bool no_duplicates = false);
+    /**
      *  Evaluates all functions for a given parameter point and returns their result.
      *  @param values A vector of FFIntTemp objects at which the parsed functions should be evaluated.
      *  @return The values of the parsed functions as a vector.
@@ -90,7 +98,11 @@ namespace firefly {
     std::unordered_map<std::string, int> vars_map {}; /**< This map holds the conversion of the used variables to an integer value to map variables to parameter points */
     std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {}; /**< This vector holds a collection of precomputed tokens where each operand/operator as a string is already converted to an FFInt */
     bool check_is_equal = false; /**< Indicates that functions are checked whether they are equal. Modifies the evaluation procedure */
-    std::vector<uint64_t> evaluation_positions; /**< Stores the position of an evaluated function */
+    size_t prime_counter = 0; // TODO
+    std::vector<FFInt> check_vars_1 {}; // TODO clear or keep?
+    std::vector<FFInt> check_vars_2 {}; // TODO clear or keep?
+    std::unordered_map<std::pair<uint64_t, uint64_t>, uint64_t, UintPairHasher> check_map {}; // TODO clear or keep?
+    std::vector<uint64_t> evaluation_positions {}; /**< Stores the position of an evaluated function */
     /**
      *  Evaluates a single function for a given parameter point and returns their result.
      *  @param fun A function in reverse polish notation
@@ -138,7 +150,7 @@ namespace firefly {
      *  Converts a function in reverse polish notation
      *  @param fun The function which should be converted
      */
-    void parse(std::string& fun);
+    std::vector<std::string> parse(std::string& fun);
     /**
      *  Checks expression for redundant parenthesis, removes them and throws an error if one encounters a mismatch of parenthesis
      *  @param r the expression as a string
