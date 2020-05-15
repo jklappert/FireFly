@@ -93,6 +93,12 @@ namespace firefly {
      *  Precomputes the tokes over the current prime field to be more efficient in evaluations
      */
     void precompute_tokens();
+    /**
+     *  TODO
+     *  @param elements_to_keep The elements which should be kept
+     *  @return A map indicating on which positions the kept elements are know
+     */
+    std::unordered_map<size_t, size_t> trim(const std::unordered_set<size_t> & elements_to_keep);
   private:
     std::vector<std::vector<std::string>> functions {}; /**< This vector holds the input function in reverse polish notation where each operand/operator is separated */
     std::unordered_map<std::string, int> vars_map {}; /**< This map holds the conversion of the used variables to an integer value to map variables to parameter points */

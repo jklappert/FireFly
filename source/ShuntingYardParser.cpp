@@ -633,6 +633,62 @@ namespace firefly {
     }
   }
 
+  std::unordered_map<size_t, size_t> ShuntingYardParser::trim(const std::unordered_set<size_t> & elements_to_keep) {
+    std::vector<std::vector<std::string>> new_functions {};
+    std::vector<std::vector<std::pair<uint8_t, FFInt>>> new_precomp_tokens {};
+    std::vector<uint64_t> new_evaluation_positions {};
+    std::unordered_map<size_t, size_t> new_positions {};
+
+    // TODO check_map and check_vars?
+
+    if (!check_is_equal) {
+      for (size_t i = 0; i != functions.size(); ++i) {
+        if (elements_to_keep.find(i) != elements_to_keep.end()) {
+          new_functions.emplace_back(std::move(functions[i]));
+
+          if (!precomp_tokens.empty()) {
+            new_precomp_tokens.emplace_back(std::move(precomp_tokens[i]));
+          }
+
+          new_positions.emplace(std::make_pair(i, new_functions.size() - 1));
+        }
+      }
+    } else {
+      std::unordered_map<size_t, size_t> functions_copied;
+
+      for (size_t i = 0; i != evaluation_positions.size(); ++i) {
+        if (elements_to_keep.find(i) != elements_to_keep.end()) {
+          auto it = functions_copied.find(static_cast<size_t>(evaluation_positions[i]));
+
+          if (it != functions_copied.end()) {
+            new_evaluation_positions.emplace_back(static_cast<uint64_t>(it->second));
+          } else {
+            new_functions.emplace_back(std::move(functions[evaluation_positions[i]]));
+
+            if (!precomp_tokens.empty()) {
+              new_precomp_tokens.emplace_back(std::move(precomp_tokens[evaluation_positions[i]]));
+            }
+
+            functions_copied.emplace(std::make_pair(static_cast<size_t>(evaluation_positions[i]), new_functions.size() - 1));
+            new_evaluation_positions.emplace_back(static_cast<uint64_t>(new_functions.size() - 1));
+          }
+
+          new_positions.emplace(std::make_pair(i, new_evaluation_positions.size() - 1));
+        }
+      }
+    }
+
+    new_functions.shrink_to_fit();
+    new_precomp_tokens.shrink_to_fit();
+    new_evaluation_positions.shrink_to_fit();
+
+    functions = std::move(new_functions);
+    precomp_tokens = std::move(new_precomp_tokens);
+    evaluation_positions = std::move(new_evaluation_positions);
+
+    return new_positions;
+  }
+
   void ShuntingYardParser::validate(std::string& r, uint64_t exp_n) {
     size_t size = r.size() + 1;
     //std::string r = line;
