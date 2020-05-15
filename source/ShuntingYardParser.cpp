@@ -169,9 +169,9 @@ namespace firefly {
         }
 
         if (i + 1 < funs.size() + 1 && i + 1 > curr_percentage*funs.size()/10) {
-	  ++curr_percentage;
+          ++curr_percentage;
           std::cerr << "\033[1;34mFireFly info:\033[0m " << i + 1 << " / " << funs.size() << "\r";
-	}
+        }
       }
     }
 
@@ -238,7 +238,7 @@ namespace firefly {
             }
           } else if (op_stack.empty() && tokens.empty()) {
             tmp.insert(tmp.begin(), ex);
-	  } else {
+          } else {
             while (!op_stack.empty() && op_stack.top() != '(' && get_weight(op_stack.top()) >= get_weight(ex)) {
               tokens.emplace_back(std::string(1, op_stack.top()));
               op_stack.pop();
@@ -246,12 +246,12 @@ namespace firefly {
 
             if (ex == '^' && fun[c_counter + 1] == '(' && fun[c_counter + 2] == '-') {
               neg_exp = true;
-	      if (tokens.back().size() > 1 && tokens.back().front() == '-' && fun[c_counter - 1] != ')') {
-		tokens.back().erase(tokens.back().begin());
-		op_stack.push(';');
-	      } else {
+              if (tokens.back().size() > 1 && tokens.back().front() == '-' && fun[c_counter - 1] != ')') {
+                tokens.back().erase(tokens.back().begin());
+                op_stack.push(';');
+              } else {
                 op_stack.push('~');
-	      }
+              }
             } else if (ex == '^' && tokens.back().size() > 1 && tokens.back().front() == '-' && fun[c_counter - 1] != ')') {
               op_stack.push('!');
               tokens.back().erase(tokens.back().begin());
@@ -376,37 +376,37 @@ namespace firefly {
           }
 
           case '-': {
-	    nums.top() -= a;
+            nums.top() -= a;
             break;
           }
 
           case '*': {
-	    nums.top() *= a;
+            nums.top() *= a;
             break;
           }
 
           case '/': {
-	    nums.top() /= a;
+            nums.top() /= a;
             break;
           }
 
           case '^': {
-	    nums.top() = std::move(nums.top().pow(a));
+            nums.top() = std::move(nums.top().pow(a));
             break;
           }
 
           case '!': {
-	    nums.top() = std::move(-nums.top().pow(a));
+            nums.top() = std::move(-nums.top().pow(a));
             break;
           }
 
           case '~': {
-	    nums.top() = std::move(nums.top().pow(a.to_neg_int()));
+            nums.top() = std::move(nums.top().pow(a.to_neg_int()));
             break;
           }
 
           case ';': {
-	    nums.top() = std::move(-nums.top().pow(a.to_neg_int()));
+            nums.top() = std::move(-nums.top().pow(a.to_neg_int()));
             break;
           }
         }

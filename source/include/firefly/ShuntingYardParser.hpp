@@ -198,42 +198,42 @@ namespace firefly {
           // Evaluate and push the result back to the stack
           switch (token[0]) {
             case '+': {
-	      nums.top() += a;
+              nums.top() += a;
               break;
             }
 
             case '-': {
-	      nums.top() -= a;
+              nums.top() -= a;
               break;
             }
 
             case '*': {
-	      nums.top() *= a;
+              nums.top() *= a;
               break;
             }
 
             case '/': {
-	      nums.top() /= a;
+              nums.top() /= a;
               break;
             }
 
             case '^': {
-	      nums.top() = std::move(nums.top().pow(a));
+              nums.top() = std::move(nums.top().pow(a));
               break;
             }
 
             case '!': {
-	      nums.top() = std::move(-nums.top().pow(a));
+              nums.top() = std::move(-nums.top().pow(a));
               break;
             }
 
             case '~': {
-	      nums.top() = std::move(nums.top().pow(a.to_neg_int()));
+              nums.top() = std::move(nums.top().pow(a.to_neg_int()));
               break;
             }
 
             case ';': {
-	      nums.top() = std::move(-nums.top().pow(a.to_neg_int()));
+              nums.top() = std::move(-nums.top().pow(a.to_neg_int()));
               break;
             }
           }
@@ -332,7 +332,7 @@ namespace firefly {
           case tokens::MINUS: {
             FFIntTemp a = nums.top();
             nums.pop();
-	    nums.top() -= a;
+            nums.top() -= a;
             break;
           }
 
@@ -346,35 +346,35 @@ namespace firefly {
           case tokens::DIV: {
             FFIntTemp a = nums.top();
             nums.pop();
-	    nums.top() /= a;
+            nums.top() /= a;
             break;
           }
 
           case tokens::POW: {
             FFIntTemp a = nums.top();
             nums.pop();
-	    nums.top() = std::move(pow(nums.top(), a));
+            nums.top() = std::move(pow(nums.top(), a));
             break;
           }
 
           case tokens::NEG_POW: {
             FFIntTemp a = nums.top();
             nums.pop();
-	    nums.top() = std::move(nums.top().pow(a.to_neg_int()));
+            nums.top() = std::move(nums.top().pow(a.to_neg_int()));
             break;
           }
 
           case tokens::POW_NEG: {
             FFIntTemp a = nums.top();
             nums.pop();
-	    nums.top() = std::move(-pow(nums.top(), a));
+            nums.top() = std::move(-pow(nums.top(), a));
             break;
           }
 
           case tokens::NEG_POW_NEG: {
             FFIntTemp a = nums.top();
             nums.pop();
-	    nums.top() = std::move(-nums.top().pow( a.to_neg_int()));
+            nums.top() = std::move(-nums.top().pow( a.to_neg_int()));
             break;
           }
 
