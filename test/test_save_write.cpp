@@ -78,7 +78,7 @@ namespace firefly {
   };
 }
 
-void remove_sates() {
+void remove_states() {
   tinydir_dir dir;
   tinydir_open_sorted(&dir, "ff_save/states");
 
@@ -103,6 +103,8 @@ void remove_sates() {
   for (const auto & el : paths) {
     std::remove(el.c_str());
   }
+
+  std::remove("ff_save/states");
 }
 
 void remove_probes() {
@@ -130,10 +132,17 @@ void remove_probes() {
   for (const auto & el : paths) {
     std::remove(el.c_str());
   }
+
+  std::remove("ff_save/probes");
 }
 
 using namespace firefly;
 int main() {
+  // Clean up if there is a save folder
+  remove_states();
+  remove_probes();
+  std::remove("ff_save");
+
   std::string root_dir = FIREFLY_ROOT_DIR;
 #ifndef WITH_MPI
 
@@ -161,8 +170,9 @@ int main() {
   }
 
   // Remove files
-  remove_sates();
+  remove_states();
   remove_probes();
+  std::remove("ff_save");
   RatReconst::reset();
 
   try {
@@ -188,8 +198,9 @@ int main() {
   }
 
   // Remove files
-  remove_sates();
+  remove_states();
   remove_probes();
+  std::remove("ff_save");
   RatReconst::reset();
 
   try {
@@ -217,8 +228,9 @@ int main() {
   }
 
   // Remove files
-  remove_sates();
+  remove_states();
   remove_probes();
+  std::remove("ff_save");
   RatReconst::reset();
 #else
   int provided;
@@ -247,5 +259,9 @@ int main() {
 
   MPI_Finalize();
 #endif
+
+  // Remove log file
+  std::remove("firefly.log");
+
   return 0;
 }

@@ -136,5 +136,9 @@ int main() {
 
   MPI_Finalize();
 #endif
+
+  // Remove log file
+  std::remove("firefly.log");
+
   return 0;
 }

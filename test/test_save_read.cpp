@@ -64,7 +64,7 @@ namespace firefly {
   };
 }
 
-void remove_sates() {
+void remove_states() {
   tinydir_dir dir;
   tinydir_open_sorted(&dir, "ff_save/states");
 
@@ -147,7 +147,7 @@ int main() {
     std::remove("ff_save/scan");
     std::remove("ff_save/shift");
     std::remove("ff_save/anchor_points");
-    remove_sates();
+    remove_states();
     remove_probes();
   } else {
     ShuntingYardParser p_1(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
@@ -157,5 +157,10 @@ int main() {
 
   MPI_Finalize();
 #endif
+
+  // Clean up
+  std::remove("ff_save");
+  std::remove("firefly.log");
+
   return 0;
 }
