@@ -2,7 +2,7 @@
 project(
   'firefly',
   ['cpp'],
-  version : '2.0.0',
+  version : '2.0.1',
   license : 'GPL3',
   default_options : [
     'cpp_std=c++14',
@@ -83,6 +83,11 @@ endif
 add_project_arguments(cpp_defs, language : 'cpp')
 deps = pkgconfig_deps + other_deps
 
+test_link_args = []
+if cpp_compiler.has_link_argument('-Wl,--disable-new-dtags')
+  test_link_args = ['-Wl,--disable-new-dtags']
+endif
+
 subdir('source')
 subdir('source/include/firefly')
 subdir('test')
@@ -94,7 +99,7 @@ executable(
   link_with : firefly,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
-  install_rpath : rpath,
+  link_args : test_link_args,
   install : false)
 
 executable(

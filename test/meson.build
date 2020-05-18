@@ -1,9 +1,4 @@
 
-test_link_args = []
-if cpp_compiler.has_link_argument('-Wl,--disable-new-dtags')
-  test_link_args = ['-Wl,--disable-new-dtags']
-endif
-
 test_bunch = executable(
   'test_bunch',
   ['test_bunch.cpp'],
@@ -66,10 +61,10 @@ test('safe', test_safe,
   env : 'MALLOC_PERTURB_=0',
   is_parallel : false)
 
-test('save read', test_save_read,
+test('save write', test_save_write,
   env : 'MALLOC_PERTURB_=0',
   is_parallel : false)
 
-test('save write', test_save_write,
+test('save read', test_save_read,
   env : 'MALLOC_PERTURB_=0',
   is_parallel : false)
