@@ -1,10 +1,16 @@
 
+test_link_args = []
+if cpp_compiler.has_link_argument('-Wl,--disable-new-dtags')
+  test_link_args = ['-Wl,--disable-new-dtags']
+endif
+
 test_bunch = executable(
   'test_bunch',
   ['test_bunch.cpp'],
   include_directories : include_dirs,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
+  link_args : test_link_args,
   link_with : firefly,
   install : false)
 
@@ -14,6 +20,7 @@ test_normal = executable(
   include_directories : include_dirs,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
+  link_args : test_link_args,
   link_with : firefly,
   install : false)
 
@@ -23,6 +30,7 @@ test_safe = executable(
   include_directories : include_dirs,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
+  link_args : test_link_args,
   link_with : firefly,
   install : false)
 
@@ -32,6 +40,7 @@ test_save_read = executable(
   include_directories : include_dirs,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
+  link_args : test_link_args,
   link_with : firefly,
   install : false)
 
@@ -41,11 +50,26 @@ test_save_write = executable(
   include_directories : include_dirs,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
+  link_args : test_link_args,
   link_with : firefly,
   install : false)
 
-test('bunch', test_bunch)
-test('normal', test_normal)
-test('safe', test_safe)
-test('save read', test_save_read)
-test('save write', test_save_write)
+test('bunch', test_bunch,
+  env : 'MALLOC_PERTURB_=0',
+  is_parallel : false)
+
+test('normal', test_normal,
+  env : 'MALLOC_PERTURB_=0',
+  is_parallel : false)
+
+test('safe', test_safe,
+  env : 'MALLOC_PERTURB_=0',
+  is_parallel : false)
+
+test('save read', test_save_read,
+  env : 'MALLOC_PERTURB_=0',
+  is_parallel : false)
+
+test('save write', test_save_write,
+  env : 'MALLOC_PERTURB_=0',
+  is_parallel : false)
