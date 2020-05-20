@@ -359,7 +359,7 @@ namespace firefly {
     std::stack<FFInt> nums;
 
     for (const auto& token : fun) {
-      if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!") {
+      if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!" || token == "~" || token == ";") {
         // Pop two numbers
         FFInt a = nums.top();
         nums.pop();
