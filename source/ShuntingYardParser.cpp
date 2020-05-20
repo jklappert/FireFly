@@ -25,10 +25,7 @@
 
 namespace firefly {
 
-  const std::unordered_set<char> ShuntingYardParser::chars = {{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
-    }
-  };
+  const std::unordered_set<char> ShuntingYardParser::chars = {{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}};
 
   ShuntingYardParser::ShuntingYardParser() {}
 
@@ -323,8 +320,7 @@ namespace firefly {
     functions.shrink_to_fit();
   }
 
-  size_t ShuntingYardParser::add_otf(const std::string & fun_, const bool no_duplicates) {
-    // TODO avoid copy?
+  size_t ShuntingYardParser::add_otf(const std::string& fun_, const bool no_duplicates) {
     std::string fun = fun_;
     validate(fun, 0);
 
@@ -633,7 +629,7 @@ namespace firefly {
     }
   }
 
-  std::unordered_map<size_t, size_t> ShuntingYardParser::trim(const std::unordered_set<size_t> & elements_to_keep) {
+  std::unordered_map<size_t, size_t> ShuntingYardParser::trim(const std::unordered_set<size_t>& elements_to_keep) {
     std::vector<std::vector<std::string>> new_functions {};
     std::vector<std::vector<std::pair<uint8_t, FFInt>>> new_precomp_tokens {};
     std::vector<uint64_t> new_evaluation_positions {};
@@ -654,13 +650,13 @@ namespace firefly {
         }
       }
     } else {
-      std::unordered_map<size_t, size_t> functions_copied;
+      std::unordered_map<size_t, size_t> copied_functions {};
 
       for (size_t i = 0; i != evaluation_positions.size(); ++i) {
         if (elements_to_keep.find(i) != elements_to_keep.end()) {
-          auto it = functions_copied.find(static_cast<size_t>(evaluation_positions[i]));
+          const auto& it = copied_functions.find(static_cast<size_t>(evaluation_positions[i]));
 
-          if (it != functions_copied.end()) {
+          if (it != copied_functions.end()) {
             new_evaluation_positions.emplace_back(static_cast<uint64_t>(it->second));
           } else {
             new_functions.emplace_back(std::move(functions[evaluation_positions[i]]));
@@ -669,7 +665,7 @@ namespace firefly {
               new_precomp_tokens.emplace_back(std::move(precomp_tokens[evaluation_positions[i]]));
             }
 
-            functions_copied.emplace(std::make_pair(static_cast<size_t>(evaluation_positions[i]), new_functions.size() - 1));
+            copied_functions.emplace(std::make_pair(static_cast<size_t>(evaluation_positions[i]), new_functions.size() - 1));
             new_evaluation_positions.emplace_back(static_cast<uint64_t>(new_functions.size() - 1));
           }
 
