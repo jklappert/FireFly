@@ -110,7 +110,7 @@ int main() {
 
     INFO_MSG("Test normal mode");
     ShuntingYardParser p_0(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
-    BlackBoxUser b_0(p_0, 0);
+    BlackBoxUser b_0(p_0);
     Reconstructor<BlackBoxUser> r_0(4, std::thread::hardware_concurrency(), b_0);
     r_0.enable_shift_scan();
     r_0.reconstruct();
