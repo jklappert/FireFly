@@ -28,22 +28,6 @@
 
 namespace firefly {
 
-  uint64_t mod_mul(uint64_t a, uint64_t b, uint64_t m);
-  /**
-   *  Performs a exponentiation modulo m
-   *  @param base the base
-   *  @param exp the exponent
-   *  @param m the modulus
-   *  @return (base^exp) mod m
-   */
-  uint64_t mod_pow(uint64_t base, uint64_t exp, uint64_t m);
-  /**
-   *  Calculates the multiplicative inverse using the Extended Euclidean Algorithm
-   *  @param a the integer of which the multiplicative inverse should be calculated
-   *  @param m the modulus
-   */
-  uint64_t mod_inv(uint64_t a, uint64_t m);
-
   /**
   * @class FFInt
   * @brief A class for finite field integers
