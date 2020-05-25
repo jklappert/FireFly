@@ -66,9 +66,9 @@ where `FLINT_LIB_PATH` is the absolute path pointing to the shared library of FL
 
 If the GMP version installed in the sytem directories does not match 6.1.2 or CMake does not find GMP, the paths for GMP can be set with the flags:
 ```
--DGMP_INCLUDE_DIR=$GMP_INC_PATH -DGMP_LIBRARIES=$GMP_LIB_PATH
+-DGMP_INCLUDE_DIRS=$GMP_INC_PATH -DGMP_LIBRARIES=$GMP_LIB_PATH
 ```
-where `GMP_INC_DIR` is the absolute path to the directory of where the include files can be found (`gmpxx.h` is required) and `GMP_LIB_PATH` is the absolute path to the GMP library.
+where `GMP_INC_PATH` is the absolute path to the directory of where the include files can be found (`gmpxx.h` is required) and `GMP_LIB_PATH` is the absolute path to the GMP library.
 
 One can include the support of the `jemalloc` memory allocation library by adding the flag
 ```

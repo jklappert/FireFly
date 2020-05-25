@@ -28,7 +28,7 @@
 
 # Try to find the GMP libraries used with C++ code:
 # GMP_FOUND - System has GMP lib
-# GMP_INCLUDE_DIR - The GMP include directory
+# GMP_INCLUDE_DIRS - The GMP include directory
 # GMP_LIBRARIES - Libraries needed to use GMP
 #
 # Reads the following variables:
@@ -39,7 +39,7 @@
 # Sets the following variables:
 #
 # - GMP_FOUND       : System has GMP library
-# - GMP_INCLUDE_DIR : The GMP include directory
+# - GMP_INCLUDE_DIRS : The GMP include directory
 # - GMP_LIBRARIES   : Libraries needed to use GMP
 
 # macro to extract the GMP version from a header file
@@ -64,17 +64,6 @@ macro(_FF_extract_GMP_version header_file)
   endif()
 endmacro()
 
-find_path(GMP_INCLUDE_DIRS
-  NAMES gmpxx.h
-  PATHS ${GMP_INCLUDE_DIR}
-  PATH_SUFFIXES include
-)
-
-find_library(GMP_LIBRARIES
-  NAMES gmp
-  PATHS ${GMP_LIBRARY}
-)
-
 # find version if asked for
 if(GMP_FIND_VERSION AND GMP_INCLUDE_DIRS)
   # search for gmp.h
@@ -83,10 +72,39 @@ if(GMP_FIND_VERSION AND GMP_INCLUDE_DIRS)
     PATHS ${GMP_INCLUDE_DIR}
     PATH_SUFFIXES include
   )
+
   if(GMP_H_INCLUDE_DIRS)
     _FF_extract_GMP_version("${GMP_H_INCLUDE_DIRS}/gmp.h")
   else()
     message(FATAL_ERROR "GMP version header gmp.h not found.")
+  endif()
+
+MESSAGE("-- Set GMP include path to: ${GMP_INCLUDE_DIRS}")
+else()
+  find_path(GMP_INCLUDE_DIRS
+    NAMES gmpxx.h
+    PATHS ${GMP_INCLUDE_DIR}
+    PATH_SUFFIXES include
+  )
+
+  find_library(GMP_LIBRARIES
+    NAMES gmp
+    PATHS ${GMP_LIBRARY}
+  )
+
+  # find version if asked for
+  if(GMP_FIND_VERSION AND GMP_INCLUDE_DIRS)
+    # search for gmp.h
+    find_path(GMP_H_INCLUDE_DIRS
+      NAMES gmp.h
+      PATHS ${GMP_INCLUDE_DIR}
+      PATH_SUFFIXES include
+    )
+    if(GMP_H_INCLUDE_DIRS)
+      _FF_extract_GMP_version("${GMP_H_INCLUDE_DIRS}/gmp.h")
+    else()
+      message(FATAL_ERROR "GMP version header gmp.h not found.")
+    endif()
   endif()
 endif()
 
@@ -100,4 +118,3 @@ find_package_handle_standard_args(GMP
 )
 
 mark_as_advanced(GMP_INCLUDE_DIRS GMP_LIBRARIES)
-
