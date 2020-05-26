@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "firefly/config.hpp"
 #include "firefly/BlackBoxBase.hpp"
 #include "firefly/FFIntVec.hpp"
 #include "firefly/ReconstHelper.hpp"

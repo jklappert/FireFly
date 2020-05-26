@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "firefly/config.hpp"
 #include "firefly/Logger.hpp"
 
 #include <condition_variable>

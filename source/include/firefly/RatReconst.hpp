@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "firefly/config.hpp"
 #include "firefly/FFThieleInterpolator.hpp"
 #include "firefly/PolyReconst.hpp"
 #include "firefly/RationalFunction.hpp"

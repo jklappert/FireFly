@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "firefly/config.hpp"
+
 #include <gmpxx.h>
 #include <iostream>
 #include <string>

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "firefly/config.hpp"
 #include "firefly/PolynomialFF.hpp"
 #include "firefly/RationalNumber.hpp"
 
