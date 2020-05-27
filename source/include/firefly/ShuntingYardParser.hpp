@@ -442,7 +442,7 @@ namespace firefly {
     }
 
     for (const auto& tokens : precomp_tokens) {
-      FFIntTemp stack[tokens.size()];//TODO evaluate maximum stack size
+      FFIntTemp* stack = new FFIntTemp[tokens.size()];//TODO evaluate maximum stack size. using the heap will make the evaluation slower!
       size_t stack_depth = 0;
 
       for (const auto& token : tokens) {
@@ -515,9 +515,11 @@ namespace firefly {
       if (stack_depth == 1)
         res.emplace_back(stack[1]);
       else {
+	delete[] stack;
         ERROR_MSG("Error in functional evaluation! Please check your input.");
         std::exit(EXIT_FAILURE);
       }
+      delete[] stack;
     }
 
     if (!check_is_equal)

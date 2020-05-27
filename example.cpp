@@ -38,7 +38,7 @@ namespace firefly {
       //std::vector<FFIntTemp> result;
 
       // Get results from parsed expressions
-      std::vector<FFIntTemp> result = par.evaluate_pre_2(values);
+      std::vector<FFIntTemp> result = par.evaluate_pre(values);
 
       result.emplace_back(result[0] / result[3]);
 
