@@ -38,7 +38,7 @@ namespace firefly {
       //std::vector<FFIntTemp> result;
 
       // Get results from parsed expressions
-      std::vector<FFIntTemp> result = par.evaluate_pre(values);
+      std::vector<FFIntTemp> result = par.evaluate_pre_2(values);
 
       result.emplace_back(result[0] / result[3]);
 
@@ -116,22 +116,22 @@ int main() {
   // Get results
   /*std::vector<RationalFunction> results = reconst.get_result();
 
-  //std::ofstream file;
-  //file.open("test.m");
+  std::ofstream file;
+  file.open("coefficients_h", std::fstream::app);
   //file << "{";
   //std::string str = "";
 
   // Print all reconstruced functions
   for (uint32_t i = 0; i < results.size(); ++i) {
-    std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
+    //std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
 
     //file << str << "\n";
     //str = results[i].to_string( {"x", "y", "z", "w"}) + "\n,";
-  }
+    file << results[i].generate_horner({"s", "t", "mH2", "ep"}) << ",\n";
 
   //str.pop_back();
   //file << str << "}\n";
-  //file.close();
+  file.close();
   */
 
   // Rewrite result in Horner form

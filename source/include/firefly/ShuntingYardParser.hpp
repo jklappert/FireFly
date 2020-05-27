@@ -79,6 +79,8 @@ namespace firefly {
      */
     template<typename FFIntTemp>
     std::vector<FFIntTemp> evaluate_pre(const std::vector<FFIntTemp>& values) const noexcept;
+    template<typename FFIntTemp>
+    std::vector<FFIntTemp> evaluate_pre_2(const std::vector<FFIntTemp>& values) const noexcept;
     /**
      *  Returns the reverse polish notation of the parsed functions
      *  @return A vector of all parsed functions in reverse polish notation. Note the additional operators '~', '!', and ';'.
@@ -380,28 +382,138 @@ namespace firefly {
           case tokens::NEG_POW_NEG: {
             FFIntTemp a = nums.top();
             nums.pop();
-            nums.top() = std::move(-nums.top().pow( a.to_neg_int()));
+	    nums.top() = std::move(-nums.top().pow(a.to_neg_int()));
             break;
           }
 
-          case tokens::VARIABLE : {
+          case tokens::VARIABLE: {
             nums.push(values[token.second.n]);
             break;
           }
 
-          case tokens::NEG_VARIABLE : {
+          case tokens::NEG_VARIABLE: {
             nums.push(neg_values[token.second.n]);
             break;
           }
 
           case tokens::NUMBER: {
             nums.push(token.second);
+	    break;
           }
         }
       }
 
       if (nums.size())
         res.emplace_back(nums.top());
+      else {
+        ERROR_MSG("Error in functional evaluation! Please check your input.");
+        std::exit(EXIT_FAILURE);
+      }
+    }
+
+    if (!check_is_equal)
+      return res;
+    else {
+      uint64_t s = evaluation_positions.size();
+
+      if (functions.size() != s) {
+        std::vector<FFIntTemp> full_res;
+        full_res.reserve(s);
+
+        for (const auto& el : evaluation_positions) {
+          full_res.emplace_back(res[el]);
+        }
+
+        return full_res;
+      } else
+        return res;
+    }
+  }
+
+  template<typename FFIntTemp>
+  std::vector<FFIntTemp> ShuntingYardParser::evaluate_pre_2(const std::vector<FFIntTemp>& values) const noexcept {
+    std::vector<FFIntTemp> res;
+    res.reserve(functions.size());
+    std::vector<FFIntTemp> neg_values;
+    neg_values.reserve(values.size());
+
+    for (const auto& el : values) {
+      neg_values.emplace_back(-el);
+    }
+
+    for (const auto& tokens : precomp_tokens) {
+      FFIntTemp stack[tokens.size()];//TODO evaluate maximum stack size
+      size_t stack_depth = 0;
+
+      for (const auto& token : tokens) {
+        switch (token.first) {
+          case tokens::PLUS: {
+	    stack[stack_depth - 1] += stack[stack_depth];
+	    --stack_depth;
+            break;
+          }
+
+          case tokens::MINUS: {
+	    stack[stack_depth - 1] -= stack[stack_depth];
+	    --stack_depth;
+            break;
+          }
+
+          case tokens::MULT: {
+	    stack[stack_depth - 1] *= stack[stack_depth];
+	    --stack_depth;
+            break;
+          }
+
+          case tokens::DIV: {
+	    stack[stack_depth - 1] /= stack[stack_depth];
+	    --stack_depth;
+            break;
+          }
+
+          case tokens::POW: {
+	    stack[stack_depth - 1] = std::move(pow(stack[stack_depth - 1], stack[stack_depth]));
+	    --stack_depth;
+            break;
+          }
+
+          case tokens::NEG_POW: {
+	    stack[stack_depth - 1] = std::move(stack[stack_depth - 1].pow(stack[stack_depth].to_neg_int()));
+	    --stack_depth;
+            break;
+          }
+
+          case tokens::POW_NEG: {
+	    stack[stack_depth - 1] = std::move(-pow(stack[stack_depth - 1], stack[stack_depth]));
+	    --stack_depth;
+            break;
+          }
+
+          case tokens::NEG_POW_NEG: {
+	    stack[stack_depth - 1] = std::move(-stack[stack_depth - 1].pow(stack[stack_depth].to_neg_int()));
+	    --stack_depth;
+            break;
+          }
+
+          case tokens::VARIABLE: {
+	    stack[++stack_depth] = values[token.second.n];
+            break;
+          }
+
+          case tokens::NEG_VARIABLE: {
+	    stack[++stack_depth] = neg_values[token.second.n];
+            break;
+          }
+
+          case tokens::NUMBER: {
+	    stack[++stack_depth] = token.second;
+	    break;
+          }
+        }
+      }
+
+      if (stack_depth == 1)
+        res.emplace_back(stack[1]);
       else {
         ERROR_MSG("Error in functional evaluation! Please check your input.");
         std::exit(EXIT_FAILURE);
