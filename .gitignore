@@ -3,6 +3,7 @@ build*/
 .*
 *.kdev4
 version.hpp
+config.hpp
 doc/html
 doc/latex
 CMakeCache.txt
