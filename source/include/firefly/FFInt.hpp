@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "firefly/config.hpp"
+
 #ifdef FLINT
 #include <flint/ulong_extras.h>
 #endif

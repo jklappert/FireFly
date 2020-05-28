@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "firefly/config.hpp"
 #include "firefly/RationalNumber.hpp"
 
 #include <vector>

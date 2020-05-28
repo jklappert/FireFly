@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "firefly/config.hpp"
 #include "firefly/RationalNumber.hpp"
 #include "firefly/UintHasher.hpp"
 #include "firefly/ShuntingYardParser.hpp"

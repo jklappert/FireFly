@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "firefly/config.hpp"
+
 #include <string>
 #include <vector>
 

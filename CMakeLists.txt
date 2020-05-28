@@ -60,34 +60,43 @@ include_directories(${GMP_INCLUDE_DIRS})
 include_directories(${ZLIB_INCLUDE_DIRS})
 set(PKG_INCLUDE -I${GMP_INCLUDE_DIRS} -I${ZLIB_INCLUDE_DIRS})
 
+set(FLINT_FLAG "0")
+set(DEFAULT_FLAG "0")
+set(CUSTOM_FLAG "0")
+set(MPI_FLAG "0")
+
 # Check for FLINT
 # if you want to use FLINT instead of our default implementation, call cmake with
 # cmake -DWITH_FLINT=true ..
 # set(WITH_FLINT false)
 if("${CUSTOM}" STREQUAL true)
-  add_definitions(-DCUSTOM)
+#  add_definitions(-DCUSTOM)
   set(PREPROCESSOR_FLAGS "-DCUSTOM")
+  set(CUSTOM_FLAG "1")
 elseif("${WITH_FLINT}" STREQUAL true)
   find_package(FLINT REQUIRED)
   include_directories(${FLINT_INCLUDE_DIR})
   set(PKG_INCLUDE ${PKG_INCLUDE} -I${FLINT_INCLUDE_DIR})
-  add_definitions(-DFLINT)
+#  add_definitions(-DFLINT)
   set(PREPROCESSOR_FLAGS "-DFLINT")
+  set(FLINT_FLAG "1")
 else()
   message("-- ${Red}Using default implementation of modular arithmetic. This can be much slower than FLINT!${ColourReset}")
-  add_definitions(-DDEFAULT)
+#  add_definitions(-DDEFAULT)
   set(PREPROCESSOR_FLAGS "-DDEFAULT")
+  set(DEFAULT_FLAG "1")
 endif()
 
 # Check for MPI
 if("${WITH_MPI}" STREQUAL true)
+  set(MPI_FLAG "1")
   if("${MPI_CXX_INCLUDE_PATH}" STREQUAL "")
     find_package(MPI REQUIRED)
   else()
     message("-- Using user defined MPI implementation library: ${MPI_CXX_LIBRARIES}")
     message("-- Using user defined MPI implementation headers: ${MPI_CXX_INCLUDE_PATH}")
   endif()
-  add_definitions(-DWITH_MPI)
+#  add_definitions(-DWITH_MPI)
   set(PREPROCESSOR_FLAGS "${PREPROCESSOR_FLAGS} -DWITH_MPI")
   include_directories(${MPI_CXX_INCLUDE_PATH})
   set(PKG_INCLUDE ${PKG_INCLUDE} -I${MPI_CXX_INCLUDE_PATH})
@@ -125,6 +134,10 @@ set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 configure_file (
   "${INCLUDE_PATH_SRC}/version.hpp.in"
   "${INCLUDE_PATH_SRC}/version.hpp")
+
+configure_file (
+  "${INCLUDE_PATH_SRC}/config.hpp.in"
+  "${INCLUDE_PATH_SRC}/config.hpp")
 
 add_library(FireFly_static STATIC ${LIBSOURCES})
 set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
@@ -202,6 +215,7 @@ if("${DISABLE_INSTALL}" STREQUAL "")
     "${INCLUDE_PATH_SRC}/AmplitudeParser.hpp"
     "${INCLUDE_PATH_SRC}/BaseReconst.hpp"
     "${INCLUDE_PATH_SRC}/BlackBoxBase.hpp"
+    "${INCLUDE_PATH_SRC}/config.hpp"
     "${INCLUDE_PATH_SRC}/DenseSolver.hpp"
     "${INCLUDE_PATH_SRC}/FFInt.hpp"
     "${INCLUDE_PATH_SRC}/FFIntVec.hpp"

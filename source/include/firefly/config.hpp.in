@@ -16,43 +16,26 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
-#pragma once
+#if @FLINT_FLAG@ == 1
+  #define FLINT 1
+#else
+  #undef FLINT
+#endif
 
-#include "firefly/config.hpp"
+#if @DEFAULT_FLAG@ == 1
+  #define DEFAULT 1
+#else
+  #undef DEFAULT
+#endif
 
-#include <vector>
+#if @CUSTOM_FLAG@ == 1
+  #define CUSTOM 1
+#else
+  #undef CUSTOM
+#endif
 
-namespace firefly {
-  /**
-  * @class UintHasher
-  * @brief A hasher for vectors of uint32_t
-  */
-  class UintHasher {
-  public:
-    std::size_t operator()(std::vector<uint32_t> const& vec) const {
-      std::size_t seed = vec.size();
-
-      for (auto & i : vec) {
-        seed ^= i + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-      }
-
-      return seed;
-    }
-  };
-
-  /**
-  * @class UintPairHasher
-  * @brief A hasher for pairs of uint32_t
-  */
-  class UintPairHasher {
-  public:
-    std::size_t operator()(std::pair<uint32_t, uint32_t> const& pair) const {
-      std::size_t seed = 2;
-
-      seed ^= pair.first + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-      seed ^= pair.second + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-
-      return seed;
-    }
-  };
-}
+#if @MPI_FLAG@ == 1
+  #define WITH_MPI 1
+#else
+  #undef WITH_MPI
+#endif
