@@ -497,20 +497,42 @@ namespace firefly {
       std::string horner_coef = "";
 
       if (max_deg > 0) {
-        for (uint32_t i = 0; i < max_deg - 1; ++i) {
-          horner_coef += "(";
-        }
-
         const std::string var = vars[index];
 
-        horner_coef += var + "*(" + horner_coefs[max_deg] + ")";
+	  std::vector<uint32_t> non_zero_degrees;
+	  non_zero_degrees.reserve(monomials.size());
 
-        for (uint32_t i = max_deg - 1; i > 0; i--) {
-          if (horner_coefs.find(i) != horner_coefs.end())
-            horner_coef += "+" + horner_coefs[i];
+          for (uint32_t i = max_deg; i > 0; i--) {
+	    if (horner_coefs.find(i) != horner_coefs.end()) {
+	      non_zero_degrees.emplace_back(i);
+	      if (i != max_deg) {
+		horner_coef += "(";
+	      }
+	    }
+	  }
 
-          horner_coef += ")*" + var;
-        }
+	  for (uint32_t i = 0; i != non_zero_degrees.size(); ++i) {
+	    const uint32_t tmp_deg = non_zero_degrees[i];
+	    if (i + 1 != non_zero_degrees.size()) {
+	      const uint32_t h_deg = non_zero_degrees[i] - non_zero_degrees[i + 1];
+	      if (tmp_deg == max_deg) {
+		horner_coef += "(" + horner_coefs[tmp_deg] + ")*" + var;
+		horner_coef += h_deg != 1 ? "^" + std::to_string(h_deg) : "";
+	      } else {
+		horner_coef += "+" + horner_coefs[tmp_deg] + ")*" + var;
+		horner_coef += h_deg != 1 ? "^" + std::to_string(h_deg) : "";
+	      }
+	    } else {
+	      const uint32_t h_deg = non_zero_degrees[i];
+	      if (tmp_deg == max_deg) {
+	        horner_coef += "(" + horner_coefs[tmp_deg] + ")*" + var;
+		horner_coef += h_deg != 1 ? + "^" + std::to_string(h_deg) : "";
+	      } else {
+		horner_coef += "+" + horner_coefs[tmp_deg] + ")*" + var;
+		horner_coef += h_deg != 1 ? + "^" + std::to_string(h_deg) : "";
+	      }
+	    }
+	  }
 
         if (horner_coefs.find(0) != horner_coefs.end())
           horner_coef += "+" + horner_coefs[0];
@@ -533,21 +555,43 @@ namespace firefly {
       std::string horner_coef = "";
 
       if (max_deg > 0) {
-        for (uint32_t i = 0; i < max_deg - 1; ++i) {
-          horner_coef += "(";
-        }
-
         const std::string var = vars[index];
 
-        horner_coef += var;
-        horner_coef += monomials.at( {max_deg}).n != 1 ? "*" + std::to_string(monomials.at( {max_deg}).n) : "";
 
-        for (uint32_t i = max_deg - 1; i > 0; i--) {
-          if (monomials.find( {i}) != monomials.end())
-            horner_coef += "+" + std::to_string(monomials.at( {i}).n);
+	  std::vector<uint32_t> non_zero_degrees;
+	  non_zero_degrees.reserve(monomials.size());
 
-          horner_coef += ")*" + var;
-        }
+          for (uint32_t i = max_deg; i > 0; i--) {
+	    if (monomials.find({i}) != monomials.end()) {
+	      non_zero_degrees.emplace_back(i);
+	      if (i != max_deg) {
+		horner_coef += "(";
+	      }
+	    }
+	  }
+
+	  for (uint32_t i = 0; i != non_zero_degrees.size(); ++i) {
+	    const uint32_t tmp_deg = non_zero_degrees[i];
+	    if (i + 1 != non_zero_degrees.size()) {
+	      const uint32_t h_deg = non_zero_degrees[i] - non_zero_degrees[i + 1];
+	      if (tmp_deg == max_deg) {
+		horner_coef += monomials.at({max_deg}).n != 1 ? std::to_string(monomials.at({tmp_deg}).n) + "*" + var :  var;
+		horner_coef += h_deg != 1 ? "^" + std::to_string(h_deg) : "";
+	      } else {
+		horner_coef += "+" + std::to_string(monomials.at({tmp_deg}).n) + ")*" + var;
+		horner_coef += h_deg != 1 ? "^" + std::to_string(h_deg) : "";
+	      }
+	    } else {
+	      const uint32_t h_deg = non_zero_degrees[i];
+	      if (tmp_deg == max_deg) {
+	        horner_coef +=  monomials.at({max_deg}).n != 1 ? std::to_string(monomials.at({tmp_deg}).n) + "*" + var : var;
+		horner_coef += h_deg != 1 ? + "^" + std::to_string(h_deg) : "";
+	      } else {
+		horner_coef += "+" + std::to_string(monomials.at({tmp_deg}).n) + ")*" + var;
+		horner_coef += h_deg != 1 ? + "^" + std::to_string(h_deg) : "";
+	      }
+	    }
+	  }
 
         if (monomials.find( {0}) != monomials.end())
           horner_coef += "+" + std::to_string(monomials.at( {0}).n);
