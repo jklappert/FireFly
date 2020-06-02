@@ -5,6 +5,7 @@ test_bunch = executable(
   include_directories : include_dirs,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
+  link_args : test_link_args,
   link_with : firefly,
   install : false)
 
@@ -14,6 +15,7 @@ test_normal = executable(
   include_directories : include_dirs,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
+  link_args : test_link_args,
   link_with : firefly,
   install : false)
 
@@ -23,6 +25,7 @@ test_safe = executable(
   include_directories : include_dirs,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
+  link_args : test_link_args,
   link_with : firefly,
   install : false)
 
@@ -32,6 +35,7 @@ test_save_read = executable(
   include_directories : include_dirs,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
+  link_args : test_link_args,
   link_with : firefly,
   install : false)
 
@@ -41,6 +45,7 @@ test_save_write = executable(
   include_directories : include_dirs,
   dependencies : deps,
   cpp_args : rootdir_cppdef,
+  link_args : test_link_args,
   link_with : firefly,
   install : false)
 
