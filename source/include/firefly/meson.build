@@ -9,6 +9,15 @@ version_target = configure_file(
   output : 'version.hpp',
   configuration : version_data)
 
+config_data = configuration_data()
+config_data.set('FLINT', cpp_def_flint)
+config_data.set('DEFAULT', cpp_def_default)
+config_data.set('CUSTOM', false)
+config_data.set('WITH_MPI', cpp_def_mpi)
+config_target = configure_file(
+  output : 'config.hpp',
+  configuration : config_data)
+
 headers = [
   'AmplitudeParser.hpp',
   'BaseReconst.hpp',

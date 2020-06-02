@@ -8,11 +8,8 @@ project(
     'cpp_std=c++14',
     'buildtype=release',
     'warning_level=3',
-    'default_library=both'])
-
-if get_option('arch') != ''
-  add_project_arguments('-march=' + get_option('arch'), language : ['cpp'])
-endif
+    'default_library=both',
+    'libdir=lib'])
 
 include_dirs = [include_directories('source/include')]
 # pkgconfig_deps will be listed in the 'Requires' field of the pkgfconfig file.
@@ -20,9 +17,11 @@ pkgconfig_deps = [dependency('zlib')]
 # other_deps will be listed in the 'Libs' field
 # (with flags in the 'Cflags' field).
 other_deps = [dependency('threads')]
-cpp_defs = []
 rootdir_cppdef = '-DFIREFLY_ROOT_DIR="' + meson.current_source_dir() + '"'
 rpath = ''
+cpp_def_flint = false
+cpp_def_default = false
+cpp_def_mpi = false
 
 # Meson versions before 0.49 don't provide access to the option wrap_mode.
 wrap_mode = 'default'
@@ -42,7 +41,7 @@ else
 endif
 
 if get_option('flint')
-  cpp_defs += ['-DFLINT']
+  cpp_def_flint = true
   if wrap_mode == 'forcefallback'
     flint_found = false
   else
@@ -65,11 +64,11 @@ else
   warning(
     'Using default implementation of modular arithmetic. ' +
     'This can be much slower than FLINT.')
-  cpp_defs += ['-DDEFAULT']
+  cpp_def_default = true
 endif
 
 if get_option('mpi')
-  cpp_defs += ['-DWITH_MPI']
+  cpp_def_mpi = true
   pkgconfig_deps += [dependency('mpi', language : 'cpp')]
   example_src = ['example_mpi.cpp']
 else
@@ -80,7 +79,6 @@ if get_option('jemalloc')
   pkgconfig_deps += dependency('jemalloc')
 endif
 
-add_project_arguments(cpp_defs, language : 'cpp')
 deps = pkgconfig_deps + other_deps
 
 test_link_args = []

@@ -37,12 +37,14 @@ pkg.generate(
   description :
     'Library for the reconstruction of rational functions over finite fields.',
   requires : pkgconfig_deps,
-  libraries : other_deps,
-  extra_cflags : cpp_defs)
+  libraries : other_deps)
 
 # Dependency object to be used if FireFly is built as a subproject:
 firefly_dep = declare_dependency(
   include_directories : include_dirs,
   dependencies : pkgconfig_deps + other_deps,
-  compile_args : cpp_defs,
   link_with : firefly)
+
+if meson.version().version_compare('>=0.54.0')
+  meson.override_dependency('firefly', firefly_dep)
+endif

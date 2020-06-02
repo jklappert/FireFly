@@ -1,7 +1,4 @@
 
-option('arch', type: 'string', value: '', yield : true,
-       description: 'Set compiler option -march=<value>.')
-
 option('flint', type: 'boolean', value: false, yield : true,
        description: 'Build FireFly with FLINT.')
 
