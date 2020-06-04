@@ -51,8 +51,9 @@ namespace firefly {
      */
     explicit ThreadPool(std::size_t pool_size = std::thread::hardware_concurrency()) {
 
+      std::unique_lock<std::mutex> lock(mutex);
       for (std::size_t i = 0; i < pool_size; ++i) {
-        threads_idle.push_back(true);
+        threads_idle.emplace_back(true);
         threads.emplace_back(
         [this, i]() {
           for (;;) {
