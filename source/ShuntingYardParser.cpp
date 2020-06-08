@@ -42,7 +42,10 @@ namespace firefly {
   }
 
   ShuntingYardParser::ShuntingYardParser(const std::vector<std::string>& funs, const std::vector<std::string>& vars, bool check_is_equal_) {
-    INFO_MSG("Parsing collection of " + std::to_string(funs.size()) + " function(s)");
+    if (!funs.empty()) {
+      INFO_MSG("Parsing collection of " + std::to_string(funs.size()) + " function(s)");
+    }
+
     check_is_equal = check_is_equal_;
 
     for (uint32_t i = 0; i != vars.size(); ++i) {
@@ -177,6 +180,7 @@ namespace firefly {
 
     auto time1 = std::chrono::high_resolution_clock::now();
 
+    if (!funs.empty()){
     if (!check_is_equal) {
       INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " function(s) in "
                + std::to_string(std::chrono::duration<double>(time1 - time0).count())
@@ -189,6 +193,7 @@ namespace firefly {
                + " s");
       INFO_MSG("Found " + std::to_string(parsed_fun_c - equal_fun_c) + " different function(s)");
     }
+      }
   }
 
   std::vector<std::string> ShuntingYardParser::parse(std::string& fun) {
@@ -636,6 +641,8 @@ namespace firefly {
     std::unordered_map<size_t, size_t> new_positions {};
 
     // TODO check_map and check_vars?
+    INFO_MSG("Trimming parser: " + std::to_string(functions.size() - elements_to_keep.size())
+	     + " out of " + std::to_string(functions.size()) + " functions will be removed.");
 
     if (!check_is_equal) {
       for (size_t i = 0; i != functions.size(); ++i) {
