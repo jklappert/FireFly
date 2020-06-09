@@ -55,10 +55,10 @@ set(INCLUDE_PATH ${SOURCE_PATH}/include)
 set(INCLUDE_PATH_SRC ${SOURCE_PATH}/include/firefly)
 
 # include headers
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/include")
 include_directories(${INCLUDE_PATH})
 include_directories(${GMP_INCLUDE_DIRS})
 include_directories(${ZLIB_INCLUDE_DIRS})
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/include")
 set(PKG_INCLUDE -I${GMP_INCLUDE_DIRS} -I${ZLIB_INCLUDE_DIRS})
 
 set(FLINT_FLAG "0")
