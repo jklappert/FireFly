@@ -58,6 +58,7 @@ set(INCLUDE_PATH_SRC ${SOURCE_PATH}/include/firefly)
 include_directories(${INCLUDE_PATH})
 include_directories(${GMP_INCLUDE_DIRS})
 include_directories(${ZLIB_INCLUDE_DIRS})
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/include")
 set(PKG_INCLUDE -I${GMP_INCLUDE_DIRS} -I${ZLIB_INCLUDE_DIRS})
 
 set(FLINT_FLAG "0")
@@ -133,11 +134,11 @@ set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
 configure_file (
   "${INCLUDE_PATH_SRC}/version.hpp.in"
-  "${INCLUDE_PATH_SRC}/version.hpp")
+  "${CMAKE_CURRENT_BINARY_DIR}/include/firefly/version.hpp")
 
 configure_file (
   "${INCLUDE_PATH_SRC}/config.hpp.in"
-  "${INCLUDE_PATH_SRC}/config.hpp")
+  "${CMAKE_CURRENT_BINARY_DIR}/include/firefly/config.hpp")
 
 add_library(FireFly_static STATIC ${LIBSOURCES})
 set_target_properties(FireFly_static PROPERTIES OUTPUT_NAME firefly)
@@ -215,7 +216,7 @@ if("${DISABLE_INSTALL}" STREQUAL "")
     "${INCLUDE_PATH_SRC}/AmplitudeParser.hpp"
     "${INCLUDE_PATH_SRC}/BaseReconst.hpp"
     "${INCLUDE_PATH_SRC}/BlackBoxBase.hpp"
-    "${INCLUDE_PATH_SRC}/config.hpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/firefly/config.hpp"
     "${INCLUDE_PATH_SRC}/DenseSolver.hpp"
     "${INCLUDE_PATH_SRC}/FFInt.hpp"
     "${INCLUDE_PATH_SRC}/FFIntVec.hpp"
@@ -240,7 +241,7 @@ if("${DISABLE_INSTALL}" STREQUAL "")
     "${INCLUDE_PATH_SRC}/tinydir.h"
     "${INCLUDE_PATH_SRC}/UintHasher.hpp"
     "${INCLUDE_PATH_SRC}/utils.hpp"
-    "${INCLUDE_PATH_SRC}/version.hpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/firefly/version.hpp"
     DESTINATION "${INCLUDE_INSTALL_DIR}")
 
   # install ibp insertion executable
