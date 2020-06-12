@@ -91,6 +91,9 @@ int main() {
   // Enables scan for factors
   reconst.enable_factor_scan();
 
+  // Stops after factor scan if one is only interesed in the occurring factors
+  //reconst.stop_after_factor_scan();
+
   // Enables a scan for a sparse shift
   reconst.enable_shift_scan();
 
@@ -106,6 +109,11 @@ int main() {
 
   // Reconstruct the black box
   reconst.reconstruct();
+
+  // Print all found factors
+  /*for (const auto & el : reconst.get_factors_string({"x","y","z","w"})) {
+    std::cout << el << "\n";
+  }*/
 
   // Get results after the first interpolation. Has to be called with
   // reconst.reconstruct(1) to work
