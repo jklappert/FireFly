@@ -85,6 +85,11 @@ namespace firefly {
      */
     void reconstruct(uint32_t prime_counter = 300);
     /**
+     *  @param vars the vector of variables as strings
+     *  @return the vector of factors for all functions that shall be reconstructed
+     */
+    std::vector<std::string> get_factors_string(const std::vector<std::string>& vars);
+    /**
      *  @return the vector of reconstructed rational functions
      */
     std::vector<RationalFunction> get_result();
@@ -943,6 +948,35 @@ namespace firefly {
     }
   }
 
+  template<typename BlackBoxTemp>
+  std::vector<std::string> Reconstructor<BlackBoxTemp>::get_factors_string(const std::vector<std::string>& vars) {
+    std::vector<std::string> result {};
+    uint32_t counter = 0;
+
+    for (auto & rec : reconst) {
+      std::unordered_map<std::vector<uint32_t>, RationalNumber, UintHasher> rnmap {};
+      rnmap.emplace(std::vector<uint32_t> (n, 0), RationalNumber (1,1));
+      Polynomial dummy_pol (rnmap);
+
+      RationalFunction rf (dummy_pol, dummy_pol);
+
+      if (change_var_order) {
+	rf.set_var_order(optimal_var_order);
+      }
+
+      if (factors_rf.find(counter) != factors_rf.end()) {
+	for (const auto& factor : factors_rf[counter]) {
+	  rf.add_factor(factor);
+	}
+      }
+
+      result.emplace_back(rf.to_string(vars));
+      ++counter;
+    }
+
+    return result;
+  }
+  
   template<typename BlackBoxTemp>
   std::vector<RationalFunction> Reconstructor<BlackBoxTemp>::get_result() {
     std::vector<RationalFunction> result {};
@@ -3105,7 +3139,7 @@ namespace firefly {
 
     auto time0 = std::chrono::high_resolution_clock::now();
 
-    std::vector<FFInt> probe = bb.eval(values_vec);
+    std::vector<FFInt> probe = bb.eval(values_vec);//todo if for user-defined probes
 
     auto time1 = std::chrono::high_resolution_clock::now();
 
