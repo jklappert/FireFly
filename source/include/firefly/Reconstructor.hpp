@@ -144,6 +144,10 @@ namespace firefly {
      *  run, thus requiring the black box to be probed in the same order.
      */
     void resume_from_saved_state();
+    /*
+     *  Enables only the scan for factors and returns afterwards
+     */
+    void stop_after_factor_scan();
 
     enum verbosity_levels {SILENT, IMPORTANT, CHATTY};
     enum RatReconst_status {RECONSTRUCTING, DONE, DELETE};
@@ -187,6 +191,7 @@ namespace firefly {
     bool load_anchor_points = false;
     bool scanned_factors = false;
     bool first_print = true;
+    bool stop_after_factors = false;
     RatReconst_list reconst;
     std::vector<std::string> tags;
     std::vector<std::string> file_paths;
@@ -421,6 +426,11 @@ namespace firefly {
     }
   }
 
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::stop_after_factor_scan() {
+    stop_after_factors = true;
+  }
+  
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::enable_scan() {
     enable_shift_scan();
@@ -861,6 +871,10 @@ namespace firefly {
           scan = false;
           done = true;
         }
+
+	if (stop_after_factors) {
+	  return;
+	}
       }
 
       if (scan) {
@@ -951,9 +965,8 @@ namespace firefly {
   template<typename BlackBoxTemp>
   std::vector<std::string> Reconstructor<BlackBoxTemp>::get_factors_string(const std::vector<std::string>& vars) {
     std::vector<std::string> result {};
-    uint32_t counter = 0;
 
-    for (auto & rec : reconst) {
+    for (size_t i = 0; i != items; ++ i) {
       std::unordered_map<std::vector<uint32_t>, RationalNumber, UintHasher> rnmap {};
       rnmap.emplace(std::vector<uint32_t> (n, 0), RationalNumber (1,1));
       Polynomial dummy_pol (rnmap);
@@ -964,14 +977,13 @@ namespace firefly {
 	rf.set_var_order(optimal_var_order);
       }
 
-      if (factors_rf.find(counter) != factors_rf.end()) {
-	for (const auto& factor : factors_rf[counter]) {
+      if (factors_rf.find(i) != factors_rf.end()) {
+	for (const auto& factor : factors_rf[i]) {
 	  rf.add_factor(factor);
 	}
       }
 
       result.emplace_back(rf.to_string(vars));
-      ++counter;
     }
 
     return result;
