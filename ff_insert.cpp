@@ -35,6 +35,7 @@ int main(int argc, char* argv[]) {
   bool save_mode = false;
   bool no_interpolation = false;
   bool merge = false;
+  bool stop_after_factors = false;
   std::string input_file = "";
 
   std::ofstream logger;
@@ -94,10 +95,13 @@ int main(int argc, char* argv[]) {
       no_interpolation = true;
     } else if (arg == "-s" || arg == "--save") {
       save_mode = true;
+    } else if (arg == "-fs" || arg == "--factorscan") {
+      stop_after_factors = true;
     } else if (arg == "-h" || arg == "--help") {
       std::cerr << "Usage: " << argv[0] << "\n"
                 << "Options:\n  -p,--parallel Sets the number of used threads\n"
                 << "  -bs,--bunchsize         Sets the maximum bunch size\n"
+                << "  -fs,--factorscan        Stops after the factor scan and write out its results\n"
                 << "  -m,--merge              Merges expressions in the given directory to one expression\n"
                 << "  -nfs,--nofactorscan     Disables the factor scan\n"
                 << "  -ni,--nointerpolation   Disables the interpolation and writes coefficients to files\n"
@@ -310,6 +314,11 @@ int main(int argc, char* argv[]) {
             if (factor_scan)
               reconst.enable_factor_scan();
 
+	    if (stop_after_factors) {
+	      reconst.stop_after_factor_scan();
+	      save_mode = false;
+	    }
+
             reconst.enable_shift_scan();
 
             bool renamed_ff_save = false;
@@ -336,13 +345,20 @@ int main(int argc, char* argv[]) {
             // Reconstruct
             reconst.reconstruct();
 
-            std::vector<RationalFunction> results = reconst.get_result();
-            file.open(file_name.c_str(), std::ios_base::app);
+	    if (!stop_after_factors) {
+              std::vector<RationalFunction> results = reconst.get_result();
+              file.open(file_name.c_str(), std::ios_base::app);
 
-            if (!results.back().zero())
-              file <<  "+ " << ap.get_master(i) << "*" + results.back().generate_horner(vars) << "\n";
+              if (!results.back().zero())
+                file <<  "+ " << ap.get_master(i) << "*" + results.back().generate_horner(vars) << "\n";
 
-            file.close();
+              file.close();
+	    } else {
+	      std::string factor = reconst.get_factors_string(vars)[0];
+              file.open(file_name.c_str(), std::ios_base::app);
+              file <<  "+ " << ap.get_master(i) << "*" + factor << "\n";
+              file.close();	      
+	    }
 
             if (save_mode) {
               std::string tmp = "ff_save_" + ap.get_master(i);
