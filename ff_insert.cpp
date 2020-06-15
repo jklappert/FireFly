@@ -425,7 +425,8 @@ int main(int argc, char* argv[]) {
           time0 = std::chrono::high_resolution_clock::now();
         }
       } else {
-        mkdir("coefficients", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	std::string dir_name = "coefficients_" + fn;
+        mkdir(dir_name.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
         for (size_t i = 0; i != masters; ++i) {
           basis_f_file.open("basis_functions", std::ios_base::app);
@@ -440,7 +441,7 @@ int main(int argc, char* argv[]) {
             skipped = true;
           } else {
             std::ofstream coef_file;
-            std::string file_name = "coefficients/" + ap.get_master(i) + ".m";
+            std::string file_name = "coefficients_" + fn + "/" + ap.get_master(i) + ".m";
             coef_file.open(file_name.c_str());
             coef_file << "{\n + " << ap.get_master(i) + "*(" << ap.get_unsimplified_coef(i) << ")\n}\n";
             coef_file.close();
@@ -452,9 +453,9 @@ int main(int argc, char* argv[]) {
           std::remove("basis_functions");
           std::remove("firefly.log");
         } else {
-          INFO_MSG("Unsimplified coefficients have been written to 'coefficients' directory");
+          INFO_MSG("Unsimplified coefficients have been written to 'coefficients_" + fn + "' directory");
           logger.open("ff_insert.log", std::ios_base::app);
-          logger << "Unsimplified coefficients have been written to 'coefficients' directory\n";
+          logger << "Unsimplified coefficients have been written to 'coefficients_" << fn << "' directory\n";
           logger.close();
           std::string new_log_name = "ff_insert_" + fn + ".log";
           std::rename("ff_insert.log", new_log_name.c_str());
