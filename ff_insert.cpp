@@ -502,7 +502,8 @@ int main(int argc, char* argv[]) {
     logger.close();
 
     std::ofstream ofile;
-    ofile.open("merged.out");
+    std::string merged_file_name = input_file + "_merged.out";
+    ofile.open(merged_file_name.c_str());
     ofile << "{\n";
 
     size_t counter = 0;
@@ -536,10 +537,10 @@ int main(int argc, char* argv[]) {
 
     auto time1 = std::chrono::high_resolution_clock::now();
     INFO_MSG("Merged files in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s");
-    INFO_MSG("Result has been written to 'merged.out'");
+    INFO_MSG("Result has been written to '" + merged_file_name + "'");
     logger.open("ff_insert.log", std::ios_base::app);
     logger << "Merged files in " + std::to_string(std::chrono::duration<double>(time1 - time0).count()) + " s\n";
-    logger << "Result has been written to 'merged.out'\n";
+    logger << "Result has been written to '" + merged_file_name + "'\n";
     logger.close();
   }
 
