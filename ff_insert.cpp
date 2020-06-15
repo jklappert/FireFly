@@ -99,7 +99,8 @@ int main(int argc, char* argv[]) {
       stop_after_factors = true;
     } else if (arg == "-h" || arg == "--help") {
       std::cerr << "Usage: " << argv[0] << "\n"
-                << "Options:\n  -p,--parallel Sets the number of used threads\n"
+                << "Options:\n"
+	        << "  -p,--parallel           Sets the number of used threads\n"
                 << "  -bs,--bunchsize         Sets the maximum bunch size\n"
                 << "  -fs,--factorscan        Stops after the factor scan and write out its results\n"
                 << "  -m,--merge              Merges expressions in the given directory to one expression\n"
