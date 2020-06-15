@@ -430,7 +430,7 @@ namespace firefly {
   void Reconstructor<BlackBoxTemp>::stop_after_factor_scan() {
     stop_after_factors = true;
   }
-  
+
   template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::enable_scan() {
     enable_shift_scan();
@@ -879,7 +879,13 @@ namespace firefly {
 
       if (scan) {
         scan_for_shift();
-        queue_new_ones();
+
+        if (items == 0) {
+          scan = false;
+          done = true;
+        } else {
+          queue_new_ones();
+        }
       } else {
         if (scanned_factors && items == 0) {
           done = true;
@@ -988,7 +994,7 @@ namespace firefly {
 
     return result;
   }
-  
+
   template<typename BlackBoxTemp>
   std::vector<RationalFunction> Reconstructor<BlackBoxTemp>::get_result() {
     std::vector<RationalFunction> result {};
