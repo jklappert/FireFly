@@ -837,6 +837,8 @@ namespace firefly {
     });
 #endif
 
+    bool empty_bb = false;
+
     if (!resume_from_state) {
       logger << "\n" << "Promote to new prime field: F(" << std::to_string(primes()[prime_it]) << ")\n";
 
@@ -870,6 +872,7 @@ namespace firefly {
         if (items == 0) {
           scan = false;
           done = true;
+          empty_bb = true;
         }
 
 	if (stop_after_factors) {
@@ -883,18 +886,21 @@ namespace firefly {
         if (items == 0) {
           scan = false;
           done = true;
+          empty_bb = true;
         } else {
           queue_new_ones();
         }
       } else {
         if (scanned_factors && items == 0) {
           done = true;
+          empty_bb = true;
         } else {
           start_first_runs(!scanned_factors);
         }
 
         if (items == 0) {
           done = true;
+          empty_bb = true;
         }
       }
     } else {
@@ -925,7 +931,34 @@ namespace firefly {
     }
 #ifdef WITH_MPI
     else {
-      mpi_setup();
+      if (!empty_bb) {
+        mpi_setup();
+
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        continue_communication = true;
+
+        cond_val.notify_one();
+
+        cond_val.wait(lock_probe_queue, [this](){return proceed;});
+
+        proceed = false;
+      }
+
+      {
+        std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
+
+        requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
+        new_jobs = false;
+
+        cond_val.wait(lock_probe_queue, [this](){return proceed;});
+
+        proceed = false;
+      }
+
+      tp.kill_all();
+
+      new_jobs = false; // to make sure that no new jobs have been started
 
       {
         std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
