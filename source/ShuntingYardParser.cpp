@@ -513,7 +513,13 @@ namespace firefly {
     return functions.empty();
   }
 
-  void ShuntingYardParser::precompute_tokens() {
+  void ShuntingYardParser::precompute_tokens(bool force) {
+    if (FFInt::p != prime_internal) {
+      prime_internal = FFInt::p;
+    } else if(!force) {
+      return;
+    }
+
     // TODO really clear here?
     check_vars_1.clear();
     check_vars_2.clear();

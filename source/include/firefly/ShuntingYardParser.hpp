@@ -94,8 +94,9 @@ namespace firefly {
     bool empty() const;
     /**
      *  Precomputes the tokes over the current prime field to be more efficient in evaluations
+     *  @param froce enforces a precompute
      */
-    void precompute_tokens();
+    void precompute_tokens(bool force = false);
     /**
      *  TODO
      *  @param elements_to_keep The elements which should be kept
@@ -112,6 +113,7 @@ namespace firefly {
     std::vector<FFInt> check_vars_2 {}; // TODO clear or keep?
     std::unordered_map<std::pair<uint64_t, uint64_t>, uint64_t, UintPairHasher> check_map {}; // TODO clear or keep?
     std::vector<uint64_t> evaluation_positions {}; /**< Stores the position of an evaluated function */
+    std::uint64_t prime_internal = 0; /**< Stores the current prime and precomputes tokens only if this number has actually changed */
     /**
      *  Evaluates a single function for a given parameter point and returns their result.
      *  @param fun A function in reverse polish notation
