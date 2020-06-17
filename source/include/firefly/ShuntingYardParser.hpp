@@ -67,6 +67,12 @@ namespace firefly {
      */
     size_t add_otf(const std::string & fun, const bool no_duplicates = false);
     /**
+     *  Adds a function in RPN to the parser
+     *  @param rpn_fun the function in RPN
+     *  @return The position of the function in the list
+     */
+    size_t add_otf(const std::vector<std::string>& rpn_fun);
+    /**
      *  Evaluates all functions for a given parameter point and returns their result.
      *  @param values A vector of FFIntTemp objects at which the parsed functions should be evaluated.
      *  @return The values of the parsed functions as a vector.

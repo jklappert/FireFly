@@ -325,6 +325,11 @@ namespace firefly {
     functions.shrink_to_fit();
   }
 
+  size_t ShuntingYardParser::add_otf(const std::vector<std::string>& rpn_fun) {
+    functions.emplace_back(rpn_fun);
+    return functions.size() - 1;
+  }
+
   size_t ShuntingYardParser::add_otf(const std::string& fun_, const bool no_duplicates) {
     std::string fun = fun_;
     validate(fun, 0);
@@ -333,7 +338,7 @@ namespace firefly {
 
     if (!check_is_equal) {
       functions.emplace_back(tokens);
-      return functions.size();
+      return functions.size() - 1;
     } else {
       FFInt::set_new_prime(primes()[prime_counter != 299 ? prime_counter + 1 : prime_counter - 1]);
       FFInt v1 = evaluate(tokens, check_vars_1);
