@@ -509,6 +509,14 @@ namespace firefly {
     return functions;
   }
 
+  std::vector<std::string> ShuntingYardParser::get_rp_function(size_t i) const {
+    return functions.at(i);
+  }
+  
+  const std::vector<std::vector<std::string>>* ShuntingYardParser::get_rp_functions_ref() const {
+    return &functions;
+  }
+
   bool ShuntingYardParser::empty() const {
     return functions.empty();
   }
@@ -648,7 +656,7 @@ namespace firefly {
 
     // TODO check_map and check_vars?
     INFO_MSG("Trimming parser: " + std::to_string(functions.size() - elements_to_keep.size())
-	     + " out of " + std::to_string(functions.size()) + " functions will be removed.");
+	     + " out of " + std::to_string(functions.size()) + " functions are be removed");
 
     if (!check_is_equal) {
       for (size_t i = 0; i != functions.size(); ++i) {

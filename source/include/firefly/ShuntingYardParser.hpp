@@ -88,6 +88,17 @@ namespace firefly {
      */
     std::vector<std::vector<std::string>> get_rp_functions() const;
     /**
+     *  Returns the reverse polish notation of the ith parsed function
+     *  @param i the counter for the corresponding function
+     *  @return A the ith function.
+     */
+    std::vector<std::string> get_rp_function(size_t i) const;
+    /**
+     *  Returns references the reverse polish notation of the parsed functions
+     *  @return A vector of all parsed function references.
+     */
+    const std::vector<std::vector<std::string>> *get_rp_functions_ref() const;
+    /**
      *  Checks if functions are stored in this class
      *  @return True if no functions are stored in this class
      */
