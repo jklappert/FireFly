@@ -73,6 +73,11 @@ namespace firefly {
      */
     size_t add_otf(const std::vector<std::string>& rpn_fun);
     /**
+     *  Reserves memory
+     *  @param number_of_functions how many entries shall be reserved
+     */
+    void reserve(size_t number_of_functions);
+    /**
      *  Evaluates all functions for a given parameter point and returns their result.
      *  @param values A vector of FFIntTemp objects at which the parsed functions should be evaluated.
      *  @return The values of the parsed functions as a vector.

@@ -330,6 +330,10 @@ namespace firefly {
     return functions.size() - 1;
   }
 
+  void ShuntingYardParser::reserve(size_t number_of_functions) {
+    functions.reserve(number_of_functions);
+  }
+
   size_t ShuntingYardParser::add_otf(const std::string& fun_, const bool no_duplicates) {
     std::string fun = fun_;
     validate(fun, 0);
@@ -543,14 +547,13 @@ namespace firefly {
     precomp_tokens = std::vector<std::vector<std::pair<uint8_t, FFInt>>> (size);
 
     for (uint64_t i = 0; i != size; ++i) {
-      std::vector<std::string> tokens = functions[i];
-      uint64_t t_size = tokens.size();
+      uint64_t t_size = functions[i].size();
       precomp_tokens[i] = std::vector<std::pair<uint8_t, FFInt>> (t_size);
 
       uint32_t offset = 0;
 
       for (uint64_t j = 0; j != t_size; ++j) {
-        std::string token = tokens[j + offset];
+        std::string token = functions[i][j + offset];
 
         if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!" || token == "~" || token == ";") {
           switch (token[0]) {
@@ -650,6 +653,8 @@ namespace firefly {
           }
         }
       }
+
+      precomp_tokens[i].shrink_to_fit();
     }
   }
 
