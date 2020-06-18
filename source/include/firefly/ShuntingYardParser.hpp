@@ -115,6 +115,10 @@ namespace firefly {
      */
     bool empty() const;
     /**
+     *  @return The number of parsed functions
+     */
+    size_t get_size() const;
+    /**
      *  Precomputes the tokes over the current prime field to be more efficient in evaluations
      *  @param froce enforces a precompute
      */

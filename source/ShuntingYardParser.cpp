@@ -530,6 +530,10 @@ namespace firefly {
     return functions.empty();
   }
 
+  size_t ShuntingYardParser::get_size() const {
+    return functions.size();
+  }
+
   void ShuntingYardParser::precompute_tokens(bool force) {
     if (FFInt::p != prime_internal) {
       prime_internal = FFInt::p;
