@@ -65,7 +65,7 @@ namespace firefly {
      *  @param no_duplicates If true, do not add the function if it is already in the list, requires check_is_equal = true
      *  @return The position of the function in the list
      */
-    size_t add_otf(const std::string & fun, const bool no_duplicates = false);
+    size_t add_otf(std::string & fun, const bool no_duplicates = false);
     /**
      *  Adds a function in RPN to the parser
      *  @param rpn_fun the function in RPN

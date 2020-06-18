@@ -334,8 +334,7 @@ namespace firefly {
     functions.reserve(number_of_functions);
   }
 
-  size_t ShuntingYardParser::add_otf(const std::string& fun_, const bool no_duplicates) {
-    std::string fun = fun_;
+  size_t ShuntingYardParser::add_otf(std::string& fun, const bool no_duplicates) {
     validate(fun, 0);
 
     std::vector<std::string> tokens = parse(fun);
