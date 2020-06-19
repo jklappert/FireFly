@@ -39,15 +39,23 @@ namespace firefly {
      *  @param file The path to the file in which the rational functions are stored
      *  @param vars A vector which specifies the variables of the functions. Each variable is allowed to be built of lower and upper case letters and numbers up to 16 characters.
      *  @param check_is_equal Sets the option to check whether parsed functions are equal to only evaluate them once
+     *  @param keep_rpn_ keeps the rpn in memory when set to true
      */
-    ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars, bool check_is_equal = false);
+    ShuntingYardParser(const std::string& file, const std::vector<std::string>& vars, bool check_is_equal = false, bool keep_rpn_ = false);
     /**
      *  Constructor which parses a list of rational functions and prepares them for evaluation.
      *  @param funs A collection of functions
      *  @param vars A vector which specifies the variables of the functions. Each variable is allowed to be built of lower and upper case letters and numbers up to 16 characters.
      *  @param check_is_equal Sets the option to check whether parsed functions are equal to only evaluate them once
+     *  @param keep_rpn_ keeps the rpn in memory when set to true
      */
-    ShuntingYardParser(const std::vector<std::string>& funs, const std::vector<std::string>& vars, bool check_is_equal = false);
+    ShuntingYardParser(const std::vector<std::string>& funs, const std::vector<std::string>& vars, bool check_is_equal = false, bool keep_rpn_ = false);
+    /**
+     *  Constructor with another SYP object without copies
+     *  @param syp another SYP
+     *  @param vars A vector which specifies the variables of the functions.
+     */
+    ShuntingYardParser(ShuntingYardParser&& par, const std::vector<std::string>& vars);
     /**
      *  Default constructor
      */
@@ -133,8 +141,11 @@ namespace firefly {
     std::vector<std::vector<std::string>> functions {}; /**< This vector holds the input function in reverse polish notation where each operand/operator is separated */
     std::unordered_map<std::string, int> vars_map {}; /**< This map holds the conversion of the used variables to an integer value to map variables to parameter points */
     std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {}; /**< This vector holds a collection of precomputed tokens where each operand/operator as a string is already converted to an FFInt */
+    std::vector<std::vector<std::tuple<size_t, uint8_t, std::string, std::string>>> precomp_number_tokens{}; /**< Stores the positions and the operation of the numbers after precomputing the tokens such that the RPN can be erased and precomputing tokens is faster */
     bool check_is_equal = false; /**< Indicates that functions are checked whether they are equal. Modifies the evaluation procedure */
+    bool keep_rpn = false; /**< Indicates whether to keep the rpn*/
     size_t prime_counter = 0; // TODO
+    bool precomputed = false; /**< A bool that indicates whether the tokes have already been precomputed */
     std::vector<FFInt> check_vars_1 {}; // TODO clear or keep?
     std::vector<FFInt> check_vars_2 {}; // TODO clear or keep?
     std::unordered_map<std::pair<uint64_t, uint64_t>, uint64_t, UintPairHasher> check_map {}; // TODO clear or keep?
@@ -214,7 +225,10 @@ namespace firefly {
       OPERATOR,
       VARIABLE,
       NEG_VARIABLE,
-      NUMBER
+      NUMBER,
+      NEG_DIV,
+      MPZ_DIV,
+      NEG_MPZ_DIV,
     }; /**< The allowed operands as an enum for fast identification. Note that ! means x ! 2 = -x^2 (! == POW_NEG) and ~ identifies a negative exponent (~ == NEG_POW), x ; 2 = -x^(-2) (; == NEG_POW_NEG) */
   }
 
