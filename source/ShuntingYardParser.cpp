@@ -568,13 +568,17 @@ namespace firefly {
 
     for (uint64_t i = 0; i != size; ++i) {
       precompute(functions[i], i);
+      // clear rpn
+      if (!keep_rpn) {
+        std::vector<std::string> tmp(std::move(functions[i]));
+      }
     }
 
     precomputed = true;
     // clear rpn
     if (!keep_rpn) {
-      std::vector<std::vector<std::string>> tmp_vec;
-      functions.swap(tmp_vec);
+	  std::vector<std::vector<std::string>> tmp_vec (std::move(functions));
+      //functions.swap(tmp_vec);
     }
     } else {
       for (size_t i = 0; i != precomp_tokens.size(); ++ i) {
