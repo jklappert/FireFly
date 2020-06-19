@@ -60,7 +60,7 @@ namespace firefly {
   ShuntingYardParser::ShuntingYardParser(ShuntingYardParser&& par, const std::vector<std::string>& vars) : functions(std::move(par.get_rp_functions())) {
     for (uint32_t i = 0; i != vars.size(); ++i) {
       vars_map.emplace(std::make_pair(vars[i], i));
-    }    
+    }
   }
 
   void ShuntingYardParser::parse_collection(const std::vector<std::string>& funs, bool is_file) {
@@ -176,7 +176,7 @@ namespace firefly {
           }
         }
 
-        if (i + 1 < funs.size() + 1 && i + 1 > curr_percentage*funs.size()/10) {
+        if (i + 1 < funs.size() + 1 && i + 1 > curr_percentage * funs.size() / 10) {
           ++curr_percentage;
           std::cerr << "\033[1;34mFireFly info:\033[0m " << i + 1 << " / " << funs.size() << "\r";
         }
@@ -188,20 +188,20 @@ namespace firefly {
 
     auto time1 = std::chrono::high_resolution_clock::now();
 
-    if (!funs.empty()){
-    if (!check_is_equal) {
-      INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " function(s) in "
-               + std::to_string(std::chrono::duration<double>(time1 - time0).count())
-               + " s");
-    } else {
-      evaluation_positions.shrink_to_fit();
-      BaseReconst::reset();
-      INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " function(s) in "
-               + std::to_string(std::chrono::duration<double>(time1 - time0).count())
-               + " s");
-      INFO_MSG("Found " + std::to_string(parsed_fun_c - equal_fun_c) + " different function(s)");
-    }
+    if (!funs.empty()) {
+      if (!check_is_equal) {
+        INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " function(s) in "
+                 + std::to_string(std::chrono::duration<double>(time1 - time0).count())
+                 + " s");
+      } else {
+        evaluation_positions.shrink_to_fit();
+        BaseReconst::reset();
+        INFO_MSG("Parsed " + std::to_string(parsed_fun_c) + " function(s) in "
+                 + std::to_string(std::chrono::duration<double>(time1 - time0).count())
+                 + " s");
+        INFO_MSG("Found " + std::to_string(parsed_fun_c - equal_fun_c) + " different function(s)");
       }
+    }
   }
 
   std::vector<std::string> ShuntingYardParser::parse(std::string& fun) {
@@ -256,6 +256,7 @@ namespace firefly {
 
             if (ex == '^' && fun[c_counter + 1] == '(' && fun[c_counter + 2] == '-') {
               neg_exp = true;
+
               if (tokens.back().size() > 1 && tokens.back().front() == '-' && fun[c_counter - 1] != ')') {
                 tokens.back().erase(tokens.back().begin());
                 op_stack.push(';');
@@ -535,7 +536,7 @@ namespace firefly {
   std::vector<std::string> ShuntingYardParser::get_rp_function(size_t i) const {
     return functions.at(i);
   }
-  
+
   const std::vector<std::vector<std::string>>* ShuntingYardParser::get_rp_functions_ref() const {
     return &functions;
   }
@@ -562,214 +563,219 @@ namespace firefly {
     check_map.clear();
 
     if (!precomputed || force) {
-    uint64_t size = functions.size();
-    precomp_tokens = std::vector<std::vector<std::pair<uint8_t, FFInt>>> (size);
-    precomp_number_tokens = std::vector<std::vector<std::tuple<size_t, uint8_t, std::string, std::string>>> (size);
+      uint64_t size = functions.size();
+      precomp_tokens = std::vector<std::vector<std::pair<uint8_t, FFInt>>> (size);
+      precomp_number_tokens = std::vector<std::vector<std::tuple<size_t, uint8_t, std::string, std::string>>> (size);
 
-    for (uint64_t i = 0; i != size; ++i) {
-      precompute(functions[i], i);
+      for (uint64_t i = 0; i != size; ++i) {
+        precompute(functions[i], i);
+
+        // clear rpn
+        if (!keep_rpn) {
+          std::vector<std::string> tmp(std::move(functions[i]));
+        }
+      }
+
+      precomputed = true;
+
       // clear rpn
       if (!keep_rpn) {
-        std::vector<std::string> tmp(std::move(functions[i]));
+        std::vector<std::vector<std::string>> tmp_vec(std::move(functions));
+        //functions.swap(tmp_vec);
       }
-    }
-
-    precomputed = true;
-    // clear rpn
-    if (!keep_rpn) {
-	  std::vector<std::vector<std::string>> tmp_vec (std::move(functions));
-      //functions.swap(tmp_vec);
-    }
     } else {
       for (size_t i = 0; i != precomp_tokens.size(); ++ i) {
-	for (const auto & el : precomp_number_tokens[i]) {
-	  switch (std::get<1>(el)) {
-	    case tokens::PLUS: {
+        for (const auto& el : precomp_number_tokens[i]) {
+          switch (std::get<1>(el)) {
+            case tokens::PLUS: {
               precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(std::stoull(std::get<2>(el)))};
-	      break;
-	    }
-	    case tokens::MINUS: {
+              break;
+            }
+
+            case tokens::MINUS: {
               precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -FFInt(std::stoull(std::get<2>(el)))};
-	      break;
-	    }
-	    case tokens::NUMBER: {
+              break;
+            }
+
+            case tokens::NUMBER: {
               precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(mpz_class(std::get<2>(el)))};
-	      break;
-	    }
-	    case tokens::DIV: {
+              break;
+            }
+
+            case tokens::DIV: {
               precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(std::stoull(std::get<2>(el))) / FFInt(std::stoull(std::get<3>(el)))};
-	      break;
-	    }
-	    case tokens::NEG_DIV: {
+              break;
+            }
+
+            case tokens::NEG_DIV: {
               precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -(FFInt(std::stoull(std::get<2>(el))) / FFInt(std::stoull(std::get<3>(el))))};
-	      break;
-	    }
-	    case tokens::MPZ_DIV: {
+              break;
+            }
+
+            case tokens::MPZ_DIV: {
               precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(mpz_class(std::get<2>(el))) / FFInt(mpz_class(std::get<3>(el)))};
-	      break;
-	    }
-	    case tokens::NEG_MPZ_DIV: {
+              break;
+            }
+
+            case tokens::NEG_MPZ_DIV: {
               precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -FFInt(mpz_class(std::get<2>(el))) / FFInt(mpz_class(std::get<3>(el)))};
-	      break;
-	    }
-	  }
-	}
+              break;
+            }
+          }
+        }
       }
     }
   }
 
   void ShuntingYardParser::precompute(const std::vector<std::string>& tokens, size_t i) {
     uint64_t t_size = tokens.size();
-      precomp_tokens[i] = std::vector<std::pair<uint8_t, FFInt>> (t_size);
+    precomp_tokens[i] = std::vector<std::pair<uint8_t, FFInt>> (t_size);
 
-      uint32_t offset = 0;
+    uint32_t offset = 0;
 
-      for (uint64_t j = 0; j != t_size; ++j) {
-        std::string token = tokens[j + offset];
+    for (uint64_t j = 0; j != t_size; ++j) {
+      std::string token = tokens[j + offset];
 
-        if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!" || token == "~" || token == ";") {
-          switch (token[0]) {
-            case '+': {
-              precomp_tokens[i][j] = {tokens::PLUS, 0};
-              break;
-            }
-
-            case '-': {
-              precomp_tokens[i][j] = {tokens::MINUS, 0};
-              break;
-            }
-
-            case '*': {
-              precomp_tokens[i][j] = {tokens::MULT, 0};
-              break;
-            }
-
-            case '/': {
-              // If the coefficient is a rational number, perform the division just once
-              if (precomp_tokens[i][j - 1].first == tokens::NUMBER && precomp_tokens[i][j - 2].first == tokens::NUMBER) {
-                FFInt quotient = precomp_tokens[i][j - 2].second / precomp_tokens[i][j - 1].second;
-                j -= 2;
-                t_size -= 2;
-                offset += 2;
-                precomp_tokens[i].pop_back();
-                precomp_tokens[i].pop_back();
-                precomp_tokens[i][j] = {tokens::NUMBER, quotient};
-
-		std::string n_1 = std::get<2>(precomp_number_tokens[i].back());
-		uint8_t key_1 = std::get<1>(precomp_number_tokens[i].back());
-		precomp_number_tokens[i].pop_back();
-		std::string n_2 = std::get<2>(precomp_number_tokens[i].back());
-		uint8_t key_2 = std::get<1>(precomp_number_tokens[i].back());
-		precomp_number_tokens[i].pop_back();
-
-		if (key_1 == tokens::NUMBER || key_2 == tokens::NUMBER) {
-		  if (key_1 == tokens::MINUS || key_2 == tokens::MINUS) {
-		    precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_MPZ_DIV, n_2, n_1));
-		  } else {
-		    precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MPZ_DIV, n_2, n_1));
-		  }
-		} else if (key_1 == tokens::MINUS || key_2 == tokens::MINUS) {
-		  if (key_1 == tokens::MINUS && key_2 == tokens::MINUS) {
-		    precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::DIV, n_2, n_1));
-		  } else {
-		    precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_DIV, n_2, n_1));
-		  }
-		} else {
-                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::DIV, n_2, n_1));
-		}
-              } else if (precomp_tokens[i][j - 1].first == tokens::NUMBER && (precomp_tokens[i][j - 2].first == tokens::VARIABLE || precomp_tokens[i][j - 2].first == tokens::NEG_VARIABLE)) {
-                FFInt inverse = 1 / precomp_tokens[i][j - 1].second;
-		std::string n = std::get<2>(precomp_number_tokens[i].back());
-		uint8_t key = std::get<1>(precomp_number_tokens[i].back());
-		precomp_number_tokens[i].pop_back();
-
-		if (key == tokens::NUMBER) {
-		  precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::MPZ_DIV, "1", n));
-		} else if (key == tokens::MINUS) {
-		  precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::NEG_DIV, "1", n));
-		} else {
-                  precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::DIV, "1", n));
-		}
-
-                precomp_tokens[i][j - 1].second = inverse;
-                precomp_tokens[i][j] = {tokens::MULT, 0};
-              } else
-                precomp_tokens[i][j] = {tokens::DIV, 0};
-
-              break;
-            }
-
-            case '^': {
-              precomp_tokens[i][j] = {tokens::POW, 0};
-              break;
-            }
-
-            case '~': {
-              precomp_tokens[i][j] = {tokens::NEG_POW, 0};
-              break;
-            }
-
-            case ';': {
-              precomp_tokens[i][j] = {tokens::NEG_POW_NEG, 0};
-              break;
-            }
-
-            case '!': {
-              precomp_tokens[i][j] = {tokens::POW_NEG, 0};
-              break;
-            }
+      if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!" || token == "~" || token == ";") {
+        switch (token[0]) {
+          case '+': {
+            precomp_tokens[i][j] = {tokens::PLUS, 0};
+            break;
           }
+
+          case '-': {
+            precomp_tokens[i][j] = {tokens::MINUS, 0};
+            break;
+          }
+
+          case '*': {
+            precomp_tokens[i][j] = {tokens::MULT, 0};
+            break;
+          }
+
+          case '/': {
+            // If the coefficient is a rational number, perform the division just once
+            if (precomp_tokens[i][j - 1].first == tokens::NUMBER && precomp_tokens[i][j - 2].first == tokens::NUMBER) {
+              FFInt quotient = precomp_tokens[i][j - 2].second / precomp_tokens[i][j - 1].second;
+              j -= 2;
+              t_size -= 2;
+              offset += 2;
+              precomp_tokens[i].pop_back();
+              precomp_tokens[i].pop_back();
+              precomp_tokens[i][j] = {tokens::NUMBER, quotient};
+
+              std::string n_1 = std::get<2>(precomp_number_tokens[i].back());
+              uint8_t key_1 = std::get<1>(precomp_number_tokens[i].back());
+              precomp_number_tokens[i].pop_back();
+              std::string n_2 = std::get<2>(precomp_number_tokens[i].back());
+              uint8_t key_2 = std::get<1>(precomp_number_tokens[i].back());
+              precomp_number_tokens[i].pop_back();
+
+              if (key_1 == tokens::NUMBER || key_2 == tokens::NUMBER) {
+                if (key_1 == tokens::MINUS || key_2 == tokens::MINUS) {
+                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_MPZ_DIV, n_2, n_1));
+                } else {
+                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MPZ_DIV, n_2, n_1));
+                }
+              } else if (key_1 == tokens::MINUS || key_2 == tokens::MINUS) {
+                if (key_1 == tokens::MINUS && key_2 == tokens::MINUS) {
+                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::DIV, n_2, n_1));
+                } else {
+                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_DIV, n_2, n_1));
+                }
+              } else {
+                precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::DIV, n_2, n_1));
+              }
+            } else if (precomp_tokens[i][j - 1].first == tokens::NUMBER && (precomp_tokens[i][j - 2].first == tokens::VARIABLE || precomp_tokens[i][j - 2].first == tokens::NEG_VARIABLE)) {
+              FFInt inverse = 1 / precomp_tokens[i][j - 1].second;
+              std::string n = std::get<2>(precomp_number_tokens[i].back());
+              uint8_t key = std::get<1>(precomp_number_tokens[i].back());
+              precomp_number_tokens[i].pop_back();
+
+              if (key == tokens::NUMBER) {
+                precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::MPZ_DIV, "1", n));
+              } else if (key == tokens::MINUS) {
+                precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::NEG_DIV, "1", n));
+              } else {
+                precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::DIV, "1", n));
+              }
+
+              precomp_tokens[i][j - 1].second = inverse;
+              precomp_tokens[i][j] = {tokens::MULT, 0};
+            } else
+              precomp_tokens[i][j] = {tokens::DIV, 0};
+
+            break;
+          }
+
+          case '^': {
+            precomp_tokens[i][j] = {tokens::POW, 0};
+            break;
+          }
+
+          case '~': {
+            precomp_tokens[i][j] = {tokens::NEG_POW, 0};
+            break;
+          }
+
+          case ';': {
+            precomp_tokens[i][j] = {tokens::NEG_POW_NEG, 0};
+            break;
+          }
+
+          case '!': {
+            precomp_tokens[i][j] = {tokens::POW_NEG, 0};
+            break;
+          }
+        }
+      } else {
+        // check then if number has more than 18 digits
+        if (token.length() > 18) {
+          std::string tmp = token;
+
+          if (token[0] == '+')
+            tmp.erase(0, 1);
+
+          precomp_tokens[i][j] = {tokens::NUMBER, FFInt(mpz_class(tmp))};
+          precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NUMBER, tmp, ""));
         } else {
-          // check then if number has more than 18 digits
-          if (token.length() > 18) {
+          if (token[0] == '-') {
             std::string tmp = token;
+            tmp.erase(0, 1);
 
-            if (token[0] == '+')
-              tmp.erase(0, 1);
+            if (vars_map.find(tmp) != vars_map.end())
+              precomp_tokens[i][j] = {tokens::NEG_VARIABLE, vars_map[tmp]};
+            else if (std::isdigit(tmp[0])) {
+              precomp_tokens[i][j] = {tokens::NUMBER, (-FFInt(std::stoull(tmp)))};
+              precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MINUS, tmp, ""));
+            } else
+              throw_not_declared_var_err(tmp);
+          } else if (token[0] == '+') {
+            std::string tmp = token;
+            tmp.erase(0, 1);
 
-            precomp_tokens[i][j] = {tokens::NUMBER, FFInt(mpz_class(tmp))};
-	    precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NUMBER, tmp, ""));
+            if (vars_map.find(tmp) != vars_map.end())
+              precomp_tokens[i][j] = {tokens::VARIABLE, vars_map[tmp]};
+            else if (std::isdigit(tmp[0])) {
+              precomp_tokens[i][j] = {tokens::NUMBER, (FFInt(std::stoull(tmp)))};
+              precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::PLUS, token, ""));//PLUS indicates a positive number here that does not need to be casted to an mpz
+            } else
+              throw_not_declared_var_err(tmp);
           } else {
-            if (token[0] == '-') {
-              std::string tmp = token;
-              tmp.erase(0, 1);
-
-              if (vars_map.find(tmp) != vars_map.end())
-                precomp_tokens[i][j] = {tokens::NEG_VARIABLE, vars_map[tmp]};
-              else if (std::isdigit(tmp[0])) {
-                precomp_tokens[i][j] = {tokens::NUMBER, (-FFInt(std::stoull(tmp)))};
-		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MINUS, tmp, ""));
-	      }
-              else
-                throw_not_declared_var_err(tmp);
-            } else if (token[0] == '+') {
-              std::string tmp = token;
-              tmp.erase(0, 1);
-
-              if (vars_map.find(tmp) != vars_map.end())
-                precomp_tokens[i][j] = {tokens::VARIABLE, vars_map[tmp]};
-              else if (std::isdigit(tmp[0])) {
-                precomp_tokens[i][j] = {tokens::NUMBER, (FFInt(std::stoull(tmp)))};
-		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::PLUS, token, ""));//PLUS indicates a positive number here that does not need to be casted to an mpz
-	      }
-              else
-                throw_not_declared_var_err(tmp);
-            } else {
-              if (vars_map.find(token) != vars_map.end())
-                precomp_tokens[i][j] = {tokens::VARIABLE, vars_map[token]};
-              else if (std::isdigit(token[0])) {
-                precomp_tokens[i][j] = {tokens::NUMBER, (FFInt(std::stoull(token)))};
-                precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::PLUS, token, ""));//PLUS indicates a positive number here that does not need to be casted to an mpz
-	      }
-              else
-                throw_not_declared_var_err(token);
-            }
+            if (vars_map.find(token) != vars_map.end())
+              precomp_tokens[i][j] = {tokens::VARIABLE, vars_map[token]};
+            else if (std::isdigit(token[0])) {
+              precomp_tokens[i][j] = {tokens::NUMBER, (FFInt(std::stoull(token)))};
+              precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::PLUS, token, ""));//PLUS indicates a positive number here that does not need to be casted to an mpz
+            } else
+              throw_not_declared_var_err(token);
           }
         }
       }
+    }
 
-      precomp_number_tokens[i].shrink_to_fit();
-      precomp_tokens[i].shrink_to_fit();
+    precomp_number_tokens[i].shrink_to_fit();
+    precomp_tokens[i].shrink_to_fit();
   }
 
   std::unordered_map<size_t, size_t> ShuntingYardParser::trim(const std::unordered_set<size_t>& elements_to_keep) {
@@ -780,7 +786,7 @@ namespace firefly {
 
     // TODO check_map and check_vars?
     INFO_MSG("Trimming parser: " + std::to_string(functions.size() - elements_to_keep.size())
-	     + " out of " + std::to_string(functions.size()) + " functions are be removed");
+             + " out of " + std::to_string(functions.size()) + " functions are be removed");
 
     if (!check_is_equal) {
       for (size_t i = 0; i != functions.size(); ++i) {

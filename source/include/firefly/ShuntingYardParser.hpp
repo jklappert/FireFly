@@ -73,7 +73,7 @@ namespace firefly {
      *  @param no_duplicates If true, do not add the function if it is already in the list, requires check_is_equal = true
      *  @return The position of the function in the list
      */
-    size_t add_otf(std::string & fun, const bool no_duplicates = false);
+    size_t add_otf(std::string& fun, const bool no_duplicates = false);
     /**
      *  Adds a function in precomputed RPN to the parser. The RPN is not stored
      *  @param rpn_fun the function in RPN
@@ -116,7 +116,7 @@ namespace firefly {
      *  Returns references the reverse polish notation of the parsed functions
      *  @return A vector of all parsed function references.
      */
-    const std::vector<std::vector<std::string>> *get_rp_functions_ref() const;
+    const std::vector<std::vector<std::string>>* get_rp_functions_ref() const;
     /**
      *  Checks if functions are stored in this class
      *  @return True if no functions are stored in this class
@@ -136,7 +136,7 @@ namespace firefly {
      *  @param elements_to_keep The elements which should be kept
      *  @return A map indicating on which positions the kept elements are know
      */
-    std::unordered_map<size_t, size_t> trim(const std::unordered_set<size_t> & elements_to_keep);
+    std::unordered_map<size_t, size_t> trim(const std::unordered_set<size_t>& elements_to_keep);
   private:
     /**
      *  Precomputes the tokens of the given RPN
@@ -147,7 +147,7 @@ namespace firefly {
     std::vector<std::vector<std::string>> functions {}; /**< This vector holds the input function in reverse polish notation where each operand/operator is separated */
     std::unordered_map<std::string, int> vars_map {}; /**< This map holds the conversion of the used variables to an integer value to map variables to parameter points */
     std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {}; /**< This vector holds a collection of precomputed tokens where each operand/operator as a string is already converted to an FFInt */
-    std::vector<std::vector<std::tuple<size_t, uint8_t, std::string, std::string>>> precomp_number_tokens{}; /**< Stores the positions and the operation of the numbers after precomputing the tokens such that the RPN can be erased and precomputing tokens is faster */
+    std::vector<std::vector<std::tuple<size_t, uint8_t, std::string, std::string>>> precomp_number_tokens {}; /**< Stores the positions and the operation of the numbers after precomputing the tokens such that the RPN can be erased and precomputing tokens is faster */
     bool check_is_equal = false; /**< Indicates that functions are checked whether they are equal. Modifies the evaluation procedure */
     bool keep_rpn = false; /**< Indicates whether to keep the rpn*/
     size_t prime_counter = 0; // TODO
@@ -431,7 +431,7 @@ namespace firefly {
           case tokens::NEG_POW_NEG: {
             FFIntTemp a = nums.top();
             nums.pop();
-	    nums.top() = std::move(-nums.top().pow(a.to_neg_int()));
+            nums.top() = std::move(-nums.top().pow(a.to_neg_int()));
             break;
           }
 
@@ -447,7 +447,7 @@ namespace firefly {
 
           case tokens::NUMBER: {
             nums.push(token.second);
-	    break;
+            break;
           }
         }
       }
@@ -497,66 +497,66 @@ namespace firefly {
       for (const auto& token : tokens) {
         switch (token.first) {
           case tokens::PLUS: {
-	    stack[stack_depth - 1] += stack[stack_depth];
-	    --stack_depth;
+            stack[stack_depth - 1] += stack[stack_depth];
+            --stack_depth;
             break;
           }
 
           case tokens::MINUS: {
-	    stack[stack_depth - 1] -= stack[stack_depth];
-	    --stack_depth;
+            stack[stack_depth - 1] -= stack[stack_depth];
+            --stack_depth;
             break;
           }
 
           case tokens::MULT: {
-	    stack[stack_depth - 1] *= stack[stack_depth];
-	    --stack_depth;
+            stack[stack_depth - 1] *= stack[stack_depth];
+            --stack_depth;
             break;
           }
 
           case tokens::DIV: {
-	    stack[stack_depth - 1] /= stack[stack_depth];
-	    --stack_depth;
+            stack[stack_depth - 1] /= stack[stack_depth];
+            --stack_depth;
             break;
           }
 
           case tokens::POW: {
-	    stack[stack_depth - 1] = std::move(pow(stack[stack_depth - 1], stack[stack_depth]));
-	    --stack_depth;
+            stack[stack_depth - 1] = std::move(pow(stack[stack_depth - 1], stack[stack_depth]));
+            --stack_depth;
             break;
           }
 
           case tokens::NEG_POW: {
-	    stack[stack_depth - 1] = std::move(stack[stack_depth - 1].pow(stack[stack_depth].to_neg_int()));
-	    --stack_depth;
+            stack[stack_depth - 1] = std::move(stack[stack_depth - 1].pow(stack[stack_depth].to_neg_int()));
+            --stack_depth;
             break;
           }
 
           case tokens::POW_NEG: {
-	    stack[stack_depth - 1] = std::move(-pow(stack[stack_depth - 1], stack[stack_depth]));
-	    --stack_depth;
+            stack[stack_depth - 1] = std::move(-pow(stack[stack_depth - 1], stack[stack_depth]));
+            --stack_depth;
             break;
           }
 
           case tokens::NEG_POW_NEG: {
-	    stack[stack_depth - 1] = std::move(-stack[stack_depth - 1].pow(stack[stack_depth].to_neg_int()));
-	    --stack_depth;
+            stack[stack_depth - 1] = std::move(-stack[stack_depth - 1].pow(stack[stack_depth].to_neg_int()));
+            --stack_depth;
             break;
           }
 
           case tokens::VARIABLE: {
-	    stack[++stack_depth] = values[token.second.n];
+            stack[++stack_depth] = values[token.second.n];
             break;
           }
 
           case tokens::NEG_VARIABLE: {
-	    stack[++stack_depth] = neg_values[token.second.n];
+            stack[++stack_depth] = neg_values[token.second.n];
             break;
           }
 
           case tokens::NUMBER: {
-	    stack[++stack_depth] = token.second;
-	    break;
+            stack[++stack_depth] = token.second;
+            break;
           }
         }
       }
@@ -564,10 +564,11 @@ namespace firefly {
       if (stack_depth == 1)
         res.emplace_back(stack[1]);
       else {
-	delete[] stack;
+        delete[] stack;
         ERROR_MSG("Error in functional evaluation! Please check your input.");
         std::exit(EXIT_FAILURE);
       }
+
       delete[] stack;
     }
 
