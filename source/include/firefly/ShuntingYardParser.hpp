@@ -75,11 +75,11 @@ namespace firefly {
      */
     size_t add_otf(std::string & fun, const bool no_duplicates = false);
     /**
-     *  Adds a function in RPN to the parser
+     *  Adds a function in precomputed RPN to the parser. The RPN is not stored
      *  @param rpn_fun the function in RPN
      *  @return The position of the function in the list
      */
-    size_t add_otf(const std::vector<std::string>& rpn_fun);
+    size_t add_otf_precompute(const std::vector<std::string>& rpn_fun);
     /**
      *  Reserves memory
      *  @param number_of_functions how many entries shall be reserved
@@ -138,6 +138,12 @@ namespace firefly {
      */
     std::unordered_map<size_t, size_t> trim(const std::unordered_set<size_t> & elements_to_keep);
   private:
+    /**
+     *  Precomputes the tokens of the given RPN
+     *  @param tokens the RPN tokens
+     *  @param i the position at which the precomputed tokens shall be inserted
+     */
+    void precompute(const std::vector<std::string>& tokens, size_t i);
     std::vector<std::vector<std::string>> functions {}; /**< This vector holds the input function in reverse polish notation where each operand/operator is separated */
     std::unordered_map<std::string, int> vars_map {}; /**< This map holds the conversion of the used variables to an integer value to map variables to parameter points */
     std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {}; /**< This vector holds a collection of precomputed tokens where each operand/operator as a string is already converted to an FFInt */

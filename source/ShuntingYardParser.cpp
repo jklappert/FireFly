@@ -333,9 +333,16 @@ namespace firefly {
     functions.shrink_to_fit();
   }
 
-  size_t ShuntingYardParser::add_otf(const std::vector<std::string>& rpn_fun) {
-    functions.emplace_back(rpn_fun);
-    return functions.size() - 1;
+  size_t ShuntingYardParser::add_otf_precompute(const std::vector<std::string>& rpn_fun) {
+    if (FFInt::p != prime_internal) {
+      prime_internal = FFInt::p;
+    }
+
+    precomp_tokens.emplace_back(std::vector<std::pair<uint8_t, FFInt>>());
+    precomp_number_tokens.emplace_back(std::vector<std::tuple<size_t, uint8_t, std::string, std::string>>());
+    size_t new_size = precomp_tokens.size() - 1;
+    precompute(rpn_fun, new_size);
+    return new_size;
   }
 
   void ShuntingYardParser::reserve(size_t number_of_functions) {
@@ -545,6 +552,7 @@ namespace firefly {
     if (FFInt::p != prime_internal) {
       prime_internal = FFInt::p;
     } else if (!force) {
+      precomputed = true;
       return;
     }
 
@@ -559,13 +567,61 @@ namespace firefly {
     precomp_number_tokens = std::vector<std::vector<std::tuple<size_t, uint8_t, std::string, std::string>>> (size);
 
     for (uint64_t i = 0; i != size; ++i) {
-      uint64_t t_size = functions[i].size();
+      precompute(functions[i], i);
+    }
+
+    precomputed = true;
+    // clear rpn
+    if (!keep_rpn) {
+      std::vector<std::vector<std::string>> tmp_vec;
+      functions.swap(tmp_vec);
+    }
+    } else {
+      for (size_t i = 0; i != precomp_tokens.size(); ++ i) {
+	for (const auto & el : precomp_number_tokens[i]) {
+	  switch (std::get<1>(el)) {
+	    case tokens::PLUS: {
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(std::stoull(std::get<2>(el)))};
+	      break;
+	    }
+	    case tokens::MINUS: {
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -FFInt(std::stoull(std::get<2>(el)))};
+	      break;
+	    }
+	    case tokens::NUMBER: {
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(mpz_class(std::get<2>(el)))};
+	      break;
+	    }
+	    case tokens::DIV: {
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(std::stoull(std::get<2>(el))) / FFInt(std::stoull(std::get<3>(el)))};
+	      break;
+	    }
+	    case tokens::NEG_DIV: {
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -(FFInt(std::stoull(std::get<2>(el))) / FFInt(std::stoull(std::get<3>(el))))};
+	      break;
+	    }
+	    case tokens::MPZ_DIV: {
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(mpz_class(std::get<2>(el))) / FFInt(mpz_class(std::get<3>(el)))};
+	      break;
+	    }
+	    case tokens::NEG_MPZ_DIV: {
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -FFInt(mpz_class(std::get<2>(el))) / FFInt(mpz_class(std::get<3>(el)))};
+	      break;
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+  void ShuntingYardParser::precompute(const std::vector<std::string>& tokens, size_t i) {
+    uint64_t t_size = tokens.size();
       precomp_tokens[i] = std::vector<std::pair<uint8_t, FFInt>> (t_size);
 
       uint32_t offset = 0;
 
       for (uint64_t j = 0; j != t_size; ++j) {
-        std::string token = functions[i][j + offset];
+        std::string token = tokens[j + offset];
 
         if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "!" || token == "~" || token == ";") {
           switch (token[0]) {
@@ -708,51 +764,8 @@ namespace firefly {
         }
       }
 
+      precomp_number_tokens[i].shrink_to_fit();
       precomp_tokens[i].shrink_to_fit();
-    }
-
-    precomputed = true;
-    // clear rpn
-    if (!keep_rpn) {
-      std::vector<std::vector<std::string>> tmp_vec;
-      functions.swap(tmp_vec);
-    }
-    } else {
-      for (size_t i = 0; i != precomp_tokens.size(); ++ i) {
-	for (const auto & el : precomp_number_tokens[i]) {
-	  switch (std::get<1>(el)) {
-	    case tokens::PLUS: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(std::stoull(std::get<2>(el)))};
-	      break;
-	    }
-	    case tokens::MINUS: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -FFInt(std::stoull(std::get<2>(el)))};
-	      break;
-	    }
-	    case tokens::NUMBER: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(mpz_class(std::get<2>(el)))};
-	      break;
-	    }
-	    case tokens::DIV: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(std::stoull(std::get<2>(el))) / FFInt(std::stoull(std::get<3>(el)))};
-	      break;
-	    }
-	    case tokens::NEG_DIV: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -(FFInt(std::stoull(std::get<2>(el))) / FFInt(std::stoull(std::get<3>(el))))};
-	      break;
-	    }
-	    case tokens::MPZ_DIV: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(mpz_class(std::get<2>(el))) / FFInt(mpz_class(std::get<3>(el)))};
-	      break;
-	    }
-	    case tokens::NEG_MPZ_DIV: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -FFInt(mpz_class(std::get<2>(el))) / FFInt(mpz_class(std::get<3>(el)))};
-	      break;
-	    }
-	  }
-	}
-      }
-    }
   }
 
   std::unordered_map<size_t, size_t> ShuntingYardParser::trim(const std::unordered_set<size_t>& elements_to_keep) {
