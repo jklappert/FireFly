@@ -340,7 +340,7 @@ namespace firefly {
     }
 
     precomp_tokens.emplace_back(std::vector<std::pair<uint8_t, FFInt>>());
-    precomp_number_tokens.emplace_back(std::vector<std::tuple<size_t, uint8_t, std::string, std::string>>());
+    precomp_number_tokens.emplace_back(std::vector<std::tuple<size_t, uint8_t, std::vector<std::string>>>());
     size_t new_size = precomp_tokens.size() - 1;
     precompute(rpn_fun, new_size);
     return new_size;
@@ -565,7 +565,7 @@ namespace firefly {
     if (!precomputed || force) {
       uint64_t size = functions.size();
       precomp_tokens = std::vector<std::vector<std::pair<uint8_t, FFInt>>> (size);
-      precomp_number_tokens = std::vector<std::vector<std::tuple<size_t, uint8_t, std::string, std::string>>> (size);
+      precomp_number_tokens = std::vector<std::vector<std::tuple<size_t, uint8_t, std::vector<std::string>>>> (size);
 
       for (uint64_t i = 0; i != size; ++i) {
         precompute(functions[i], i);
@@ -588,37 +588,61 @@ namespace firefly {
         for (const auto& el : precomp_number_tokens[i]) {
           switch (std::get<1>(el)) {
             case tokens::PLUS: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(std::stoull(std::get<2>(el)))};
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(std::stoull(std::get<2>(el)[0]))};
               break;
             }
 
             case tokens::MINUS: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -FFInt(std::stoull(std::get<2>(el)))};
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -FFInt(std::stoull(std::get<2>(el)[0]))};
               break;
             }
 
             case tokens::NUMBER: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(mpz_class(std::get<2>(el)))};
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(mpz_class(std::get<2>(el)[0]))};
               break;
             }
 
             case tokens::DIV: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(std::stoull(std::get<2>(el))) / FFInt(std::stoull(std::get<3>(el)))};
+	      FFInt res(std::stoull(std::get<2>(el)[0]));
+
+	      for (size_t j = 1; j != std::get<2>(el).size(); ++j) {
+		res /= FFInt(std::stoull(std::get<2>(el)[j]));
+	      }
+	      
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, res};
               break;
             }
 
             case tokens::NEG_DIV: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -(FFInt(std::stoull(std::get<2>(el))) / FFInt(std::stoull(std::get<3>(el))))};
+	      FFInt res(std::stoull(std::get<2>(el)[0]));
+
+	      for (size_t j = 1; j != std::get<2>(el).size(); ++j) {
+		res /= FFInt(std::stoull(std::get<2>(el)[j]));
+	      }
+	      
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -res};
               break;
             }
 
             case tokens::MPZ_DIV: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, FFInt(mpz_class(std::get<2>(el))) / FFInt(mpz_class(std::get<3>(el)))};
+	      FFInt res(mpz_class(std::get<2>(el)[0]));
+
+	      for (size_t j = 1; j != std::get<2>(el).size(); ++j) {
+		res /= FFInt(mpz_class(std::get<2>(el)[j]));
+	      }
+	      
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, res};
               break;
             }
 
             case tokens::NEG_MPZ_DIV: {
-              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -FFInt(mpz_class(std::get<2>(el))) / FFInt(mpz_class(std::get<3>(el)))};
+	      FFInt res(mpz_class(std::get<2>(el)[0]));
+
+	      for (size_t j = 1; j != std::get<2>(el).size(); ++j) {
+		res /= FFInt(mpz_class(std::get<2>(el)[j]));
+	      }
+	      
+              precomp_tokens[i][std::get<0>(el)] = {tokens::NUMBER, -res};
               break;
             }
           }
@@ -664,40 +688,91 @@ namespace firefly {
               precomp_tokens[i].pop_back();
               precomp_tokens[i][j] = {tokens::NUMBER, quotient};
 
-              std::string n_1 = std::get<2>(precomp_number_tokens[i].back());
+              auto n_1 = std::get<2>(precomp_number_tokens[i].back());
               uint8_t key_1 = std::get<1>(precomp_number_tokens[i].back());
               precomp_number_tokens[i].pop_back();
-              std::string n_2 = std::get<2>(precomp_number_tokens[i].back());
+              auto n_2 = std::get<2>(precomp_number_tokens[i].back());
               uint8_t key_2 = std::get<1>(precomp_number_tokens[i].back());
               precomp_number_tokens[i].pop_back();
 
+	      n_2.emplace_back(n_1[0]);
+
+	      // Special case number / number / number / ...
+	      if (key_2 != tokens::NUMBER && key_2 != tokens::MINUS && key_2 != tokens::PLUS) {
+		switch (key_2) {
+            case tokens::DIV: {
+	      if (key_1 == tokens::NUMBER) {
+		n_2.emplace_back(n_1[0]);
+		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MPZ_DIV, n_2));
+	      } else if (key_1 == tokens::MINUS) {
+		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_DIV, n_2));
+	      } else {
+		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::DIV, n_2));
+	      }
+              break;
+            }
+
+            case tokens::NEG_DIV: {
+	      if (key_1 == tokens::NUMBER) {
+		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_MPZ_DIV, n_2));
+	      } else if (key_1 == tokens::MINUS) {
+		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::DIV, n_2));
+	      } else {
+		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_DIV, n_2));
+	      }
+              break;
+            }
+
+            case tokens::MPZ_DIV: {
+	      if (key_1 == tokens::MINUS) {
+		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_MPZ_DIV, n_2));
+	      } else {
+		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MPZ_DIV, n_2));
+	      }
+              break;
+            }
+
+            case tokens::NEG_MPZ_DIV: {
+	      if (key_1 == tokens::MINUS) {
+		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MPZ_DIV, n_2));
+	      } else {
+		precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_MPZ_DIV, n_2));
+	      }
+              break;
+            }
+
+		}
+	      } else {
+	      // Normal case, i.e. number / number
               if (key_1 == tokens::NUMBER || key_2 == tokens::NUMBER) {
                 if (key_1 == tokens::MINUS || key_2 == tokens::MINUS) {
-                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_MPZ_DIV, n_2, n_1));
+                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_MPZ_DIV, n_2));
                 } else {
-                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MPZ_DIV, n_2, n_1));
+                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MPZ_DIV, n_2));
                 }
               } else if (key_1 == tokens::MINUS || key_2 == tokens::MINUS) {
                 if (key_1 == tokens::MINUS && key_2 == tokens::MINUS) {
-                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::DIV, n_2, n_1));
+                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::DIV, n_2));
                 } else {
-                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_DIV, n_2, n_1));
+                  precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NEG_DIV, n_2));
                 }
               } else {
-                precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::DIV, n_2, n_1));
+                precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::DIV, n_2));
               }
+		}
             } else if (precomp_tokens[i][j - 1].first == tokens::NUMBER && (precomp_tokens[i][j - 2].first == tokens::VARIABLE || precomp_tokens[i][j - 2].first == tokens::NEG_VARIABLE)) {
               FFInt inverse = 1 / precomp_tokens[i][j - 1].second;
-              std::string n = std::get<2>(precomp_number_tokens[i].back());
+              auto n = std::get<2>(precomp_number_tokens[i].back());
               uint8_t key = std::get<1>(precomp_number_tokens[i].back());
               precomp_number_tokens[i].pop_back();
+	      std::vector<std::string> div = {{"1", n[0]}};
 
               if (key == tokens::NUMBER) {
-                precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::MPZ_DIV, "1", n));
+                precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::MPZ_DIV, div));
               } else if (key == tokens::MINUS) {
-                precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::NEG_DIV, "1", n));
+                precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::NEG_DIV, div));
               } else {
-                precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::DIV, "1", n));
+                precomp_number_tokens[i].emplace_back(std::make_tuple(j - 1, tokens::DIV, div));
               }
 
               precomp_tokens[i][j - 1].second = inverse;
@@ -737,7 +812,7 @@ namespace firefly {
             tmp.erase(0, 1);
 
           precomp_tokens[i][j] = {tokens::NUMBER, FFInt(mpz_class(tmp))};
-          precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NUMBER, tmp, ""));
+          precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::NUMBER, std::vector<std::string> (1, tmp)));
         } else {
           if (token[0] == '-') {
             std::string tmp = token;
@@ -747,7 +822,7 @@ namespace firefly {
               precomp_tokens[i][j] = {tokens::NEG_VARIABLE, vars_map[tmp]};
             else if (std::isdigit(tmp[0])) {
               precomp_tokens[i][j] = {tokens::NUMBER, (-FFInt(std::stoull(tmp)))};
-              precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MINUS, tmp, ""));
+              precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::MINUS, std::vector<std::string> (1, tmp)));
             } else
               throw_not_declared_var_err(tmp);
           } else if (token[0] == '+') {
@@ -758,7 +833,7 @@ namespace firefly {
               precomp_tokens[i][j] = {tokens::VARIABLE, vars_map[tmp]};
             else if (std::isdigit(tmp[0])) {
               precomp_tokens[i][j] = {tokens::NUMBER, (FFInt(std::stoull(tmp)))};
-              precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::PLUS, token, ""));//PLUS indicates a positive number here that does not need to be casted to an mpz
+              precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::PLUS, std::vector<std::string> (1, token)));//PLUS indicates a positive number here that does not need to be casted to an mpz
             } else
               throw_not_declared_var_err(tmp);
           } else {
@@ -766,7 +841,7 @@ namespace firefly {
               precomp_tokens[i][j] = {tokens::VARIABLE, vars_map[token]};
             else if (std::isdigit(token[0])) {
               precomp_tokens[i][j] = {tokens::NUMBER, (FFInt(std::stoull(token)))};
-              precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::PLUS, token, ""));//PLUS indicates a positive number here that does not need to be casted to an mpz
+              precomp_number_tokens[i].emplace_back(std::make_tuple(j, tokens::PLUS, std::vector<std::string> (1, token)));//PLUS indicates a positive number here that does not need to be casted to an mpz
             } else
               throw_not_declared_var_err(token);
           }
