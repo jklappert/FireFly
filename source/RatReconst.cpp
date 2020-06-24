@@ -2302,6 +2302,11 @@ namespace firefly {
   }
 
   void RatReconst::check_for_solved_degs(const std::vector<uint32_t>& uni_degs, const bool is_num) {
+    if (max_deg_num == 0 || max_deg_den == 0) {
+      is_singular_system = false;
+      return;
+    }
+
     for (const auto & el : uni_degs) {
       if (is_num) {
         if (non_solved_degs_num.find(el) == non_solved_degs_num.end()) {
