@@ -5,6 +5,9 @@ option('flint', type: 'boolean', value: false, yield : true,
 option('mpi', type: 'boolean', value: false, yield : true,
        description: 'Build FireFly with MPI.')
 
+option('custom-mpi', type: 'string', value: 'false', yield : true,
+       description: 'Name of the MPI dependency or true for manual configuration (implies mpi).')
+
 option('jemalloc', type: 'boolean', value: false, yield : true,
        description: 'Link executables with jemalloc.')
 

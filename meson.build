@@ -67,9 +67,13 @@ else
   cpp_def_default = true
 endif
 
-if get_option('mpi')
+if get_option('mpi') or get_option('custom-mpi') != 'false'
   cpp_def_mpi = true
-  pkgconfig_deps += [dependency('mpi', language : 'cpp')]
+  if get_option('custom-mpi') == 'false'
+    pkgconfig_deps += [dependency('mpi', language : 'cpp')]
+  elif get_option('custom-mpi') != 'true'
+    pkgconfig_deps += [dependency(get_option('custom-mpi'))]
+  endif
   example_src = ['example_mpi.cpp']
 else
   example_src = ['example.cpp']
