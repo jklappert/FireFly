@@ -147,7 +147,7 @@ namespace firefly {
     std::vector<std::vector<std::string>> functions {}; /**< This vector holds the input function in reverse polish notation where each operand/operator is separated */
     std::unordered_map<std::string, int> vars_map {}; /**< This map holds the conversion of the used variables to an integer value to map variables to parameter points */
     std::vector<std::vector<std::pair<uint8_t, FFInt>>> precomp_tokens {}; /**< This vector holds a collection of precomputed tokens where each operand/operator as a string is already converted to an FFInt */
-    std::vector<std::vector<std::tuple<size_t, uint8_t, std::vector<std::string>>>> precomp_number_tokens {}; /**< Stores the positions and the operation of the numbers after precomputing the tokens such that the RPN can be erased and precomputing tokens is faster */
+    std::vector<std::vector<std::pair<size_t, std::vector<std::string>>>> partial_rpn {}; /**< Stores the positions and the RPN of the numbers after precomputing the tokens such that the full RPN can be erased and precomputing tokens is faster */
     bool check_is_equal = false; /**< Indicates that functions are checked whether they are equal. Modifies the evaluation procedure */
     bool keep_rpn = false; /**< Indicates whether to keep the rpn*/
     size_t prime_counter = 0; // TODO
