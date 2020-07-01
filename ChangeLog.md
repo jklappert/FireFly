@@ -1,3 +1,51 @@
+FireFly 2.0.2
+=============
+
+New features
+------------
+
+ * The factor scan can be performed as a standalone option by calling the
+ member function `stop_after_factor_scan` of the `Reconstructor` class.
+ The factors can be obtained afterwards with `get_factors_string`.
+ An example is given in `example.cpp`.
+
+ * The `ff_insert` executable performs a factor scan only by using the
+ `-fs` or `--factorscan` option. The result is written as
+ `FUNCTION * FACTOR`.
+
+ * Added on-the-fly and trim functions for the `ShuntingYardParser` class.
+
+ * Added the Meson build system to be used by the `Kira` package.
+
+Changes
+-------
+
+ * The generated Horner form now concatenates repeated multiplications into
+ an exponentiation.
+
+ * Removed the support for compilable math expressions. The shunting-yard parser
+ should be used instead.
+
+ * When using the option `-m` or `--merge` of the `ff_insert` executable, the
+ merged file now has a prefix of the directory that has been used for merging.
+
+ * When using the option `-ni` or `--nointerpolation` of the `ff_insert`
+ executable, the `coefficient` directory now carries a suffix of the input file.
+
+ * Improved the memory footprint of the `ShuntingYardParser` class. The RPN is
+ only kept in memory on demand when precomputing tokens.
+
+Bug fixes
+---------
+
+ * Fixed a bug that prevented the shift from being disabled in rare cases.
+
+ * Add missing operator to `evalute` function. This affacted `^(-` operations.
+
+ * Fixed a bug in the `ThreadPool` which lead to segmentation faults in
+ rare cases.
+
+
 FireFly 2.0.1
 =============
 
