@@ -68,7 +68,7 @@ namespace firefly {
      */
     void parse_function(std::string& fun_, const std::vector<std::string>& vars, bool validate_fun = false);
     /**
-     *  TODO
+     *  Parses a function on the fly
      *  @param fun The rational function to be parsed as a string
      *  @param no_duplicates If true, do not add the function if it is already in the list, requires check_is_equal = true
      *  @return The position of the function in the list
@@ -132,7 +132,7 @@ namespace firefly {
      */
     void precompute_tokens(bool force = false);
     /**
-     *  TODO
+     *  Trims the parser by removing elements
      *  @param elements_to_keep The elements which should be kept
      *  @return A map indicating on which positions the kept elements are know
      */
@@ -150,7 +150,7 @@ namespace firefly {
     std::vector<std::vector<std::pair<size_t, std::vector<std::string>>>> partial_rpn {}; /**< Stores the positions and the RPN of the numbers after precomputing the tokens such that the full RPN can be erased and precomputing tokens is faster */
     bool check_is_equal = false; /**< Indicates that functions are checked whether they are equal. Modifies the evaluation procedure */
     bool keep_rpn = false; /**< Indicates whether to keep the rpn*/
-    size_t prime_counter = 0; // TODO
+    size_t prime_counter = 0; /**< Indicates which prime is currently used. This prevents the 'precompute_tokens' method from being called multiple times over the same prime field */
     bool precomputed = false; /**< A bool that indicates whether the tokes have already been precomputed */
     std::vector<FFInt> check_vars_1 {}; // TODO clear or keep?
     std::vector<FFInt> check_vars_2 {}; // TODO clear or keep?
