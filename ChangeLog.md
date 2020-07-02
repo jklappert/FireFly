@@ -20,11 +20,8 @@ New features
 Changes
 -------
 
- * The generated Horner form now concatenates repeated multiplications into
- an exponentiation.
-
- * Removed the support for compilable math expressions. The shunting-yard parser
- should be used instead.
+ * The Horner form generator now rewrites repeated multiplications into an
+ exponentiation.
 
  * When using the option `-m` or `--merge` of the `ff_insert` executable, the
  merged file now has a prefix of the directory that has been used for merging.
@@ -40,7 +37,8 @@ Bug fixes
 
  * Fixed a bug that prevented the shift from being disabled in rare cases.
 
- * Add missing operator to `evalute` function. This affacted `^(-` operations.
+ * Add missing operator to the `evaluate` function of the `ShuntingYardParser`
+ class. This affacted `^(-` operations only.
 
  * Fixed a bug in the `ThreadPool` which lead to segmentation faults in
  rare cases.
