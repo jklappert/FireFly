@@ -317,7 +317,7 @@ namespace firefly {
      */
     void reset_new_prime();
 #ifdef WITH_MPI
-    int world_size;
+    int world_size = -1;
     uint32_t worker_thread_count = 0;
     uint32_t iterations_on_this_node = 0;
     bool proceed = false;
@@ -2311,7 +2311,7 @@ namespace firefly {
         }
 
 #ifdef WITH_MPI
-        {
+        if (!mpi_first_send) {
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
           continue_communication = true;
