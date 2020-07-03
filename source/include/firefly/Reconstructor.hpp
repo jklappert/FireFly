@@ -3329,6 +3329,59 @@ namespace firefly {
   inline void Reconstructor<BlackBoxTemp>::mpi_setup() {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Bcast(&prime_it, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
+
+    if (!parsed_factors.empty()) {
+      std::vector<std::string> vars;
+      vars.reserve(n);
+
+      for (std::uint32_t i = 1; i != n + 1; ++i) {
+        vars.emplace_back("x" + std::to_string(i));
+      }
+
+      std::vector<std::string> factors = get_factors_string(vars);
+      uint32_t counter = 0;
+
+      for (auto & factor : factors) {
+        const int batch_size = 2147483645; // 2147483647 is the largest signed 32-bit integer
+        const int split = static_cast<int>(factor.size()) / batch_size;
+
+        if (split > 1) {
+          int tmp;
+          if (static_cast<int>(factor.size()) % batch_size == 0) {
+            tmp = -split;
+          } else {
+            tmp = - 1 - split;
+          }
+          MPI_Bcast(&tmp, 1, MPI_INT, master, MPI_COMM_WORLD);
+        } else if (split == 1 && static_cast<int>(factor.size()) != batch_size) {
+          int tmp = - 1 - split;
+          MPI_Bcast(&tmp, 1, MPI_INT, master, MPI_COMM_WORLD);
+        }
+
+        for (int i = 0; i != 1 + split; ++i) {
+          if (i == split) {
+            int amount = static_cast<int>(factor.size()) - i * batch_size;
+            if (amount != 0) {
+              MPI_Bcast(&amount, 1, MPI_INT, master, MPI_COMM_WORLD);
+              MPI_Bcast(&factor[i * batch_size], amount, MPI_CHAR, master, MPI_COMM_WORLD);
+            }
+          } else {
+            int amount = batch_size;
+            MPI_Bcast(&amount, 1, MPI_INT, master, MPI_COMM_WORLD);
+            MPI_Bcast(&factor[i * batch_size], amount, MPI_CHAR, master, MPI_COMM_WORLD);
+          }
+        }
+
+        uint32_t function_number = counter;
+        ++counter;
+        MPI_Bcast(&function_number, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
+      }
+    }
+
+    int end = -1;
+    MPI_Bcast(&end, 1, MPI_INT, master, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD);
   }
 
   template<typename BlackBoxTemp>
