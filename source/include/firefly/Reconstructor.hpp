@@ -2021,6 +2021,7 @@ namespace firefly {
     if (!factor_scan && save_states) {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       mkdir("ff_save/states", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      mkdir("ff_save/tmp", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       mkdir("ff_save/probes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       std::ofstream anchor_file;
       anchor_file.open("ff_save/anchor_points");

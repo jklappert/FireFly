@@ -2505,7 +2505,7 @@ namespace firefly {
 
   void RatReconst::save_state() {
     ogzstream file;
-    std::string file_name = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
+    std::string file_name = "ff_save/tmp/" + tag + "_" + std::to_string(prime_number) + ".gz";
     file.open(file_name.c_str());
     file << "combined_prime\n" << combined_prime.get_str() << "\n";
     file << "tag_name\n" << tag_name << "\n";
@@ -2688,6 +2688,9 @@ namespace firefly {
       if (std::remove(old_file_name.c_str()) != 0)
         WARNING_MSG("The previously saved file '" + old_file_name + "' could not be removed.");
     }
+
+    std::string file_name_new = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
+    std::rename(file_name.c_str(), file_name_new.c_str());
   }
 
   std::pair<bool, uint32_t> RatReconst::start_from_saved_file(const std::string& file_name) {
