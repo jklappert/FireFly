@@ -118,6 +118,33 @@ void remove_probes() {
   }
 }
 
+void remove_tmp() {
+  tinydir_dir dir;
+  tinydir_open_sorted(&dir, "ff_save/tmp");
+
+  std::vector<std::string> files;
+  std::vector<std::string> paths;
+
+  for (size_t i = 0; i != dir.n_files; ++i) {
+    tinydir_file file;
+    tinydir_readfile_n(&dir, &file, i);
+
+    if (!file.is_dir) {
+      files.emplace_back(file.name);
+    }
+  }
+
+  tinydir_close(&dir);
+
+  for (const auto & file : files) {
+    paths.emplace_back("ff_save/tmp/" + file);
+  }
+
+  for (const auto & el : paths) {
+    std::remove(el.c_str());
+  }
+}
+
 using namespace firefly;
 int main() {
   std::string root_dir = FIREFLY_ROOT_DIR;
@@ -149,6 +176,7 @@ int main() {
     std::remove("ff_save/anchor_points");
     remove_states();
     remove_probes();
+    remove_tmp();
   } else {
     ShuntingYardParser p_1(root_dir + "/parser_test/s_y_4_v.m", {"x1", "y", "zZ", "W"});
     BlackBoxUser b_1(p_1);
