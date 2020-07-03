@@ -15,7 +15,8 @@ New features
 
  * Added on-the-fly and trim functions for the `ShuntingYardParser` class.
 
- * Added the Meson build system to be used by the `Kira` package.
+ * Added the Meson build system which can be optionally used by the `Kira`
+ package. We recommend to build FireFly with `CMake`.
 
 Changes
 -------
