@@ -835,9 +835,8 @@ namespace firefly {
 
       mpi_communicate();
     });
-#endif
-
     bool empty_bb = false;
+#endif
 
     if (!resume_from_state) {
       logger << "\n" << "Promote to new prime field: F(" << std::to_string(primes()[prime_it]) << ")\n";
@@ -872,7 +871,9 @@ namespace firefly {
         if (items == 0) {
           scan = false;
           done = true;
+#ifdef WITH_MPI
           empty_bb = true;
+#endif
         }
 
 	if (stop_after_factors) {
@@ -886,21 +887,27 @@ namespace firefly {
         if (items == 0) {
           scan = false;
           done = true;
+#ifdef WITH_MPI
           empty_bb = true;
+#endif
         } else {
           queue_new_ones();
         }
       } else {
         if (scanned_factors && items == 0) {
           done = true;
+#ifdef WITH_MPI
           empty_bb = true;
+#endif
         } else {
           start_first_runs(!scanned_factors);
         }
 
         if (items == 0) {
           done = true;
+#ifdef WITH_MPI
           empty_bb = true;
+#endif
         }
       }
     } else {
