@@ -503,6 +503,12 @@ namespace firefly {
       logger << "Starting new reconstruction and saving states\n";
       return;
     }
+
+    // Create directories to ensure their existence
+    // states and probes should exist at this point, otherwise loading should have failed
+    mkdir("ff_save/states", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    mkdir("ff_save/tmp", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    mkdir("ff_save/probes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   }
 
   template<typename BlackBoxTemp>
