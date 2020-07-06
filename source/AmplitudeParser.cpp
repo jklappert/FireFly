@@ -135,7 +135,9 @@ namespace firefly {
             }
 
             if (prefac == "*") {
-              coefficient = int_fam.substr(0, int_fam.size() - fam.size() - 1);
+              //coefficient = int_fam.substr(0, int_fam.size() - fam.size() - 1);
+	      ERROR_MSG("The format 'c_*FUNCTION' is not supported. Use 'FUNCTION*c_' instead.");
+	      std::exit(EXIT_FAILURE);
             } else if (found + 1 < amplitude_size - 1 && amplitude.substr(found + 1, 1) == "*") {
               std::size_t fo_2 = amplitude.find('[', found + 1);
 
