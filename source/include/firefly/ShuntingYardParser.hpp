@@ -107,6 +107,11 @@ namespace firefly {
      */
     std::vector<std::vector<std::string>> get_rp_functions() const;
     /**
+     *  Moves the SYP's RPN into rpn_
+     *  @param The container in which the RPN of the SYP shall be moved
+     */
+    void move_rpn(std::vector<std::vector<std::string>>& rpn_);
+    /**
      *  Returns the reverse polish notation of the ith parsed function
      *  @param i the counter for the corresponding function
      *  @return A the ith function.
