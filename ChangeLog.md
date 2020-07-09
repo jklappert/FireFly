@@ -7,16 +7,15 @@ New features
  * The factor scan can be performed as a standalone option by calling the
  member function `stop_after_factor_scan` of the `Reconstructor` class.
  The factors can be obtained afterwards with `get_factors_string`.
- An example is given in `example.cpp`.
+ An example is shown in `example.cpp`.
 
- * The `ff_insert` executable performs a factor scan only by using the
+ * The `ff_insert` executable performs a factor scan only when using the
  `-fs` or `--factorscan` option. The result is written as
  `FUNCTION * FACTOR`.
 
- * Added on-the-fly and trim functions for the `ShuntingYardParser` class.
+ * Added add-on-the-fly and trim functions for the `ShuntingYardParser` class.
 
- * Added the Meson build system which can be optionally used by the `Kira`
- package. We recommend to build FireFly with `CMake`.
+ * Added the Meson build system. We recommend to build FireFly with CMake.
 
 Changes
 -------
@@ -30,19 +29,26 @@ Changes
  * When using the option `-ni` or `--nointerpolation` of the `ff_insert`
  executable, the `coefficient` directory now carries a suffix of the input file.
 
- * Improved the memory footprint of the `ShuntingYardParser` class. The RPN is
- only kept in memory on demand when precomputing tokens.
+ * Improved the memory footprint of the `ShuntingYardParser` class. The Reverse
+ Polish Notation is only kept in memory on demand when precomputing tokens.
 
 Bug fixes
 ---------
 
- * Fixed a bug that prevented the shift from being disabled in rare cases.
+ * Fixed that the factors were not sent to the workers when loading a saved
+ state with MPI enabled and thus leading to wrong results for all probes
+ computed on the workers if factors were found by the factor scan.
 
  * Add missing operator to the `evaluate` function of the `ShuntingYardParser`
  class. This affacted `^(-` operations only.
 
+ * Fixed a crash when loading a saved state after the first prime field with MPI
+ enabled. Thanks to Herschel Chawdhry for the bug report.
+
  * Fixed a bug in the `ThreadPool` which lead to segmentation faults in
  rare cases.
+
+ * Fixed a bug that prevented the shift from being disabled in rare cases.
 
 
 FireFly 2.0.1
@@ -54,7 +60,7 @@ Changes
  * The degree bounds obtained by the shift scan are now used to terminate the
  actual interpolation earlier when possible.
 
- * Moved the header files to include/firefly.
+ * Moved the header files to `include/firefly`.
 
  * Removed the support for compilable math expressions. The shunting-yard parser
  should be used instead.
