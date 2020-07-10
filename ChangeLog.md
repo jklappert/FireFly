@@ -45,7 +45,7 @@ Bug fixes
  * Fixed a crash when loading a saved state after the first prime field with MPI
  enabled. Thanks to Herschel Chawdhry for the bug report.
 
- * Fixed a bug in the `ThreadPool` which lead to segmentation faults in
+ * Fixed a bug in the `ThreadPool` which led to segmentation faults in
  rare cases.
 
  * Fixed a bug that prevented the shift from being disabled in rare cases.
