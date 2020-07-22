@@ -731,7 +731,7 @@ namespace firefly {
 
     // TODO check_map and check_vars?
     INFO_MSG("Trimming parser: " + std::to_string(functions.size() - elements_to_keep.size())
-             + " out of " + std::to_string(functions.size()) + " functions are be removed");
+             + " out of " + std::to_string(functions.size()) + " functions will be removed");
 
     if (!check_is_equal) {
       for (size_t i = 0; i != functions.size(); ++i) {
