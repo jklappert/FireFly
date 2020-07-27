@@ -304,8 +304,13 @@ namespace firefly {
         interpolate(std::get<0>(food), std::get<1>(food), std::get<2>(food));
 
         while (saved_ti.find(curr_zi_order) != saved_ti.end()) {
+          lock.lock();
+
           std::pair<FFInt, FFInt> key_val = saved_ti[curr_zi_order].front();
           saved_ti[curr_zi_order].pop();
+
+          lock.unlock();
+
           interpolate(key_val.first, key_val.second, curr_zi_order);
         }
 
@@ -342,6 +347,8 @@ namespace firefly {
           // Prepare food for Gauss system
           if (n > 1) {
             if (saved_ti.find(curr_zi_order) != saved_ti.end()) {
+              std::lock_guard<std::mutex> lock(mutex_status);
+
               t_food = saved_ti[curr_zi_order];
               saved_ti.erase(curr_zi_order);
             }
@@ -1216,11 +1223,16 @@ namespace firefly {
         }
       } else {
         if (saved_ti.find(fed_zi_ord) == saved_ti.end()) {
+          std::lock_guard<std::mutex> lock(mutex_status);
+
           std::queue<std::pair<FFInt, FFInt>> tmp_;
           tmp_.emplace(std::make_pair(new_ti, num));
           saved_ti[fed_zi_ord] = tmp_;
-        } else
+        } else {
+          std::lock_guard<std::mutex> lock(mutex_status);
+
           saved_ti[fed_zi_ord].emplace(std::make_pair(new_ti, num));
+        }
       }
     }
   }
@@ -1350,7 +1362,12 @@ namespace firefly {
     tmp_res_num = numerator;
     tmp_res_den = denominator;
 
-    saved_ti = ff_queue_map();
+    {
+      std::lock_guard<std::mutex> lock(mutex_status);
+
+      saved_ti = ff_queue_map();
+    }
+
     max_num_coef_num = std::make_pair(0, 0);
     max_num_coef_den = std::make_pair(0, 0);
 
