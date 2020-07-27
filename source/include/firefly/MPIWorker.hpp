@@ -278,6 +278,8 @@ namespace firefly {
         uint64_t prime;
         MPI_Recv(&prime, 1, MPI_UINT64_T, master, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
+        MPI_Barrier(MPI_COMM_WORLD);
+
         MPI_Wait(&request, MPI_STATUS_IGNORE);
 
         uint64_t last_package_of_prime = 0;
@@ -369,6 +371,8 @@ namespace firefly {
 
         uint64_t tmp;
         MPI_Recv(&tmp, 1, MPI_UINT64_T, master, END, MPI_COMM_WORLD, &status);
+
+        MPI_Barrier(MPI_COMM_WORLD);
 
         MPI_Wait(&request, MPI_STATUS_IGNORE);
 

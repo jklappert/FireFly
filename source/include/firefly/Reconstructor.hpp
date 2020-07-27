@@ -3553,6 +3553,8 @@ namespace firefly {
           }
         }
 
+        MPI_Barrier(MPI_COMM_WORLD);
+
         std::vector<double> timings;
         std::vector<double> weights;
         timings.reserve(world_size);
@@ -3610,6 +3612,8 @@ namespace firefly {
         MPI_Waitall(world_size - 1, requests, MPI_STATUSES_IGNORE);
 
         delete[] requests;
+
+        MPI_Barrier(MPI_COMM_WORLD);
 
         {
           std::lock_guard<std::mutex> lock_probe_queue(mutex_probe_queue);
