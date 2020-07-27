@@ -2116,11 +2116,17 @@ namespace firefly {
       rec->feed(t_vec, probes[i], zi_order_vec, prime_it);
       std::tuple<bool, bool, uint32_t> interpolated_done_prime = rec->interpolate();
 
+      int status = RECONSTRUCTING;
+
       if (std::get<2>(interpolated_done_prime) > prime_it) {
         ++items_new_prime;
+      } else if (std::get<1>(interpolated_done_prime)) {
+        status = DONE;
+        ++items_done;
+        one_done = true;
       }
 
-      reconst.emplace_back(std::make_tuple(i, RECONSTRUCTING, rec));
+      reconst.emplace_back(std::make_tuple(i, status, rec));
     }
 
     if (!factor_scan && save_states) {
