@@ -3793,18 +3793,32 @@ namespace firefly {
         results_list.reserve(amount);
         MPI_Recv(&results_list[0], amount, MPI_UINT64_T, status.MPI_SOURCE, RESULT, MPI_COMM_WORLD, &status);
 
-        for (uint32_t i = 0; i != new_results; ++i) {
-          uint64_t index = results_list[i * (items + 1)];
-          std::vector<std::vector<FFInt>> results;
-          results.reserve(items);
+        std::vector<uint64_t> indices;
+        indices.reserve(new_results);
+        indices.emplace_back(results_list[0]);
+
+        std::vector<std::vector<FFInt>> results;
+        results.reserve(items);
+
+        for (uint32_t j = 1; j != items + 1; ++j) {
+          std::vector<FFInt> result;
+          result.reserve(new_results);
+          result.emplace_back(results_list[j]);
+          results.emplace_back(result);
+        }
+
+        for (uint32_t i = 1; i != new_results; ++i) {
+          indices.emplace_back(results_list[i * (items + 1)]);
 
           for (uint32_t j = 1; j != items + 1; ++j) {
-            results.emplace_back(std::vector<FFInt> (1, results_list[i * (items + 1) + j]));
+            results[j - 1].emplace_back(results_list[i * (items + 1) + j]);
           }
+        }
 
+        {
           std::lock_guard<std::mutex> lock_res(future_control);
 
-          computed_probes.emplace(std::make_pair(std::vector<uint64_t>(1, index), std::move(results)));
+          computed_probes.emplace(std::make_pair(std::move(indices), std::move(results)));
 
           condition_future.notify_one();
         }
