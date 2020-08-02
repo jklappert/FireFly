@@ -316,6 +316,10 @@ namespace firefly {
      *  Resets all variables when the prime changes
      */
     void reset_new_prime();
+    /**
+     *  Attempts to continue the calculation if no probes are queued anymore
+     */
+    void attempt_to_continue();
 #ifdef WITH_MPI
     int world_size = -1;
     uint32_t worker_thread_count = 0;
@@ -2646,17 +2650,23 @@ namespace firefly {
             new_prime = true;
             continue;
           } else {
-            throw std::runtime_error("Nothing left to feed: "
-                                     + std::to_string(items)
-                                     + " " + std::to_string(items_new_prime)
-                                     + " " + std::to_string(items_done) + " | "
-                                     + std::to_string(feed_jobs) + " "
-                                     + std::to_string(interpolate_jobs) + " | "
-                                     + std::to_string(probes_fed) + " "
-                                     + std::to_string(fed_ones) + " | "
-                                     + std::to_string(probes_queued) + " "
-                                     + std::to_string(computed_probes.size()) + " "
-                                     + std::to_string(requested_probes.size()) + "\n");
+            std::string msg = "Nothing left to feed: "
+                              + std::to_string(items)
+                              + " " + std::to_string(items_new_prime)
+                              + " " + std::to_string(items_done) + " | "
+                              + std::to_string(feed_jobs) + " "
+                              + std::to_string(interpolate_jobs) + " | "
+                              + std::to_string(probes_fed) + " "
+                              + std::to_string(fed_ones) + " | "
+                              + std::to_string(probes_queued) + " "
+                              + std::to_string(computed_probes.size()) + " "
+                              + std::to_string(requested_probes.size());
+            WARNING_MSG(msg);
+            WARNING_MSG("Please report this error");
+            WARNING_MSG("Attempting to continue");
+            logger << msg << "\nPlease report this error\nAttempting to continue\n";
+
+            attempt_to_continue();
           }
         }
       }
@@ -3304,6 +3314,247 @@ namespace firefly {
     computed_probes.emplace(std::make_pair(std::move(indices), std::move(tmp)));
 
     condition_future.notify_one();
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::attempt_to_continue() {
+    uint64_t items_done_tmp = 0;
+    uint64_t items_done_tmp2 = 0;
+    uint64_t items_new_prime_tmp = 0;
+    uint64_t items_new_prime_tmp2 = 0;
+    uint64_t interpolated = 0;
+
+    std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> started_probes_copy = std::move(started_probes);
+    started_probes = std::unordered_map<std::vector<uint32_t>, uint32_t, UintHasher> {};
+
+    for (auto & rec : reconst) {
+      if (std::get<1>(rec) == DONE) {
+        ++items_done_tmp;
+        one_done = true;
+      } else if (std::get<1>(rec) == RECONSTRUCTING) {
+        std::pair<bool, uint32_t> done_prime = std::get<2>(rec)->get_done_and_prime();
+
+        if (done_prime.first) {
+         ++items_done_tmp2;
+         std::get<1>(rec) = DONE;
+         one_done = true;
+        } else {
+          if (done_prime.second != prime_it) {
+           ++items_new_prime_tmp;
+           one_new_prime = true;
+          } else {
+            // try to use all stored probes
+            std::tuple<bool, bool, uint32_t> interpolated_done_prime = std::get<2>(rec)->interpolate();
+
+            if (std::get<0>(interpolated_done_prime)) {
+              ++interpolated;
+            }
+
+            // force to write probes to the file
+            std::get<2>(rec)->write_food_to_file();
+
+            // start new jobs if required
+            if (!std::get<1>(interpolated_done_prime)) { // not done
+              if (std::get<2>(interpolated_done_prime) > prime_it) { // compare prime counters
+                one_new_prime = true;
+                ++items_new_prime_tmp2;
+
+                if (std::get<2>(rec)->get_num_eqn() > probes_for_next_prime) {
+                  probes_for_next_prime = std::get<2>(rec)->get_num_eqn();
+                }
+              } else if (!safe_mode && prime_it != 0) {
+                std::vector<std::pair<uint32_t, uint32_t>> all_required_probes = std::get<2>(rec)->get_needed_feed_vec();
+
+                if (!all_required_probes.empty()) {
+                  for (const auto & some_probes : all_required_probes) {
+                    if (some_probes.second == 0) {
+                      continue;
+                    }
+
+                    uint32_t required_probes = some_probes.second;
+                    std::vector<uint32_t> zi_order;
+                    if (!factor_scan) {
+                      zi_order = std::vector<uint32_t>(n - 1, some_probes.first);
+                    } else {
+                      zi_order = std::vector<uint32_t>(0, some_probes.first);
+                    }
+
+                    auto it = started_probes.find(zi_order);
+
+                    if (it != started_probes.end()) {
+                      if (required_probes > started_probes[zi_order]) {
+                        uint32_t to_start = required_probes - started_probes[zi_order];
+                        started_probes[zi_order] = required_probes;
+
+                        if (verbosity == CHATTY) {
+                         std::string msg = "Starting zi_order (";
+
+                         for (const auto & ele : zi_order) {
+                           msg += std::to_string(ele) + ", ";
+                         }
+
+                         msg = msg.substr(0, msg.length() - 2);
+                         msg += ") " + std::to_string(to_start) + " time(s)";
+
+                         INFO_MSG(msg);
+                        }
+
+                        queue_probes(zi_order, to_start);
+                      }
+                    } else {
+                      started_probes.emplace(zi_order, required_probes);
+
+                      if (verbosity == CHATTY) {
+                        std::string msg = "Starting zi_order (";
+
+                        for (const auto & ele : zi_order) {
+                          msg += std::to_string(ele) + ", ";
+                        }
+
+                        msg = msg.substr(0, msg.length() - 2);
+                        msg += ") " + std::to_string(required_probes) + " time(s)";
+
+                        INFO_MSG(msg);
+                      }
+
+                      queue_probes(zi_order, required_probes);
+                    }
+                  }
+                }
+              } else {
+                std::pair<std::vector<std::pair<std::vector<uint32_t>, uint32_t>>, uint32_t> next_orders_pair = std::get<2>(rec)->get_zi_orders();
+                auto next_orders = next_orders_pair.first;
+                uint32_t tmp_system_size = next_orders_pair.second;
+
+                if ((prime_it == 0 || safe_mode == true) && (factor_scan || (next_orders.size() == 1 && next_orders.front().first == std::vector<uint32_t>(n - 1, 1)))) {
+                  auto it = started_probes.find(next_orders.front().first);
+
+                  if (it == started_probes.end()) {
+                    fed_ones = 1;
+#ifndef WITH_MPI
+                    uint32_t to_start = 1 + thr_n /** bunch_size*/;
+#else
+                    uint32_t to_start = 1 + static_cast<uint32_t>(buffer) * worker_thread_count + thr_n; //TODO * bunch_size
+#endif
+                    started_probes[next_orders.front().first] += to_start;
+
+                    if (verbosity == CHATTY) {
+                      INFO_MSG("Starting ones: " + std::to_string(to_start));
+                    }
+
+                    queue_probes(next_orders.front().first, to_start);
+                  }
+                } else {
+                  for (size_t i = 0; i != next_orders.size(); ++i) {
+                    auto it = started_probes.find(next_orders[i].first);
+
+                    if (it != started_probes.end()) {
+                      if (tmp_system_size > started_probes[next_orders[i].first]) {
+                        uint32_t to_start = std::min(tmp_system_size - started_probes[next_orders[i].first], next_orders[i].second);
+                        started_probes[next_orders[i].first] += to_start;
+
+                        if (verbosity == CHATTY) {
+                          std::string msg = "Starting zi_order (";
+
+                          for (const auto & ele : next_orders[i].first) {
+                            msg += std::to_string(ele) + ", ";
+                          }
+
+                          msg = msg.substr(0, msg.length() - 2);
+                          msg += ") " + std::to_string(to_start) + " time(s) ";
+
+                          INFO_MSG(msg);
+                        }
+
+                        queue_probes(next_orders[i].first, to_start);
+                      }
+                    } else {
+                      started_probes.emplace(next_orders[i].first, next_orders[i].second);
+
+                      if (verbosity == CHATTY) {
+                        std::string msg = "Starting zi_order (";
+
+                        for (const auto & ele : next_orders[i].first) {
+                          msg += std::to_string(ele) + ", ";
+                        }
+
+                        msg = msg.substr(0, msg.length() - 2);
+                        msg += ") " + std::to_string(next_orders[i].second) + " time(s)";
+
+                        INFO_MSG(msg);
+                      }
+
+                      queue_probes(next_orders[i].first, next_orders[i].second);
+                    }
+                  }
+                }
+              }
+            } else {
+              std::get<1>(rec) = DONE;
+              ++items_done_tmp2;
+              one_done = true;
+            }
+          }
+        }
+      }
+    }
+
+    if (interpolated) {
+      WARNING_MSG(std::to_string(interpolated) + " interpolations");
+      logger << std::to_string(interpolated) + " interpolations\n";
+    }
+
+    if (items_done != items_done_tmp || items_done_tmp2 != 0) {
+      WARNING_MSG("Some items were not counted as done: " + std::to_string(items_done) + " " + std::to_string(items_done_tmp) + " " + std::to_string(items_done_tmp2));
+      logger << "Some items were not counted as done: " + std::to_string(items_done) + " " + std::to_string(items_done_tmp) + " " + std::to_string(items_done_tmp2) + "\n";
+      items_done = items_done_tmp + items_done_tmp2;
+    }
+
+    if (items_new_prime != items_new_prime_tmp || items_new_prime_tmp2 != 0) {
+      WARNING_MSG("Some items were not counted as new prime: " + std::to_string(items_new_prime) + " " + std::to_string(items_new_prime_tmp) + " " + std::to_string(items_new_prime_tmp2));
+      logger << "Some items were not counted as new prime: " + std::to_string(items_new_prime) + " " + std::to_string(items_new_prime_tmp) + " " + std::to_string(items_new_prime_tmp2) + "\n";
+      items_new_prime = items_new_prime_tmp + items_new_prime_tmp2;
+    }
+
+    if (items_done == items) {
+      WARNING_MSG("All items done");
+      logger << "All items done\n";
+      done = true;
+    } else if (items_done + items_new_prime == items) {
+      WARNING_MSG("All items require next prime");
+      logger << "All items require next prime\n";
+      new_prime = true;
+    } else {
+      if (started_probes.size() == 0) {
+        WARNING_MSG("Cannot continue");
+        logger << "Cannot continue\n";
+        throw std::runtime_error("Cannot continue");
+      } else {
+        std::vector<uint32_t> zi_order;
+
+        if (!factor_scan) {
+          zi_order = std::vector<uint32_t>(n - 1, 1);
+        } else {
+          zi_order = std::vector<uint32_t>(0, 1);
+        }
+
+        auto it = started_probes.find(zi_order);
+
+        if (it != started_probes.end() && started_probes.size() == 1) {
+          WARNING_MSG("Started only ones");
+          logger << "Started only ones\n";
+          started_probes_copy.at(it->first) = it->second;
+          started_probes = std::move(started_probes_copy);
+        } else {
+          WARNING_MSG("Started probes other than ones: Deleting probe history");
+          logger << "Started probes other than ones: Deleting probe history\n";
+          started_probes.emplace(std::make_pair(zi_order, 0));
+        }
+      }
+    }
+
+    WARNING_MSG("Continue normal procedure");
+    logger << "Continue normal procedure\n";
   }
 
   template<typename BlackBoxTemp>
