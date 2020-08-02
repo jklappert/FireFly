@@ -2639,6 +2639,9 @@ namespace firefly {
             lock_probe_queue.unlock();
           }
 
+          // make sure that no threads are running anymore
+          while (tp.wait());
+
           // no jobs are running anymore, check if done or new_prime else throw error
           if (items_done == items) {
             done = true;
