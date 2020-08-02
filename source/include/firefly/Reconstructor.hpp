@@ -163,7 +163,7 @@ namespace firefly {
     uint32_t total_iterations = 0;
     uint32_t iteration = 0;
     uint32_t probes_queued = 0;
-    uint32_t fed_ones = 0;
+    uint32_t balance_of_ones = 0;
     uint32_t probes_for_next_prime = 0;
     uint32_t items = 0;
     uint32_t items_done = 0;
@@ -204,7 +204,7 @@ namespace firefly {
     std::mutex future_control;
     // average_black_box_time, computed_probes, iteration
     std::mutex job_control;
-    // fed_ones, started_probes, probes_for_next_prime
+    // balance_of_ones, started_probes, probes_for_next_prime
     std::mutex feed_control;
     // interpolate_jobs, feed_jobs
     std::mutex print_control;
@@ -731,11 +731,8 @@ namespace firefly {
 
     auto it = started_probes.find(std::vector<uint32_t> (n - 1, 1));
 
-    if (it != started_probes.end()) {
-      fed_ones = it->second;
-    } else {
+    if (it == started_probes.end()) {
       started_probes.emplace(std::vector<uint32_t> (n - 1, 1), 0);
-      fed_ones = 0;
     }
 
     if (prime_it == 0 && items != items_new_prime + items_done) {
@@ -1987,7 +1984,7 @@ namespace firefly {
     if (count_ones != 0) {
       std::lock_guard<std::mutex> lock_status(job_control);
 
-      fed_ones += count_ones;
+      balance_of_ones += count_ones;
     }
 
     {
@@ -2657,7 +2654,7 @@ namespace firefly {
                               + std::to_string(feed_jobs) + " "
                               + std::to_string(interpolate_jobs) + " | "
                               + std::to_string(probes_fed) + " "
-                              + std::to_string(fed_ones) + " | "
+                              + std::to_string(balance_of_ones) + " | "
                               + std::to_string(probes_queued) + " "
                               + std::to_string(computed_probes.size()) + " "
                               + std::to_string(requested_probes.size());
@@ -2887,7 +2884,7 @@ namespace firefly {
     if (count_ones != 0) {
       std::lock_guard<std::mutex> lock_status(job_control);
 
-      fed_ones += count_ones;
+      balance_of_ones += count_ones;
     }
 
     uint32_t counter = 0;
@@ -3048,13 +3045,9 @@ namespace firefly {
             if ((prime_it == 0 || safe_mode == true) && (factor_scan || (next_orders.size() == 1 && next_orders.front().first == std::vector<uint32_t>(n - 1, 1)))) {
               std::unique_lock<std::mutex> lock(job_control);
 
-#ifndef WITH_MPI
-              if (started_probes[next_orders.front().first] - thr_n /** bunch_size*/ <= fed_ones - 1) {
-                uint32_t to_start = fed_ones - started_probes[next_orders.front().first] + thr_n /** bunch_size*/;
-#else
-              if (started_probes[next_orders.front().first] - buffer * worker_thread_count - thr_n <= fed_ones - 1) { // TODO static_cast<uint32_t>(buffer) * * bunch_size
-                uint32_t to_start = fed_ones - started_probes[next_orders.front().first] + static_cast<uint32_t>(buffer) * worker_thread_count + thr_n; //TODO * bunch_size
-#endif
+              if (balance_of_ones) {
+                uint32_t to_start = balance_of_ones;
+                balance_of_ones = 0;
                 started_probes[next_orders.front().first] += to_start;
 
                 lock.unlock();
@@ -3430,11 +3423,11 @@ namespace firefly {
                   auto it = started_probes.find(next_orders.front().first);
 
                   if (it == started_probes.end()) {
-                    fed_ones = 1;
+                    balance_of_ones = 0;
 #ifndef WITH_MPI
-                    uint32_t to_start = 1 + thr_n /** bunch_size*/;
+                    uint32_t to_start = thr_n /** bunch_size*/;
 #else
-                    uint32_t to_start = 1 + static_cast<uint32_t>(buffer) * worker_thread_count + thr_n; //TODO * bunch_size
+                    uint32_t to_start = static_cast<uint32_t>(buffer) * worker_thread_count + thr_n; //TODO * bunch_size
 #endif
                     started_probes[next_orders.front().first] += to_start;
 
@@ -3566,7 +3559,7 @@ namespace firefly {
     new_jobs = false;
 #endif
 
-    fed_ones = 0;
+    balance_of_ones = 0;
     probes_queued = 0;
     started_probes.clear();
     index_map.clear();
