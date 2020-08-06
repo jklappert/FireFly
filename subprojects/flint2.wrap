@@ -1,5 +1,5 @@
-
 [wrap-git]
 
-url = git@github.com:maiphi/flint2.git
+directory = flint2
+url = https://github.com/maiphi/flint2.git
 revision = head
