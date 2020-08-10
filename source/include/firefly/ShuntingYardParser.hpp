@@ -51,12 +51,6 @@ namespace firefly {
      */
     ShuntingYardParser(const std::vector<std::string>& funs, const std::vector<std::string>& vars, bool check_is_equal = false, bool keep_rpn_ = false);
     /**
-     *  Constructor with another SYP object without copies
-     *  @param syp another SYP
-     *  @param vars A vector which specifies the variables of the functions.
-     */
-    ShuntingYardParser(ShuntingYardParser&& par, const std::vector<std::string>& vars);
-    /**
      *  Default constructor
      */
     ShuntingYardParser();
