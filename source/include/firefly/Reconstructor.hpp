@@ -317,7 +317,7 @@ namespace firefly {
      */
     void reset_new_prime();
 #ifdef WITH_MPI
-    int world_size;
+    int world_size = -1;
     uint32_t worker_thread_count = 0;
     uint32_t iterations_on_this_node = 0;
     bool proceed = false;
@@ -503,6 +503,12 @@ namespace firefly {
       logger << "Starting new reconstruction and saving states\n";
       return;
     }
+
+    // Create directories to ensure their existence
+    // states and probes should exist at this point, otherwise loading should have failed
+    mkdir("ff_save/states", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    mkdir("ff_save/tmp", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    mkdir("ff_save/probes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   }
 
   template<typename BlackBoxTemp>
@@ -835,9 +841,8 @@ namespace firefly {
 
       mpi_communicate();
     });
-#endif
-
     bool empty_bb = false;
+#endif
 
     if (!resume_from_state) {
       logger << "\n" << "Promote to new prime field: F(" << std::to_string(primes()[prime_it]) << ")\n";
@@ -872,7 +877,9 @@ namespace firefly {
         if (items == 0) {
           scan = false;
           done = true;
+#ifdef WITH_MPI
           empty_bb = true;
+#endif
         }
 
 	if (stop_after_factors) {
@@ -886,21 +893,27 @@ namespace firefly {
         if (items == 0) {
           scan = false;
           done = true;
+#ifdef WITH_MPI
           empty_bb = true;
+#endif
         } else {
           queue_new_ones();
         }
       } else {
         if (scanned_factors && items == 0) {
           done = true;
+#ifdef WITH_MPI
           empty_bb = true;
+#endif
         } else {
           start_first_runs(!scanned_factors);
         }
 
         if (items == 0) {
           done = true;
+#ifdef WITH_MPI
           empty_bb = true;
+#endif
         }
       }
     } else {
@@ -2014,6 +2027,7 @@ namespace firefly {
     if (!factor_scan && save_states) {
       mkdir("ff_save", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       mkdir("ff_save/states", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      mkdir("ff_save/tmp", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       mkdir("ff_save/probes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       std::ofstream anchor_file;
       anchor_file.open("ff_save/anchor_points");
@@ -2303,7 +2317,7 @@ namespace firefly {
         }
 
 #ifdef WITH_MPI
-        {
+        if (!mpi_first_send) {
           std::unique_lock<std::mutex> lock_probe_queue(mutex_probe_queue);
 
           continue_communication = true;
@@ -3321,6 +3335,59 @@ namespace firefly {
   inline void Reconstructor<BlackBoxTemp>::mpi_setup() {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Bcast(&prime_it, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
+
+    if (!parsed_factors.empty()) {
+      std::vector<std::string> vars;
+      vars.reserve(n);
+
+      for (std::uint32_t i = 1; i != n + 1; ++i) {
+        vars.emplace_back("x" + std::to_string(i));
+      }
+
+      std::vector<std::string> factors = get_factors_string(vars);
+      uint32_t counter = 0;
+
+      for (auto & factor : factors) {
+        const int batch_size = 2147483645; // 2147483647 is the largest signed 32-bit integer
+        const int split = static_cast<int>(factor.size()) / batch_size;
+
+        if (split > 1) {
+          int tmp;
+          if (static_cast<int>(factor.size()) % batch_size == 0) {
+            tmp = -split;
+          } else {
+            tmp = - 1 - split;
+          }
+          MPI_Bcast(&tmp, 1, MPI_INT, master, MPI_COMM_WORLD);
+        } else if (split == 1 && static_cast<int>(factor.size()) != batch_size) {
+          int tmp = - 1 - split;
+          MPI_Bcast(&tmp, 1, MPI_INT, master, MPI_COMM_WORLD);
+        }
+
+        for (int i = 0; i != 1 + split; ++i) {
+          if (i == split) {
+            int amount = static_cast<int>(factor.size()) - i * batch_size;
+            if (amount != 0) {
+              MPI_Bcast(&amount, 1, MPI_INT, master, MPI_COMM_WORLD);
+              MPI_Bcast(&factor[i * batch_size], amount, MPI_CHAR, master, MPI_COMM_WORLD);
+            }
+          } else {
+            int amount = batch_size;
+            MPI_Bcast(&amount, 1, MPI_INT, master, MPI_COMM_WORLD);
+            MPI_Bcast(&factor[i * batch_size], amount, MPI_CHAR, master, MPI_COMM_WORLD);
+          }
+        }
+
+        uint32_t function_number = counter;
+        ++counter;
+        MPI_Bcast(&function_number, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
+      }
+    }
+
+    int end = -1;
+    MPI_Bcast(&end, 1, MPI_INT, master, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD);
   }
 
   template<typename BlackBoxTemp>

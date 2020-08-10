@@ -52,6 +52,6 @@ headers_mpi = ['MPIWorker.hpp']
 install_headers(headers, subdir : 'firefly')
 install_headers(version_target, subdir : 'firefly')
 
-if get_option('mpi')
+if cpp_def_mpi
   install_headers(headers_mpi, subdir : 'firefly')
 endif

@@ -527,6 +527,10 @@ namespace firefly {
     return functions;
   }
 
+  void ShuntingYardParser::move_rpn(std::vector<std::vector<std::string>>& rpn_) {
+    rpn_ = std::move(functions);
+  }
+
   std::vector<std::string> ShuntingYardParser::get_rp_function(size_t i) const {
     return functions.at(i);
   }

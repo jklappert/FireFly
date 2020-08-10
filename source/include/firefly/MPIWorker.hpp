@@ -130,6 +130,55 @@ namespace firefly {
     FFInt::set_new_prime(primes()[prime]);
     bb.prime_changed_internal();
 
+    {
+      std::vector<std::string> vars;
+      vars.reserve(n);
+
+      for (std::uint32_t i = 1; i != n + 1; ++i) {
+        vars.emplace_back("x" + std::to_string(i));
+      }
+
+      // Receive factors
+      while (true) {
+        int amount;
+        int multiple = 1;
+        MPI_Bcast(&amount, 1, MPI_INT, master, MPI_COMM_WORLD);
+
+        if (amount == -1) {
+          break;
+        } else if (amount < -1) {
+          multiple = -amount;
+        }
+
+        std::string tmp_fac_s = "";
+
+        for (int j = 0; j != multiple; ++j) {
+          if (multiple != 1) {
+            MPI_Bcast(&amount, 1, MPI_INT, master, MPI_COMM_WORLD);
+          }
+
+          char* fac_c = new char[amount];
+          MPI_Bcast(fac_c, amount, MPI_CHAR, master, MPI_COMM_WORLD);
+
+          for (int i = 0; i != amount; ++i) {
+            tmp_fac_s += fac_c[i];
+          }
+
+          delete[] fac_c;
+        }
+
+        uint32_t function_number;
+        MPI_Bcast(&function_number, 1, MPI_UINT32_T, master, MPI_COMM_WORLD);
+
+        ShuntingYardParser parser = ShuntingYardParser();
+        parser.parse_function(tmp_fac_s, vars);
+        parser.precompute_tokens();
+        parsed_factors.emplace(function_number, parser);
+      }
+
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+
     communicate();
   }
 
