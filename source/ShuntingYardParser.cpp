@@ -57,12 +57,6 @@ namespace firefly {
     parse_collection(funs, false);
   }
 
-  ShuntingYardParser::ShuntingYardParser(ShuntingYardParser&& par, const std::vector<std::string>& vars) : functions(std::move(par.get_rp_functions())) {
-    for (uint32_t i = 0; i != vars.size(); ++i) {
-      vars_map.emplace(std::make_pair(vars[i], i));
-    }
-  }
-
   void ShuntingYardParser::parse_collection(const std::vector<std::string>& funs, bool is_file) {
     //size_t prime_counter = 0;
     //std::vector<FFInt> check_vars_1;
