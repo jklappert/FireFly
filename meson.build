@@ -13,10 +13,10 @@ project(
 
 include_dirs = [include_directories('source/include')]
 # pkgconfig_deps will be listed in the 'Requires' field of the pkgfconfig file.
-pkgconfig_deps = [dependency('zlib')]
+pkgconfig_deps = [dependency('zlib', static : get_option('static'))]
 # other_deps will be listed in the 'Libs' field
 # (with flags in the 'Cflags' field).
-other_deps = [dependency('threads')]
+other_deps = [dependency('threads', static : get_option('static'))]
 rootdir_cppdef = '-DFIREFLY_ROOT_DIR="' + meson.current_source_dir() + '"'
 rpath = ''
 cpp_def_flint = false
@@ -32,11 +32,14 @@ endif
 cpp_compiler = meson.get_compiler('cpp')
 
 # On some systems, gmp doesn't provide a pkg-config file.
-gmp_dep = dependency('gmp', required : false)
+gmp_dep = dependency('gmp', required : false, static : get_option('static'))
 if gmp_dep.found()
   pkgconfig_deps += gmp_dep
 else
-  gmp_dep = cpp_compiler.find_library('gmp', required : true)
+  gmp_dep = cpp_compiler.find_library(
+    'gmp',
+    required : true,
+    static : get_option('static'))
   other_deps += gmp_dep
 endif
 
@@ -47,8 +50,15 @@ if get_option('flint')
   else
     # FLint doesn't provide a pkg-config file.
     # This is also the reason why we can't use
-    # dependency('flint', fallback : ['flint', 'flint_dep']))
-    flint_dep = cpp_compiler.find_library('flint', required : false)
+    # dependency(
+    #   'flint',
+    #   fallback : ['flint', 'flint_dep'],
+    #   static : get_option('static'))
+    if get_option('static')
+      flint_dep = cpp_compiler.find_library('flint', required : false, static : true)
+    else
+      flint_dep = cpp_compiler.find_library('flint', required : false)
+    endif
     flint_found = flint_dep.found()
   endif
   if not flint_found
@@ -70,9 +80,9 @@ endif
 if get_option('mpi') or get_option('custom-mpi') != 'false'
   cpp_def_mpi = true
   if get_option('custom-mpi') == 'false'
-    pkgconfig_deps += [dependency('mpi', language : 'cpp')]
+    pkgconfig_deps += [dependency('mpi', language : 'cpp', static : get_option('static'))]
   elif get_option('custom-mpi') != 'true'
-    pkgconfig_deps += [dependency(get_option('custom-mpi'))]
+    pkgconfig_deps += [dependency(get_option('custom-mpi'), static : get_option('static'))]
   endif
   example_src = ['example_mpi.cpp']
 else
@@ -80,7 +90,18 @@ else
 endif
 
 if get_option('jemalloc')
-  pkgconfig_deps += dependency('jemalloc')
+  pkgconfig_deps += dependency('jemalloc', static : get_option('static'))
+  # jemalloc needs libdl, but this not specified in the pkg-config file.
+  # libdl doesn't privide a pkg-config file.
+  # "required : false", because e.g. on BSD there is no separate dl library.
+  if get_option('static')
+    libdl = cpp_compiler.find_library('dl', required : false, static : true)
+  else
+    libdl = cpp_compiler.find_library('dl', required : false)
+  endif
+  if libdl.found()
+    other_deps += libdl
+  endif
 endif
 
 deps = pkgconfig_deps + other_deps

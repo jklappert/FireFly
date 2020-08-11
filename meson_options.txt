@@ -1,5 +1,5 @@
 
-option('flint', type: 'boolean', value: false, yield : true,
+option('flint', type: 'boolean', value: true, yield : true,
        description: 'Build FireFly with FLINT.')
 
 option('mpi', type: 'boolean', value: false, yield : true,
@@ -10,5 +10,8 @@ option('custom-mpi', type: 'string', value: 'false', yield : true,
 
 option('jemalloc', type: 'boolean', value: false, yield : true,
        description: 'Link executables with jemalloc.')
+
+option('static', type : 'boolean', value : false, yield : true,
+       description : 'Use static dependencies.')
 
 # Custom modular arithmetic is not (yet) supported.

@@ -21,13 +21,23 @@ src = [
   'ShuntingYardParser.cpp',
   'utils.cpp']
 
-firefly = library(
-  'firefly',
-  src,
-  include_directories : include_dirs,
-  dependencies : deps,
-  install_rpath : rpath,
-  install : true)
+if get_option('static')
+  firefly = static_library(
+    'firefly',
+    src,
+    include_directories : include_dirs,
+    dependencies : deps,
+    install_rpath : rpath,
+    install : true)
+else
+  firefly = library(
+    'firefly',
+    src,
+    include_directories : include_dirs,
+    dependencies : deps,
+    install_rpath : rpath,
+    install : true)
+endif
 
 pkg = import('pkgconfig')
 pkg.generate(
