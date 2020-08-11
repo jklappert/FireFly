@@ -281,7 +281,7 @@ namespace firefly {
       int tmp_max = 0;
       int tmp_min = 0;
 
-      for (const auto c : coefs) {
+      for (const auto & c : coefs) {
         int tmp_deg = 0;
 
         for (const auto i : c.first) {

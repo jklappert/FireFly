@@ -117,7 +117,7 @@ namespace firefly {
 
           ais.emplace(std::make_pair(std::vector<uint32_t> (n), std::vector<FFInt> ()));
 
-          for (const auto ci : combined_ci) {
+          for (const auto & ci : combined_ci) {
             mpz_class a = ci.second;
 
             auto res = get_rational_coef(a, combined_prime);
@@ -484,7 +484,7 @@ namespace firefly {
                 std::pair<mpz_class, mpz_class> p2;
                 std::pair<mpz_class, mpz_class> p3;
 
-                for (const auto el : combined_ci) {
+                for (const auto & el : combined_ci) {
                   if (ci_tmp.find(el.first) == ci_tmp.end() && gi.find(el.first) == gi.end()) {
                     ci_tmp.emplace(std::make_pair(el.first, 0));
                   }
