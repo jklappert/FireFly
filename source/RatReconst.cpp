@@ -153,11 +153,14 @@ namespace firefly {
             else
               save_zero_state();
 
-            std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+            std::string probe_file_name_tmp = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + "_tmp.gz";
+	    std::rename(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str(), probe_file_name_tmp.c_str()); 
             ogzstream gzfile;
             std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
             gzfile.open(probe_file_name.c_str());
             gzfile.close();
+	    std::rename(probe_file_name.c_str(), probe_file_name_tmp.c_str());
+	    std::rename(probe_file_name_tmp.c_str(), probe_file_name.c_str());
           }
 
           ++prime_number;
@@ -231,11 +234,14 @@ namespace firefly {
             else
               save_zero_state();
 
-            std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str());
+            std::string probe_file_name_tmp = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + "_tmp.gz";
+	    std::rename(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str(), probe_file_name_tmp.c_str()); 
             ogzstream gzfile;
             std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
             gzfile.open(probe_file_name.c_str());
             gzfile.close();
+	    std::rename(probe_file_name.c_str(), probe_file_name_tmp.c_str());
+	    std::rename(probe_file_name_tmp.c_str(), probe_file_name.c_str());
           }
 
           ++prime_number;
@@ -1710,11 +1716,15 @@ namespace firefly {
 
         std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> tmp_;
         saved_food.swap(tmp_);
-        std::remove(("ff_save/probes/" + tag + "_" + std::to_string(prime_number - 1) + ".gz").c_str());
-        ogzstream gzfile;
-        std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
-        gzfile.open(probe_file_name.c_str());
-        gzfile.close();
+
+	std::string probe_file_name_tmp = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + "_tmp.gz";
+	std::rename(("ff_save/probes/" + tag + "_" + std::to_string(prime_number - 1) + ".gz").c_str(), probe_file_name_tmp.c_str()); 
+	ogzstream gzfile;
+	std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
+	gzfile.open(probe_file_name.c_str());
+	gzfile.close();
+	std::rename(probe_file_name.c_str(), probe_file_name_tmp.c_str());
+	std::rename(probe_file_name_tmp.c_str(), probe_file_name.c_str());
       }
 
       queue = std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>>();
@@ -2682,14 +2692,13 @@ namespace firefly {
 
     file.close();
 
+    std::string file_name_new = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
+
     if (prime_number > 0) {
       std::string old_file_name = "ff_save/states/" + tag + "_" + std::to_string(prime_number - 1) + ".gz";
-
-      if (std::remove(old_file_name.c_str()) != 0)
-        WARNING_MSG("The previously saved file '" + old_file_name + "' could not be removed.");
+      std::rename(old_file_name.c_str(), file_name_new.c_str());
     }
 
-    std::string file_name_new = "ff_save/states/" + tag + "_" + std::to_string(prime_number) + ".gz";
     std::rename(file_name.c_str(), file_name_new.c_str());
   }
 
