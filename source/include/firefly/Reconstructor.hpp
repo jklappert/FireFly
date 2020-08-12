@@ -669,8 +669,8 @@ namespace firefly {
     }
 
     if (probe_files.size() != items) {
-      ERROR_MSG("Mismatch in number of probe files");
-      logger << "Mismatch in number of probe files\n";
+      ERROR_MSG("Mismatch in number of probe files. Found " + std::to_string(probe_files.size()) + " files for " + std::to_string(items) + " functions");
+      logger << "Mismatch in number of probe files. Found " << std::to_string(probe_files.size()) << " files for " << std::to_string(items) + " functions\n";
       std::exit(EXIT_FAILURE);
     }
 
