@@ -153,7 +153,7 @@ namespace firefly {
             else
               save_zero_state();
 
-            std::string probe_file_name_tmp = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + "_tmp.gz";
+            std::string probe_file_name_tmp = "ff_save/tmp/probe_" + tag + "_" + std::to_string(prime_number + 1) + "_tmp.gz";
 	    std::rename(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str(), probe_file_name_tmp.c_str()); 
             ogzstream gzfile;
             std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
@@ -234,7 +234,7 @@ namespace firefly {
             else
               save_zero_state();
 
-            std::string probe_file_name_tmp = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + "_tmp.gz";
+            std::string probe_file_name_tmp = "ff_save/tmp/probe_" + tag + "_" + std::to_string(prime_number + 1) + "_tmp.gz";
 	    std::rename(("ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz").c_str(), probe_file_name_tmp.c_str()); 
             ogzstream gzfile;
             std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number + 1) + ".gz";
@@ -1734,7 +1734,7 @@ namespace firefly {
         std::queue<std::tuple<FFInt, FFInt, std::vector<uint32_t>>> tmp_;
         saved_food.swap(tmp_);
 
-	std::string probe_file_name_tmp = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + "_tmp.gz";
+	std::string probe_file_name_tmp = "ff_save/tmp/probe_" + tag + "_" + std::to_string(prime_number) + "_tmp.gz";
 	std::rename(("ff_save/probes/" + tag + "_" + std::to_string(prime_number - 1) + ".gz").c_str(), probe_file_name_tmp.c_str()); 
 	ogzstream gzfile;
 	std::string probe_file_name = "ff_save/probes/" + tag + "_" + std::to_string(prime_number) + ".gz";
