@@ -1429,12 +1429,12 @@ namespace firefly {
                   uint32_t fac_max_deg_num = 0, fac_max_deg_den = 0;
 
                   for (const auto& mon : canonical_factors.first) {
-                    tmp_combined_ni.emplace(std::make_pair(mon.first, mon.second));
+                    tmp_combined_ni.emplace(std::make_pair(mon.first, mpz_class(std::to_string(mon.second))));
                     fac_max_deg_num = std::max(fac_max_deg_num, mon.first);
                   }
 
                   for (const auto& mon : canonical_factors.second) {
-                    tmp_combined_di.emplace(std::make_pair(mon.first, mon.second));
+                    tmp_combined_di.emplace(std::make_pair(mon.first, mpz_class(std::to_string(mon.second))));
                     fac_max_deg_den = std::max(fac_max_deg_den, mon.first);
                   }
 
