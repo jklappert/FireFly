@@ -1892,7 +1892,7 @@ namespace firefly {
 
     // Convert poly to mpz
     for (const auto& mon : poly) {
-      tmp_coefs.emplace(std::make_pair(mon.first, mon.second));
+      tmp_coefs.emplace(std::make_pair(mon.first, mpz_class(std::to_string(mon.second))));
     }
 
     for (auto it = tmp_coefs.begin(); it != tmp_coefs.end(); ++it) {
