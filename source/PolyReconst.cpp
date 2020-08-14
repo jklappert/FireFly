@@ -137,7 +137,7 @@ namespace firefly {
             }
 
             if (done) {
-              combined_prime = 0;
+              combined_prime = mpz_class(0);
               combined_ci.clear();
               max_deg.clear();
               use_chinese_remainder = false;

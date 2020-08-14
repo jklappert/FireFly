@@ -145,7 +145,7 @@ namespace firefly {
           fed_zero = true;
 
           if (zero_counter == prime_number + 1)
-            combined_prime = primes()[prime_number + 1];
+            combined_prime = mpz_class(std::to_string(primes()[prime_number + 1]));
 
           if (tag.size() != 0) {
             if (prime_number != 0)
@@ -226,7 +226,7 @@ namespace firefly {
           fed_zero = true;
 
           if (zero_counter == prime_number + 1)
-            combined_prime = primes()[prime_number + 1];
+            combined_prime = mpz_class(std::to_string(primes()[prime_number + 1]));
 
           if (tag.size() != 0) {
             if (prime_number != 0)
@@ -1395,7 +1395,7 @@ namespace firefly {
 
     if (!div_by_zero) {
       if (!use_chinese_remainder) {
-        combined_prime = FFInt::p;
+        combined_prime = mpz_class(std::to_string(FFInt::p));
         combined_ni = convert_to_mpz(numerator);
         combined_di = convert_to_mpz(denominator);
 
