@@ -34,7 +34,7 @@ namespace firefly {
     type = POLY;
     n = n_;
     zero_element = std::vector<uint32_t>(n);
-    combined_prime = FFInt::p;
+    combined_prime = mpz_class(std::to_string(FFInt::p));
     curr_zi_order = std::vector<uint32_t>(n, 1);
 
     deg = deg_inp;
@@ -491,13 +491,13 @@ namespace firefly {
                 }
 
                 for (auto it = ci_tmp.begin(); it != ci_tmp.end(); ++it) {
-                  p2 = std::make_pair(it->second, FFInt::p);
+                  p2 = std::make_pair(mpz_class(it->second), mpz_class(std::to_string(FFInt::p)));
 
                   if (combined_ci.find(it->first) == combined_ci.end() && gi.find(it->first) == gi.end()) {
                     combined_ci.emplace(std::make_pair(it->first, 0));
                   }
 
-                  p1 = std::make_pair(combined_ci[it->first], combined_prime);
+                  p1 = std::make_pair(mpz_class(combined_ci[it->first]), combined_prime);
                   p3 = run_chinese_remainder(p1, p2);
                   combined_ci[it->first] = p3.first;
                 }
