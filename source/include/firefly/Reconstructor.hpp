@@ -1896,7 +1896,7 @@ namespace firefly {
     }
 
     for (auto it = tmp_coefs.begin(); it != tmp_coefs.end(); ++it) {
-      p2 = std::make_pair(it->second, FFInt::p);
+      p2 = std::make_pair(it->second, mpz_class(std::to_string(FFInt::p)));
       p1 = std::make_pair(combined_ci[it->first], combined_prime);
       p3 = run_chinese_remainder(p1, p2);
       combined_ci[it->first] = p3.first;
