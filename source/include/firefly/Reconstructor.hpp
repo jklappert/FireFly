@@ -1292,7 +1292,7 @@ namespace firefly {
       std::unordered_map<uint32_t, std::unordered_map<uint32_t, mpz_class>> combined_ni {};
       std::unordered_map<uint32_t, std::unordered_map<uint32_t, mpz_class>> combined_di {};
       std::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> max_deg_map {};
-      mpz_class combined_prime = FFInt::p;
+      mpz_class combined_prime = mpz_class(std::to_string(FFInt::p));
       bool fac_done = false;
       curr_var = "x" + std::to_string(i + 1);
       possible_factors_bb_counter.clear();
