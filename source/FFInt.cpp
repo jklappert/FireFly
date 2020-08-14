@@ -28,9 +28,9 @@ namespace firefly {
   FFInt::FFInt(const FFInt& ffint) : n(ffint.n) {}
 
   FFInt::FFInt(mpz_class in) {
-    in = in % p;
+    in = in % mpz_class(std::to_string(p));
 
-    if (in < 0) in = p + in;
+    if (in < 0) in = mpz_class(std::to_string(p)) + in;
 
     n = std::stoull(in.get_str());
   }

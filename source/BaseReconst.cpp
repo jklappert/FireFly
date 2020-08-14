@@ -185,7 +185,7 @@ namespace firefly {
     mpz_map ci_mpz;
 
     for (const auto & coef : coefs) {
-      ci_mpz.insert(std::make_pair(coef.first, mpz_class(coef.second.n)));
+      ci_mpz.insert(std::make_pair(coef.first, mpz_class(std::to_string(coef.second.n))));
     }
 
     return ci_mpz;

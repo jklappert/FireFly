@@ -1460,17 +1460,17 @@ namespace firefly {
         for (auto it = combined_ni.begin(); it != combined_ni.end(); ++it) {
           if (!is_safe_mode) {
             p1 = std::make_pair(it->second, combined_prime);
-            p2 = std::make_pair(mpz_class(numerator[it->first].n), FFInt::p);
+            p2 = std::make_pair(mpz_class(std::to_string(numerator[it->first].n)), FFInt::p);
             p3 = run_chinese_remainder(p1, p2);
             combined_ni[it->first] = p3.first;
           } else {
             if (numerator.find(it->first) != numerator.end() && g_ni.find(it->first) == g_ni.end()) {
               if (combined_ni[it->first] == 0) {
-                combined_ni[it->first] = mpz_class(numerator[it->first].n);
-                combined_primes_ni[it->first] = mpz_class(FFInt::p);
+                combined_ni[it->first] = mpz_class(std::to_string(numerator[it->first].n));
+                combined_primes_ni[it->first] = mpz_class(std::to_string(FFInt::p));
               } else {
                 p1 = std::make_pair(it->second, combined_primes_ni[it->first]);
-                p2 = std::make_pair(mpz_class(numerator[it->first].n), FFInt::p);
+                p2 = std::make_pair(mpz_class(std::to_string(numerator[it->first].n)), FFInt::p);
                 p3 = run_chinese_remainder(p1, p2);
                 combined_ni[it->first] = p3.first;
                 combined_primes_ni[it->first] = p3.second;
@@ -1483,17 +1483,17 @@ namespace firefly {
         for (auto it = combined_di.begin(); it != combined_di.end(); ++it) {
           if (!is_safe_mode) {
             p1 = std::make_pair(it->second, combined_prime);
-            p2 = std::make_pair(mpz_class(denominator[it->first].n), FFInt::p);
+            p2 = std::make_pair(mpz_class(std::to_string(denominator[it->first].n)), FFInt::p);
             p3 = run_chinese_remainder(p1, p2);
             combined_di[it->first] = p3.first;
           } else {
             if (denominator.find(it->first) != denominator.end() && g_di.find(it->first) == g_di.end()) {
               if (combined_di[it->first] == 0) {
-                combined_di[it->first] = mpz_class(denominator[it->first].n);
-                combined_primes_di[it->first] = mpz_class(FFInt::p);
+                combined_di[it->first] = mpz_class(std::to_string(denominator[it->first].n));
+                combined_primes_di[it->first] = mpz_class(std::to_string(FFInt::p));
               } else {
                 p1 = std::make_pair(it->second, combined_primes_di[it->first]);
-                p2 = std::make_pair(mpz_class(denominator[it->first].n), FFInt::p);
+                p2 = std::make_pair(mpz_class(std::to_string(denominator[it->first].n)), FFInt::p);
                 p3 = run_chinese_remainder(p1, p2);
                 combined_di[it->first] = p3.first;
                 combined_primes_di[it->first] = p3.second;
