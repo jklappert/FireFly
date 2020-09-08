@@ -383,7 +383,6 @@ namespace firefly {
 
     for (size_t i = 0; i != distinct_integral_counter; ++i) {
       bool got_master = false;
-
       const auto tmp_mi_map = amplitude_mapping.at(i);
 
       for (const auto& mi_map : tmp_mi_map) {
@@ -395,11 +394,10 @@ namespace firefly {
       if (got_master) {
         std::string tmp_coef = "+(";
 
+	bool pref_done = false;
+	bool got_pref = false;
+	bool got_fun = false;
         for (const auto& mi_map : tmp_mi_map) {
-          bool pref_done = false;
-          bool got_pref = false;
-          bool got_fun = false;
-
           if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP) {
             if (got_pref)
               tmp_coef += "+(" + functions[mi_map.first] + ")";
@@ -450,11 +448,10 @@ namespace firefly {
       if (got_master) {
         std::string tmp_coef = "+(";
 
+	bool pref_done = false;
+	bool got_pref = false;
+	bool got_fun = false;
         for (const auto& mi_map : tmp_mi_map) {
-          bool pref_done = false;
-          bool got_pref = false;
-          bool got_fun = false;
-
           if (mi_map.second == coef_type::PREFACTOR || mi_map.second == coef_type::REPEATED_REP) {
             if (got_pref)
               tmp_coef += "+(" + functions[mi_map.first] + ")";
