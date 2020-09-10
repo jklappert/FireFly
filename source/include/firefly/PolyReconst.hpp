@@ -118,6 +118,7 @@ namespace firefly {
      *  @param individual_degree_bounds_ the degree bounds
      */
     void set_individual_degree_bounds(const std::vector<uint32_t>& individual_degree_bounds_);
+    static bool use_bt; // determines, if Ben-Or and Tiwari is used for univariate interpolation, default is true
   private:
     /**
      *  Starts the real interpolation managed by the class itself
@@ -217,7 +218,6 @@ namespace firefly {
     int deg = -1; /**< The maximal degree of the to be interpolated polynomial */
     bool with_rat_reconst = false; /**< A variable indicating whether this object is called from a RatReconst object */
     bool combine_res = false; /**< A bool indicating whether the result should be combined using the Chinese Remainder Theorem */
-    bool use_bt = true; // determines, if Ben-Or and Tiwari is used for univariate interpolation, default is true
     bool use_newton = true; // determines, if Newton is used for univariate interpolation, default is true, if rational reconstruction is used this has always to be true
     bool is_set_individual_degree_bounds = false; /**< If true individual degree bounds are set */
     std::vector<uint32_t> individual_degree_bounds {}; /**< Stores individual degree bounds */

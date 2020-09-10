@@ -27,6 +27,7 @@ namespace firefly {
 
   std::mutex PolyReconst::mutex_anchor;
   std::vector<FFInt> PolyReconst::global_anchor_points;
+  bool PolyReconst::use_bt = true;
 
   PolyReconst::PolyReconst(uint32_t n_, const int deg_inp, const bool with_rat_reconst_inp) {
     std::lock_guard<std::mutex> lock_status(mutex_status);

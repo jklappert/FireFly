@@ -264,6 +264,14 @@ if("${DISABLE_INSTALL}" STREQUAL "")
     add_subdirectory(test)
   endif()
 
+  # benchmarks
+  if("${BUILD_BENCH}" STREQUAL true)
+    add_executable(benchmarks ${PROJECT_SOURCE_DIR}/benchmarks/benchmarks.cpp)
+    target_link_libraries(benchmarks FireFly_static ${LIBS})
+    add_executable(benchmarks_no_bt ${PROJECT_SOURCE_DIR}/benchmarks/benchmarks_no_bt.cpp)
+    target_link_libraries(benchmarks_no_bt FireFly_static ${LIBS})
+  endif()
+
   add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold --no-newline "FireFly info: ")
   add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo "To run the example type: ./example")
   add_custom_command(TARGET FireFly_shared POST_BUILD COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --blue --bold --no-newline "FireFly info: ")
