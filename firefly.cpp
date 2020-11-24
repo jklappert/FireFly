@@ -16,12 +16,19 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
+#include <getopt.h>
 #include <string>
 #include <vector>
 
 #include "firefly/BlackBoxBase.hpp"
 #include "firefly/RationalFunction.hpp"
 #include "firefly/Reconstructor.hpp"
+
+static struct option long_options[] = {
+  {"parallel", required_argument, 0, 'p'},
+  {"variables", required_argument, 0, 'v'},
+  {0, 0, 0, 0} // mark end of array
+};
 
 namespace firefly {
   // Empty black box
@@ -72,15 +79,63 @@ std::vector<std::vector<std::uint64_t>> load_points(std::string file) {
 }
 
 using namespace firefly;
-int main() {
+int main(int argc, char* argv[]) {
+  std::ofstream logger;
+  logger.open("firefly-exe.log");
+
+  std::uint32_t n = 0;
+  std::uint32_t n_threads = 1;
+
+  while (true) {
+    int c;
+    int option_index = 0;
+
+    c = getopt_long_only(argc, argv, "p:v:", long_options, &option_index);
+
+    /* Detect the end of the options. */
+    if (c == -1) {
+      break;
+    }
+
+    switch (c) {
+      case 'p':
+        n_threads = std::stoul(optarg);
+        if (n_threads > 0) {
+          INFO_MSG("Starting with " + std::to_string(n_threads) + " threads.");
+          logger << "Starting with " + std::to_string(n_threads) + " threads.\n";
+        } else {
+          ERROR_MSG("Wrong argument for -p!");
+          logger << "Wrong argument for -p!\n";
+          logger.close();
+          std::exit(EXIT_FAILURE);
+        }
+        break;
+      case 'v':
+        n = std::stoul(optarg);
+        if (n > 0) {
+          INFO_MSG("Setting " + std::to_string(n) + " variables.");
+          logger << "Setting " + std::to_string(n) + " variables.\n";
+        } else {
+          ERROR_MSG("Wrong argument for -v!");
+          logger << "Wrong argument for -v!\n";
+          logger.close();
+          std::exit(EXIT_FAILURE);
+        }
+        break;
+    }
+  }
+
+  if (n == 0) {
+    ERROR_MSG("The number of variables was not set! Use the option -v.");
+    logger << "The number of variables was not set! Use the option -v.\n";
+    logger.close();
+    std::exit(EXIT_FAILURE);
+  }
+
   BlackBoxFireFly bb;
 
   // Initialize the Reconstructor
-  Reconstructor<BlackBoxFireFly> reconst(4 /*n_vars*/,
-                                      std::thread::hardware_concurrency() /*n_threads*/,
-                                      1 /*bunch size*/,
-                                      bb /*black box*//*,
-                                      Reconstructor<BlackBoxFireFly>::CHATTY *//* verbosity mode*/);
+  Reconstructor<BlackBoxFireFly> reconst(n, n_threads, 1, bb /*, Reconstructor<BlackBoxFireFly>::CHATTY */);
 
   // Enables scan for factors
   //reconst.enable_factor_scan();
@@ -148,6 +203,8 @@ int main() {
 
   // Resets all statics in RatReconst to start a new reconstruction
   //RatReconst::reset();
+
+  logger.close();
 
   return 0;
 }
