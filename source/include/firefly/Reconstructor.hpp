@@ -2272,12 +2272,10 @@ namespace firefly {
       proceed = false;
     }
 
-    if (!precomputed_probes) {
-      for (uint32_t j = 0; j != to_start; ++j) {
-        tp.run_task([this]() {
-          get_job();
-        });
-      }
+    for (uint32_t j = 0; j != to_start; ++j) {
+      tp.run_task([this]() {
+        get_job();
+      });
     }
 #endif
   }
