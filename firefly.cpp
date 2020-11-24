@@ -16,6 +16,11 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //==================================================================================
 
+#include <string>
+#include <vector>
+
+#include "firefly/BlackBoxBase.hpp"
+#include "firefly/RationalFunction.hpp"
 #include "firefly/Reconstructor.hpp"
 
 namespace firefly {
@@ -34,10 +39,40 @@ namespace firefly {
   };
 }
 
+std::vector<std::vector<std::uint64_t>> load_points(std::string file) {
+  std::ifstream ifile(file.c_str());
+  std::vector<std::vector<std::uint64_t>> points {};
+
+  if (ifile.is_open()) {
+    std::string line;
+
+    while (std::getline(ifile, line)) {
+      std::size_t pos = 0;
+      int i = 0;
+      std::string delimiter = " ";
+      std::vector<uint64_t> tmp {};
+
+      if (line.back() != ' ') {
+        line.append(" ");
+      }
+
+      while ((pos = line.find(delimiter)) != std::string::npos) {
+        tmp.emplace_back(std::stoul(line.substr(0, pos)));
+        line.erase(0, pos + 1);
+        ++i;
+      }
+
+      points.emplace_back(tmp);
+    }
+  }
+
+  ifile.close();
+
+  return points;
+}
+
 using namespace firefly;
 int main() {
-  std::string root_dir = FIREFLY_ROOT_DIR;
-
   BlackBoxFireFly bb;
 
   // Initialize the Reconstructor
@@ -56,8 +91,8 @@ int main() {
   // Set flag for the safe mode
   //reconst.set_safe_interpolation();
 
-  std::vector<std::vector<std::uint64_t>> anchor_points {{224234, 23478923478, 2394789234}, {224234, 23478923478, 2394789234}, {224234, 23478923478, 2394789234}};
-  std::vector<std::vector<std::uint64_t>> shifts {{25, 224234, 23478923478, 2394789234}, {25, 224234, 23478923478, 2394789234}, {25, 224234, 23478923478, 2394789234}};
+  std::vector<std::vector<std::uint64_t>> anchor_points = load_points("anchor_poins");
+  std::vector<std::vector<std::uint64_t>> shifts = load_points("shifts");
 
   reconst.set_anchor_points(anchor_points);
   reconst.set_shifts(shifts);
