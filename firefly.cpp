@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
   // Set flag for the safe mode
   //reconst.set_safe_interpolation();
 
-  std::vector<std::vector<std::uint64_t>> anchor_points = load_points("anchor_poins");
+  std::vector<std::vector<std::uint64_t>> anchor_points = load_points("anchor_points");
   std::vector<std::vector<std::uint64_t>> shifts = load_points("shifts");
 
   reconst.set_anchor_points(anchor_points);
