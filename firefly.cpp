@@ -46,7 +46,7 @@ namespace firefly {
   };
 }
 
-std::vector<std::vector<std::uint64_t>> load_points(std::string file) {
+std::vector<std::vector<std::uint64_t>> load_points(const std::string& file) {
   std::ifstream ifile(file.c_str());
   std::vector<std::vector<std::uint64_t>> points {};
 
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     }
 
     switch (c) {
-      case 'p':
+      case 'p': {
         n_threads = std::stoul(optarg);
         if (n_threads > 0) {
           INFO_MSG("Starting with " + std::to_string(n_threads) + " threads.");
@@ -110,7 +110,8 @@ int main(int argc, char* argv[]) {
           std::exit(EXIT_FAILURE);
         }
         break;
-      case 'v':
+      }
+      case 'v': {
         n = std::stoul(optarg);
         if (n > 0) {
           INFO_MSG("Setting " + std::to_string(n) + " variables.");
@@ -122,6 +123,7 @@ int main(int argc, char* argv[]) {
           std::exit(EXIT_FAILURE);
         }
         break;
+      }
     }
   }
 
