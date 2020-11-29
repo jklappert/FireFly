@@ -14,7 +14,7 @@ Changes
  executable. It can be compiled by the CMake option `-BUILD_BENCH=true`.
 
   * The same function can now appear multiple times on the right-hand-side of the
-  same replacement rule. Thanks to Wen Chen for this suggestion.
+  same replacement rule when using `ff_insert`. Thanks to Wen Chen for this suggestion.
 
 Bug fixes
 ---------
