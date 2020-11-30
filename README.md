@@ -190,3 +190,17 @@ make doc
 ```
 
 The generated documentation can be found in `doc/html/index.html` or in `doc/latex`. Using the latter directory, calling `make` will create a pdf file.
+
+
+## Compiling with FireFly
+
+To compile source code with FireFly, one add the needed compiler flags with `pkgconfig` by adding "`pkg-config --libs --cflags firefly`" to the compilitation command. Alternatively one can use the following flags:
+
+* When jemalloc and FLINT is used:
+	- "-DFLINT -I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -ljemalloc -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
+* When jemalloc is used:
+	- "-I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -ljemalloc -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
+* When FLINT is used:
+	- "-DFLINT -I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
+* When neither jemalloc nor FLINT is used:
+	- "-I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
