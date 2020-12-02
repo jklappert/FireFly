@@ -8,12 +8,18 @@ Please refer to these papers when using FireFly:
 * J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[*Comput.Phys.Commun.* **247** (2020) 106951](https://doi.org/10.1016/j.cpc.2019.106951)], [[1904.00009](https://arxiv.org/abs/1904.00009)]
 * J. Klappert, S.Y. Klein, and F. Lange, *Interpolation of Dense and Sparse Rational Functions and other Improvements in FireFly*, [[2004.01463](https://arxiv.org/abs/2004.01463)]
 
+The authors of Firefly are:
+* Jonas Klappert <XXX>
+* Sven Yannick Klein <XXX>
+* Fabian Lange <fabian.lange@kit.edu>
+
 ## Table of contents
 * [Requirements](#requirements)
 * [Building FireFly](#building-firefly)
-* [Reconstructing funtions](#reconstructing-functions)
+* [Reconstructing functions](#reconstructing-functions)
 * [Directly parse collections of rational functions](#directly-parse-collections-of-rational-functions)
 * [Code Documentation](#code-documentation)
+* [Compiling Code with FireFly](#compiling-code-with-firefly)
 
 ## Requirements
 FireFly requires:
@@ -89,7 +95,7 @@ where `MPI_INC_PATH` is the absolute path to the directory where the include fil
 ## Reconstructing functions
 To reconstruct functions with FireFly, it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
 
-The black box is implemented as functor following the curiously reurring template pattern. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor and the evaluation of the black box:
+The black box is implemented as functor following the curiously recurring template pattern. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor and the evaluation of the black box:
 
 ```cpp
 class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
@@ -191,15 +197,22 @@ make doc
 
 The generated documentation can be found in `doc/html/index.html` or in `doc/latex`. Using the latter directory, calling `make` will create a pdf file.
 
-## Compiling with FireFly
+## Compiling Code with FireFly
 
-To compile source code with FireFly, one add the needed compiler flags with `pkgconfig` by adding "`pkg-config --libs --cflags firefly`" to the compilitation command. Alternatively one can use the following flags:
+In order to successfully compile and link another program with FireFly, one has to set the correct compiler and linker flags.
+These can be found in the file `firefly.pc`, which is installed together with FireFly into the subdirectory `lib/pkgconfig` of the path set by the user with `-DCMAKE_INSTALL_PREFIX` (or the default path on the system).
+The easiest possibility to compile and link code with FireFly is to import it employing the `pkg-config` support of a build system.
+When you do not use a build system, the required flags can be extracted from `firefly.pc` using `pkg-config`, e.g.
 
-* When jemalloc and FLINT is used:
-	- "-DFLINT -I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -ljemalloc -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
-* When jemalloc is used:
-	- "-I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -ljemalloc -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
-* When FLINT is used:
-	- "-DFLINT -I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
-* When neither jemalloc nor FLINT is used:
-	- "-I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
+```
+FF_CFLAGS=$(pkg-config --cflags firefly)
+FF_LIBS=$(pkg-config --libs firefly)
+```
+
+Then, the code can be compiled and linked with
+
+```
+g++ $FF_CFLAGS <USER_CODE> $FF_LIBS
+```
+
+If `pkg-config` is not installed on the system, the flags can simply be read off `firefly.pc`.

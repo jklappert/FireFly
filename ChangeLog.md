@@ -10,8 +10,8 @@ Changes
  * Reduced the risk of corrupted saved states after crashes by moving files to a
  temporary directory and overwriting files instead of deleting them.
 
- * Added some benchmarks of [[2004.01463](https://arxiv.org/abs/2004.01463)] as
- executable. It can be compiled by the CMake option `-BUILD_BENCH=true`.
+ * Added some benchmarks of [2004.01463](https://arxiv.org/abs/2004.01463) as
+ executables. They can be compiled with the CMake option `-DBUILD_BENCH=true`.
 
   * The same function can now appear multiple times on the right-hand-side of the
   same replacement rule when using `ff_insert`. Thanks to Wen Chen for this suggestion.
@@ -28,7 +28,6 @@ Bug fixes
  the prime field or finishing the calculation.
 
  * Fixed some compiler warnings.
-
 
 
 FireFly 2.0.2
