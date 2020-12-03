@@ -14,6 +14,7 @@ Please refer to these papers when using FireFly:
 * [Reconstructing funtions](#reconstructing-functions)
 * [Directly parse collections of rational functions](#directly-parse-collections-of-rational-functions)
 * [Code Documentation](#code-documentation)
+* [FireFly Executable (in Development)](#firefly-executable-(in-development))
 
 ## Requirements
 FireFly requires:
@@ -204,3 +205,82 @@ To compile source code with FireFly, one add the needed compiler flags with `pkg
 	- "-DFLINT -I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
 * When neither jemalloc nor FLINT is used:
 	- "-I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
+
+## FireFly Executable (in Development)
+
+`FireFly` offers the executable `firefly`, which can read in probes from a file and interpolate and reconstruct the functions from it.
+This feature is still in development and not officially released.
+Currently, only the most basic options for `FireFly` are supported, i.e. neither the scan for a sparse shift nor the scan for univariate factors are performed.
+
+With the CMake option `-DFIREFLY_EXECUTABLE=true`, one can build and install the executable if neither a custom modular arithmetic nor `MPI` is used.
+
+The user has to set the anchor points and the shifts for all variables in all prime fields and write them to the files `anchor_points` and `shifts` in the directory, in which `firefly` is supposed to run.
+The anchor points and shifts are related to the values for the variables through
+
+```
+z_i = t * y_i^(j_i) + s_i
+```
+
+where `z_i` is the value, `y_i` is the anchor point, `j_i > 0` is an integer power of the anchor point, and `s_i` the shift for variable `i`.
+`t` is a random number.
+In the publications on `FireFly`, the powers are referred to as `zi_orders`.
+The anchor points for the first variable are always set to 1 and they do not have to be set by the user.
+For four variables, the file `anchor_points` may then look like
+
+```
+224234 23478923478 2394789234
+8794785289 178278843 1948348934
+...
+```
+
+The anchor points may coincide between different prime fields, but we encourage to use distinct random values in different prime fields to reduce the risk of accidental cancellations.
+The corresponding file `shift` may then read
+
+```
+25 224234 23478923478 2394789234
+898599345 123099035 834889345 892349845
+...
+```
+
+The probes have then to be placed into the directory `probes`.
+For each prime field, one requires a separate file `$PRIME.gz`, where `$PRIME` is the iterator number of the prime fields, i.e. 0, 1, 2, ...
+The file `0.gz` for the first prime field may then look like
+
+```
+1 1 1 | 5 | 0 1 30
+1 1 1 | 6 | 0 1 31
+1 1 1 | 7 | 0 1 32
+1 1 1 | 8 | 0 1 33
+2 1 1 | 29 | 0 1 54
+1 2 1 | 37 | 0 1 62
+1 1 2 | 25 | 0 1 50
+...
+```
+
+where the three numbers in the first fold are the `zi_orders` (powers) `j_2`, `j_3`, `j_4` for the anchor points (`j_1` is irrelevant since the corresponding anchor point is 1).
+The number in the second fold is `t`, while the numbers in the third fold are the results of the three black box functions in this example evaluated at the chosen values.
+
+The executable can then be run with
+
+```
+firefly -v $NUMBER_OF_VARIABLES -p $THREADS
+```
+
+If the provided probes are not sufficient to fully interpolate and reconstruct the black-box functions, it will abort, store the intermediate results to the folder `ff_save`, and write the next probes it requires to the file `requested_probes.gz`, which for example reads
+
+```
+2 1 1 | 2143034386812271651 | 2143034386812271676 6771525491877985602 8908964042862776446 6579185578178744400
+...
+```
+
+Again, the numbers in the first fold are the `zi_orders` (powers) of the anchor points.
+The number of the second fold is a suggestion on which `t` to choose, while the numbers in the third fold are the values for the variables computed through the formula above assuming the suggested `t`.
+The user is free to choose any other `t` if desired.
+However, any `t` chosen twice for the same powers in the same prime field is automatically discarded by `FireFly`.
+
+The user then has to evaluate the black box at those values and provide them in the `probes` directory as described above, e.g. by replacing the previous file.
+By calling `firefly` again, the saved state is loaded from the `ff_save` directory and the interpolation resumed with the new probes.
+
+In the first prime field, the functional forms of the black-box functions is not known.
+Hence, `FireFly` only requests a relatively small number of probes after each step.
+Once the functional forms are known in the second prime field, all probes required in the prime field are requested at the beginning of the prime field (after a first probe is fed).
