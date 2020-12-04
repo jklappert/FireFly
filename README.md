@@ -10,7 +10,7 @@ Please refer to these papers when using FireFly:
 
 The authors of Firefly are:
 * Jonas Klappert <XXX>
-* Sven Yannick Klein <XXX>
+* Sven Yannick Klein <yklein@physik.rwth-aachen.de>
 * Fabian Lange <fabian.lange@kit.edu>
 
 ## Table of contents
