@@ -1,3 +1,37 @@
+FireFly 2.0.3
+=============
+
+Changes
+-------
+
+ * Try to gracefully continue the interpolation if a `Nothing left to feed.`
+ occurs.
+
+ * Reduced the risk of corrupted saved states after crashes by moving files to a
+ temporary directory and overwriting files instead of deleting them.
+
+ * Added some benchmarks of [2004.01463](https://arxiv.org/abs/2004.01463) as
+ executables. They can be compiled with the CMake option `-DBUILD_BENCH=true`.
+
+  * The same function can now appear multiple times on the right-hand-side of the
+  same replacement rule when using `ff_insert`. Thanks to Wen Chen for this suggestion.
+
+Bug fixes
+---------
+
+ * Fixed many issues concerning GMP revealed by compiling FireFly under macOS.
+ FireFly should now properly compile under macOS.
+
+ * Fixed a rare crash caused by not protecting a variable with a mutex.
+
+ * Fixed a deadlock in the MPI implementation which could occur when changing
+ the prime field or finishing the calculation.
+
+ * Added missing `-pthread` flags to `firefly.pc`.
+
+ * Fixed some compiler warnings.
+
+
 FireFly 2.0.2
 =============
 

@@ -5,15 +5,21 @@
 FireFly is a reconstruction library for rational functions written in C++.
 
 Please refer to these papers when using FireFly:
-* J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[*Comput.Phys.Commun.* **247** (2020) 106951](https://doi.org/10.1016/j.cpc.2019.106951)], [[1904.00009](https://arxiv.org/abs/1904.00009)]
-* J. Klappert, S.Y. Klein, and F. Lange, *Interpolation of Dense and Sparse Rational Functions and other Improvements in FireFly*, [[2004.01463](https://arxiv.org/abs/2004.01463)]
+* [1] J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[*Comput.Phys.Commun.* **247** (2020) 106951](https://doi.org/10.1016/j.cpc.2019.106951)], [[1904.00009](https://arxiv.org/abs/1904.00009)]
+* [2] J. Klappert, S.Y. Klein, and F. Lange, *Interpolation of Dense and Sparse Rational Functions and other Improvements in FireFly*, [[2004.01463](https://arxiv.org/abs/2004.01463)]
+
+The authors of Firefly are:
+* Jonas Klappert <XXX>
+* Sven Yannick Klein <yklein@physik.rwth-aachen.de>
+* Fabian Lange <fabian.lange@kit.edu>
 
 ## Table of contents
 * [Requirements](#requirements)
 * [Building FireFly](#building-firefly)
-* [Reconstructing funtions](#reconstructing-functions)
+* [Reconstructing functions](#reconstructing-functions)
 * [Directly parse collections of rational functions](#directly-parse-collections-of-rational-functions)
 * [Code Documentation](#code-documentation)
+* [Compiling Code with FireFly](#compiling-code-with-firefly)
 * [FireFly Executable (in Development)](#firefly-executable-(in-development))
 
 ## Requirements
@@ -55,6 +61,12 @@ After calling `cmake` the build directory contains all required build files. Ass
 make
 ```
 
+and afterwards install it with
+
+```
+make install
+```
+
 By default the code is compiled with optimizations.
 
 If FLINT is used for modular arithmetic and it cannot be found in the default system directories, one has to add the additional flags:
@@ -65,7 +77,7 @@ If FLINT is used for modular arithmetic and it cannot be found in the default sy
 
 where `FLINT_LIB_PATH` is the absolute path pointing to the shared library of FLINT.
 
-If the GMP version installed in the sytem directories does not match 6.1.2 or CMake does not find GMP, the paths for GMP can be set with the flags:
+If the GMP version installed in the system directories does not match 6.1.2 or CMake does not find GMP, the paths for GMP can be set with the flags:
 ```
 -DGMP_INCLUDE_DIRS=$GMP_INC_PATH -DGMP_LIBRARIES=$GMP_LIB_PATH
 ```
@@ -87,10 +99,29 @@ If the MPI version found with CMake is not satisfactory, one can set custom path
 ```
 where `MPI_INC_PATH` is the absolute path to the directory where the include files can be found and `MPI_LIB_PATH` is the absolute path to the shared library (`libmpi.so`, `libmpich.so`, ...) of your favored MPI implementation.
 
+Below is a list of all build options for `FireFly`:
+
+* `-DWITH_FLINT=true` (default: `false`): Employ FLINT for the modular arithmetic (highly recommended).
+* `-DCUSTOM=true` (default: `false`): Employ a custom modular arithmetic.
+* `-DWITH_JEMALLOC=true` (default: `false`): Employ jemalloc for malloc operations (highly recommended).
+* `-DWITH_MPI=true` (default: `false`): Enable MPI support.
+* `-DGMP_INCLUDE_DIRS=$GMP_INC_PATH` (default: not set): If GMP is not automatically found, one has to manually set the absolute path to its header files (`gmpxx.h` is required).
+* `-DGMP_LIBRARIES=$GMP_LIB_PATH` (default: not set): If GMP is not automatically found, one has to manually set the absolute path to the shared library.
+* `-DFLINT_INCLUDE_DIR=$FLINT_INC_PATH` (default: not set): If FLINT is not automatically found, one has to manually set the absolute path to its header files.
+* `-DFLINT_LIBRARY=$FLINT_LIB_PATH` (default: not set): If FLINT is not automatically found, one has to manually set the absolute path to the shared library.
+* `-DMPI_CXX_INCLUDE_PATH=$MPI_INC_PATH` (default: not set): If MPI is not automatically found, one has to manually set the absolute path to its header files.
+* `-DMPI_CXX_LIBRARIES=$MPI_LIB_PATH` (default: not set): If MPI is not automatically found, one has to manually set the absolute path to the shared library.
+* `-DBUILD_BENCH=true` (default: `false`): Build the benchmark executables `benchmarks` and `benchmarks_no_bt`, which perform some of the benchmarks from Ref. [2].
+
+Important standard options of CMake are:
+
+* `-DCMAKE_INSTALL_PREFIX=$INSTALL_PATH` (default: standard path depending on the system): Path to which FireFly is installed.
+* `-DCMAKE_BUILD_TYPE=Debug` (default: `Release`): Compile with warnings in debug mode.
+
 ## Reconstructing functions
 To reconstruct functions with FireFly, it offers an interface which directly makes use of a thread pool for the parallel reconstruction of various functions over the same prime field. Additionally, black-box probes are calculated in parallel.
 
-The black box is implemented as functor following the curiously reurring template pattern. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor and the evaluation of the black box:
+The black box is implemented as functor following the curiously recurring template pattern. The user has to define the black box as a derived class of `BlackBoxBase` and provide a constructor and the evaluation of the black box:
 
 ```cpp
 class BlackBoxUser : public BlackBoxBase<BlackBoxUser> {
@@ -192,19 +223,25 @@ make doc
 
 The generated documentation can be found in `doc/html/index.html` or in `doc/latex`. Using the latter directory, calling `make` will create a pdf file.
 
+## Compiling Code with FireFly
 
-## Compiling with FireFly
+In order to successfully compile and link another program with FireFly, one has to set the correct compiler and linker flags.
+These can be found in the file `firefly.pc`, which is installed together with FireFly into the subdirectory `lib/pkgconfig` of the path set by the user with `-DCMAKE_INSTALL_PREFIX` (or the default path on the system).
+The easiest possibility to compile and link code with FireFly is to import it employing the `pkg-config` support of a build system.
+When you do not use a build system, the required flags can be extracted from `firefly.pc` using `pkg-config`, e.g.
 
-To compile source code with FireFly, one add the needed compiler flags with `pkgconfig` by adding "`pkg-config --libs --cflags firefly`" to the compilitation command. Alternatively one can use the following flags:
+```
+FF_CFLAGS=$(pkg-config --cflags firefly)
+FF_LIBS=$(pkg-config --libs firefly)
+```
 
-* When jemalloc and FLINT is used:
-	- "-DFLINT -I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -ljemalloc -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
-* When jemalloc is used:
-	- "-I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -ljemalloc -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
-* When FLINT is used:
-	- "-DFLINT -I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
-* When neither jemalloc nor FLINT is used:
-	- "-I/usr/local/include -L/usr/local/lib -lfirefly -Wl,-rpath,/usr/lib -lm -lstdc++ -pthread -ldl /usr/lib/libgmp.so /usr/lib/libz.so /usr/lib/libflint.so"
+Then, the code can be compiled and linked with
+
+```
+g++ $FF_CFLAGS <USER_CODE> $FF_LIBS
+```
+
+If `pkg-config` is not installed on the system, the flags can simply be read off `firefly.pc`.
 
 ## FireFly Executable (in Development)
 

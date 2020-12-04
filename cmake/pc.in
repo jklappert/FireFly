@@ -7,4 +7,4 @@ Description: Library for the reconstruction of rational functions over finite fi
 Version: @PROJECT_VERSION@
 
 Libs: -L${libdir} -lfirefly @PKG_LIBS@
-Cflags: @PREPROCESSOR_FLAGS@ -I${includedir} @PKG_INCLUDE@
+Cflags: -I${includedir} @PKG_INCLUDE@
