@@ -112,6 +112,7 @@ Below is a list of all build options for `FireFly`:
 * `-DMPI_CXX_INCLUDE_PATH=$MPI_INC_PATH` (default: not set): If MPI is not automatically found, one has to manually set the absolute path to its header files.
 * `-DMPI_CXX_LIBRARIES=$MPI_LIB_PATH` (default: not set): If MPI is not automatically found, one has to manually set the absolute path to the shared library.
 * `-DBUILD_BENCH=true` (default: `false`): Build the benchmark executables `benchmarks` and `benchmarks_no_bt`, which perform some of the benchmarks from Ref. [2].
+* `-DFIREFLY_EXECUTABLE=true` (default: `false`): Build and install the executable `firefly`, cf. [FireFly Executable (in Development)](#firefly-executable-(in-development)).
 
 Important standard options of CMake are:
 
