@@ -29,6 +29,7 @@ Bug fixes
 
  * Fixed some compiler warnings.
 
+ * Added missing `-pthread` flags to `firefly.pc`.
 
 FireFly 2.0.2
 =============
