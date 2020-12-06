@@ -156,6 +156,10 @@ namespace firefly {
      *  TODO
      */
     void load_precomputed_probes();
+    /**
+     *  TODO
+     */
+    bool reconstruction_done();
     /*
      *  Enables only the scan for factors and returns afterwards
      */
@@ -854,6 +858,12 @@ namespace firefly {
 #else
     WARNING_MSG("Precomputed probes are not supported with MPI enabled!");
 #endif
+  }
+
+  template<typename BlackBoxTemp>
+  bool Reconstructor<BlackBoxTemp>::reconstruction_done() {
+    std::lock_guard<std::mutex> lock(status_control);
+    return done;
   }
 
   template<typename BlackBoxTemp>

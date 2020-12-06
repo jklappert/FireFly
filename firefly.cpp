@@ -168,43 +168,32 @@ int main(int argc, char* argv[]) {
   // Reconstruct the black box
   reconst.reconstruct();
 
-  // Print all found factors
-  /*for (const auto & el : reconst.get_factors_string({"x","y","z","w"})) {
-    std::cout << el << "\n";
-  }*/
+  if (reconst.reconstruction_done()) {
+    // Get results
+    std::vector<RationalFunction> results = reconst.get_result();
 
-  // Get results after the first interpolation. Has to be called with
-  // reconst.reconstruct(1) to work
-  /*for(const auto& rf : reconst.get_result_ff()) {
-    std::cout << rf.to_string({"x","y","z","w"}) << "\n";
-  }*/
+    std::ofstream file;
+    file.open("result.m");
+    file << "{";
+    std::string str = "";
 
-  // Get results
-  std::vector<RationalFunction> results = reconst.get_result();
+    std::vector<std::string> variables;
+    variables.reserve(n);
 
-  //std::ofstream file;
-  //file.open("test.m");
-  //file << "{";
-  //std::string str = "";
+    for (uint32_t i = 1; i != n + 1; ++i) {
+      variables.emplace_back("x" + std::to_string(i));
+    }
 
-  // Print all reconstruced functions
-  for (uint32_t i = 0; i != results.size(); ++i) {
-    std::cout << "Function " << i + 1 << ":\n" << results[i].to_string( {"x", "y", "z", "w"}) << "\n";
+    // Print all reconstruced functions
+    for (uint32_t i = 0; i != results.size(); ++i) {
+      file << str << "\n";
+      str = results[i].generate_horner(variables) + "\n,";
+    }
 
-    //file << str << "\n";
-    //str = results[i].to_string( {"x", "y", "z", "w"}) + "\n,";
+    str.pop_back();
+    file << str << "}\n";
+    file.close();
   }
-
-  //str.pop_back();
-  //file << str << "}\n";
-  //file.close();
-
-  // Rewrite result in Horner form
-  /*std::string f15_horner = results[14].generate_horner({"x", "y", "z", "w"});
-  std::cout << "Function 15 in Horner form:\n" << f15_horner << "\n";*/
-
-  // Resets all statics in RatReconst to start a new reconstruction
-  //RatReconst::reset();
 
   logger.close();
 
