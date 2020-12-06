@@ -3801,7 +3801,7 @@ namespace firefly {
     } else {
       WARNING_MSG("Cannot find " + file_name + "!");
       logger << "Cannot find " + file_name + "!\n";
-      throw std::runtime_error("Cannot find " + file_name + "!");
+      std::exit(EXIT_FAILURE);
     }
   }
 
