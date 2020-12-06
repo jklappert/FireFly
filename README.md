@@ -234,7 +234,7 @@ FF_LIBS=$(pkg-config --libs firefly)
 Then, the code can be compiled and linked with
 
 ```
-g++ $FF_CFLAGS <USER_CODE> $FF_LIBS
+c++ $FF_CFLAGS <USER_CODE> $FF_LIBS
 ```
 
 If `pkg-config` is not installed on the system, the flags can simply be read off `firefly.pc`.
