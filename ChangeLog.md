@@ -27,10 +27,9 @@ Bug fixes
  * Fixed a deadlock in the MPI implementation which could occur when changing
  the prime field or finishing the calculation.
 
- * Added missing `-pthread` flags to `firefly.pc`.
-
  * Fixed some compiler warnings.
 
+ * Added missing `-pthread` flags to `firefly.pc`.
 
 FireFly 2.0.2
 =============

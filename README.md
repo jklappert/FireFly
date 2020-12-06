@@ -8,11 +8,6 @@ Please refer to these papers when using FireFly:
 * [1] J. Klappert and F. Lange, *Reconstructing Rational Functions with FireFly*, [[*Comput.Phys.Commun.* **247** (2020) 106951](https://doi.org/10.1016/j.cpc.2019.106951)], [[1904.00009](https://arxiv.org/abs/1904.00009)]
 * [2] J. Klappert, S.Y. Klein, and F. Lange, *Interpolation of Dense and Sparse Rational Functions and other Improvements in FireFly*, [[2004.01463](https://arxiv.org/abs/2004.01463)]
 
-The authors of Firefly are:
-* Jonas Klappert <XXX>
-* Sven Yannick Klein <yklein@physik.rwth-aachen.de>
-* Fabian Lange <fabian.lange@kit.edu>
-
 ## Table of contents
 * [Requirements](#requirements)
 * [Building FireFly](#building-firefly)
