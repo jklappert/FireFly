@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(FireFly VERSION 2.0.2 LANGUAGES CXX)
+project(FireFly VERSION 2.0.3 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
