@@ -251,27 +251,36 @@ The user has to set the anchor points and the shifts for all variables in all pr
 The anchor points and shifts are related to the values for the variables through
 
 ```
-z_i = t * y_i^(j_i) + s_i
+z_{i, j_i, k} = t_k * a_i^{j_i} + s_i
 ```
 
-where `z_i` is the value, `y_i` is the anchor point, `j_i > 0` is an integer power of the anchor point, and `s_i` the shift for variable `i`.
-`t` is a random number.
+where `t_k` is an arbitrary random number, `a_i` is the anchor point for variable `i`, `s_i` is the shift for variable `i`, and `j_i > 0` is some power for the anchor point `a_i`.
 In the publications on `FireFly`, the powers are referred to as `zi_orders`.
 The anchor points for the first variable are always set to 1 and they do not have to be set by the user.
-For four variables, the file `anchor_points` may then look like
+FireFly requests each probe to be computed at some tuple of the powers `j_i`, e.g. the tuple `(3,1)` translates to
 
 ```
-224234 23478923478 2394789234
-8794785289 178278843 1948348934
-...
+z_{1, x, k} = t_k * 1^x + s_1 , z_{2, 3, k} = t_k * a_2^3 + s_2 , z_{3, 1, k} = t_k * a_3^1 + s_3 ,
+```
+
+where `x` is irrelevant, because the anchor point is 1.
+
+This special form is required for two algorithms used in polynomial interpolation, namely solving Vandermonde systems (see the last two pages of Sct. 2.1 in Ref. [1]) and the Ben-Or/Tiwari algorithm (see Sct. 2.1.1 in Ref. [2]).
+Usually, the powers `j_i` monotonically increase in steps of 1 until the algorithms terminate with the current variable, e.g. a possible order would be `(1,1), (2,1), ..., (10,1), (1,2), (2,2), (3,2), ...`
+
+For three variables, the file `anchor_points` may then look like
+
+```
+6747833927250002263 1719011221300048416
+6706258047612828567 5195796091462229223
 ```
 
 The anchor points may coincide between different prime fields, but we encourage to use distinct random values in different prime fields to reduce the risk of accidental cancellations.
 The corresponding file `shift` may then read
 
 ```
-25 224234 23478923478 2394789234
-898599345 123099035 834889345 892349845
+443333693649116027 530304748736793718 4727957290386205426
+2611273300125671761 4082324484597984495 3075032569815551545
 ...
 ```
 
@@ -280,18 +289,16 @@ For each prime field, one requires a separate file `$PRIME.gz`, where `$PRIME` i
 The file `0.gz` for the first prime field may then look like
 
 ```
-1 1 1 | 5 | 0 1 30
-1 1 1 | 6 | 0 1 31
-1 1 1 | 7 | 0 1 32
-1 1 1 | 8 | 0 1 33
-2 1 1 | 29 | 0 1 54
-1 2 1 | 37 | 0 1 62
-1 1 2 | 25 | 0 1 50
+1 1 | 6303994061519960968 | 0 1 6747327755169076995
+1 1 | 2956691294852519450 | 0 1 3400024988501635477
+1 1 | 9142216511497419146 | 0 1 362178168291759390
+2 1 | 8389701825437495663 | 0 1 8833035519086611690
+1 2 | 1460015629339790903 | 0 1 1903349322988906930
 ...
 ```
 
 where the three numbers in the first fold are the `zi_orders` (powers) `j_2`, `j_3`, `j_4` for the anchor points (`j_1` is irrelevant since the corresponding anchor point is 1).
-The number in the second fold is `t`, while the numbers in the third fold are the results of the three black box functions in this example evaluated at the chosen values.
+The number in the second fold is `t_k`, while the numbers in the third fold are the results of the three black box functions in this example evaluated at the chosen values.
 
 The executable can then be run with
 
@@ -302,14 +309,14 @@ firefly -v $NUMBER_OF_VARIABLES -p $THREADS
 If the provided probes are not sufficient to fully interpolate and reconstruct the black-box functions, it will abort, store the intermediate results to the folder `ff_save`, and write the next probes it requires to the file `requested_probes.gz`, which for example reads
 
 ```
-2 1 1 | 2143034386812271651 | 2143034386812271676 6771525491877985602 8908964042862776446 6579185578178744400
+2 1 | 1931531046357483833 | 2374864740006599860 6216802671037139389 2374659357042260498
 ...
 ```
 
 Again, the numbers in the first fold are the `zi_orders` (powers) of the anchor points.
-The number of the second fold is a suggestion on which `t` to choose, while the numbers in the third fold are the values for the variables computed through the formula above assuming the suggested `t`.
-The user is free to choose any other `t` if desired.
-However, any `t` chosen twice for the same powers in the same prime field is automatically discarded by `FireFly`.
+The number of the second fold is a suggestion on which `t_k` to choose, while the numbers in the third fold are the values for the variables computed through the formula above assuming the suggested `t_k`.
+The user is free to choose any other `t_k` if desired.
+However, any `t_k` chosen twice for the same powers in the same prime field is automatically discarded by `FireFly`.
 
 The user then has to evaluate the black box at those values and provide them in the `probes` directory as described above, e.g. by replacing the previous file.
 By calling `firefly` again, the saved state is loaded from the `ff_save` directory and the interpolation resumed with the new probes.
@@ -317,3 +324,5 @@ By calling `firefly` again, the saved state is loaded from the `ff_save` directo
 In the first prime field, the functional forms of the black-box functions is not known.
 Hence, `FireFly` only requests a relatively small number of probes after each step.
 Once the functional forms are known in the second prime field, all probes required in the prime field are requested at the beginning of the prime field (after a first probe is fed).
+
+A simple example can be found in the directory `examples/firefly_executable`.
