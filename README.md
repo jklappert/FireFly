@@ -12,7 +12,7 @@ Please refer to these papers when using FireFly:
 * [Requirements](#requirements)
 * [Building FireFly](#building-firefly)
 * [Reconstructing functions](#reconstructing-functions)
-* [Directly parse collections of rational functions](#directly-parse-collections-of-rational-functions)
+* [Parse collections of rational functions](#parse-collections-of-rational-functions)
 * [Code Documentation](#code-documentation)
 * [Compiling Code with FireFly](#compiling-code-with-firefly)
 
@@ -154,7 +154,7 @@ rec.get_result();
 We refer to the `example.cpp` file and the code documentation for additional options and features.
 
 
-## Directly parse collections of rational functions
+## Parse collections of rational functions
 FireFly provides a parser class for rational functions. The functions will be stored in reverse polish notation to be evaluated for a given parameter point. Parsing collections of rational functions can be done with the `ShuntingYardParser` class. It has to be constructed with a path to a file which contains the rational functions and a vector of the occurring variables:
 
 ```cpp
