@@ -642,10 +642,10 @@ namespace firefly {
           ERROR_MSG("Validation failed: Number of entries does not match the black box!");
           logger << "Validation failed: Number of entries does not match the black box!\n";
           std::exit(EXIT_FAILURE);
-        } else {
-          WARNING_MSG("Validating states is disabled with precomputed probes.");
-          logger << "Validating states is disabled with precomputed probes.\n";
         }
+      } else {
+        WARNING_MSG("Validating states is disabled with precomputed probes.");
+        logger << "Validating states is disabled with precomputed probes.\n";
       }
     } else {
       ERROR_MSG("Validation file not found!");
