@@ -15,6 +15,7 @@ Please refer to these papers when using FireFly:
 * [Parse collections of rational functions](#parse-collections-of-rational-functions)
 * [Code Documentation](#code-documentation)
 * [Compiling Code with FireFly](#compiling-code-with-firefly)
+* [FireFly Executable (in Development)](#firefly-executable-in-development)
 
 ## Requirements
 FireFly requires:
@@ -106,6 +107,9 @@ Below is a list of all build options for `FireFly`:
 * `-DMPI_CXX_INCLUDE_PATH=$MPI_INC_PATH` (default: not set): If MPI is not automatically found, one has to manually set the absolute path to its header files.
 * `-DMPI_CXX_LIBRARIES=$MPI_LIB_PATH` (default: not set): If MPI is not automatically found, one has to manually set the absolute path to the shared library.
 * `-DBUILD_BENCH=true` (default: `false`): Build the benchmark executables `benchmarks` and `benchmarks_no_bt`, which perform some of the benchmarks from Ref. [2].
+  The functions as well as the source code can be found in the directory `benchmarks`.
+  Both executables can simply be run without command line arguments.
+* `-DFIREFLY_EXECUTABLE=true` (default: `false`): Build and install the executable `firefly`, cf. [FireFly Executable (in Development)](#firefly-executable-in-development).
 
 Important standard options of CMake are:
 
@@ -232,7 +236,17 @@ FF_LIBS=$(pkg-config --libs firefly)
 Then, the code can be compiled and linked with
 
 ```
-g++ $FF_CFLAGS <USER_CODE> $FF_LIBS
+c++ $FF_CFLAGS <USER_CODE> $FF_LIBS
 ```
 
 If `pkg-config` is not installed on the system, the flags can simply be read off `firefly.pc`.
+
+## FireFly Executable (in Development)
+
+`FireFly` offers the executable `firefly`, which can read in probes from a file and interpolate and reconstruct the functions from it.
+This feature is still in development and not officially released.
+Currently, only the most basic options for `FireFly` are supported, i.e. neither the scan for a sparse shift nor the scan for univariate factors are performed.
+
+With the CMake option `-DFIREFLY_EXECUTABLE=true`, one can build and install the executable if neither a custom modular arithmetic nor `MPI` is used.
+
+We refer to the Wiki page for detailed instructions.

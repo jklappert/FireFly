@@ -144,6 +144,22 @@ namespace firefly {
      *  run, thus requiring the black box to be probed in the same order.
      */
     void resume_from_saved_state();
+    /**
+     *  TODO
+     */
+    void set_anchor_points(const std::vector<std::vector<std::uint64_t>>& anchor_points);
+    /**
+     *  TODO
+     */
+    void set_shifts(const std::vector<std::vector<std::uint64_t>>& shifts);
+    /**
+     *  TODO
+     */
+    void load_precomputed_probes();
+    /**
+     *  TODO
+     */
+    bool reconstruction_done();
     /*
      *  Enables only the scan for factors and returns afterwards
      */
@@ -192,6 +208,7 @@ namespace firefly {
     bool scanned_factors = false;
     bool first_print = true;
     bool stop_after_factors = false;
+    bool precomputed_probes = false;
     RatReconst_list reconst;
     std::vector<std::string> tags;
     std::vector<std::string> file_paths;
@@ -233,6 +250,9 @@ namespace firefly {
     std::unordered_map<uint32_t, std::vector<std::pair<uint32_t, uint32_t>>> max_deg_map_complete {};
     RatReconst tmp_rec;
     std::vector<FFInt> shift;
+    std::vector<std::vector<std::uint64_t>> anchor_points {};
+    std::vector<std::vector<std::uint64_t>> shifts {};
+
     /**
     *  Scan the black-box functions for a sparse shift
     */
@@ -320,6 +340,14 @@ namespace firefly {
      *  Attempts to continue the calculation if no probes are queued anymore
      */
     void attempt_to_continue();
+    /**
+     *  TODO
+     */
+    void load_precomputed_probes_from_file();
+    /**
+     *  TODO
+     */
+    void write_requested_probes_to_file();
 #ifdef WITH_MPI
     int world_size = -1;
     uint32_t worker_thread_count = 0;
@@ -588,31 +616,36 @@ namespace firefly {
     v_file.open("ff_save/validation.gz");
 
     if (v_file.is_open()) {
-      std::getline(validation_file, line);
-      std::vector<FFInt> values = parse_vector_FFInt(line);
+      if (!precomputed_probes) {
+        std::getline(validation_file, line);
+        std::vector<FFInt> values = parse_vector_FFInt(line);
 
-      std::vector<FFInt> result = bb.eval(values);
-      size_t counter = 0;
+        std::vector<FFInt> result = bb.eval(values);
+        size_t counter = 0;
 
-      for (const auto & el : parsed_factors) {
-        result[el.first] /= el.second.evaluate_pre(values)[0];
-      }
-
-      while (std::getline(validation_file, line)) {
-        if (std::stoul(line) != result[counter]) {
-          ERROR_MSG("Validation failed: Entry " + std::to_string(counter) + " does not match the black-box result!");
-          logger << "Validation failed: Entry " + std::to_string(counter) + " does not match the black-box result!\n";
-          logger.close();
-          std::exit(EXIT_FAILURE);
+        for (const auto & el : parsed_factors) {
+          result[el.first] /= el.second.evaluate_pre(values)[0];
         }
 
-        ++counter;
-      }
+        while (std::getline(validation_file, line)) {
+          if (std::stoul(line) != result[counter]) {
+            ERROR_MSG("Validation failed: Entry " + std::to_string(counter) + " does not match the black-box result!");
+            logger << "Validation failed: Entry " + std::to_string(counter) + " does not match the black-box result!\n";
+            logger.close();
+            std::exit(EXIT_FAILURE);
+          }
 
-      if (counter != result.size()) {
-        ERROR_MSG("Validation failed: Number of entries does not match the black box!");
-        logger << "Validation failed: Number of entries does not match the black box!\n";
-        std::exit(EXIT_FAILURE);
+          ++counter;
+        }
+
+        if (counter != result.size()) {
+          ERROR_MSG("Validation failed: Number of entries does not match the black box!");
+          logger << "Validation failed: Number of entries does not match the black box!\n";
+          std::exit(EXIT_FAILURE);
+        }
+      } else {
+        WARNING_MSG("Validating states is disabled with precomputed probes.");
+        logger << "Validating states is disabled with precomputed probes.\n";
       }
     } else {
       ERROR_MSG("Validation file not found!");
@@ -809,6 +842,31 @@ namespace firefly {
   }
 
   template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::set_anchor_points(const std::vector<std::vector<std::uint64_t>>& anchor_points_) {
+    anchor_points = anchor_points_;
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::set_shifts(const std::vector<std::vector<std::uint64_t>>& shifts_) {
+    shifts = shifts_;
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::load_precomputed_probes() {
+#ifndef WITH_MPI
+    precomputed_probes = true;
+#else
+    WARNING_MSG("Precomputed probes are not supported with MPI enabled!");
+#endif
+  }
+
+  template<typename BlackBoxTemp>
+  bool Reconstructor<BlackBoxTemp>::reconstruction_done() {
+    std::lock_guard<std::mutex> lock(status_control);
+    return done;
+  }
+
+  template<typename BlackBoxTemp>
   void Reconstructor<BlackBoxTemp>::set_safe_interpolation() {
     safe_mode = true;
   }
@@ -827,6 +885,11 @@ namespace firefly {
       aborted = false;
 
 #ifdef WITH_MPI
+    if (precomputed_probes) {
+      ERROR_MSG("Precomputed probes are not supported with MPI support enabled!");
+      return;
+    }
+
     ThreadPool tp_comm(1);
     tp_comm.run_priority_task([this]() {
       {
@@ -994,12 +1057,14 @@ namespace firefly {
                  " | " << "Requires new prime field: " << std::to_string(items_new_prime) << " / " << std::to_string(items - items_done) << "\n";
     }
 
-    logger << "Completed reconstruction in "
-      << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count())
-      << " s | " << std::to_string(total_iterations) << " probes in total\n"
-      << "Required prime fields: " << std::to_string(prime_it) << " + 1\n"
-      << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n";
-    logger.close();
+    if (done) {
+      logger << "Completed reconstruction in "
+        << std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count())
+        << " s | " << std::to_string(total_iterations) << " probes in total\n"
+        << "Required prime fields: " << std::to_string(prime_it) << " + 1\n"
+        << "Average time of the black-box probe: " << std::to_string(average_black_box_time) << " s\n";
+      logger.close();
+    }
 
     if (verbosity > SILENT) {
       if (one_done || one_new_prime) {
@@ -1008,10 +1073,12 @@ namespace firefly {
                  " | " + "Requires new prime field: " + std::to_string(items_new_prime) + " / " + std::to_string(items - items_done) + "\n");
       }
 
-      INFO_MSG("Completed reconstruction in " +
-               std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count()) + " s | " + std::to_string(total_iterations) + " probes in total");
-      INFO_MSG("Required prime fields: " + std::to_string(prime_it) + " + 1");
-      INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
+      if (done) {
+        INFO_MSG("Completed reconstruction in " +
+                 std::to_string(std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count()) + " s | " + std::to_string(total_iterations) + " probes in total");
+        INFO_MSG("Required prime fields: " + std::to_string(prime_it) + " + 1");
+        INFO_MSG("Average time of the black-box probe: " + std::to_string(average_black_box_time) + " s");
+      }
     }
   }
 
@@ -1909,6 +1976,27 @@ namespace firefly {
   void Reconstructor<BlackBoxTemp>::start_first_runs(bool first) {
     prime_start = std::chrono::high_resolution_clock::now();
 
+    if (anchor_points.size() > static_cast<std::size_t>(prime_it)) {
+      std::vector<FFInt> tmp_an_vec;
+
+      for (const auto value : anchor_points[prime_it]) {
+        tmp_an_vec.emplace_back(value);
+      }
+
+      tmp_rec.set_anchor_points(tmp_an_vec);
+    }
+
+    if (shifts.size() > static_cast<std::size_t>(prime_it)) {
+      shift.clear();
+      shift.reserve(n);
+
+      for (const auto value : shifts[prime_it]) {
+        shift.emplace_back(value);
+      }
+
+      tmp_rec.set_shift(shift);
+    }
+
     std::vector<uint32_t> zi_order;
 
     if (!factor_scan) {
@@ -1924,6 +2012,10 @@ namespace firefly {
     uint32_t to_start = thr_n;//* bunch_size;
     queue_probes(zi_order, to_start);
     started_probes.emplace(zi_order, to_start);
+
+    if (precomputed_probes) {
+      load_precomputed_probes_from_file();
+    }
 #else
     if (first) {
       send_first_jobs();
@@ -2449,6 +2541,18 @@ namespace firefly {
               ++items_new_prime;
             }
           }
+        } else if (anchor_points.size() > static_cast<std::size_t>(prime_it)) {
+          std::vector<FFInt> tmp_an_vec;
+
+          for (const auto value : anchor_points[prime_it]) {
+            tmp_an_vec.emplace_back(value);
+          }
+
+          tmp_rec.set_anchor_points(tmp_an_vec);
+
+          for (auto & rec : reconst) {
+            std::get<2>(rec)->set_anchor_points(tmp_an_vec);
+          }
         } else {
           tmp_rec.generate_anchor_points();
           const auto tmp_an_vec = tmp_rec.get_anchor_points();
@@ -2456,6 +2560,17 @@ namespace firefly {
           for (auto & rec : reconst) {
             std::get<2>(rec)->set_anchor_points(tmp_an_vec);
           }
+        }
+
+        if (shifts.size() > static_cast<std::size_t>(prime_it)) {
+          shift.clear();
+          shift.reserve(n);
+
+          for (const auto value : shifts[prime_it]) {
+            shift.emplace_back(value);
+          }
+
+          tmp_rec.set_shift(shift);
         }
 
         shift = tmp_rec.get_zi_shift_vec();
@@ -2549,6 +2664,10 @@ namespace firefly {
           }
 
 #ifndef WITH_MPI
+        }
+
+        if (precomputed_probes) {
+          load_precomputed_probes_from_file();
         }
 #else
           cond_val.notify_one();
@@ -2649,6 +2768,9 @@ namespace firefly {
           } else if (items_done + items_new_prime == items) {
             new_prime = true;
             continue;
+          } else if (precomputed_probes) {
+            write_requested_probes_to_file();
+            return;
           } else {
             std::string msg = "Nothing left to feed: "
                               + std::to_string(items)
@@ -2667,6 +2789,34 @@ namespace firefly {
             logger << msg << "\nPlease report this error\nAttempting to continue\n";
 
             attempt_to_continue();
+          }
+        } else if (precomputed_probes) {
+          lock_probe_queue.unlock();
+          std::unique_lock<std::mutex> lock_future(future_control);
+
+          if (computed_probes.empty()) {
+            lock_future.unlock();
+
+            {
+              std::unique_lock<std::mutex> lock_feed(feed_control);
+
+              condition_feed.wait(lock_feed, [this](){return feed_jobs == 0 && interpolate_jobs == 0;});
+            }
+
+            {
+              std::lock_guard<std::mutex> lock_status(status_control);
+
+              if (items_done == items) {
+                done = true;
+                continue;
+              } else if (items_done + items_new_prime == items) {
+                new_prime = true;
+                continue;
+              }
+            }
+
+            write_requested_probes_to_file();
+            return;
           }
         }
       }
@@ -2814,10 +2964,12 @@ namespace firefly {
 #ifdef WITH_MPI
     if (!first) {
 #endif
-    for (uint32_t j = 0; j != to_start; ++j) {
-      tp.run_task([this]() {
-        get_job();
-      });
+    if (!precomputed_probes) {
+      for (uint32_t j = 0; j != to_start; ++j) {
+        tp.run_task([this]() {
+          get_job();
+        });
+      }
     }
 #ifdef WITH_MPI
     }
@@ -3581,6 +3733,104 @@ namespace firefly {
 
     requested_probes = std::deque<std::pair<uint64_t, std::vector<FFInt>>>();
     computed_probes = std::queue<std::pair<std::vector<uint64_t>, std::vector<std::vector<FFInt>>>>();
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::load_precomputed_probes_from_file() {
+    std::string file_name = "probes/" + std::to_string(prime_it) + ".gz";
+    std::ifstream ifile(file_name.c_str());
+    igzstream gzfile;
+    gzfile.open(file_name.c_str());
+
+    if (ifile.is_open()) {
+      ifile.close();
+      std::string line;
+
+      while (std::getline(gzfile, line)) {
+        std::size_t first_delim = line.find(" | ");
+
+        if (first_delim == std::string::npos) {
+          WARNING_MSG(file_name + " has a wrong format!");
+          logger << file_name + " has a wrong format!\n";
+          throw std::runtime_error(file_name + " has a wrong format!");
+        }
+
+        std::string zi_order_string = line.substr(0, first_delim + 1);
+        std::string remainder = line.substr(first_delim + 3);
+
+        std::size_t second_delim = remainder.find(" | ");
+
+        if (second_delim == std::string::npos) {
+          WARNING_MSG(file_name + " has a wrong format!");
+          logger << file_name + " has a wrong format!\n";
+          throw std::runtime_error(file_name + " has a wrong format!");
+        }
+
+        FFInt t(std::stoul(remainder.substr(0, second_delim)));
+
+        std::vector<uint32_t> zi_order = parse_vector_32(zi_order_string, n - 1);
+
+        if (zi_order.size() != n - 1) {
+          WARNING_MSG(file_name + " has a wrong format!");
+          logger << file_name + " has a wrong format!\n";
+          throw std::runtime_error(file_name + " has a wrong format!");
+        }
+
+        size_t pos = 0;
+        std::string delimiter = " ";
+        std::vector<std::vector<FFInt>> probes {};
+
+        std::string probe_string = remainder.substr(second_delim + 3);
+
+        if (probe_string.back() != ' ') {
+          probe_string.append(" ");
+        }
+
+        while ((pos = probe_string.find(delimiter)) != std::string::npos) {
+          probes.emplace_back(std::vector<FFInt> (1, std::stoul(probe_string.substr(0, pos))));
+          probe_string.erase(0, pos + 1);
+        }
+
+        probes.shrink_to_fit();
+
+        computed_probes.emplace(std::make_pair(std::vector<uint64_t> (1, ind), probes));
+        index_map.emplace(std::make_pair(ind, std::make_pair(t, zi_order)));
+        ++ind;
+        ++probes_queued;
+      }
+    } else {
+      WARNING_MSG("Cannot find " + file_name + "!");
+      logger << "Cannot find " + file_name + "!\n";
+      std::exit(EXIT_FAILURE);
+    }
+  }
+
+  template<typename BlackBoxTemp>
+  void Reconstructor<BlackBoxTemp>::write_requested_probes_to_file() {
+    INFO_MSG("Writing requested probes to requested_probes.gz.");
+    logger << "Writing requested probes to requested_probes.gz.\n";
+
+    std::string file_name = "requested_probes.gz";
+    ogzstream gzfile;
+    gzfile.open(file_name.c_str());
+
+    for (const auto & probe : requested_probes) {
+      auto t_and_zi_order = index_map.at(probe.first);
+
+      for (const auto & zi : t_and_zi_order.second) {
+        gzfile << zi << " ";
+      }
+
+      gzfile << "| " << t_and_zi_order.first << " |";
+
+      for (const auto & value : probe.second) {
+        gzfile << " " << value;
+      }
+
+      gzfile << "\n";
+    }
+
+    gzfile.close();
   }
 
 #ifdef WITH_MPI
