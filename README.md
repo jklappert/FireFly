@@ -249,4 +249,4 @@ Currently, only the most basic options for `FireFly` are supported, i.e. neither
 
 With the CMake option `-DFIREFLY_EXECUTABLE=true`, one can build and install the executable if neither a custom modular arithmetic nor `MPI` is used.
 
-We refer to the Wiki page for detailed instructions.
+We refer to the [Wiki page](https://gitlab.com/firefly-library/firefly/-/wikis/FireFly-Executable-(in-Development)) for detailed instructions.
