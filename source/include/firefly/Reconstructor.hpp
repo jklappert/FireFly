@@ -383,6 +383,12 @@ namespace firefly {
 #else
                                int verbosity_): n(n_), thr_n(thr_n_ - 1), bb(bb_), verbosity(verbosity_), tp(thr_n) {
 #endif
+    if (n == 0) {
+      ERROR_MSG("FireFly does not support functional reconstructions without variables!\n               If you want to continue, set n at least to 1.");
+      logger << "FireFly does not support functional reconstructions without variables!\nIf you want to continue, set n at least to 1.\n";
+      std::exit(EXIT_FAILURE);
+    }
+
     FFInt::set_new_prime(primes()[prime_it]);
     bb.prime_changed_internal();
     uint64_t seed = static_cast<uint64_t>(std::time(0));
@@ -413,8 +419,14 @@ namespace firefly {
 #else
                                BlackBoxBase<BlackBoxTemp>& bb_, int verbosity_): n(n_), thr_n(thr_n_ - 1), bunch_size(bunch_size_), bb(bb_), verbosity(verbosity_), tp(thr_n) {
 #endif
+    if (n == 0) {
+      ERROR_MSG("FireFly does not support functional reconstructions without variables!\n               If you want to continue, set n at least to 1.");
+      logger << "FireFly does not support functional reconstructions without variables!\nIf you want to continue, set n at least to 1.\n";
+      std::exit(EXIT_FAILURE);
+    }
+
     if (bunch_size != 1 && bunch_size != 2 && bunch_size != 4 && bunch_size != 8 && bunch_size != 16 && bunch_size != 32 && bunch_size != 64 && bunch_size != 128) {
-      ERROR_MSG("Maximum bunch size " + std::to_string(bunch_size) + " is no supported power of 2!\nChoose among 1, 2, 4, 8, 16, 32, 64, 128");
+      ERROR_MSG("Maximum bunch size " + std::to_string(bunch_size) + " is no supported power of 2!\n               Choose among 1, 2, 4, 8, 16, 32, 64, 128");
       logger << "Maximum bunch size " << std::to_string(bunch_size) << " is no supported power of 2!\nChoose among 1, 2, 4, 8, 16, 32, 64, 128\n";
       std::exit(EXIT_FAILURE);
     }

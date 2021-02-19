@@ -184,6 +184,12 @@ int main(int argc, char* argv[]) {
 
     var_file.close();
 
+    if (vars.empty()) {
+      ERROR_MSG("FireFly does not support functional reconstructions without variables!\n               If you want to continue, declare a variable.");
+      logger << "FireFly does not support functional reconstructions without variables!\nIf you want to continue, declare a variable.\n";
+      std::exit(EXIT_FAILURE);
+    }
+
     // Check for a skip file
     std::ifstream skip_file_test("config/skip_functions");
     std::ifstream skip_file;
@@ -358,7 +364,7 @@ int main(int argc, char* argv[]) {
 	      std::string factor = reconst.get_factors_string(vars)[0];
               file.open(file_name.c_str(), std::ios_base::app);
               file <<  "+ " << ap.get_master(i) << "*" + factor << "\n";
-              file.close();	      
+              file.close();
 	    }
 
             if (save_mode) {

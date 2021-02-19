@@ -13,8 +13,10 @@ Changes
  * Added some benchmarks of [2004.01463](https://arxiv.org/abs/2004.01463) as
  executables. They can be compiled with the CMake option `-DBUILD_BENCH=true`.
 
-  * The same function can now appear multiple times on the right-hand-side of the
-  same replacement rule when using `ff_insert`. Thanks to Wen Chen for this suggestion.
+ * The same function can now appear multiple times on the right-hand-side of the
+ same replacement rule when using `ff_insert`. Thanks to Wen Chen for this suggestion.
+
+ * Added warning messages that FireFly requires at least one variable.
 
 Bug fixes
 ---------
