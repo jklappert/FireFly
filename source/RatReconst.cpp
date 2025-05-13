@@ -27,6 +27,10 @@
 #include <algorithm>
 #include <sys/stat.h>
 
+#ifdef FLINT
+#include "/usr/include/flint/nmod_poly_factor.h"
+#endif
+
 namespace firefly {
   std::vector<FFInt> RatReconst::shift {};
   std::unordered_set<uint32_t> RatReconst::singular_system_set {};

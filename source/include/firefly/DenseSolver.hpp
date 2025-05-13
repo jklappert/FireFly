@@ -22,6 +22,7 @@
 #include "firefly/config.hpp"
 #include "firefly/Logger.hpp"
 
+#include <cstdint>
 #include <vector>
 
 namespace firefly {
