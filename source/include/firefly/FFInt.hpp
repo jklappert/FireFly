@@ -23,6 +23,7 @@
 #ifdef FLINT
 #include <flint/ulong_extras.h>
 #endif
+#include <cstdint>
 #include <gmpxx.h>
 #include <iostream>
 #include <string>

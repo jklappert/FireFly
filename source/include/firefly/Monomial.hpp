@@ -21,6 +21,7 @@
 #include "firefly/config.hpp"
 #include "firefly/RationalNumber.hpp"
 
+#include <cstdint>
 #include <vector>
 
 namespace firefly {

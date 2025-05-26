@@ -20,6 +20,7 @@
 
 #include "firefly/config.hpp"
 
+#include <cstdint>
 #include <vector>
 
 namespace firefly {
